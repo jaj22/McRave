@@ -1,11 +1,30 @@
 #include <BWAPI.h>
-#include "Header.h"
+#include <vector>
 
 using namespace BWAPI;
-extern int nexusDesired;
-extern TilePosition playerStartingTilePosition;
+using namespace std;
 
-void buildingManager(UnitType building, Unit builder, TilePosition nexus);
+// External structure count for pre-requisite buildings and expanding
+extern int nexusCnt, nexusDesired, coreCnt, archivesCnt, fleetBeaconCnt;
+extern vector <TilePosition> activeExpansion;
+extern vector<int> buildingWorkerID;
+extern TilePosition buildTilePosition;
+extern Position buildPosition;
+extern UnitType currentBuilding;
+
+// External unit variables
+extern int zealotCnt, dragoonCnt, darkTemplarCnt;
+
+// External resource variables
+extern int queuedMineral;
+extern int queuedGas;
+
+// External other variables
+extern vector<TilePosition> nextExpansion;
+
+// Function declarations
+void buildingManager(UnitType building, Unit builder);
 void nexusManager(UnitType building, Unit builder, TilePosition expansion);
-bool canBuildHere(UnitType building, Unit builder, TilePosition buildPosition);
-TilePosition getBuildLocationNear(UnitType building, Unit builder, TilePosition buildPosition);
+void productionManager(Unit building);
+bool canBuildHere(UnitType building, Unit builder, TilePosition buildTilePosition);
+TilePosition getBuildLocationNear(UnitType building, Unit builder, TilePosition buildTilePosition);
