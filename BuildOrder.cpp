@@ -1,61 +1,52 @@
 #include "BuildOrder.h"
 
 using namespace BWAPI;
-using namespace std;
 
+// Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
 void getBuildOrder()
 {	
-	pylonDesired = min(22,(int)floor((Broodwar->self()->supplyUsed() / 14)));
-	nexusDesired = min(5, nexusCnt + (int)floor(((mineralWorkerID.size() + 1)/(2*mineralID.size() + 1))));
+	pylonDesired = min(22,(int)floor((Broodwar->self()->supplyUsed() / 14)));	
+	nexusDesired = min((int)nextExpansion.size(), nexusCnt + (int)floor(probeCnt / (2 * mineralID.size() + 2 * gasTilePosition.size() + 1)));
 	switch (Broodwar->enemy()->getRace())
 	{
 	case Races::Enum::Zerg:
 		// Structures
-		// Build is Speedlot Corsair with High Templars/Archons
-
-		// Units
-
+		// Build 1: Counter hydra/ling/lurker using zealot/goon/reaver
+		gateDesired = min(2 + nexusCnt, (int)floor(Broodwar->self()->supplyUsed() / 20));
+		forgeDesired = min(2, 2 * ((int)floor(Broodwar->self()->supplyUsed() / 160)));
+		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->supplyUsed() / 24));
+		coreDesired = min(1, gateCnt);
+		roboDesired = min(1, coreCnt);
+		supportBayDesired = min(1, roboCnt);
+		observatoryDesired = min(1, roboCnt);
+		citadelDesired = max(0, nexusCnt - 2);	
+		// Build 2: Counter muta/ling using corsairs/zealots
+		// Content WIP
 		break;
 	case Races::Enum::Terran:		
 		// Structures
-		// Build is Early Speedlots/Goons -> Add Arbiters (at some point) -> Carriers
+		// Build 1: Counter bio using zealot/goon/DT/carrier
 		gateDesired = min(2 + nexusCnt, (int)floor(Broodwar->self()->supplyUsed() / 20));
 		forgeDesired = min(2, 2*((int)floor(Broodwar->self()->supplyUsed() / 160)));
 		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->supplyUsed() / 24));
 		coreDesired = min(1, gateCnt);
 		citadelDesired = min(1, coreCnt);
 		archivesDesired = min(1, citadelCnt);
-		//stargateDesired = min(3, coreCnt*Broodwar->self()->supplyUsed() / 130);
-		//fleetBeaconDesired = min(1, stargateCnt);
-		//Units
-
+		stargateDesired = min(3, coreCnt*Broodwar->self()->supplyUsed() / 130);
+		fleetBeaconDesired = min(1, stargateCnt);
+		// Build 2: Counter mech
+		// Content WIP
 		break;
 	case Races::Enum::Protoss:
-		// Build is Early Speedlots -> Reavers/Goons (NEED EARLIER GATES, 10,12 GATE)
-
-		// Units
-
+		// Build 1: Counter gate using zealot/goon/reaver
+		gateDesired = min(2 + nexusCnt, 2*(int)floor(Broodwar->self()->supplyUsed() / 20));
+		forgeDesired = min(2, 2 * ((int)floor(Broodwar->self()->supplyUsed() / 160)));
+		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->supplyUsed() / 30));
+		coreDesired = min(1, gateCnt/2);
+		roboDesired = max(0, nexusCnt - 1);
+		supportBayDesired = min(1, roboCnt);
+		observatoryDesired = min(1, roboCnt);
+		citadelDesired = max(0, nexusCnt - 2);
 		break;
 	}
-
 }
-
-
-
-
-
-
-
-
-
-//// Check what structures are desired based on current supplies	
-//pylonDesired = (int)floor((Broodwar->self()->supplyUsed() / 14));
-//gateDesired = min(3 + nexusCnt, (int)floor(Broodwar->self()->supplyUsed() / 20));
-//coreDesired = min(1, (int)floor(Broodwar->self()->supplyUsed() / 36));
-//citadelDesired = min(1, nexusCnt - 1);
-//roboDesired = min(1, nexusCnt - 1);
-////stargateDesired = min(4, nexusCnt*Broodwar->self()->supplyUsed() / 130);
-////stargateDesired = min(4, (int)floor(0.00246078*exp(0.0231046*Broodwar->self()->supplyUsed())));
-////fleetBeaconDesired = min(1, stargateCnt);
-//nexusDesired = min(5, (int)floor(Broodwar->self()->supplyUsed() / 120)) + 1;
-//gasDesired = std::min(nexusCnt, (int)floor(Broodwar->self()->supplyUsed() / 34));

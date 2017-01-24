@@ -17,18 +17,10 @@ bool analysis_just_finished;
 
 void CMProtoBot::onStart()
 {
-	// Print the map name.
-	// BWAPI returns std::string when retrieving a string, don't forget to add .c_str() when printing!
-	// Broodwar << "The map is " << Broodwar->mapName() << "!" << endl;
-
 	// Enable the UserInput flag, which allows us to control the bot and type messages.
 	Broodwar->enableFlag(Flag::UserInput);
 
-	// Uncomment the following line and the bot will know about everything through the fog of war (cheat).
-	//Broodwar->enableFlag(Flag::CompleteMapInformation);
-
-	// Set the command optimization level so that common commands can be grouped
-	// and reduce the bot's APM (Actions Per Minute).
+	// Set the command optimization level so that common commands can be grouped and reduce the bot's APM (Actions Per Minute).
 	Broodwar->setCommandOptimizationLevel(2);
 
 	if (Broodwar->enemy())
@@ -36,7 +28,6 @@ void CMProtoBot::onStart()
 		Broodwar << "The matchup is " << Broodwar->self()->getRace() << " vs " << Broodwar->enemy()->getRace() << endl;
 	}
 	if (analyzed == false) {
-		//Broodwar << "Analyzing map... this may take a minute" << std::endl;;
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AnalyzeThread, NULL, 0, NULL);
 	}
 
@@ -61,7 +52,7 @@ void CMProtoBot::onFrame()
 		drawTerrainData();
 
 	// Only do this loop once if map analysis done
-	if (analysis_just_finished && enemyBasePositions.size() > 0)
+	if (analysis_just_finished)
 	{
 		//Broodwar << "Finished analyzing map." << std::endl;
 		analysis_just_finished = false;
@@ -100,17 +91,19 @@ void CMProtoBot::onFrame()
 		}
 
 		// Find nearest bases, move to vector for easier use (TESTING ONLY HALF THE BASES, WANT ENEMY EXPANSIONS SEPARATE)
-		for (int i = 0; i < ((int)baseDistances.size() / (Broodwar->getPlayers().size() - 1)); i++)
+		for (int i = 0; i < ((int)baseDistances.size() / (int)(Broodwar->getPlayers().size() - 1)); i++)
 		{
 			nearestBases.push_back(*min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
 			furthestBases.push_back(*max_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
 			baseDistancesBuffer.erase(min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
 			baseDistancesBuffer.erase(max_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
+
 			// Reorganize base positions and tile positions into ascending order of distance for expansions
 			nearestBasePositions.push_back(basePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i)) - baseDistances.begin())));
 			nearestBaseTilePositions.push_back(baseTilePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i))) - baseDistances.begin()));
 			nearestBaseTilePositionsBuffer.push_back(baseTilePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i))) - baseDistances.begin()));
-			// Reorganize base positions and tile positions into descending order of distance for enemy expansions
+
+			// Reorganize base positions and tile positions into descending order of distance for enemy expansions  (IMPLEMENTING)
 			// furthestBasePositions.push_back()
 		}
 
@@ -129,16 +122,14 @@ void CMProtoBot::onFrame()
 			for (int j = 0; j <= (int)nearestBaseTilePositionsBuffer.size() - 2; j++)
 			{
 				double rawDistance = getGroundDistance(nextExpansion.at(i), nearestBaseTilePositionsBuffer.at(j));
-				//double rawDistance = pow(nextExpansion.at(i).x - nearestBaseTilePositionsBuffer.at(j).x, 2)
-				//	+ pow(nextExpansion.at(i).y - nearestBaseTilePositionsBuffer.at(j).y, 2);
-				//expansionRawDistance.push_back(sqrt(rawDistance));
 			}
 
 			nextExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionRawDistance.begin(), expansionRawDistance.end()) - expansionRawDistance.begin()));
 			activeExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionRawDistance.begin(), expansionRawDistance.end()) - expansionRawDistance.begin()));
+
 			// Based on the next expansion, get the distance to our starting location so we can see if any other expansions are closer
 			double expectedDistance = sqrt(pow((playerStartingTilePosition.x - nextExpansion.back().x), 2) + pow((playerStartingTilePosition.y - nextExpansion.back().y), 2));
-			//double expectedDistance = getGroundDistance(playerStartingTilePosition, nextExpansion.back());
+
 			// Measure distance to every possible expansion		
 			for (int j = 0; j <= (int)nearestBaseTilePositionsBuffer.size() - 2; j++)
 			{
@@ -180,7 +171,6 @@ void CMProtoBot::onFrame()
 			nearestChokepointPosition.push_back(chokepointPositions.at((find(chokepointDistances.begin(), chokepointDistances.end(), lowestChokepointDistance.at(i)) - chokepointDistances.begin())));
 		}
 		BWTAhandling = true;
-		holdingPosition = ((Broodwar->getRegionAt(Position(nextExpansion.at(nexusCnt).x * 32, nextExpansion.at(nexusCnt).y * 32)))->getCenter() + (Broodwar->getRegionAt(Position(nextExpansion.at(nexusCnt + 1).x * 32, nextExpansion.at(nexusCnt + 1).y * 32)))->getCenter()) / 2;
 	}
 	if (BWTAhandling)
 	{
@@ -193,6 +183,7 @@ void CMProtoBot::onFrame()
 			Broodwar->drawTextMap(activeExpansion.at(i).x * 32, activeExpansion.at(i).y * 32, "Base %d", i, Colors::White);
 		}
 		Broodwar->drawCircleMap(holdingPosition, 200, Colors::Blue, false);
+		holdingPosition = Broodwar->getRegionAt(Position(32 * nextExpansion.at(nexusDesired).x, 32 * nextExpansion.at(nexusDesired).y))->getCenter();
 	}
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 	// On-Screen Information
@@ -299,7 +290,7 @@ void CMProtoBot::onFrame()
 	// Prevent spamming by only running our onFrame once every number of latency frames.
 	// Latency frames are the number of frames before commands are processed.
 	if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
-		return;	
+		return;
 
 	// Iterate through all the units that we own
 	for (auto &u : Broodwar->self()->getUnits())
@@ -333,7 +324,7 @@ void CMProtoBot::onFrame()
 				if (pylonCnt + pylonBuildingCnt < pylonDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Pylon.mineralPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Pylon, u);
-				}				
+				}
 				else if (gasCnt + gasBuildingCnt < gasDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Assimilator.mineralPrice())
 				{
 					u->build(UnitTypes::Protoss_Assimilator, gasTilePosition.back());
@@ -391,7 +382,7 @@ void CMProtoBot::onFrame()
 							nexusManager(UnitTypes::Protoss_Nexus, u, nextExpansion.at(i));
 						}
 					}
-				}	
+				}
 			}
 			else if (u->getID() == buildingWorkerID.front() && u->isConstructing())
 			{
@@ -428,7 +419,7 @@ void CMProtoBot::onFrame()
 
 		else if (u->getType().isResourceDepot())
 		{
-			if (u->isIdle() && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral) && probeCnt < (int)(mineralID.size() * 2 + assimilatorID.size() * 3))
+			if (u->isIdle() && probeCnt < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral) && probeCnt < (int)(mineralID.size() * 2 + assimilatorID.size() * 3))
 			{
 				u->train(UnitTypes::Protoss_Probe);
 				continue;
@@ -437,6 +428,11 @@ void CMProtoBot::onFrame()
 			{
 				pylonNeeded = getBuildLocationNear(UnitTypes::Protoss_Pylon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
 				Broodwar->getUnit(buildingWorkerID.front())->build(UnitTypes::Protoss_Pylon, pylonNeeded);
+			}
+			if (u->getUnitsInRadius(500, Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon).size() < 2 && nexusCnt > 1)
+			{
+				cannonNeeded = getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
+				Broodwar->getUnit(buildingWorkerID.front())->build(UnitTypes::Protoss_Photon_Cannon, cannonNeeded);
 			}
 		}
 
@@ -457,13 +453,21 @@ void CMProtoBot::onFrame()
 		{
 			unitGetCommand(u);
 		}
-		if (u->getType() == UnitTypes::Protoss_Carrier)
-		{
-			carrierGetCommand(u);
-		}
 		if (u->getType() == UnitTypes::Protoss_Shuttle)
 		{
 			shuttleManager(u);
+		}
+		if (u->getType() == UnitTypes::Protoss_Observer)
+		{
+			observerManager(u);
+		}
+		if (u->getType() == UnitTypes::Protoss_Reaver)
+		{
+			reaverManager(u);
+		}
+		if (u->getType() == UnitTypes::Protoss_Carrier)
+		{
+			carrierGetCommand(u);
 		}
 	}
 }
@@ -587,6 +591,7 @@ void CMProtoBot::onUnitDestroy(BWAPI::Unit unit)
 {
 	if (unit->getPlayer() == Broodwar->self())
 	{
+		// Allied ground units
 		switch (unit->getType()){
 		case UnitTypes::Enum::Protoss_Probe:
 			deadProbeID.push_back(unit->getID());
@@ -604,8 +609,39 @@ void CMProtoBot::onUnitDestroy(BWAPI::Unit unit)
 		case UnitTypes::Enum::Protoss_Dragoon:
 			dragoonCnt--;
 			break;
+		case UnitTypes::Enum::Protoss_High_Templar:
+			highTemplarCnt--;
+			break;
 		case UnitTypes::Enum::Protoss_Dark_Templar:
 			darkTemplarCnt--;
+			break;
+		case UnitTypes::Enum::Protoss_Reaver:
+			reaverCnt--;
+			break;
+		case UnitTypes::Enum::Protoss_Archon:
+			archonCnt--;
+			break;
+		case UnitTypes::Enum::Protoss_Dark_Archon:
+			darkArchonCnt--;
+			break;
+			// Allied air units
+		case UnitTypes::Enum::Protoss_Observer:
+			observerCnt--;
+			break;
+		case UnitTypes::Enum::Protoss_Shuttle:
+			shuttleCnt--;
+			break;
+		case UnitTypes::Enum::Protoss_Scout:
+			scoutCnt--;
+			break;
+		case UnitTypes::Enum::Protoss_Carrier:
+			carrierCnt--;
+			break;
+		case UnitTypes::Enum::Protoss_Arbiter:
+			arbiterCnt--;
+			break;
+		case UnitTypes::Enum::Protoss_Corsair:
+			corsairCnt--;
 			break;
 		}
 	}
@@ -665,14 +701,39 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 		case UnitTypes::Enum::Protoss_Dragoon:
 			dragoonCnt++;
 			break;
+		case UnitTypes::Enum::Protoss_High_Templar:
+			highTemplarCnt++;
+			break;
 		case UnitTypes::Enum::Protoss_Dark_Templar:
 			darkTemplarCnt++;
+			break;
+		case UnitTypes::Enum::Protoss_Reaver:
+			reaverCnt++;
+			break;
+		case UnitTypes::Enum::Protoss_Archon:
+			archonCnt++;
+			break;
+		case UnitTypes::Enum::Protoss_Dark_Archon:
+			darkArchonCnt++;
+			break;
+			// Allied air units
+		case UnitTypes::Enum::Protoss_Observer:
+			observerCnt++;
 			break;
 		case UnitTypes::Enum::Protoss_Shuttle:
 			shuttleCnt++;
 			break;
+		case UnitTypes::Enum::Protoss_Scout:
+			scoutCnt++;
+			break;
 		case UnitTypes::Enum::Protoss_Carrier:
 			carrierCnt++;
+			break;
+		case UnitTypes::Enum::Protoss_Arbiter:
+			arbiterCnt++;
+			break;
+		case UnitTypes::Enum::Protoss_Corsair:
+			corsairCnt++;
 			break;
 			// Buildings
 		case UnitTypes::Enum::Protoss_Pylon:
@@ -734,7 +795,6 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 			nexusPosition = unit->getPosition();
 			if (Broodwar->getFrameCount() < 100)
 			{
-
 				for (auto u : Broodwar->neutral()->getUnits())
 				{
 					if (u->getType() == UnitTypes::Resource_Vespene_Geyser && u->getDistance(nexusPosition) <= 400)
@@ -772,7 +832,6 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 			enemySupply = enemySupply + unit->getType().supplyRequired();
 		}
 	}
-
 }
 DWORD WINAPI AnalyzeThread()
 {

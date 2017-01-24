@@ -24,10 +24,12 @@ using namespace BWTA;
 
 bool BWTAhandling = false;
 bool scouting = false;
-bool expansionNeeded = false;
+bool enemyFound = false;
+bool expansionCreation = false;
 
 // Unit Variables
-int probeCnt = 0, zealotCnt = 0, dragoonCnt = 0, carrierCnt = 0, shuttleCnt = 0, darkTemplarCnt;
+int probeCnt = 0, zealotCnt = 0, dragoonCnt = 0, highTemplarCnt = 0, darkTemplarCnt = 0, reaverCnt = 0, archonCnt = 0, darkArchonCnt = 0;
+int observerCnt = 0, shuttleCnt = 0, scoutCnt = 0, carrierCnt = 0, arbiterCnt = 0, corsairCnt = 0;
 
 // Building Variables
 int queuedMineral, queuedGas = 0;
@@ -89,8 +91,11 @@ vector<double> expansionRawDistance;
 vector<TilePosition> nextExpansion;
 vector<TilePosition> activeExpansion;
 
-//Targeting
+// Targeting
 Position currentTargetPosition;
+Position currentPosition;
+Position chokepointWrap;
+Position nextPosition;
 
 // Variables that are unsorted below this line
 BaseLocation* playerStartingLocation;
@@ -123,3 +128,4 @@ vector<double> furthestBases;
 vector<Position> nearestChokepointPosition;
 
 TilePosition pylonNeeded;
+TilePosition cannonNeeded;

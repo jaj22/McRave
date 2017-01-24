@@ -11,15 +11,15 @@ void assignProbe(Unit probe)
 		if (deadProbeID.size() > 0)
 		{
 			probeID.assign(find(probeID.begin(), probeID.end(), deadProbeID.back()) - probeID.begin(), probe->getID());
+			if (find(mineralWorkerID.begin(), mineralWorkerID.end(), deadProbeID.back()) != mineralWorkerID.end())
+			{
+				mineralWorkerID.assign(find(mineralWorkerID.begin(), mineralWorkerID.end(), deadProbeID.back()) - mineralWorkerID.begin(), probe->getID());
+			}
+			else if (find(gasWorkerID.begin(), gasWorkerID.end(), deadProbeID.back()) != gasWorkerID.end())
+			{
+				gasWorkerID.assign(find(gasWorkerID.begin(), gasWorkerID.end(), deadProbeID.back()) - gasWorkerID.begin(), probe->getID());
+			}
 			deadProbeID.pop_back();
-		}
-		// Assign as a gas worker if we need more
-		else if ((int)gasWorkerID.size() < assimilatorID.size() * 3)
-		{
-			probeID.push_back(probe->getID());
-			//Broodwar << "Probe " << probe->getID() << " is now gathering gas." << std::endl;
-			gasWorkerID.push_back(probe->getID());
-			probe->gather(Broodwar->getUnit(assimilatorID.at((int)floor((find(gasWorkerID.begin(), gasWorkerID.end(), probe->getID()) - gasWorkerID.begin()) / 3))));
 		}
 		// Assign as mineral worker if we need more
 		else if ((int)mineralWorkerID.size() < (mineralID.size() * 2))
@@ -35,6 +35,14 @@ void assignProbe(Unit probe)
 			{
 				probe->gather(Broodwar->getUnit(mineralID.at((int)floor((find(mineralWorkerID.begin(), mineralWorkerID.end(), probe->getID()) - mineralWorkerID.begin()) / 2))));
 			}
+		}
+		// Assign as a gas worker if we need more
+		else if ((int)gasWorkerID.size() < assimilatorID.size() * 3)
+		{
+			probeID.push_back(probe->getID());
+			//Broodwar << "Probe " << probe->getID() << " is now gathering gas." << std::endl;
+			gasWorkerID.push_back(probe->getID());
+			probe->gather(Broodwar->getUnit(assimilatorID.at((int)floor((find(gasWorkerID.begin(), gasWorkerID.end(), probe->getID()) - gasWorkerID.begin()) / 3))));
 		}
 		// The nexus sometimes trains an extra (if probeCnt isn't updated yet because probe is training, can be improved with probeTrainingCnt? (TEMP FIX)
 		else
