@@ -1,5 +1,5 @@
 #include "UnitManager.h"
-
+#include "TargetManager.h"
 
 Unit currentTarget;
 
@@ -60,36 +60,11 @@ void carrierGetCommand(Unit unit)
 }
 
 void unitGetTarget(Unit unit)
-{
-	Unit currentTarget = unit->getClosestUnit(Filter::IsEnemy && Filter::IsVisible
-		&& Filter::IsDetected && (!Filter::IsBuilding || Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon
-		|| Filter::GetType == UnitTypes::Enum::Terran_Bunker
-		|| Filter::GetType == UnitTypes::Enum::Zerg_Sunken_Colony
-		|| Filter::GetType == UnitTypes::Enum::Zerg_Spore_Colony));
+{	
+	currentTarget = targetPriority(unit);
 	if (currentTarget && unit)
 	{
-		//// If my next position is outside the bounds of the region on the right or left, move vertically away from the target instead
-		//if (nextPosition.x > unit->getRegion()->getBoundsRight())
-		//{
-		//	nextPosition = Position(currentPosition.x, currentPosition.y * 2 - currentTargetPosition.y);
-		//}
-		//if (nextPosition.x < unit->getRegion()->getBoundsLeft())
-		//{
-		//	nextPosition = Position(currentPosition.x, currentPosition.y * 2 - currentTargetPosition.y);
-		//}
-
-		//// If my next position is outside the bounds of the region on the top or bottom, move horizontally away from the target instead
-		//if (nextPosition.y > unit->getRegion()->getBoundsTop())
-		//{
-		//	nextPosition = Position(currentPosition.x * 2 - currentTargetPosition.x, currentPosition.y);
-		//}
-		//if (nextPosition.y < unit->getRegion()->getBoundsBottom())
-		//{
-		//	nextPosition = Position(currentPosition.x * 2 - currentTargetPosition.x, currentPosition.y);
-		//}
-
-
-		// Some if statements from UAlbertaBot to ensure units don't studder or attempt to change target mid attack
+		// Some if statements to ensure that the target isn't interrupted when attacking
 		if (unit->getLastCommandFrame() >= Broodwar->getFrameCount() || unit->isAttackFrame())
 		{
 			return;
@@ -100,12 +75,13 @@ void unitGetTarget(Unit unit)
 			return;
 		}
 
+		// Some if statements to turn off kiting if unnecessary
 		if (unit->getType().groundWeapon().maxRange() <= 32)
 		{
 			kite = false;
 		}
 
-		if (unit->isStuck())
+		if (unit->isStuck() || !currentTarget->getType().canAttack())
 		{
 			kite = false;
 		}

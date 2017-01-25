@@ -62,7 +62,7 @@ void CMProtoBot::onFrame()
 		// --------------------------------------------------------------------------------------------------------------------------------------------
 
 		// Find player starting position and tile position		
-		playerStartingLocation = getStartLocation(Broodwar->self());
+		BaseLocation* playerStartingLocation = getStartLocation(Broodwar->self());
 		playerStartingPosition = playerStartingLocation->getPosition();
 		playerStartingTilePosition = playerStartingLocation->getTilePosition();
 
@@ -82,9 +82,9 @@ void CMProtoBot::onFrame()
 			{
 				// Get base positions and tile positions, store in vectors
 				basePositions.push_back((*itr)->getPosition());
-				baseTilePositions.push_back((*itr)->getTilePosition());
+				baseTilePositions.push_back((*itr)->getTilePosition());				
+				
 				// Get closest locations to player starting tile position
-
 				baseDistances.push_back(BWTA::getGroundDistance(playerStartingTilePosition, (*itr)->getTilePosition()));
 				baseDistancesBuffer.push_back(BWTA::getGroundDistance(playerStartingTilePosition, (*itr)->getTilePosition()));
 			}
@@ -107,6 +107,16 @@ void CMProtoBot::onFrame()
 			// furthestBasePositions.push_back()
 		}
 
+		// Check each base tile position, if they overlap, erase one
+		for (int i = 0; i <= (int)nearestBaseTilePositions.size() - 2; i++)
+		{
+			if (abs(nearestBaseTilePositions.at(i).x - nearestBaseTilePositions.at(i + 1).x) <= 10 && abs(nearestBaseTilePositions.at(i).y - nearestBaseTilePositions.at(i + 1).y) <= 10)
+			{
+				nearestBaseTilePositions.erase(nearestBaseTilePositions.begin() + i);
+				nearestBaseTilePositionsBuffer.erase(nearestBaseTilePositionsBuffer.begin() + i);
+			}
+		}
+
 		// Erase starting locations from base positions for better scouting/expanding utility
 		nextExpansion.push_back(nearestBaseTilePositions.at(0));
 		activeExpansion.push_back(nearestBaseTilePositions.at(0));
@@ -122,6 +132,7 @@ void CMProtoBot::onFrame()
 			for (int j = 0; j <= (int)nearestBaseTilePositionsBuffer.size() - 2; j++)
 			{
 				double rawDistance = getGroundDistance(nextExpansion.at(i), nearestBaseTilePositionsBuffer.at(j));
+				expansionRawDistance.push_back(rawDistance);
 			}
 
 			nextExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionRawDistance.begin(), expansionRawDistance.end()) - expansionRawDistance.begin()));
@@ -155,18 +166,18 @@ void CMProtoBot::onFrame()
 		// --------------------------------------------------------------------------------------------------------------------------------------------
 
 		// Find chokepoints, move to vector for easier use 
-		myChokes = BWTA::getChokepoints();
+		set<BWTA::Chokepoint*> myChokes = BWTA::getChokepoints();
 		for (std::set<BWTA::Chokepoint*>::iterator itr = myChokes.begin(); itr != myChokes.end(); itr++)
 		{
 			chokepointPositions.push_back((*itr)->getCenter());
 			chokepointDistances.push_back(BWTA::getGroundDistance(playerStartingTilePosition, TilePosition(chokepointPositions.back())));
-			chokepointDistancesBuffer1.push_back(BWTA::getGroundDistance(playerStartingTilePosition, TilePosition(chokepointPositions.back())));
+			chokepointDistancesBuffer.push_back(BWTA::getGroundDistance(playerStartingTilePosition, TilePosition(chokepointPositions.back())));
 		}
 		// Find nearest chokepoints, move to vector for easier use
 		for (int i = 0; i <= (int)chokepointDistances.size() - 1; i++)
 		{
-			lowestChokepointDistance.push_back(*std::min_element(chokepointDistancesBuffer1.begin(), chokepointDistancesBuffer1.end()));
-			chokepointDistancesBuffer1.erase(std::min_element(chokepointDistancesBuffer1.begin(), chokepointDistancesBuffer1.end()));
+			lowestChokepointDistance.push_back(*std::min_element(chokepointDistancesBuffer.begin(), chokepointDistancesBuffer.end()));
+			chokepointDistancesBuffer.erase(std::min_element(chokepointDistancesBuffer.begin(), chokepointDistancesBuffer.end()));
 			// Reorganize chokepoint positions and tile positions into ascending order of distance
 			nearestChokepointPosition.push_back(chokepointPositions.at((find(chokepointDistances.begin(), chokepointDistances.end(), lowestChokepointDistance.at(i)) - chokepointDistances.begin())));
 		}

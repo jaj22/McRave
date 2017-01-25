@@ -4,9 +4,9 @@
 
 // Include other source files
 #include "BuildingManager.h"
+#include "BuildOrder.h"
 #include "ProbeManager.h"
 #include "UnitManager.h"
-#include "BuildOrder.h"
 
 // Include standard libraries that are needed
 #include <vector>
@@ -25,11 +25,12 @@ using namespace BWTA;
 bool BWTAhandling = false;
 bool scouting = false;
 bool enemyFound = false;
-bool expansionCreation = false;
 
 // Unit Variables
 int probeCnt = 0, zealotCnt = 0, dragoonCnt = 0, highTemplarCnt = 0, darkTemplarCnt = 0, reaverCnt = 0, archonCnt = 0, darkArchonCnt = 0;
 int observerCnt = 0, shuttleCnt = 0, scoutCnt = 0, carrierCnt = 0, arbiterCnt = 0, corsairCnt = 0;
+Position builderPosition;
+Position scouterPosition;
 
 // Building Variables
 int queuedMineral, queuedGas = 0;
@@ -51,6 +52,8 @@ int observatoryCnt = 0, observatoryBuildingCnt = 0, observatoryDesired = 0;
 int tribunalCnt = 0, tribunalBuildingCnt = 0, tribunalDesired = 0;
 
 // Resource IDs
+Position nexusPosition;
+TilePosition nexusTilePosition;
 vector<int> mineralID;
 vector<TilePosition> gasTilePosition;
 vector<int> assimilatorID;
@@ -66,30 +69,50 @@ vector<int> scoutWorkerID;
 // Enemy unit tracking
 int enemySupply = 0;
 
-// Anti worker stuck
-double distanceToBuild = 0;
-double framesToMove = 10000;
-
-
-// BWTA vectors
 // Base positions and tilepositions, used to find closest bases
-TilePosition buildTilePosition; // building manager
+TilePosition buildTilePosition; 
 Position buildPosition;
 UnitType currentBuilding;
+
+// Holding positions
 Position holdingPosition;
 Position zealotPosition;
 
-Position nexusPosition;
-TilePosition nexusTilePosition;
+// Base positions
 vector<Position> basePositions;
 vector<TilePosition> baseTilePositions;
 vector<double> baseDistances;
 vector<double> baseDistancesBuffer;
-vector<double> baseTileDistances;
 vector<double> expansionStartDistance;
 vector<double> expansionRawDistance;
+
+vector<double> nearestBases;
+vector<double> furthestBases;
+
+vector<Position>nearestBasePositions;
+vector<TilePosition>nearestBaseTilePositions;
+vector<TilePosition>nearestBaseTilePositionsBuffer;
+
+vector<Position>enemyBasePositions;
+Position enemyStartingPosition;
+TilePosition enemyStartingTilePosition;
+
 vector<TilePosition> nextExpansion;
 vector<TilePosition> activeExpansion;
+
+// Starting locations
+Position playerStartingPosition;
+TilePosition playerStartingTilePosition;
+vector<Position>startingLocationPositions;
+vector<TilePosition>startingLocationTilePositions;
+
+// Chokepoints
+vector<Position>chokepointPositions;
+vector<TilePosition>chokepointTilePositions;
+vector<double> chokepointDistances;
+vector<double> lowestChokepointDistance;
+vector<double> chokepointDistancesBuffer;
+vector<Position> nearestChokepointPosition;
 
 // Targeting
 Position currentTargetPosition;
@@ -97,35 +120,8 @@ Position currentPosition;
 Position chokepointWrap;
 Position nextPosition;
 
-// Variables that are unsorted below this line
-BaseLocation* playerStartingLocation;
-Position playerStartingPosition;
-TilePosition playerStartingTilePosition;
-Position enemyStartingPosition;
-TilePosition enemyStartingTilePosition;
-
-vector<Position>startingLocationPositions;
-vector<TilePosition>startingLocationTilePositions;
-Position builderPosition;
-Position scouterPosition;
-
-set<BWTA::Chokepoint*> myChokes;
-vector<Position>chokepointPositions;
-vector<TilePosition>chokepointTilePositions;
-vector<double> chokepointDistances;
-vector<double> lowestChokepointDistance;
-vector<double> chokepointDistancesBuffer1;
-
-vector<Position>nearestBasePositions;
-vector<TilePosition>nearestBaseTilePositions;
-vector<TilePosition>nearestBaseTilePositionsBuffer;
-
-vector<Position>enemyBasePositions;
-
-vector<double> nearestBases;
-vector<double> furthestBases;
-
-vector<Position> nearestChokepointPosition;
-
+// Defensive building
 TilePosition pylonNeeded;
 TilePosition cannonNeeded;
+
+// Variables that are unsorted below this line
