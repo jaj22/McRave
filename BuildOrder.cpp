@@ -4,49 +4,86 @@ using namespace BWAPI;
 
 // Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
 void getBuildOrder()
-{	
-	pylonDesired = min(22,(int)floor((Broodwar->self()->supplyUsed() / 14)));	
-	nexusDesired = min((int)nextExpansion.size(), nexusCnt + (int)floor(probeCnt / (2 * mineralID.size() + 2 * gasTilePosition.size() + 1)));
+{
+	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / 14)));	
+	// Gateways
+	switch (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Probe))
+	{
+	case 9:
+		gateDesired = 1 * Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
+		break;
+	case 10:
+		gateDesired = 2 * Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
+		break;
+	case 18:
+		gateDesired = 3 * Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
+		break;
+	}
+	// Expanding
+	switch (Broodwar->self()->completedUnitCount() - Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Probe) - Broodwar->self()->completedUnitCount(UnitTypes::Buildings))
+	{
+	case 20:
+		nexusDesired = 2;
+		break;
+	case 40:
+		nexusDesired = 3;
+		break;
+	}
+	// Assimilators
+	if (Broodwar->self()->gas() < Broodwar->self()->minerals())
+	{
+		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->supplyUsed() / 40));
+	}
+
 	switch (Broodwar->enemy()->getRace())
 	{
 	case Races::Enum::Zerg:
 		// Structures
 		// Build 1: Counter hydra/ling/lurker using zealot/goon/reaver
-		gateDesired = min(2 + nexusCnt, (int)floor(Broodwar->self()->supplyUsed() / 20));
 		forgeDesired = min(2, 2 * ((int)floor(Broodwar->self()->supplyUsed() / 160)));
-		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->supplyUsed() / 24));
-		coreDesired = min(1, gateCnt);
-		roboDesired = min(1, coreCnt);
-		supportBayDesired = min(1, roboCnt);
-		observatoryDesired = min(1, roboCnt);
-		citadelDesired = max(0, nexusCnt - 2);	
+		
+		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway)/2);
+		roboDesired = max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) - 1);
+		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		citadelDesired = min(1, max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) - 2));
+		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
 		// Build 2: Counter muta/ling using corsairs/zealots
 		// Content WIP
 		break;
-	case Races::Enum::Terran:		
+	case Races::Enum::Terran:
 		// Structures
 		// Build 1: Counter bio using zealot/goon/DT/carrier
-		gateDesired = min(2 + nexusCnt, (int)floor(Broodwar->self()->supplyUsed() / 20));
-		forgeDesired = min(2, 2*((int)floor(Broodwar->self()->supplyUsed() / 160)));
-		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->supplyUsed() / 24));
-		coreDesired = min(1, gateCnt);
-		citadelDesired = min(1, coreCnt);
-		archivesDesired = min(1, citadelCnt);
-		stargateDesired = min(3, coreCnt*Broodwar->self()->supplyUsed() / 130);
-		fleetBeaconDesired = min(1, stargateCnt);
+		forgeDesired = min(2, 2 * ((int)floor(Broodwar->self()->supplyUsed() / 160)));		
+		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) / 2);
+		roboDesired = max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) - 1);
+		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core));
+		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
 		// Build 2: Counter mech
 		// Content WIP
 		break;
 	case Races::Enum::Protoss:
-		// Build 1: Counter gate using zealot/goon/reaver
-		gateDesired = min(2 + nexusCnt, 2*(int)floor(Broodwar->self()->supplyUsed() / 20));
+		// Build 1: Counter gate using zealot/goon/reaver		
 		forgeDesired = min(2, 2 * ((int)floor(Broodwar->self()->supplyUsed() / 160)));
-		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->supplyUsed() / 30));
-		coreDesired = min(1, gateCnt/2);
-		roboDesired = max(0, nexusCnt - 1);
-		supportBayDesired = min(1, roboCnt);
-		observatoryDesired = min(1, roboCnt);
-		citadelDesired = max(0, nexusCnt - 2);
+		
+		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
+		roboDesired = max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) - 1);
+		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		citadelDesired = min(1, max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) - 2));
+		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
 		break;
 	}
 }
+
+
+
+//forgeDesired = min(2, 2 * ((int)floor(Broodwar->self()->supplyUsed() / 160)));
+//gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->supplyUsed() / 24));
+//coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
+//citadelDesired = min(1, max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) - 2));
+//archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
+//stargateDesired = min(3, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core)*Broodwar->self()->supplyUsed() / 130);
+//fleetBeaconDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));

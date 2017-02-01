@@ -27,33 +27,29 @@ bool scouting = false;
 bool enemyFound = false;
 
 // Unit Variables
-int probeCnt = 0, zealotCnt = 0, dragoonCnt = 0, highTemplarCnt = 0, darkTemplarCnt = 0, reaverCnt = 0, archonCnt = 0, darkArchonCnt = 0;
-int observerCnt = 0, shuttleCnt = 0, scoutCnt = 0, carrierCnt = 0, arbiterCnt = 0, corsairCnt = 0;
 Position builderPosition;
 Position scouterPosition;
 
 // Building Variables
 int queuedMineral, queuedGas = 0;
-int nexusCnt = 0, nexusBuildingCnt = 0, nexusDesired = 0, inactiveNexusCnt = 0;
-int pylonDesired, pylonBuildingCnt = 0, pylonCnt = 0;
-int	gasCnt = 0, gasBuildingCnt = 0, gasDesired = 0;
-int gateDesired, gateBuildingCnt = 0, gateCnt = 0;
-int forgeCnt = 0, forgeBuildingCnt = 0, forgeDesired = 0;
-int coreCnt = 0, coreBuildingCnt = 0, coreDesired = 0;
+int nexusDesired = 0, inactiveNexusCnt = 0;
+int pylonDesired = 0;
+int	gasDesired = 0;
+int gateDesired = 0;
+int forgeDesired = 0;
+int coreDesired = 0;
 
 // Advanced Building Variables
-int roboCnt = 0, roboBuildingCnt = 0, roboDesired = 0;
-int stargateCnt = 0, stargateBuildingCnt = 0, stargateDesired = 0;
-int citadelCnt = 0, citadelBuildingCnt = 0, citadelDesired = 0;
-int supportBayCnt = 0, supportBayBuildingCnt = 0, supportBayDesired = 0;
-int fleetBeaconCnt = 0, fleetBeaconBuildingCnt = 0, fleetBeaconDesired = 0;
-int archivesCnt = 0, archivesBuildingCnt = 0, archivesDesired = 0;
-int observatoryCnt = 0, observatoryBuildingCnt = 0, observatoryDesired = 0;
-int tribunalCnt = 0, tribunalBuildingCnt = 0, tribunalDesired = 0;
+int roboDesired = 0;
+int stargateDesired = 0;
+int citadelDesired = 0;
+int supportBayDesired = 0;
+int fleetBeaconDesired = 0;
+int archivesDesired = 0;
+int observatoryDesired = 0;
+int tribunalDesired = 0;
 
 // Resource IDs
-Position nexusPosition;
-TilePosition nexusTilePosition;
 vector<int> mineralID;
 vector<TilePosition> gasTilePosition;
 vector<int> assimilatorID;
@@ -65,9 +61,17 @@ vector<int> gasWorkerID;
 vector<int> mineralWorkerID;
 vector<int> buildingWorkerID;
 vector<int> scoutWorkerID;
+vector<int> combatWorkerID;
 
 // Enemy unit tracking
 int enemySupply = 0;
+int enemyCountNearby = 0;
+
+// Threat array
+int threatArray[256][256] = { { 0 } };
+
+// Friendly unit tracking
+int allySupply = 0;
 
 // Base positions and tilepositions, used to find closest bases
 TilePosition buildTilePosition; 
@@ -77,8 +81,10 @@ UnitType currentBuilding;
 // Holding positions
 Position holdingPosition;
 Position zealotPosition;
+TilePosition furthestNexus;
 
 // Base positions
+vector<int> nexusDistances;
 vector<Position> basePositions;
 vector<TilePosition> baseTilePositions;
 vector<double> baseDistances;
@@ -119,6 +125,7 @@ Position currentTargetPosition;
 Position currentPosition;
 Position chokepointWrap;
 Position nextPosition;
+Position fleePosition;
 
 // Defensive building
 TilePosition pylonNeeded;

@@ -10,7 +10,6 @@ void buildingManager(UnitType building, Unit builder)
 	// For each expansion, check if you can build near it, starting at the main
 	for (int i = 0; i < (int)activeExpansion.size() - 1; i++)
 	{
-		Broodwar << "Attempt at base#: " << i << endl;
 		buildTilePosition = getBuildLocationNear(building, builder, activeExpansion.at(i));
 		buildPosition = Position(32 * buildTilePosition.x, 32 * buildTilePosition.y);
 
@@ -18,15 +17,22 @@ void buildingManager(UnitType building, Unit builder)
 		if (buildTilePosition != TilePositions::None)
 		{
 			// If builder is too far away, let's just get a different one, also helps prevent probes from pathing weird and getting stuck
-			if (builder->getDistance(Position(32 * buildTilePosition.x, 32 * buildTilePosition.y)) > 2000)
+			if (builder->getDistance(Position(32 * buildTilePosition.x, 32 * buildTilePosition.y)) > 640)
 			{
 				buildingWorkerID.pop_back();
 				buildingWorkerID.push_back((Broodwar->getClosestUnit(buildPosition, Filter::IsAlly && Filter::IsWorker))->getID());
-				break;
+				builder = Broodwar->getClosestUnit(buildPosition, Filter::IsAlly && Filter::IsWorker);
 			}
-			// Build
-			builder->build(building, buildTilePosition);
-			currentBuilding = building;
+			if (!Broodwar->isVisible(buildTilePosition))
+			{
+				builder->move(buildPosition);
+			}
+			else
+			{
+				// Build
+				builder->build(building, buildTilePosition);
+				currentBuilding = building;
+			}
 			break;
 		}
 	}
@@ -34,8 +40,6 @@ void buildingManager(UnitType building, Unit builder)
 
 bool canBuildHere(UnitType building, Unit builder, TilePosition buildTilePosition)
 {
-	TilePosition expectedRightCorner;
-
 	// Start at one tile vertically above the build site and check the tile width and height + 1 to make sure units can move past and dont get stuck
 	for (int x = buildTilePosition.x; x < buildTilePosition.x + building.tileWidth() + 1; x++)
 	{
@@ -58,14 +62,26 @@ bool canBuildHere(UnitType building, Unit builder, TilePosition buildTilePositio
 			}
 		}
 	}
+	// If building is on an expansion tile, don't build there
+	for (int i = 0; i <= nextExpansion.size() - 1; i++)
+	{
+		for (int j = 0; j <= 3; j++)
+		{
+			for (int k = 0; k <= 3; k++)
+			{
+				if (buildPosition.x == nextExpansion.at(i).x + j && buildPosition.y == nextExpansion.at(i).y + k)
+				{
+					return false;
+				}
+			}
+		}
+	}
 	// If the building site has power for buildings that need it (all except nexus/pylon), return true
 	if (building == UnitTypes::Protoss_Pylon || Broodwar->hasPower(buildTilePosition, building) == true)
 	{
-		Broodwar << "Placement is okay" << endl;
 		return true;
 	}
-	// If we missed anything, return false and try again
-	Broodwar << "Couldn't place building" << endl;
+	// If we missed anything, return false and try again	
 	return false;
 }
 
@@ -124,10 +140,26 @@ TilePosition getBuildLocationNear(UnitType building, Unit builder, TilePosition 
 
 void nexusManager(UnitType building, Unit builder, TilePosition expansion)
 {
-	TilePosition buildTilePosition;
-	buildTilePosition = Broodwar->getBuildLocation(building, expansion);
-	builder->build(building, buildTilePosition);
-	Broodwar << "Expanding." << std::endl;
+	Unitset unitsBlocking = Broodwar->getUnitsInRectangle(Position(expansion.x * 32, expansion.y * 32), Position(expansion.x * 32 + 128, expansion.y * 32 + 128));
+	for (Unitset::iterator itr = unitsBlocking.begin(); itr != unitsBlocking.end(); itr++)
+	{
+		(*itr)->move(Position(Broodwar->self()->getStartLocation().x * 32, Broodwar->self()->getStartLocation().y * 32));
+	}
+	// If builder is too far away, let's just get a different one, also helps prevent probes from pathing weird and getting stuck
+	if (builder->getDistance(Position(32 * expansion.x, 32 * expansion.y)) > 1280)
+	{
+		buildingWorkerID.pop_back();
+		buildingWorkerID.push_back((Broodwar->getClosestUnit(Position(32 * expansion.x, 32 * expansion.y), Filter::IsAlly && Filter::IsWorker))->getID());
+	}
+
+	if (!Broodwar->isVisible(expansion))
+	{
+		builder->move(Position(expansion.x*32, expansion.y*32));
+	}
+	else
+	{
+		builder->build(building, expansion);
+	}
 }
 
 void productionManager(Unit building)
@@ -184,34 +216,34 @@ void productionManager(Unit building)
 
 			// Production Buildings
 		case UnitTypes::Enum::Protoss_Gateway:
-			if (archivesCnt >= 1 && darkTemplarCnt < 10 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Dark_Templar.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dark_Templar.gasPrice() + queuedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dark_Templar.supplyRequired() <= Broodwar->self()->supplyTotal())
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Templar_Archives) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dark_Templar) < 10 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Dark_Templar.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dark_Templar.gasPrice() + queuedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dark_Templar.supplyRequired() <= Broodwar->self()->supplyTotal())
 			{
 				building->train(UnitTypes::Protoss_Dark_Templar);
 			}
-			else if (coreCnt >= 1 && dragoonCnt < 20 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
+			else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
 			{
 				building->train(UnitTypes::Protoss_Dragoon);
 			}
-			else if (zealotCnt < 30 && Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice() || zealotCnt < dragoonCnt && Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
+			else if ((Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1 || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) < Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon) || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice()) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
 			{
 				building->train(UnitTypes::Protoss_Zealot);
 			}
 			break;
 		case UnitTypes::Enum::Protoss_Stargate:
-			if (fleetBeaconCnt >= 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Carrier.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Carrier.gasPrice() + queuedGas)
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Fleet_Beacon) >= 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Carrier.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Carrier.gasPrice() + queuedGas)
 			{
 				building->train(UnitTypes::Protoss_Carrier);
 			}
 		case UnitTypes::Enum::Protoss_Robotics_Facility:
-			if (reaverCnt <= shuttleCnt && Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + queuedGas)
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + queuedGas)
 			{
 				building->train(UnitTypes::Protoss_Reaver);
 			}
-			if (reaverCnt > shuttleCnt && Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + queuedMineral)
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + queuedMineral)
 			{
 				building->train(UnitTypes::Protoss_Shuttle);
 			}
-			if (observerCnt < 2 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < 2 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)
 			{
 				building->train(UnitTypes::Protoss_Observer);
 			}

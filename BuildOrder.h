@@ -4,26 +4,23 @@
 using namespace std;
 using namespace BWAPI;
 
-// External unit count variables
-extern int probeCnt;
-
 // External building variables
-extern int nexusDesired, nexusCnt;
+extern int nexusDesired;
 extern int pylonDesired;
 extern int gasDesired;
-extern int gateDesired, gateCnt;
-extern int forgeDesired, forgeCnt;
-extern int coreDesired, coreCnt;
+extern int gateDesired;
+extern int forgeDesired;
+extern int coreDesired;
 
 // External advanced building variables
-extern int roboDesired, roboCnt;
-extern int stargateDesired, stargateCnt;
-extern int citadelDesired, citadelCnt;
-extern int supportBayDesired, supportBayCnt;
-extern int fleetBeaconDesired, fleetBeaconCnt;
-extern int archivesDesired, archivesCnt;
-extern int observatoryDesired, obseravtoryCnt;
-extern int tribunalDesired, tribunalCnt;
+extern int roboDesired;
+extern int stargateDesired;
+extern int citadelDesired;
+extern int supportBayDesired;
+extern int fleetBeaconDesired;
+extern int archivesDesired;
+extern int observatoryDesired;
+extern int tribunalDesired;
 
 // External resource and expansion variables
 extern vector<TilePosition>gasTilePosition;

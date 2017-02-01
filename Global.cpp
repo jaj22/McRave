@@ -47,6 +47,37 @@ void CMProtoBot::onEnd(bool isWinner)
 
 void CMProtoBot::onFrame()
 {
+	// Threat level manager (TESTING)
+	for (int x = 0; x <= Broodwar->mapWidth(); x++)
+	{
+		for (int y = 0; y <= Broodwar->mapHeight(); y++)
+		{
+			if (threatArray[x][y] > 0)
+			{
+				Broodwar->drawTextMap(x * 32, y * 32, "%d", threatArray[x][y]);
+				threatArray[x][y] = 0;
+			}
+		}
+	}
+	for (auto &u : Broodwar->enemy()->getUnits())
+	{
+		if (!u->getType().isBuilding() && u->getType().groundWeapon().damageAmount() > 0)
+		{			
+			int range = u->getType().groundWeapon().maxRange()/32;
+			// The + 1 is because we need to still check an additional tile
+			for (int x = u->getTilePosition().x - range; x <= u->getTilePosition().x + range + 1; x++)
+			{
+				for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
+				{
+					if ((u->getDistance(Position((x * 32), (y * 32))) <= (range*32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
+					{
+						threatArray[x][y] += u->getType().groundWeapon().damageAmount();
+					}				
+				}
+			}
+		}
+	}
+
 	// BWTA draw
 	if (analyzed)
 		drawTerrainData();
@@ -82,8 +113,8 @@ void CMProtoBot::onFrame()
 			{
 				// Get base positions and tile positions, store in vectors
 				basePositions.push_back((*itr)->getPosition());
-				baseTilePositions.push_back((*itr)->getTilePosition());				
-				
+				baseTilePositions.push_back((*itr)->getTilePosition());
+
 				// Get closest locations to player starting tile position
 				baseDistances.push_back(BWTA::getGroundDistance(playerStartingTilePosition, (*itr)->getTilePosition()));
 				baseDistancesBuffer.push_back(BWTA::getGroundDistance(playerStartingTilePosition, (*itr)->getTilePosition()));
@@ -168,10 +199,10 @@ void CMProtoBot::onFrame()
 		// Find chokepoints, move to vector for easier use 
 		set<BWTA::Chokepoint*> myChokes = BWTA::getChokepoints();
 		for (std::set<BWTA::Chokepoint*>::iterator itr = myChokes.begin(); itr != myChokes.end(); itr++)
-		{
+		{			
 			chokepointPositions.push_back((*itr)->getCenter());
 			chokepointDistances.push_back(BWTA::getGroundDistance(playerStartingTilePosition, TilePosition(chokepointPositions.back())));
-			chokepointDistancesBuffer.push_back(BWTA::getGroundDistance(playerStartingTilePosition, TilePosition(chokepointPositions.back())));
+			chokepointDistancesBuffer.push_back(BWTA::getGroundDistance(playerStartingTilePosition, TilePosition(chokepointPositions.back())));			
 		}
 		// Find nearest chokepoints, move to vector for easier use
 		for (int i = 0; i <= (int)chokepointDistances.size() - 1; i++)
@@ -193,59 +224,86 @@ void CMProtoBot::onFrame()
 		{
 			Broodwar->drawTextMap(activeExpansion.at(i).x * 32, activeExpansion.at(i).y * 32, "Base %d", i, Colors::White);
 		}
+
+		Broodwar->drawTextMap(enemyStartingPosition, "Starting Position");
+		// Holding position, average between all chokepoints
+		/*int xC = 0;
+		int yC = 0;
+		set <Chokepoint*> getRegionChokes = getRegion(furthestNexus)->getChokepoints();
+		for (set <Chokepoint*>::iterator itr = getRegionChokes.begin(); itr != getRegionChokes.end(); itr++)
+		{
+		xC = xC + (*itr)->getCenter().x;
+		yC = yC + (*itr)->getCenter().y;
+		}
+		holdingPosition.x = xC / getRegionChokes.size();
+		holdingPosition.y = yC / getRegionChokes.size();
+		Broodwar->drawTextMap(furthestNexus.x *32, furthestNexus.y * 32 + 10, "Defend Point");*/
+		//holdingPosition = Broodwar->getRegionAt(Position(32 * nextExpansion.at(1).x, 32 * nextExpansion.at(1).y))->getCenter();
+		if (Broodwar->self()->visibleUnitCount() > 0)
+		{
+			holdingPosition = Position(furthestNexus.x * 32, furthestNexus.y * 32);
+		}
 		Broodwar->drawCircleMap(holdingPosition, 200, Colors::Blue, false);
-		holdingPosition = Broodwar->getRegionAt(Position(32 * nextExpansion.at(nexusDesired).x, 32 * nextExpansion.at(nexusDesired).y))->getCenter();
+		// Get build order based on enemy race(s)
+		getBuildOrder();
 	}
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 	// On-Screen Information
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 
-	// Display some information about our buildings
-	Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
-	Broodwar->drawTextScreen(0, 10, "Nexus:");
-	Broodwar->drawTextScreen(0, 20, "Pylon:");
-	Broodwar->drawTextScreen(0, 30, "Gas:");
-	Broodwar->drawTextScreen(0, 40, "Gate:");
-	Broodwar->drawTextScreen(0, 50, "Forge:");
-	Broodwar->drawTextScreen(0, 60, "Core:");
-	Broodwar->drawTextScreen(0, 70, "RoboF:");
-	Broodwar->drawTextScreen(0, 80, "Stargate:");
-	Broodwar->drawTextScreen(0, 90, "Citadel:");
-	Broodwar->drawTextScreen(0, 100, "Support:");
-	Broodwar->drawTextScreen(0, 110, "Fleet:");
-	Broodwar->drawTextScreen(0, 120, "Archives:");
+	//// Display some information about our buildings
+	//Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
+	//Broodwar->drawTextScreen(0, 10, "Nexus:");
+	//Broodwar->drawTextScreen(0, 20, "Pylon:");
+	//Broodwar->drawTextScreen(0, 30, "Gas:");
+	//Broodwar->drawTextScreen(0, 40, "Gate:");
+	//Broodwar->drawTextScreen(0, 50, "Forge:");
+	//Broodwar->drawTextScreen(0, 60, "Core:");
+	//Broodwar->drawTextScreen(0, 70, "RoboF:");
+	//Broodwar->drawTextScreen(0, 80, "Stargate:");
+	//Broodwar->drawTextScreen(0, 90, "Citadel:");
+	//Broodwar->drawTextScreen(0, 100, "Support:");
+	//Broodwar->drawTextScreen(0, 110, "Fleet:");
+	//Broodwar->drawTextScreen(0, 120, "Archives:");
 
-	// Counters
-	Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
-	Broodwar->drawTextScreen(50, 10, "%d  %d Inactive: %d", nexusCnt, nexusDesired, inactiveNexusCnt);
-	Broodwar->drawTextScreen(50, 20, "%d  %d", pylonCnt, pylonDesired);
-	Broodwar->drawTextScreen(50, 30, "%d  %d", gasCnt, gasDesired);
-	Broodwar->drawTextScreen(50, 40, "%d  %d", gateCnt, gateDesired);
-	Broodwar->drawTextScreen(50, 50, "%d  %d", forgeCnt, forgeDesired);
-	Broodwar->drawTextScreen(50, 60, "%d  %d", coreCnt, coreDesired);
-	Broodwar->drawTextScreen(50, 70, "%d  %d", roboCnt, roboDesired);
-	Broodwar->drawTextScreen(50, 80, "%d  %d", stargateCnt, stargateDesired);
-	Broodwar->drawTextScreen(50, 90, "%d  %d", citadelCnt, citadelDesired);
-	Broodwar->drawTextScreen(50, 100, "%d  %d", supportBayCnt, supportBayDesired);
-	Broodwar->drawTextScreen(50, 110, "%d  %d", fleetBeaconCnt, fleetBeaconDesired);
-	Broodwar->drawTextScreen(50, 120, "%d  %d", archivesCnt, archivesDesired);
+	//// Counters
+	//Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
+	//Broodwar->drawTextScreen(50, 10, "%d  %d Inactive: %d", nexusCnt, nexusDesired, inactiveNexusCnt);
+	//Broodwar->drawTextScreen(50, 20, "%d  %d", pylonCnt, pylonDesired);
+	//Broodwar->drawTextScreen(50, 30, "%d  %d", gasCnt, gasDesired);
+	//Broodwar->drawTextScreen(50, 40, "%d  %d", gateCnt, gateDesired);
+	//Broodwar->drawTextScreen(50, 50, "%d  %d", forgeCnt, forgeDesired);
+	//Broodwar->drawTextScreen(50, 60, "%d  %d", coreCnt, coreDesired);
+	//Broodwar->drawTextScreen(50, 70, "%d  %d", roboCnt, roboDesired);
+	//Broodwar->drawTextScreen(50, 80, "%d  %d", stargateCnt, stargateDesired);
+	//Broodwar->drawTextScreen(50, 90, "%d  %d", citadelCnt, citadelDesired);
+	//Broodwar->drawTextScreen(50, 100, "%d  %d", supportBayCnt, supportBayDesired);
+	//Broodwar->drawTextScreen(50, 110, "%d  %d", fleetBeaconCnt, fleetBeaconDesired);
+	//Broodwar->drawTextScreen(50, 120, "%d  %d", archivesCnt, archivesDesired);
 
 	// Display some information about our queued resources required for structure building
 	Broodwar->drawTextScreen(200, 0, "Queued Minerals: %d", queuedMineral);
 	Broodwar->drawTextScreen(200, 10, "Queued Gas: %d", queuedGas);
 
-	// Display some information about our units
-	Broodwar->drawTextScreen(500, 20, "Unit Count");
-	Broodwar->drawTextScreen(500, 30, "Probe Count: %d", probeCnt);
-	Broodwar->drawTextScreen(500, 40, "Zealot Count: %d", zealotCnt);
-	Broodwar->drawTextScreen(500, 50, "Dragoon Count: %d", dragoonCnt);
-	Broodwar->drawTextScreen(500, 60, "Carrier Count: %d", carrierCnt);
+	//// Display some information about our units
+	//Broodwar->drawTextScreen(500, 20, "Unit Count");
+	//Broodwar->drawTextScreen(500, 30, "Probe Count: %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe));
+	//Broodwar->drawTextScreen(500, 40, "Zealot Count: %d", zealotCnt);
+	//Broodwar->drawTextScreen(500, 50, "Dragoon Count: %d", dragoonCnt);
+	//Broodwar->drawTextScreen(500, 60, "Carrier Count: %d", carrierCnt);
 
 	// Display some information for debuffing
 	Broodwar->drawTextScreen(500, 200, "Mineral ID Size: %d", mineralID.size());
 	Broodwar->drawTextScreen(500, 210, "Mineral Worker ID Size: %d", mineralWorkerID.size());
 	Broodwar->drawTextScreen(500, 220, "Gas ID Size: %d", assimilatorID.size());
 	Broodwar->drawTextScreen(500, 230, "Gas Worker ID Size: %d", gasWorkerID.size());
+	Broodwar->drawTextScreen(500, 240, "Combat Worker ID Size: %d", combatWorkerID.size());
+
+	//
+	Broodwar->drawTextScreen(500, 250, "Our Army: %d", allySupply);
+	Broodwar->drawTextScreen(500, 260, "Their Army: %d", enemySupply);	
+	Broodwar->drawTextScreen(500, 280, "Cnt: %d", enemyCountNearby);
+
 
 	// Display which worker is builder and scouter (slightly delayed)
 	if (Broodwar->getFrameCount() > 100)
@@ -264,38 +322,36 @@ void CMProtoBot::onFrame()
 	// Structure Information
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 
-	// Get build order based on enemy race(s)
-	getBuildOrder();
 
 	// If a structure is required, make sure we notify production that we have an additional cost to not eat into
-	queuedMineral = std::max(0, (nexusDesired - nexusCnt - nexusBuildingCnt)*(UnitTypes::Protoss_Nexus.mineralPrice()))
-		+ std::max(0, (pylonDesired - pylonCnt - pylonBuildingCnt)*(UnitTypes::Protoss_Pylon.mineralPrice()))
-		+ std::max(0, (gasDesired - gasCnt - gasBuildingCnt)*(UnitTypes::Protoss_Assimilator.mineralPrice()))
-		+ std::max(0, (gateDesired - gateCnt - gateBuildingCnt)*(UnitTypes::Protoss_Gateway.mineralPrice()))
-		+ std::max(0, (forgeDesired - forgeCnt - forgeBuildingCnt)*(UnitTypes::Protoss_Forge.mineralPrice()))
-		+ std::max(0, (coreDesired - coreCnt - coreBuildingCnt)*(UnitTypes::Protoss_Cybernetics_Core.mineralPrice()))
-		+ std::max(0, (roboDesired - roboCnt - roboBuildingCnt)*(UnitTypes::Protoss_Robotics_Facility.mineralPrice()))
-		+ std::max(0, (stargateDesired - stargateCnt - stargateBuildingCnt)*(UnitTypes::Protoss_Stargate.mineralPrice()))
-		+ std::max(0, (citadelDesired - citadelCnt - citadelBuildingCnt)*(UnitTypes::Protoss_Citadel_of_Adun.mineralPrice()))
-		+ std::max(0, (supportBayDesired - supportBayCnt - supportBayBuildingCnt)*(UnitTypes::Protoss_Robotics_Support_Bay.mineralPrice()))
-		+ std::max(0, (fleetBeaconDesired - fleetBeaconCnt - fleetBeaconBuildingCnt)*(UnitTypes::Protoss_Fleet_Beacon.mineralPrice()))
-		+ std::max(0, (archivesDesired - archivesCnt - archivesBuildingCnt)*(UnitTypes::Protoss_Templar_Archives.mineralPrice()))
-		+ std::max(0, (observatoryDesired - observatoryCnt - observatoryBuildingCnt)*(UnitTypes::Protoss_Observatory.mineralPrice()))
-		+ std::max(0, (tribunalDesired - tribunalCnt - tribunalBuildingCnt)*(UnitTypes::Protoss_Arbiter_Tribunal.mineralPrice()))
+	queuedMineral = std::max(0, (nexusDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus))*(UnitTypes::Protoss_Nexus.mineralPrice()))
+		+ std::max(0, (pylonDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))*(UnitTypes::Protoss_Pylon.mineralPrice()))
+		+ std::max(0, (gasDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Assimilator))*(UnitTypes::Protoss_Assimilator.mineralPrice()))
+		+ std::max(0, (gateDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Gateway))*(UnitTypes::Protoss_Gateway.mineralPrice()))
+		+ std::max(0, (forgeDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Forge))*(UnitTypes::Protoss_Forge.mineralPrice()))
+		+ std::max(0, (coreDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Cybernetics_Core))*(UnitTypes::Protoss_Cybernetics_Core.mineralPrice()))
+		+ std::max(0, (roboDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Facility))*(UnitTypes::Protoss_Robotics_Facility.mineralPrice()))
+		+ std::max(0, (stargateDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Stargate))*(UnitTypes::Protoss_Stargate.mineralPrice()))
+		+ std::max(0, (citadelDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Citadel_of_Adun))*(UnitTypes::Protoss_Citadel_of_Adun.mineralPrice()))
+		+ std::max(0, (supportBayDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Support_Bay))*(UnitTypes::Protoss_Robotics_Support_Bay.mineralPrice()))
+		+ std::max(0, (fleetBeaconDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Fleet_Beacon))*(UnitTypes::Protoss_Fleet_Beacon.mineralPrice()))
+		+ std::max(0, (archivesDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Templar_Archives))*(UnitTypes::Protoss_Templar_Archives.mineralPrice()))
+		+ std::max(0, (observatoryDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Observatory))*(UnitTypes::Protoss_Observatory.mineralPrice()))
+		+ std::max(0, (tribunalDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Arbiter_Tribunal))*(UnitTypes::Protoss_Arbiter_Tribunal.mineralPrice()))
 		;
 
-	queuedGas = std::max(0, (roboDesired - roboCnt - roboBuildingCnt)*(UnitTypes::Protoss_Robotics_Facility.gasPrice()))
-		+ std::max(0, (stargateDesired - stargateCnt - stargateBuildingCnt)*(UnitTypes::Protoss_Stargate.gasPrice()))
-		+ std::max(0, (citadelDesired - citadelCnt - citadelBuildingCnt)*(UnitTypes::Protoss_Citadel_of_Adun.gasPrice()))
-		+ std::max(0, (supportBayDesired - supportBayCnt - supportBayBuildingCnt)*(UnitTypes::Protoss_Robotics_Support_Bay.gasPrice()))
-		+ std::max(0, (fleetBeaconDesired - fleetBeaconCnt - fleetBeaconBuildingCnt)*(UnitTypes::Protoss_Fleet_Beacon.gasPrice()))
-		+ std::max(0, (archivesDesired - archivesCnt - archivesBuildingCnt)*(UnitTypes::Protoss_Templar_Archives.gasPrice()))
-		+ std::max(0, (observatoryDesired - observatoryCnt - observatoryBuildingCnt)*(UnitTypes::Protoss_Observatory.gasPrice()))
-		+ std::max(0, (tribunalDesired - tribunalCnt - tribunalBuildingCnt)*(UnitTypes::Protoss_Arbiter_Tribunal.gasPrice()))
+	queuedGas = std::max(0, (roboDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Facility))*(UnitTypes::Protoss_Robotics_Facility.gasPrice()))
+		+ std::max(0, (stargateDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Stargate))*(UnitTypes::Protoss_Stargate.gasPrice()))
+		+ std::max(0, (citadelDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Citadel_of_Adun))*(UnitTypes::Protoss_Citadel_of_Adun.gasPrice()))
+		+ std::max(0, (supportBayDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Support_Bay))*(UnitTypes::Protoss_Robotics_Support_Bay.gasPrice()))
+		+ std::max(0, (fleetBeaconDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Fleet_Beacon))*(UnitTypes::Protoss_Fleet_Beacon.gasPrice()))
+		+ std::max(0, (archivesDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Templar_Archives))*(UnitTypes::Protoss_Templar_Archives.gasPrice()))
+		+ std::max(0, (observatoryDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Observatory))*(UnitTypes::Protoss_Observatory.gasPrice()))
+		+ std::max(0, (tribunalDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Arbiter_Tribunal))*(UnitTypes::Protoss_Arbiter_Tribunal.gasPrice()))
 		;
 
 	// --------------------------------------------------------------------------------------------------------------------------------------------
-	// Unit Iterator
+	// Probe Manager
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 
 	// Prevent spamming by only running our onFrame once every number of latency frames.
@@ -313,89 +369,89 @@ void CMProtoBot::onFrame()
 
 		// Probe commands
 		if (u->getType() == UnitTypes::Protoss_Probe)
-		{
+		{			
 			// Assign the probe a task (mineral, gas)
 			assignProbe(u);
+
 			// If no builder exists, this probe is now the builder
-			if ((buildingWorkerID.size() < 1) && find(mineralWorkerID.begin(), mineralWorkerID.end(), u->getID()) != mineralWorkerID.end())
+			if (find(scoutWorkerID.begin(), scoutWorkerID.end(), u->getID()) == scoutWorkerID.end() && buildingWorkerID.size() < 1)
 			{
-				Broodwar << "Probe " << u->getID() << " is now the builder probe." << std::endl;
 				buildingWorkerID.push_back(u->getID());
 			}
 			// Else if no scouter exists, this probe is now the scouter
-			else if (scoutWorkerID.size() < 1 && find(mineralWorkerID.begin(), mineralWorkerID.end(), u->getID()) != mineralWorkerID.end())
+			else if (find(buildingWorkerID.begin(), buildingWorkerID.end(), u->getID()) == buildingWorkerID.end() && scoutWorkerID.size() < 1)
 			{
-				Broodwar << "Probe " << u->getID() << " is now the scout probe." << std::endl;
 				scoutWorkerID.push_back(u->getID());
 			}
 			// Builder commands
-			if (u->getID() == buildingWorkerID.front() && !u->isConstructing())
+			if (u->getID() == buildingWorkerID.front() && (!u->isConstructing() || !u->isMoving()))
 			{
 				builderPosition = u->getPosition();
-				if (pylonCnt + pylonBuildingCnt < pylonDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Pylon.mineralPrice())
+				if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon) < pylonDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Pylon.mineralPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Pylon, u);
 				}
-				else if (gasCnt + gasBuildingCnt < gasDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Assimilator.mineralPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Assimilator) < gasDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Assimilator.mineralPrice())
 				{
 					u->build(UnitTypes::Protoss_Assimilator, gasTilePosition.back());
 				}
-				else if (gateCnt + gateBuildingCnt < gateDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Gateway.mineralPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Gateway) < gateDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Gateway.mineralPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Gateway, u);
 				}
-				else if (forgeCnt + forgeBuildingCnt < forgeDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Forge.mineralPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Forge) < forgeDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Forge.mineralPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Forge, u);
 				}
-				else if (coreCnt + coreBuildingCnt < coreDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Cybernetics_Core.mineralPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Cybernetics_Core) < coreDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Cybernetics_Core.mineralPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Cybernetics_Core, u);
 				}
-				else if (roboCnt + roboBuildingCnt < roboDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Robotics_Facility.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Robotics_Facility.gasPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Facility) < roboDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Robotics_Facility.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Robotics_Facility.gasPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Robotics_Facility, u);
 				}
-				else if (stargateCnt + stargateBuildingCnt < stargateDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Stargate.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Stargate.gasPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Stargate) < stargateDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Stargate.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Stargate.gasPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Stargate, u);
 				}
-				else if (citadelCnt + citadelBuildingCnt < citadelDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Citadel_of_Adun.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Citadel_of_Adun.gasPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Citadel_of_Adun) < citadelDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Citadel_of_Adun.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Citadel_of_Adun.gasPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Citadel_of_Adun, u);
 				}
-				else if (supportBayCnt + supportBayBuildingCnt < supportBayDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Robotics_Support_Bay.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Robotics_Support_Bay.gasPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) < supportBayDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Robotics_Support_Bay.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Robotics_Support_Bay.gasPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Robotics_Support_Bay, u);
 				}
-				else if (fleetBeaconCnt + fleetBeaconBuildingCnt < fleetBeaconDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Fleet_Beacon.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Fleet_Beacon.gasPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Fleet_Beacon) < fleetBeaconDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Fleet_Beacon.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Fleet_Beacon.gasPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Fleet_Beacon, u);
 				}
-				else if (archivesCnt + archivesBuildingCnt < archivesDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Templar_Archives.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Templar_Archives.gasPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Templar_Archives) < archivesDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Templar_Archives.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Templar_Archives.gasPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Templar_Archives, u);
 				}
-				else if (observatoryCnt + observatoryBuildingCnt < observatoryDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Observatory.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observatory.gasPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Observatory) < observatoryDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Observatory.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observatory.gasPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Observatory, u);
 				}
-				else if (tribunalCnt + tribunalBuildingCnt < tribunalDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Arbiter_Tribunal.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Arbiter_Tribunal.gasPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) < tribunalDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Arbiter_Tribunal.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Arbiter_Tribunal.gasPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Arbiter_Tribunal, u);
 				}
-				else if (nexusCnt + nexusBuildingCnt < nexusDesired + inactiveNexusCnt && Broodwar->self()->minerals() >= UnitTypes::Protoss_Nexus.mineralPrice())
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) < nexusDesired + inactiveNexusCnt && Broodwar->self()->minerals() >= UnitTypes::Protoss_Nexus.mineralPrice())
 				{
 					for (int i = 0; i <= (int)nextExpansion.size() - 1; i++)
 					{
 						if (Broodwar->isBuildable(nextExpansion.at(i), true))
 						{
 							nexusManager(UnitTypes::Protoss_Nexus, u, nextExpansion.at(i));
+							break;
 						}
 					}
 				}
 			}
-			else if (u->getID() == buildingWorkerID.front() && u->isConstructing())
+			else if (u->getID() == buildingWorkerID.front() && u->isStuck())
 			{
 				if (u->getLastCommandFrame() > Broodwar->getFrameCount() + 1000)
 				{
@@ -403,7 +459,7 @@ void CMProtoBot::onFrame()
 				}
 			}
 			// Scouter commands
-			else if (u->getID() == scoutWorkerID.front() && BWTAhandling && scouting == false)
+			else if (u->getID() == scoutWorkerID.front() && BWTAhandling)
 			{
 				if (Broodwar->self()->supplyUsed() >= 18)
 				{
@@ -414,7 +470,7 @@ void CMProtoBot::onFrame()
 							u->move(startingLocationPositions.at(i));
 						}
 					}
-					for (int i = 1; i <= (int)nextExpansion.size() - 1; i++)
+					/*for (int i = 1; i <= (int)nextExpansion.size() - 1; i++)
 					{
 						if (Broodwar->isExplored(nextExpansion.at(i).x + 2, nextExpansion.at(i).y + 2) == false)
 						{
@@ -422,35 +478,52 @@ void CMProtoBot::onFrame()
 							u->move(Position(32 * (nextExpansion.at(i).x + 4), 32 * (nextExpansion.at(i).y + 4)), true);
 							break;
 						}
-					}
+					}*/
 				}
 			}
-		} // End of worker unit commands
-		// Probe production (currently builds probes if possible)
-
-		else if (u->getType().isResourceDepot())
-		{
-			if (u->isIdle() && probeCnt < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral) && probeCnt < (int)(mineralID.size() * 2 + assimilatorID.size() * 3))
+			if (enemyBasePositions.size() < 1 && Broodwar->getFrameCount() > 15000)
 			{
-				u->train(UnitTypes::Protoss_Probe);
-				continue;
-			}
-			if (u->getUnitsInRadius(100, Filter::GetType == UnitTypes::Enum::Protoss_Pylon).size() == 0 && nexusCnt > 1)
-			{
-				pylonNeeded = getBuildLocationNear(UnitTypes::Protoss_Pylon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
-				Broodwar->getUnit(buildingWorkerID.front())->build(UnitTypes::Protoss_Pylon, pylonNeeded);
-			}
-			if (u->getUnitsInRadius(500, Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon).size() < 2 && nexusCnt > 1)
-			{
-				cannonNeeded = getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
-				Broodwar->getUnit(buildingWorkerID.front())->build(UnitTypes::Protoss_Photon_Cannon, cannonNeeded);
+				for (int i = 0; i <= basePositions.size() - 1; i++)
+				{
+					if (!Broodwar->isVisible(TilePosition(basePositions.at(i))))
+					{
+						Broodwar->getClosestUnit(basePositions.at(i), Filter::IsAlly && !Filter::IsBuilding)->attack(basePositions.at(i));
+					}
+				}
 			}
 		}
 
 		// --------------------------------------------------------------------------------------------------------------------------------------------
-		// Production Manager
+		// Building Manager
 		// --------------------------------------------------------------------------------------------------------------------------------------------
 
+		// If it's a Nexus and we need probes, train the probes
+		else if (u->getType().isResourceDepot())
+		{
+			if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral) && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < (int)(mineralID.size() * 2 + assimilatorID.size() * 3))
+			{
+				u->train(UnitTypes::Protoss_Probe);
+				continue;
+			}
+			// If there are no pylons around it, build one so we can make cannons
+			if (u->getUnitsInRadius(100, Filter::GetType == UnitTypes::Enum::Protoss_Pylon).size() == 0 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 1)
+			{
+				pylonNeeded = getBuildLocationNear(UnitTypes::Protoss_Pylon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
+				Broodwar->getUnit(buildingWorkerID.front())->build(UnitTypes::Protoss_Pylon, pylonNeeded);
+			}
+			// If not at least two cannons, build two cannons, good for anti harass and detection
+			if (u->getUnitsInRadius(500, Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon).size() < 2 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 1)
+			{
+				cannonNeeded = getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
+				Broodwar->getUnit(buildingWorkerID.front())->build(UnitTypes::Protoss_Photon_Cannon, cannonNeeded);
+			}
+			// If there are enemies nearby, request help
+			if (u->getUnitsInRadius(320, Filter::IsEnemy).size() > 0)
+			{
+				enemyCountNearby = u->getUnitsInRadius(320, Filter::IsEnemy && !Filter::IsFlyer).size();
+			}
+		}
+		// If it's a building capable of production, send to production manager
 		else if (u->getType().isBuilding() && u->getType() != UnitTypes::Protoss_Pylon && u->getType() != UnitTypes::Protoss_Nexus)
 		{
 			productionManager(u);
@@ -478,9 +551,12 @@ void CMProtoBot::onFrame()
 		}
 		if (u->getType() == UnitTypes::Protoss_Carrier)
 		{
-			carrierGetCommand(u);
+			carrierManager(u);
 		}
-	}
+
+		// Calculating my current army supply
+		allySupply = Broodwar->self()->allUnitCount() - Broodwar->self()->allUnitCount(UnitTypes::Buildings) - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe);
+	}	
 }
 
 void CMProtoBot::onSendText(std::string text)
@@ -540,48 +616,14 @@ void CMProtoBot::onUnitCreate(BWAPI::Unit unit)
 {
 	if (unit->getPlayer() == Broodwar->self() && Broodwar->getFrameCount() >= 100)
 	{
-		switch (unit->getType())
+		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus)
 		{
-		case UnitTypes::Enum::Protoss_Pylon:
-			pylonBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Gateway:
-			gateBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Forge:
-			forgeBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Cybernetics_Core:
-			coreBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Robotics_Facility:
-			roboBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Stargate:
-			stargateBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Citadel_of_Adun:
-			citadelBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Robotics_Support_Bay:
-			supportBayBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Fleet_Beacon:
-			fleetBeaconBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Templar_Archives:
-			archivesBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Observatory:
-			observatoryBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Arbiter_Tribunal:
-			tribunalBuildingCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Nexus:
-			nexusBuildingCnt++;
-			nexusTilePosition = unit->getTilePosition();
-			nexusPosition = unit->getPosition();
+			Position nexusPosition = unit->getPosition();
+			if (getGroundDistance(unit->getTilePosition(), enemyStartingTilePosition) < getGroundDistance(furthestNexus, enemyStartingTilePosition))
+			{
+				furthestNexus = unit->getTilePosition();
+			}
+			// When Nexus is placed, get IDs of gas and minerals around Nexus so we can train probes ahead of time
 			for (auto u : Broodwar->neutral()->getUnits())
 			{
 				if (u->getType() == UnitTypes::Resource_Vespene_Geyser && u->getDistance(nexusPosition) <= 400)
@@ -593,79 +635,56 @@ void CMProtoBot::onUnitCreate(BWAPI::Unit unit)
 					mineralID.push_back(u->getID());
 				}
 			}
-			break;
 		}
 	}
 }
 
 void CMProtoBot::onUnitDestroy(BWAPI::Unit unit)
 {
-	if (unit->getPlayer() == Broodwar->self())
+	if (unit->getPlayer() == Broodwar->self() && !unit->isConstructing())
 	{
 		// Allied ground units
-		switch (unit->getType()){
-		case UnitTypes::Enum::Protoss_Probe:
-			deadProbeID.push_back(unit->getID());
-			probeCnt--;
+		if (unit->getType() = UnitTypes::Enum::Protoss_Probe)
+		{
 			if (unit->getID() == scoutWorkerID.front()){
 				scoutWorkerID.pop_back();
 			}
 			if (unit->getID() == buildingWorkerID.front()){
 				buildingWorkerID.pop_back();
 			}
-			break;
-		case UnitTypes::Enum::Protoss_Zealot:
-			zealotCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Dragoon:
-			dragoonCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_High_Templar:
-			highTemplarCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Dark_Templar:
-			darkTemplarCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Reaver:
-			reaverCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Archon:
-			archonCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Dark_Archon:
-			darkArchonCnt--;
-			break;
-			// Allied air units
-		case UnitTypes::Enum::Protoss_Observer:
-			observerCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Shuttle:
-			shuttleCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Scout:
-			scoutCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Carrier:
-			carrierCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Arbiter:
-			arbiterCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Corsair:
-			corsairCnt--;
-			break;
+			if (find(mineralWorkerID.begin(), mineralWorkerID.end(), unit->getID()) != mineralWorkerID.end())
+			{
+				mineralWorkerID.erase(find(mineralWorkerID.begin(), mineralWorkerID.end(), unit->getID()));
+			}
+			if (find(gasWorkerID.begin(), gasWorkerID.end(), unit->getID()) != gasWorkerID.end())
+			{
+				gasWorkerID.erase(find(gasWorkerID.begin(), gasWorkerID.end(), unit->getID()));
+			}
+			if (find(combatWorkerID.begin(), combatWorkerID.end(), unit->getID()) != combatWorkerID.end())
+			{
+				combatWorkerID.erase(find(combatWorkerID.begin(), combatWorkerID.end(), unit->getID()));
+			}
 		}
 	}
+	if (unit->getPlayer() == Broodwar->enemy())
+	{
+		if (!unit->getType().isWorker())
+		{
+			enemySupply = enemySupply - unit->getType().supplyRequired();
+		}
+	}
+	// If a mineral field died that we are keeping track of, remove the mineral from the vector and the corresponding worker(s) that were tasked on it
+	// Removing the workers means we can re-assign them to new tasks immediately where necessary
 	if (unit->getType().isMineralField() && find(mineralID.begin(), mineralID.end(), unit->getID()) != mineralID.end())
 	{
 		int pointer = find(mineralID.begin(), mineralID.end(), unit->getID()) - mineralID.begin();
 		if ((find(probeID.begin(), probeID.end(), mineralWorkerID.at(pointer * 2)) != probeID.end()))
 		{
-			Broodwar << pointer << endl;
 			probeID.erase(find(probeID.begin(), probeID.end(), mineralWorkerID.at(pointer * 2)), find(probeID.begin(), probeID.end(), mineralWorkerID.at((pointer * 2) + 1)));
 			mineralWorkerID.erase(find(mineralWorkerID.begin(), mineralWorkerID.end(), mineralWorkerID.at(pointer * 2)), find(mineralWorkerID.begin(), mineralWorkerID.end(), mineralWorkerID.at((pointer * 2) + 1)));
 			mineralID.erase(find(mineralID.begin(), mineralID.end(), unit->getID()));
 		}
+		// Remove this nexus as an active expansion, so we can expand to a new base to keep our income up
 		TilePosition closestNexus = Broodwar->getClosestUnit(unit->getPosition(), Filter::IsResourceDepot)->getTilePosition();
 		if (find(activeExpansion.begin(), activeExpansion.end(), closestNexus) != activeExpansion.end())
 		{
@@ -673,17 +692,14 @@ void CMProtoBot::onUnitDestroy(BWAPI::Unit unit)
 			inactiveNexusCnt++;
 		}
 	}
+	if (unit->getPlayer() == Broodwar->enemy() && unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) != enemyBasePositions.end())
+	{
+		enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()));
+	}
 }
 
 void CMProtoBot::onUnitMorph(BWAPI::Unit unit)
 {
-	if (unit->getPlayer() == Broodwar->self())
-	{
-		if (unit->getType() == UnitTypes::Protoss_Assimilator)
-		{
-			gasBuildingCnt++;
-		}
-	}
 }
 
 void CMProtoBot::onUnitRenegade(BWAPI::Unit unit)
@@ -700,147 +716,49 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 	// If player owned unit is completed, get counter
 	if (unit->getPlayer() == Broodwar->self())
 	{
-		switch (unit->getType())
+		// If it's the start of the game, gather the IDs of the gas and minerals around the Nexus, otherwise this is done during the Unit Create function
+		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus && Broodwar->getFrameCount() < 100)
 		{
-			// Units
-		case UnitTypes::Enum::Protoss_Probe:
-			probeCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Zealot:
-			zealotCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Dragoon:
-			dragoonCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_High_Templar:
-			highTemplarCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Dark_Templar:
-			darkTemplarCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Reaver:
-			reaverCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Archon:
-			archonCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Dark_Archon:
-			darkArchonCnt++;
-			break;
-			// Allied air units
-		case UnitTypes::Enum::Protoss_Observer:
-			observerCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Shuttle:
-			shuttleCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Scout:
-			scoutCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Carrier:
-			carrierCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Arbiter:
-			arbiterCnt++;
-			break;
-		case UnitTypes::Enum::Protoss_Corsair:
-			corsairCnt++;
-			break;
-			// Buildings
-		case UnitTypes::Enum::Protoss_Pylon:
-			pylonCnt++;
-			pylonBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Assimilator:
-			gasCnt++;
-			gasBuildingCnt--;
-			assimilatorID.push_back(unit->getID());
-			break;
-		case UnitTypes::Enum::Protoss_Gateway:
-			gateCnt++;
-			gateBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Forge:
-			forgeCnt++;
-			forgeBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Cybernetics_Core:
-			coreCnt++;
-			coreBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Robotics_Facility:
-			roboCnt++;
-			roboBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Stargate:
-			stargateCnt++;
-			stargateBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Citadel_of_Adun:
-			citadelCnt++;
-			citadelBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Robotics_Support_Bay:
-			supportBayCnt++;
-			supportBayBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Fleet_Beacon:
-			fleetBeaconCnt++;
-			fleetBeaconBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Templar_Archives:
-			archivesCnt++;
-			archivesBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Observatory:
-			observatoryCnt++;
-			observatoryBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Arbiter_Tribunal:
-			tribunalCnt++;
-			tribunalBuildingCnt--;
-			break;
-		case UnitTypes::Enum::Protoss_Nexus:
-			nexusCnt++;
-			nexusTilePosition = unit->getTilePosition();
-			nexusPosition = unit->getPosition();
-			if (Broodwar->getFrameCount() < 100)
+			Position nexusPosition = unit->getPosition();
+			furthestNexus = unit->getTilePosition();
+			for (auto u : Broodwar->neutral()->getUnits())
 			{
-				for (auto u : Broodwar->neutral()->getUnits())
+				if (u->getType() == UnitTypes::Resource_Vespene_Geyser && u->getDistance(nexusPosition) <= 400)
 				{
-					if (u->getType() == UnitTypes::Resource_Vespene_Geyser && u->getDistance(nexusPosition) <= 400)
-					{
-						gasTilePosition.push_back(u->getTilePosition());
-					}
-					if (u->getType().isMineralField() == true && u->getDistance(nexusPosition) <= 400)
-					{
-						mineralID.push_back(u->getID());
-					}
+					gasTilePosition.push_back(u->getTilePosition());
+				}
+				if (u->getType().isMineralField() == true && u->getDistance(nexusPosition) <= 400)
+				{
+					mineralID.push_back(u->getID());
 				}
 			}
-			else
-			{
-				nexusBuildingCnt--;
-			}
-			break;
+		}
+		else if (unit->getType() == UnitTypes::Enum::Protoss_Assimilator)
+		{
+			assimilatorID.push_back(unit->getID());
 		}
 	}
+
 	// If unit not owned by player
 	if (unit->getPlayer()->getID() == Broodwar->enemy()->getID())
 	{
 		if (unit->getType().isResourceDepot())
 		{
 			Broodwar << "Enemy Resource Depot Found!" << endl;
-			enemyBasePositions.push_back(unit->getPosition());
 			if (enemyBasePositions.size() == 0)
 			{
-				enemyStartingPosition = (unit->getPosition());
+				enemyStartingPosition = unit->getPosition();
 				enemyStartingTilePosition = TilePosition(enemyStartingPosition);
 			}
+			enemyBasePositions.push_back(unit->getPosition());
 		}
-		else
+		else if (!unit->getType().isWorker())
 		{
 			enemySupply = enemySupply + unit->getType().supplyRequired();
+		}
+		if (unit->getType().isBuilding() && enemyFound == false)
+		{
+			enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
 		}
 	}
 }
