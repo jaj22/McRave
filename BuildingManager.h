@@ -7,10 +7,8 @@ using namespace std;
 // External building positioning variables
 extern vector <TilePosition> activeExpansion;
 extern vector <TilePosition> nextExpansion;
-extern TilePosition buildTilePosition;
-extern TilePosition enemyStartingTilePosition;
-extern Position buildPosition;
 extern UnitType currentBuilding;
+extern TilePosition buildTilePosition;
 
 // External unit variables
 extern vector<int> buildingWorkerID;
@@ -18,10 +16,6 @@ extern vector<int> buildingWorkerID;
 // External resource variables
 extern int queuedMineral;
 extern int queuedGas;
-
-// Other
-extern vector <int> nexusDistances;
-extern vector <Position> enemyBasePositions;
 
 // Function declarations
 void buildingManager(UnitType building, Unit builder);

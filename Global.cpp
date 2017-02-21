@@ -11,6 +11,8 @@ using namespace std;
 using namespace BWAPI;
 using namespace BWTA;
 using namespace Filter;
+using namespace BWEM;
+namespace { auto & theMap = BWEM::Map::Instance(); }
 
 bool analyzed;
 bool analysis_just_finished;
@@ -27,10 +29,19 @@ void CMProtoBot::onStart()
 	{
 		Broodwar << "The matchup is " << Broodwar->self()->getRace() << " vs " << Broodwar->enemy()->getRace() << endl;
 	}
+
+	theMap.Initialize();
+	theMap.EnableAutomaticPathAnalysis();
+	bool startingLocationsOK = theMap.FindBasesForStartingLocations();
+	assert(startingLocationsOK);
+
+	BWEM::utils::MapPrinter::Initialize(&theMap);
+	BWEM::utils::printMap(theMap);      // will print the map into the file <StarCraftFolder>bwapi-data/map.bmp
+	BWEM::utils::pathExample(theMap);   // add to the printed map a path between two starting locations
+
 	if (analyzed == false) {
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AnalyzeThread, NULL, 0, NULL);
 	}
-
 	readMap();
 	analyzed = false;
 	analysis_just_finished = false;
@@ -47,7 +58,9 @@ void CMProtoBot::onEnd(bool isWinner)
 
 void CMProtoBot::onFrame()
 {
-	// Threat level manager (TESTING)
+	// --------------------------------------------------------------------------------------------------------------------------------------------
+	// Threat Manager
+	// --------------------------------------------------------------------------------------------------------------------------------------------
 	for (int x = 0; x <= Broodwar->mapWidth(); x++)
 	{
 		for (int y = 0; y <= Broodwar->mapHeight(); y++)
@@ -59,191 +72,214 @@ void CMProtoBot::onFrame()
 			}
 		}
 	}
-	for (auto &u : Broodwar->enemy()->getUnits())
+	for (auto u : Broodwar->enemy()->getUnits())
 	{
-		if (!u->getType().isBuilding() && u->getType().groundWeapon().damageAmount() > 0)
-		{			
-			int range = u->getType().groundWeapon().maxRange()/32;
+		if (u->getType().groundWeapon().damageAmount() > 0)
+		{
+			int range;
+			// Making sure we properly analyze the threat of melee units without adding range to ranged units
+			if (u->getType().groundWeapon().maxRange() < 32)
+			{
+				range = (u->getType().groundWeapon().maxRange() + 32) / 32;
+			}
+			else
+			{
+				range = (u->getType().groundWeapon().maxRange()) / 32;
+			}
 			// The + 1 is because we need to still check an additional tile
 			for (int x = u->getTilePosition().x - range; x <= u->getTilePosition().x + range + 1; x++)
 			{
 				for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
 				{
-					if ((u->getDistance(Position((x * 32), (y * 32))) <= (range*32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
+					if ((u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
 					{
 						threatArray[x][y] += u->getType().groundWeapon().damageAmount();
-					}				
+					}
 				}
 			}
+		}
+	}
+	// --------------------------------------------------------------------------------------------------------------------------------------------
+	// Territory Manager
+	// --------------------------------------------------------------------------------------------------------------------------------------------
+	if (BWTAhandling)
+	{
+		if (territory.size() < 1)
+		{
+			allyTerritory.push_back(BWTA::getRegion(playerStartingPosition));
+			territory = BWTA::getRegions();
+		}
+		// In each ally territory there are chokepoints to defend, find and store those chokepoints
+		if (allyTerritory.size() != currentSize && allyTerritory.size() > 0)
+		{
+			// For all regions
+			for (auto *region : territory)
+			{
+				bool merge = false;
+				// For each chokepoint
+				for (auto Chokepoint : region->getChokepoints())
+				{
+					// Check if every chokepoint is connected to an ally territory, in which case add this to our territory (connecting regions)
+					if (find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().first) != allyTerritory.end() || find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().second) != allyTerritory.end())
+					{
+						merge = true;
+					}
+					else
+					{
+						merge = false;
+						break;
+					}
+				}
+				if (merge == true)
+				{
+					allyTerritory.push_back(region);
+				}
+			}
+			defendHere.erase(defendHere.begin(), defendHere.end());
+			currentSize = allyTerritory.size();
+			Broodwar << allyTerritory.size() << endl;
+			// For each region that is ally territory
+			for (auto *region : allyTerritory)
+			{
+				// For each chokepoint of each ally region				
+				for (auto Chokepoint : region->getChokepoints())
+				{
+					// Check if both territories are ally
+					if (find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().first) != allyTerritory.end() && find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().second) != allyTerritory.end())
+					{
+						// If both are ally, do nothing (we don't need to defend two ally regions
+					}
+					else
+					{
+						defendHere.push_back(Chokepoint->getCenter());
+					}
+				}
+			}
+		}
+		// Draw territory boundaries
+		for (auto position : defendHere)
+		{
+			Broodwar->drawCircleMap(position, 80, Colors::Green);
 		}
 	}
 
 	// BWTA draw
 	if (analyzed)
-		drawTerrainData();
+		//drawTerrainData();
 
-	// Only do this loop once if map analysis done
-	if (analysis_just_finished)
-	{
-		//Broodwar << "Finished analyzing map." << std::endl;
-		analysis_just_finished = false;
-
-		// --------------------------------------------------------------------------------------------------------------------------------------------
-		// Base Locations
-		// --------------------------------------------------------------------------------------------------------------------------------------------
-
-		// Find player starting position and tile position		
-		BaseLocation* playerStartingLocation = getStartLocation(Broodwar->self());
-		playerStartingPosition = playerStartingLocation->getPosition();
-		playerStartingTilePosition = playerStartingLocation->getTilePosition();
-
-		// Find all start locations
-		set<BWTA::BaseLocation*> startLocations = BWTA::getStartLocations();
-		for (set<BWTA::BaseLocation*>::iterator itr = startLocations.begin(); itr != startLocations.end(); itr++)
+		// Only do this loop once if map analysis done
+		if (analysis_just_finished)
 		{
-			startingLocationPositions.push_back((*itr)->getPosition());
-			startingLocationTilePositions.push_back((*itr)->getTilePosition());
-		}
+			analysis_just_finished = false;
 
-		// Find base locations, find positions and tilepositions of each base location, put those in a vector for easier use
-		std::set<BWTA::BaseLocation*> bases = BWTA::getBaseLocations();
-		for (std::set<BWTA::BaseLocation*>::iterator itr = bases.begin(); itr != bases.end(); itr++)
-		{
-			if (!(*itr)->isIsland())
+			// --------------------------------------------------------------------------------------------------------------------------------------------
+			// Base Locations
+			// --------------------------------------------------------------------------------------------------------------------------------------------
+
+			// Find player starting position and tile position		
+			BaseLocation* playerStartingLocation = getStartLocation(Broodwar->self());
+			playerStartingPosition = playerStartingLocation->getPosition();
+			playerStartingTilePosition = playerStartingLocation->getTilePosition();
+
+			// Find all start locations
+			for (BaseLocation* start : getStartLocations())
 			{
-				// Get base positions and tile positions, store in vectors
-				basePositions.push_back((*itr)->getPosition());
-				baseTilePositions.push_back((*itr)->getTilePosition());
-
-				// Get closest locations to player starting tile position
-				baseDistances.push_back(BWTA::getGroundDistance(playerStartingTilePosition, (*itr)->getTilePosition()));
-				baseDistancesBuffer.push_back(BWTA::getGroundDistance(playerStartingTilePosition, (*itr)->getTilePosition()));
-			}
-		}
-
-		// Find nearest bases, move to vector for easier use (TESTING ONLY HALF THE BASES, WANT ENEMY EXPANSIONS SEPARATE)
-		for (int i = 0; i < ((int)baseDistances.size() / (int)(Broodwar->getPlayers().size() - 1)); i++)
-		{
-			nearestBases.push_back(*min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
-			furthestBases.push_back(*max_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
-			baseDistancesBuffer.erase(min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
-			baseDistancesBuffer.erase(max_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
-
-			// Reorganize base positions and tile positions into ascending order of distance for expansions
-			nearestBasePositions.push_back(basePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i)) - baseDistances.begin())));
-			nearestBaseTilePositions.push_back(baseTilePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i))) - baseDistances.begin()));
-			nearestBaseTilePositionsBuffer.push_back(baseTilePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i))) - baseDistances.begin()));
-
-			// Reorganize base positions and tile positions into descending order of distance for enemy expansions  (IMPLEMENTING)
-			// furthestBasePositions.push_back()
-		}
-
-		// Check each base tile position, if they overlap, erase one
-		for (int i = 0; i <= (int)nearestBaseTilePositions.size() - 2; i++)
-		{
-			if (abs(nearestBaseTilePositions.at(i).x - nearestBaseTilePositions.at(i + 1).x) <= 10 && abs(nearestBaseTilePositions.at(i).y - nearestBaseTilePositions.at(i + 1).y) <= 10)
-			{
-				nearestBaseTilePositions.erase(nearestBaseTilePositions.begin() + i);
-				nearestBaseTilePositionsBuffer.erase(nearestBaseTilePositionsBuffer.begin() + i);
-			}
-		}
-
-		// Erase starting locations from base positions for better scouting/expanding utility
-		nextExpansion.push_back(nearestBaseTilePositions.at(0));
-		activeExpansion.push_back(nearestBaseTilePositions.at(0));
-		nearestBasePositions.erase(nearestBasePositions.begin());
-		startingLocationPositions.erase(find(startingLocationPositions.begin(), startingLocationPositions.end(), playerStartingPosition));
-		startingLocationTilePositions.erase(find(startingLocationTilePositions.begin(), startingLocationTilePositions.end(), playerStartingTilePosition));
-
-		// For each expansion
-		for (int i = 0; i <= (int)nearestBaseTilePositions.size() - 2; i++)
-		{
-			nearestBaseTilePositionsBuffer.erase(find(nearestBaseTilePositionsBuffer.begin(), nearestBaseTilePositionsBuffer.end(), nextExpansion.at(i)));
-			//Look at remaining base locations, closest one is next expansion
-			for (int j = 0; j <= (int)nearestBaseTilePositionsBuffer.size() - 2; j++)
-			{
-				double rawDistance = getGroundDistance(nextExpansion.at(i), nearestBaseTilePositionsBuffer.at(j));
-				expansionRawDistance.push_back(rawDistance);
+				startingLocationPositions.push_back(start->getPosition());
+				startingLocationTilePositions.push_back(start->getTilePosition());
 			}
 
-			nextExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionRawDistance.begin(), expansionRawDistance.end()) - expansionRawDistance.begin()));
-			activeExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionRawDistance.begin(), expansionRawDistance.end()) - expansionRawDistance.begin()));
-
-			// Based on the next expansion, get the distance to our starting location so we can see if any other expansions are closer
-			double expectedDistance = sqrt(pow((playerStartingTilePosition.x - nextExpansion.back().x), 2) + pow((playerStartingTilePosition.y - nextExpansion.back().y), 2));
-
-			// Measure distance to every possible expansion		
-			for (int j = 0; j <= (int)nearestBaseTilePositionsBuffer.size() - 2; j++)
+			// Find base locations, find positions and tilepositions of each base location, put those in a vector for easier use			
+			for (BaseLocation* base : getBaseLocations())
 			{
-				double startDistance = pow(playerStartingTilePosition.x - (nearestBaseTilePositionsBuffer.at(j)).x, 2)
-					+ pow(playerStartingTilePosition.y - (nearestBaseTilePositionsBuffer.at(j)).y, 2);
-				expansionStartDistance.push_back(sqrt(startDistance));
+				if (!base->isIsland())
+				{
+					// Get base positions and tile positions, store in vectors
+					basePositions.push_back(base->getPosition());
+					baseTilePositions.push_back(base->getTilePosition());
+
+					// Get closest locations to player starting tile position
+					baseDistances.push_back(BWTA::getGroundDistance(playerStartingTilePosition, base->getTilePosition()));
+					baseDistancesBuffer.push_back(BWTA::getGroundDistance(playerStartingTilePosition, base->getTilePosition()));
+				}
 			}
 
-			// Check to see if it's closer, if so, add that as next expansion
-			if ((*min_element(expansionStartDistance.begin(), expansionStartDistance.end()) * 2) <= expectedDistance)
+			// Find nearest bases, move to vector for easier use (TESTING ONLY HALF THE BASES, WANT ENEMY EXPANSIONS SEPARATE)
+			for (int i = 0; i < ((int)baseDistances.size() / (int)(Broodwar->getPlayers().size() - 1)); i++)
 			{
-				nextExpansion.pop_back();
-				nextExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionStartDistance.begin(), expansionStartDistance.end()) - expansionStartDistance.begin()));
-				activeExpansion.pop_back();
-				activeExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionStartDistance.begin(), expansionStartDistance.end()) - expansionStartDistance.begin()));
+				nearestBases.push_back(*min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));				
+				baseDistancesBuffer.erase(min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
+				baseDistancesBuffer.erase(max_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
+
+				// Reorganize base positions and tile positions into ascending order of distance for expansions
+				nearestBasePositions.push_back(basePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i)) - baseDistances.begin())));
+				nearestBaseTilePositions.push_back(baseTilePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i))) - baseDistances.begin()));
+				nearestBaseTilePositionsBuffer.push_back(baseTilePositions.at((find(baseDistances.begin(), baseDistances.end(), nearestBases.at(i))) - baseDistances.begin()));
+
+				// Reorganize base positions and tile positions into descending order of distance for enemy expansions  (IMPLEMENTING)
+				// furthestBasePositions.push_back()
 			}
-			expansionRawDistance.erase(expansionRawDistance.begin(), expansionRawDistance.end());
-			expansionStartDistance.erase(expansionStartDistance.begin(), expansionStartDistance.end());
-		}
 
-		// --------------------------------------------------------------------------------------------------------------------------------------------
-		// Chokepoint Locations
-		// --------------------------------------------------------------------------------------------------------------------------------------------
+			// Check each base tile position, if they overlap, erase one
+			for (int i = 0; i <= (int)nearestBaseTilePositions.size() - 2; i++)
+			{
+				if (abs(nearestBaseTilePositions.at(i).x - nearestBaseTilePositions.at(i + 1).x) <= 10 && abs(nearestBaseTilePositions.at(i).y - nearestBaseTilePositions.at(i + 1).y) <= 10)
+				{
+					nearestBaseTilePositions.erase(nearestBaseTilePositions.begin() + i);
+					nearestBaseTilePositionsBuffer.erase(nearestBaseTilePositionsBuffer.begin() + i);
+				}
+			}
 
-		// Find chokepoints, move to vector for easier use 
-		set<BWTA::Chokepoint*> myChokes = BWTA::getChokepoints();
-		for (std::set<BWTA::Chokepoint*>::iterator itr = myChokes.begin(); itr != myChokes.end(); itr++)
-		{			
-			chokepointPositions.push_back((*itr)->getCenter());
-			chokepointDistances.push_back(BWTA::getGroundDistance(playerStartingTilePosition, TilePosition(chokepointPositions.back())));
-			chokepointDistancesBuffer.push_back(BWTA::getGroundDistance(playerStartingTilePosition, TilePosition(chokepointPositions.back())));			
+			// Erase starting locations from base positions for better scouting/expanding utility
+			nextExpansion.push_back(nearestBaseTilePositions.at(0));
+			activeExpansion.push_back(nearestBaseTilePositions.at(0));
+			nearestBasePositions.erase(nearestBasePositions.begin());
+			startingLocationPositions.erase(find(startingLocationPositions.begin(), startingLocationPositions.end(), playerStartingPosition));
+			startingLocationTilePositions.erase(find(startingLocationTilePositions.begin(), startingLocationTilePositions.end(), playerStartingTilePosition));
+
+			// For each expansion
+			for (int i = 0; i <= (int)nearestBaseTilePositions.size() - 2; i++)
+			{
+				nearestBaseTilePositionsBuffer.erase(find(nearestBaseTilePositionsBuffer.begin(), nearestBaseTilePositionsBuffer.end(), nextExpansion.at(i)));
+				//Look at remaining base locations, closest one is next expansion
+				for (int j = 0; j <= (int)nearestBaseTilePositionsBuffer.size() - 2; j++)
+				{
+					double rawDistance = getGroundDistance(nextExpansion.at(i), nearestBaseTilePositionsBuffer.at(j));
+					expansionRawDistance.push_back(rawDistance);
+				}
+
+				nextExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionRawDistance.begin(), expansionRawDistance.end()) - expansionRawDistance.begin()));
+				activeExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionRawDistance.begin(), expansionRawDistance.end()) - expansionRawDistance.begin()));
+
+				// Based on the next expansion, get the distance to our starting location so we can see if any other expansions are closer
+				double expectedDistance = sqrt(pow((playerStartingTilePosition.x - nextExpansion.back().x), 2) + pow((playerStartingTilePosition.y - nextExpansion.back().y), 2));
+
+				// Measure distance to every possible expansion		
+				for (int j = 0; j <= (int)nearestBaseTilePositionsBuffer.size() - 2; j++)
+				{
+					double startDistance = pow(playerStartingTilePosition.x - (nearestBaseTilePositionsBuffer.at(j)).x, 2)
+						+ pow(playerStartingTilePosition.y - (nearestBaseTilePositionsBuffer.at(j)).y, 2);
+					expansionStartDistance.push_back(sqrt(startDistance));
+				}
+
+				// Check to see if it's closer, if so, add that as next expansion
+				if ((*min_element(expansionStartDistance.begin(), expansionStartDistance.end()) * 2) <= expectedDistance)
+				{
+					nextExpansion.pop_back();
+					nextExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionStartDistance.begin(), expansionStartDistance.end()) - expansionStartDistance.begin()));
+					activeExpansion.pop_back();
+					activeExpansion.push_back(nearestBaseTilePositionsBuffer.at(min_element(expansionStartDistance.begin(), expansionStartDistance.end()) - expansionStartDistance.begin()));
+				}
+				expansionRawDistance.erase(expansionRawDistance.begin(), expansionRawDistance.end());
+				expansionStartDistance.erase(expansionStartDistance.begin(), expansionStartDistance.end());
+			}
+			BWTAhandling = true;
 		}
-		// Find nearest chokepoints, move to vector for easier use
-		for (int i = 0; i <= (int)chokepointDistances.size() - 1; i++)
-		{
-			lowestChokepointDistance.push_back(*std::min_element(chokepointDistancesBuffer.begin(), chokepointDistancesBuffer.end()));
-			chokepointDistancesBuffer.erase(std::min_element(chokepointDistancesBuffer.begin(), chokepointDistancesBuffer.end()));
-			// Reorganize chokepoint positions and tile positions into ascending order of distance
-			nearestChokepointPosition.push_back(chokepointPositions.at((find(chokepointDistances.begin(), chokepointDistances.end(), lowestChokepointDistance.at(i)) - chokepointDistances.begin())));
-		}
-		BWTAhandling = true;
-	}
 	if (BWTAhandling)
-	{
-		for (int i = 0; i <= (int)nearestChokepointPosition.size() - 1; i++)
-		{
-			Broodwar->drawCircleMap(nearestChokepointPosition.at(i), 100, Colors::White);
-		}
+	{		
 		for (int i = 0; i <= (int)activeExpansion.size() - 1; i++)
 		{
-			Broodwar->drawTextMap(activeExpansion.at(i).x * 32, activeExpansion.at(i).y * 32, "Base %d", i, Colors::White);
+			//Broodwar->drawTextMap(activeExpansion.at(i).x * 32, activeExpansion.at(i).y * 32, "Base %d", i, Colors::White);
 		}
-
-		Broodwar->drawTextMap(enemyStartingPosition, "Starting Position");
-		// Holding position, average between all chokepoints
-		/*int xC = 0;
-		int yC = 0;
-		set <Chokepoint*> getRegionChokes = getRegion(furthestNexus)->getChokepoints();
-		for (set <Chokepoint*>::iterator itr = getRegionChokes.begin(); itr != getRegionChokes.end(); itr++)
-		{
-		xC = xC + (*itr)->getCenter().x;
-		yC = yC + (*itr)->getCenter().y;
-		}
-		holdingPosition.x = xC / getRegionChokes.size();
-		holdingPosition.y = yC / getRegionChokes.size();
-		Broodwar->drawTextMap(furthestNexus.x *32, furthestNexus.y * 32 + 10, "Defend Point");*/
-		//holdingPosition = Broodwar->getRegionAt(Position(32 * nextExpansion.at(1).x, 32 * nextExpansion.at(1).y))->getCenter();
-		if (Broodwar->self()->visibleUnitCount() > 0)
-		{
-			holdingPosition = Position(furthestNexus.x * 32, furthestNexus.y * 32);
-		}
-		Broodwar->drawCircleMap(holdingPosition, 200, Colors::Blue, false);
 		// Get build order based on enemy race(s)
 		getBuildOrder();
 	}
@@ -251,61 +287,49 @@ void CMProtoBot::onFrame()
 	// On-Screen Information
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 
-	//// Display some information about our buildings
-	//Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
-	//Broodwar->drawTextScreen(0, 10, "Nexus:");
-	//Broodwar->drawTextScreen(0, 20, "Pylon:");
-	//Broodwar->drawTextScreen(0, 30, "Gas:");
-	//Broodwar->drawTextScreen(0, 40, "Gate:");
-	//Broodwar->drawTextScreen(0, 50, "Forge:");
-	//Broodwar->drawTextScreen(0, 60, "Core:");
-	//Broodwar->drawTextScreen(0, 70, "RoboF:");
-	//Broodwar->drawTextScreen(0, 80, "Stargate:");
-	//Broodwar->drawTextScreen(0, 90, "Citadel:");
-	//Broodwar->drawTextScreen(0, 100, "Support:");
-	//Broodwar->drawTextScreen(0, 110, "Fleet:");
-	//Broodwar->drawTextScreen(0, 120, "Archives:");
+	// display some information about our buildings
+	Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
+	Broodwar->drawTextScreen(0, 10, "Nexus:");
+	Broodwar->drawTextScreen(0, 20, "Pylon:");
+	Broodwar->drawTextScreen(0, 30, "Gas:");
+	Broodwar->drawTextScreen(0, 40, "Gate:");
+	Broodwar->drawTextScreen(0, 50, "Forge:");
+	Broodwar->drawTextScreen(0, 60, "Core:");
+	Broodwar->drawTextScreen(0, 70, "RoboF:");
+	Broodwar->drawTextScreen(0, 80, "Stargate:");
+	Broodwar->drawTextScreen(0, 90, "Citadel:");
+	Broodwar->drawTextScreen(0, 100, "Support:");
+	Broodwar->drawTextScreen(0, 110, "Fleet:");
+	Broodwar->drawTextScreen(0, 120, "Archives:");
 
-	//// Counters
-	//Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
-	//Broodwar->drawTextScreen(50, 10, "%d  %d Inactive: %d", nexusCnt, nexusDesired, inactiveNexusCnt);
-	//Broodwar->drawTextScreen(50, 20, "%d  %d", pylonCnt, pylonDesired);
-	//Broodwar->drawTextScreen(50, 30, "%d  %d", gasCnt, gasDesired);
-	//Broodwar->drawTextScreen(50, 40, "%d  %d", gateCnt, gateDesired);
-	//Broodwar->drawTextScreen(50, 50, "%d  %d", forgeCnt, forgeDesired);
-	//Broodwar->drawTextScreen(50, 60, "%d  %d", coreCnt, coreDesired);
-	//Broodwar->drawTextScreen(50, 70, "%d  %d", roboCnt, roboDesired);
-	//Broodwar->drawTextScreen(50, 80, "%d  %d", stargateCnt, stargateDesired);
-	//Broodwar->drawTextScreen(50, 90, "%d  %d", citadelCnt, citadelDesired);
-	//Broodwar->drawTextScreen(50, 100, "%d  %d", supportBayCnt, supportBayDesired);
-	//Broodwar->drawTextScreen(50, 110, "%d  %d", fleetBeaconCnt, fleetBeaconDesired);
-	//Broodwar->drawTextScreen(50, 120, "%d  %d", archivesCnt, archivesDesired);
+	// Counters	
+	Broodwar->drawTextScreen(50, 10, "%d  %d Inactive: %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus), nexusDesired, inactiveNexusCnt);
+	Broodwar->drawTextScreen(50, 20, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired);
+	Broodwar->drawTextScreen(50, 30, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Assimilator), gasDesired);
+	Broodwar->drawTextScreen(50, 40, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Gateway), gateDesired);
+	Broodwar->drawTextScreen(50, 50, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Forge), forgeDesired);
+	Broodwar->drawTextScreen(50, 60, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Cybernetics_Core), coreDesired);
+	Broodwar->drawTextScreen(50, 70, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Facility), roboDesired);
+	Broodwar->drawTextScreen(50, 80, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Stargate), stargateDesired);
+	Broodwar->drawTextScreen(50, 90, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Citadel_of_Adun), citadelDesired);
+	Broodwar->drawTextScreen(50, 100, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Support_Bay), supportBayDesired);
+	Broodwar->drawTextScreen(50, 110, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Fleet_Beacon), fleetBeaconDesired);
+	Broodwar->drawTextScreen(50, 120, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Templar_Archives), archivesDesired);
 
 	// Display some information about our queued resources required for structure building
 	Broodwar->drawTextScreen(200, 0, "Queued Minerals: %d", queuedMineral);
 	Broodwar->drawTextScreen(200, 10, "Queued Gas: %d", queuedGas);
+	Broodwar->drawTextScreen(200, 20, "%d", Broodwar->getFrameCount());
 
-	//// Display some information about our units
-	//Broodwar->drawTextScreen(500, 20, "Unit Count");
-	//Broodwar->drawTextScreen(500, 30, "Probe Count: %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe));
-	//Broodwar->drawTextScreen(500, 40, "Zealot Count: %d", zealotCnt);
-	//Broodwar->drawTextScreen(500, 50, "Dragoon Count: %d", dragoonCnt);
-	//Broodwar->drawTextScreen(500, 60, "Carrier Count: %d", carrierCnt);
+	// Display some information about our units
+	Broodwar->drawTextScreen(500, 20, "Unit Count");
+	Broodwar->drawTextScreen(500, 30, "Scouting %d", scouting);
+	Broodwar->drawTextScreen(500, 40, "Ally Supply: %d", allySupply);
+	Broodwar->drawTextScreen(500, 50, "Enemy Supply: %d", enemySupply);
+	Broodwar->drawTextScreen(500, 60, "Ally Strength: %f", allyStrength);
+	Broodwar->drawTextScreen(500, 70, "Enemy Strength: %f", enemyStrength);
 
-	// Display some information for debuffing
-	Broodwar->drawTextScreen(500, 200, "Mineral ID Size: %d", mineralID.size());
-	Broodwar->drawTextScreen(500, 210, "Mineral Worker ID Size: %d", mineralWorkerID.size());
-	Broodwar->drawTextScreen(500, 220, "Gas ID Size: %d", assimilatorID.size());
-	Broodwar->drawTextScreen(500, 230, "Gas Worker ID Size: %d", gasWorkerID.size());
-	Broodwar->drawTextScreen(500, 240, "Combat Worker ID Size: %d", combatWorkerID.size());
-
-	//
-	Broodwar->drawTextScreen(500, 250, "Our Army: %d", allySupply);
-	Broodwar->drawTextScreen(500, 260, "Their Army: %d", enemySupply);	
-	Broodwar->drawTextScreen(500, 280, "Cnt: %d", enemyCountNearby);
-
-
-	// Display which worker is builder and scouter (slightly delayed)
+	// Display which worker is builder and scouter
 	if (Broodwar->getFrameCount() > 100)
 	{
 		Broodwar->drawTextMap(Broodwar->getUnit(buildingWorkerID.front())->getPosition(), "Builder", Colors::Yellow);
@@ -318,17 +342,31 @@ void CMProtoBot::onFrame()
 	Broodwar->drawBoxMap(buildTilePosition.x * 32, buildTilePosition.y * 32, expectedRightCorner.x * 32, expectedRightCorner.y * 32, Colors::Black, false);
 
 
+	// Scouting if we can't find enemy bases
+	if (enemyBasePositions.size() < 1 && Broodwar->getFrameCount() > 10000 && Broodwar->getFrameCount() > enemyScoutedLast + 1000 && Broodwar->getUnitsInRadius(playerStartingPosition, 50000, Filter::IsBuilding && Filter::IsEnemy).size() < 1)
+	{
+		enemyScoutedLast = Broodwar->getFrameCount();
+		Broodwar << "Can't find enemy, scouting out." << endl;
+		for (Position base : basePositions)
+		{
+			if (!Broodwar->isVisible(TilePosition(base)))
+			{
+				Broodwar->getClosestUnit(base, Filter::IsAlly && !Filter::IsBuilding && !Filter::IsWorker)->attack(base);
+			}
+		}
+	}
+
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 	// Structure Information
 	// --------------------------------------------------------------------------------------------------------------------------------------------
-
-
+	
 	// If a structure is required, make sure we notify production that we have an additional cost to not eat into
-	queuedMineral = std::max(0, (nexusDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus))*(UnitTypes::Protoss_Nexus.mineralPrice()))
+	queuedMineral = std::max(0, (nexusDesired + inactiveNexusCnt - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus))*(UnitTypes::Protoss_Nexus.mineralPrice()))
 		+ std::max(0, (pylonDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))*(UnitTypes::Protoss_Pylon.mineralPrice()))
 		+ std::max(0, (gasDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Assimilator))*(UnitTypes::Protoss_Assimilator.mineralPrice()))
 		+ std::max(0, (gateDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Gateway))*(UnitTypes::Protoss_Gateway.mineralPrice()))
 		+ std::max(0, (forgeDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Forge))*(UnitTypes::Protoss_Forge.mineralPrice()))
+		+ std::max(0, (batteryDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Shield_Battery))*(UnitTypes::Protoss_Shield_Battery.mineralPrice()))
 		+ std::max(0, (coreDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Cybernetics_Core))*(UnitTypes::Protoss_Cybernetics_Core.mineralPrice()))
 		+ std::max(0, (roboDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Facility))*(UnitTypes::Protoss_Robotics_Facility.mineralPrice()))
 		+ std::max(0, (stargateDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Stargate))*(UnitTypes::Protoss_Stargate.mineralPrice()))
@@ -351,8 +389,24 @@ void CMProtoBot::onFrame()
 		;
 
 	// --------------------------------------------------------------------------------------------------------------------------------------------
-	// Probe Manager
+	// Unit Manager
 	// --------------------------------------------------------------------------------------------------------------------------------------------
+	// Check all units for their current health, shields and damage capabilities to compare against enemy
+	allyStrength = 0.0;
+	for (auto u : Broodwar->self()->getUnits())
+	{
+		if (u->getType().groundWeapon().damageAmount() > 0 && !u->getType().isWorker() && u->getType() != UnitTypes::Protoss_Scarab && u->getType() != UnitTypes::Terran_Vulture_Spider_Mine)
+		{
+			if (u->getType() == UnitTypes::Protoss_Zealot)
+			{
+				allyStrength += (double(u->getShields() + u->getHitPoints()) / 100) + (double(u->getType().groundWeapon().damageAmount() * 2) / double(u->getType().groundWeapon().damageCooldown() + 1));
+			}
+			else
+			{
+				allyStrength += (double)(u->getHitPoints() + u->getShields()) / 100 + ((double)u->getType().groundWeapon().damageAmount() / ((double)u->getType().groundWeapon().damageCooldown() + 1.0));
+			}
+		}
+	}
 
 	// Prevent spamming by only running our onFrame once every number of latency frames.
 	// Latency frames are the number of frames before commands are processed.
@@ -360,8 +414,9 @@ void CMProtoBot::onFrame()
 		return;
 
 	// Iterate through all the units that we own
-	for (auto &u : Broodwar->self()->getUnits())
+	for (auto u : Broodwar->self()->getUnits())
 	{
+
 		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, loaded, not powered, stuck, not completed
 		if (!u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised()
 			|| u->isLoaded() || !u->isPowered() || u->isStuck() || !u->isCompleted())
@@ -369,7 +424,7 @@ void CMProtoBot::onFrame()
 
 		// Probe commands
 		if (u->getType() == UnitTypes::Protoss_Probe)
-		{			
+		{
 			// Assign the probe a task (mineral, gas)
 			assignProbe(u);
 
@@ -385,8 +440,7 @@ void CMProtoBot::onFrame()
 			}
 			// Builder commands
 			if (u->getID() == buildingWorkerID.front() && (!u->isConstructing() || !u->isMoving()))
-			{
-				builderPosition = u->getPosition();
+			{				
 				if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon) < pylonDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Pylon.mineralPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Pylon, u);
@@ -402,6 +456,10 @@ void CMProtoBot::onFrame()
 				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Forge) < forgeDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Forge.mineralPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Forge, u);
+				}
+				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Shield_Battery) < batteryDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Shield_Battery.mineralPrice())
+				{
+					buildingManager(UnitTypes::Protoss_Shield_Battery, u);
 				}
 				else if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Cybernetics_Core) < coreDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Cybernetics_Core.mineralPrice())
 				{
@@ -443,7 +501,7 @@ void CMProtoBot::onFrame()
 				{
 					for (int i = 0; i <= (int)nextExpansion.size() - 1; i++)
 					{
-						if (Broodwar->isBuildable(nextExpansion.at(i), true))
+						if (Broodwar->canBuildHere(nextExpansion.at(i), UnitTypes::Protoss_Nexus, u, false))
 						{
 							nexusManager(UnitTypes::Protoss_Nexus, u, nextExpansion.at(i));
 							break;
@@ -463,31 +521,47 @@ void CMProtoBot::onFrame()
 			{
 				if (Broodwar->self()->supplyUsed() >= 18)
 				{
-					for (int i = 0; i <= (int)startingLocationPositions.size() - 1; i++)
+					if (scouting == true && enemyBasePositions.size() > 0 && u->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() < 1)
 					{
-						if (Broodwar->isExplored(startingLocationTilePositions.at(i)) == false)
+						Position one = Position(enemyBasePositions.at(0).x - 192, enemyBasePositions.at(0).y - 192);
+						Position two = Position(enemyBasePositions.at(0).x + 192, enemyBasePositions.at(0).y - 192);
+						Position three = Position(enemyBasePositions.at(0).x + 192, enemyBasePositions.at(0).y + 192);
+						Position four = Position(enemyBasePositions.at(0).x - 192, enemyBasePositions.at(0).y + 192);
+						if (u->getDistance(enemyBasePositions.at(0)) < 96)
 						{
-							u->move(startingLocationPositions.at(i));
+							u->move(one);
+						}
+						if (u->getDistance(one) < 10)
+						{
+							u->move(two);
+						}
+						else if (u->getDistance(two) < 10)
+						{
+							u->move(three);
+						}
+						else if (u->getDistance(three) < 10)
+						{
+							u->move(four);
+						}
+						else if (u->getDistance(four) < 10)
+						{
+							u->move(one);
 						}
 					}
-					/*for (int i = 1; i <= (int)nextExpansion.size() - 1; i++)
+					else if (enemyBasePositions.size() < 1)
 					{
-						if (Broodwar->isExplored(nextExpansion.at(i).x + 2, nextExpansion.at(i).y + 2) == false)
+						for (int i = 0; i <= (int)startingLocationPositions.size() - 1; i++)
 						{
-							u->move(Position(32 * (nextExpansion.at(i).x), 32 * (nextExpansion.at(i).y + 4)), true);
-							u->move(Position(32 * (nextExpansion.at(i).x + 4), 32 * (nextExpansion.at(i).y + 4)), true);
-							break;
+							if (Broodwar->isExplored(startingLocationTilePositions.at(i)) == false)
+							{
+								u->move(startingLocationPositions.at(i));
+								break;
+							}
 						}
-					}*/
-				}
-			}
-			if (enemyBasePositions.size() < 1 && Broodwar->getFrameCount() > 15000)
-			{
-				for (int i = 0; i <= basePositions.size() - 1; i++)
-				{
-					if (!Broodwar->isVisible(TilePosition(basePositions.at(i))))
+					}
+					else
 					{
-						Broodwar->getClosestUnit(basePositions.at(i), Filter::IsAlly && !Filter::IsBuilding)->attack(basePositions.at(i));
+						scouting = false;
 					}
 				}
 			}
@@ -500,21 +574,21 @@ void CMProtoBot::onFrame()
 		// If it's a Nexus and we need probes, train the probes
 		else if (u->getType().isResourceDepot())
 		{
-			if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral) && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < (int)(mineralID.size() * 2 + assimilatorID.size() * 3))
+			if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral) && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < (int)((mineralID.size() * 2.5 + assimilatorID.size() * 3)))
 			{
 				u->train(UnitTypes::Protoss_Probe);
 				continue;
 			}
 			// If there are no pylons around it, build one so we can make cannons
-			if (u->getUnitsInRadius(100, Filter::GetType == UnitTypes::Enum::Protoss_Pylon).size() == 0 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 1)
+			if (u->getUnitsInRadius(128, Filter::GetType == UnitTypes::Enum::Protoss_Pylon).size() == 0 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 1)
 			{
-				pylonNeeded = getBuildLocationNear(UnitTypes::Protoss_Pylon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
+				TilePosition pylonNeeded = getBuildLocationNear(UnitTypes::Protoss_Pylon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
 				Broodwar->getUnit(buildingWorkerID.front())->build(UnitTypes::Protoss_Pylon, pylonNeeded);
 			}
 			// If not at least two cannons, build two cannons, good for anti harass and detection
-			if (u->getUnitsInRadius(500, Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon).size() < 2 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 1)
+			if (u->getUnitsInRadius(640, Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon).size() < 2 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 3)
 			{
-				cannonNeeded = getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
+				TilePosition cannonNeeded = getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, Broodwar->getUnit(buildingWorkerID.front()), u->getTilePosition());
 				Broodwar->getUnit(buildingWorkerID.front())->build(UnitTypes::Protoss_Photon_Cannon, cannonNeeded);
 			}
 			// If there are enemies nearby, request help
@@ -530,7 +604,7 @@ void CMProtoBot::onFrame()
 		}
 
 		// --------------------------------------------------------------------------------------------------------------------------------------------
-		// Unit Manager
+		// Unit Micro Manager
 		// --------------------------------------------------------------------------------------------------------------------------------------------
 
 		if (u->getType() == UnitTypes::Protoss_Dragoon || u->getType() == UnitTypes::Protoss_Zealot || u->getType() == UnitTypes::Protoss_Dark_Templar)
@@ -539,7 +613,15 @@ void CMProtoBot::onFrame()
 		}
 		if (u->getType() == UnitTypes::Protoss_Shuttle)
 		{
+			/*if (harassShuttleID.size() < 1 || find(harassShuttleID.begin(), harassShuttleID.end(), u->getID()) != harassShuttleID.end())
+			{
+			shuttleHarass(u);
+			harassShuttleID.push_back(u->getID());
+			}
+			else
+			{*/
 			shuttleManager(u);
+			//	}
 		}
 		if (u->getType() == UnitTypes::Protoss_Observer)
 		{
@@ -553,10 +635,7 @@ void CMProtoBot::onFrame()
 		{
 			carrierManager(u);
 		}
-
-		// Calculating my current army supply
-		allySupply = Broodwar->self()->allUnitCount() - Broodwar->self()->allUnitCount(UnitTypes::Buildings) - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe);
-	}	
+	}
 }
 
 void CMProtoBot::onSendText(std::string text)
@@ -618,11 +697,8 @@ void CMProtoBot::onUnitCreate(BWAPI::Unit unit)
 	{
 		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus)
 		{
-			Position nexusPosition = unit->getPosition();
-			if (getGroundDistance(unit->getTilePosition(), enemyStartingTilePosition) < getGroundDistance(furthestNexus, enemyStartingTilePosition))
-			{
-				furthestNexus = unit->getTilePosition();
-			}
+			allyTerritory.push_back(BWTA::getRegion(unit->getPosition()));
+			Position nexusPosition = unit->getPosition();			
 			// When Nexus is placed, get IDs of gas and minerals around Nexus so we can train probes ahead of time
 			for (auto u : Broodwar->neutral()->getUnits())
 			{
@@ -641,10 +717,10 @@ void CMProtoBot::onUnitCreate(BWAPI::Unit unit)
 
 void CMProtoBot::onUnitDestroy(BWAPI::Unit unit)
 {
-	if (unit->getPlayer() == Broodwar->self() && !unit->isConstructing())
+	if (unit->getPlayer() == Broodwar->self())
 	{
 		// Allied ground units
-		if (unit->getType() = UnitTypes::Enum::Protoss_Probe)
+		if (unit->getType() == UnitTypes::Enum::Protoss_Probe)
 		{
 			if (unit->getID() == scoutWorkerID.front()){
 				scoutWorkerID.pop_back();
@@ -665,12 +741,25 @@ void CMProtoBot::onUnitDestroy(BWAPI::Unit unit)
 				combatWorkerID.erase(find(combatWorkerID.begin(), combatWorkerID.end(), unit->getID()));
 			}
 		}
-	}
-	if (unit->getPlayer() == Broodwar->enemy())
-	{
+		else if (unit->getType() == UnitTypes::Enum::Protoss_Reaver && find(reaverID.begin(), reaverID.end(), unit->getID()) != reaverID.end())
+		{
+			reaverID.erase(find(reaverID.begin(), reaverID.end(), unit->getID()));
+		}
+		else if (unit->getType() == UnitTypes::Enum::Protoss_Shuttle && find(shuttleID.begin(), shuttleID.end(), unit->getID()) != shuttleID.end())
+		{
+			shuttleID.erase(find(shuttleID.begin(), shuttleID.end(), unit->getID()));
+		}
 		if (!unit->getType().isWorker())
 		{
-			enemySupply = enemySupply - unit->getType().supplyRequired();
+			allySupply = allySupply - unit->getType().supplyRequired();
+		}
+	}
+	else if (unit->getPlayer() == Broodwar->enemy())
+	{
+		if (!unit->getType().isWorker() && unit->getType().groundWeapon().damageAmount() > 0 && unit->getType() != UnitTypes::Protoss_Scarab && unit->getType() != UnitTypes::Terran_Vulture_Spider_Mine)
+		{
+			enemySupply -= unit->getType().supplyRequired();
+			enemyStrength -= (double)(unit->getType().maxHitPoints() + unit->getType().maxShields()) / 100 + ((double)unit->getType().groundWeapon().damageAmount() / ((double)unit->getType().groundWeapon().damageCooldown() + 1.0));
 		}
 	}
 	// If a mineral field died that we are keeping track of, remove the mineral from the vector and the corresponding worker(s) that were tasked on it
@@ -719,8 +808,7 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 		// If it's the start of the game, gather the IDs of the gas and minerals around the Nexus, otherwise this is done during the Unit Create function
 		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus && Broodwar->getFrameCount() < 100)
 		{
-			Position nexusPosition = unit->getPosition();
-			furthestNexus = unit->getTilePosition();
+			Position nexusPosition = unit->getPosition();			
 			for (auto u : Broodwar->neutral()->getUnits())
 			{
 				if (u->getType() == UnitTypes::Resource_Vespene_Geyser && u->getDistance(nexusPosition) <= 400)
@@ -737,28 +825,63 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 		{
 			assimilatorID.push_back(unit->getID());
 		}
+		if (!unit->getType().isWorker())
+		{
+			allySupply = allySupply + unit->getType().supplyRequired();
+		}
 	}
 
 	// If unit not owned by player
 	if (unit->getPlayer()->getID() == Broodwar->enemy()->getID())
 	{
-		if (unit->getType().isResourceDepot())
+		// If scouting
+		if (scouting)
 		{
-			Broodwar << "Enemy Resource Depot Found!" << endl;
+			if (unit->getType() == UnitTypes::Enum::Zerg_Zergling || (unit->getType() == UnitTypes::Enum::Zerg_Spawning_Pool && unit->isCompleted()))
+			{
+				Broodwar << "Early Pool Pressure" << endl;
+				fourPool = true;
+			}
+			if (unit->getType() == UnitTypes::Enum::Protoss_Gateway && unit->isCompleted())
+			{
+				enemyGate++;
+				if (enemyGate >= 2)
+				{
+					Broodwar << "Early 2 Gate Pressure" << endl;
+					twoGate = true;
+				}
+			}
+			if (unit->getType() == UnitTypes::Enum::Terran_Barracks && unit->isCompleted())
+			{
+				enemyRax++;
+				if (enemyRax >= 2)
+				{
+					Broodwar << "Early 2 Rax Pressure" << endl;
+					twoRax = true;
+				}
+			}
+		}
+		if (unit->getType().isBuilding())
+		{
 			if (enemyBasePositions.size() == 0)
 			{
-				enemyStartingPosition = unit->getPosition();
-				enemyStartingTilePosition = TilePosition(enemyStartingPosition);
+				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
+				enemyStartingPosition = Position(enemyStartingTilePosition.x * 32, enemyStartingTilePosition.y * 32);
+				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
 			}
+		}
+		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) == enemyBasePositions.end())
+		{
 			enemyBasePositions.push_back(unit->getPosition());
 		}
-		else if (!unit->getType().isWorker())
+		if (!unit->getType().isWorker() && unit->getType().groundWeapon().damageAmount() > 0 && unit->getType() != UnitTypes::Protoss_Scarab && unit->getType() != UnitTypes::Terran_Vulture_Spider_Mine)
 		{
-			enemySupply = enemySupply + unit->getType().supplyRequired();
+			enemySupply += unit->getType().supplyRequired();
+			enemyStrength += (double)(unit->getType().maxHitPoints() + unit->getType().maxShields()) / 100 + ((double)unit->getType().groundWeapon().damageAmount() / ((double)unit->getType().groundWeapon().damageCooldown() + 1.0));
 		}
-		if (unit->getType().isBuilding() && enemyFound == false)
+		if (unit->getType() == UnitTypes::Terran_Bunker)
 		{
-			enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
+			enemyStrength += 1.6;
 		}
 	}
 }

@@ -4,4 +4,5 @@
 
 using namespace BWAPI;
 
+extern Position playerStartingPosition;
 Unit targetPriority(Unit unit);

@@ -1,12 +1,14 @@
 // Include API files
 #include <BWAPI.h>
 #include <BWTA.h>
+#include "src\bwem.h"
 
 // Include other source files
 #include "BuildingManager.h"
 #include "BuildOrder.h"
 #include "ProbeManager.h"
 #include "UnitManager.h"
+#include "StrategyManager.h"
 
 // Include standard libraries that are needed
 #include <vector>
@@ -18,17 +20,13 @@
 #include <fstream>
 #include <BWTA.h>
 
+// Namespaces
 using namespace BWAPI;
 using namespace std;
 using namespace BWTA;
 
 bool BWTAhandling = false;
-bool scouting = false;
-bool enemyFound = false;
-
-// Unit Variables
-Position builderPosition;
-Position scouterPosition;
+bool scouting = true;
 
 // Building Variables
 int queuedMineral, queuedGas = 0;
@@ -37,6 +35,7 @@ int pylonDesired = 0;
 int	gasDesired = 0;
 int gateDesired = 0;
 int forgeDesired = 0;
+int batteryDesired = 0;
 int coreDesired = 0;
 
 // Advanced Building Variables
@@ -51,58 +50,68 @@ int tribunalDesired = 0;
 
 // Resource IDs
 vector<int> mineralID;
-vector<TilePosition> gasTilePosition;
 vector<int> assimilatorID;
+vector<TilePosition> gasTilePosition;
 
 // Probe ID and their assignments
 vector<int> probeID;
 vector<int> deadProbeID;
 vector<int> gasWorkerID;
 vector<int> mineralWorkerID;
+vector<int> additionalMineralWorkerID;
 vector<int> buildingWorkerID;
 vector<int> scoutWorkerID;
 vector<int> combatWorkerID;
 
+// Shuttle ID and Reaver ID pairing
+vector<int> shuttleID;
+vector<int> harassShuttleID;
+vector<int> reaverID;
+
 // Enemy unit tracking
-int enemySupply = 0;
 int enemyCountNearby = 0;
+int defendingUnitCount = 0;
+int enemyScoutedLast = 0;
 
-// Threat array
+// Enemy build tracking
+bool fourPool, twoGate, twoRax = false;
+int enemyGate, enemyRax = 0;
+
+// Threat calculations
+double allyStrength = 0.0, enemyStrength = 0.0;
 int threatArray[256][256] = { { 0 } };
+int allySupply = 0, enemySupply = 0;
 
-// Friendly unit tracking
-int allySupply = 0;
-
-// Base positions and tilepositions, used to find closest bases
-TilePosition buildTilePosition; 
-Position buildPosition;
+// Building Manager Variables
 UnitType currentBuilding;
+TilePosition buildTilePosition;
 
-// Holding positions
-Position holdingPosition;
-Position zealotPosition;
-TilePosition furthestNexus;
+// Territory Variables
+int currentSize = 0;
+vector<Position> defendHere;
+set <BWTA::Region*> territory;
+vector<BWTA::Region*> allyTerritory;
+vector<BWTA::Region> enemyTerritory;
+
+// --------------------------------------------
+// Variables that are unsorted: 
+// --------------------------------------------
 
 // Base positions
-vector<int> nexusDistances;
+BWEM::CPPath path;
 vector<Position> basePositions;
 vector<TilePosition> baseTilePositions;
 vector<double> baseDistances;
 vector<double> baseDistancesBuffer;
 vector<double> expansionStartDistance;
 vector<double> expansionRawDistance;
-
 vector<double> nearestBases;
-vector<double> furthestBases;
-
 vector<Position>nearestBasePositions;
 vector<TilePosition>nearestBaseTilePositions;
 vector<TilePosition>nearestBaseTilePositionsBuffer;
-
 vector<Position>enemyBasePositions;
 Position enemyStartingPosition;
 TilePosition enemyStartingTilePosition;
-
 vector<TilePosition> nextExpansion;
 vector<TilePosition> activeExpansion;
 
@@ -112,23 +121,6 @@ TilePosition playerStartingTilePosition;
 vector<Position>startingLocationPositions;
 vector<TilePosition>startingLocationTilePositions;
 
-// Chokepoints
-vector<Position>chokepointPositions;
-vector<TilePosition>chokepointTilePositions;
-vector<double> chokepointDistances;
-vector<double> lowestChokepointDistance;
-vector<double> chokepointDistancesBuffer;
-vector<Position> nearestChokepointPosition;
+//Expanding
+int firstAttack = 0;
 
-// Targeting
-Position currentTargetPosition;
-Position currentPosition;
-Position chokepointWrap;
-Position nextPosition;
-Position fleePosition;
-
-// Defensive building
-TilePosition pylonNeeded;
-TilePosition cannonNeeded;
-
-// Variables that are unsorted below this line

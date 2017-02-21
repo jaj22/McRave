@@ -10,6 +10,7 @@ extern int pylonDesired;
 extern int gasDesired;
 extern int gateDesired;
 extern int forgeDesired;
+extern int batteryDesired;
 extern int coreDesired;
 
 // External advanced building variables
@@ -26,6 +27,13 @@ extern int tribunalDesired;
 extern vector<TilePosition>gasTilePosition;
 extern vector<int> mineralID, mineralWorkerID;
 extern vector<TilePosition> nextExpansion;
+
+// External expansion paramaters
+extern int firstAttack;
+
+// External enemy build tracking
+extern bool fourPool;
+extern bool twoGate, twoRax;
 
 // Function declaration
 void getBuildOrder();
