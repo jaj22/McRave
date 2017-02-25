@@ -1,6 +1,7 @@
 // CMProtoBot is made by Christian McCrave
+// Twitch nickname McRave \o/
 // For any questions, email christianmccrave@gmail.com
-// Bot started 01/03/2017 - currently in Alpha
+// Bot started 01/03/2017
 
 // Include header with all includes in them
 #include "Header.h"
@@ -61,17 +62,22 @@ void CMProtoBot::onFrame()
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 	// Threat Manager
 	// --------------------------------------------------------------------------------------------------------------------------------------------
+	// For each tile, draw the current threat onto the tile
 	for (int x = 0; x <= Broodwar->mapWidth(); x++)
 	{
 		for (int y = 0; y <= Broodwar->mapHeight(); y++)
 		{
 			if (threatArray[x][y] > 0)
 			{
-				Broodwar->drawTextMap(x * 32, y * 32, "%d", threatArray[x][y]);
+				Broodwar->drawTextMap(x * 32, y * 32, "%.2f", threatArray[x][y]);				
+			}
+			if (Broodwar->isVisible(x, y))
+			{
 				threatArray[x][y] = 0;
 			}
 		}
 	}
+	// For each enemy unit, add its attack value to each tile it is in range of
 	for (auto u : Broodwar->enemy()->getUnits())
 	{
 		if (u->getType().groundWeapon().damageAmount() > 0)
@@ -80,7 +86,7 @@ void CMProtoBot::onFrame()
 			// Making sure we properly analyze the threat of melee units without adding range to ranged units
 			if (u->getType().groundWeapon().maxRange() < 32)
 			{
-				range = (u->getType().groundWeapon().maxRange() + 32) / 32;
+				range = (u->getType().groundWeapon().maxRange() + 64) / 32;
 			}
 			else
 			{
@@ -91,9 +97,9 @@ void CMProtoBot::onFrame()
 			{
 				for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
 				{
-					if ((u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
+					if (Broodwar->isVisible(x,y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
 					{
-						threatArray[x][y] += u->getType().groundWeapon().damageAmount();
+						threatArray[x][y] += unitGetStrength(u);
 					}
 				}
 			}
@@ -137,7 +143,6 @@ void CMProtoBot::onFrame()
 			}
 			defendHere.erase(defendHere.begin(), defendHere.end());
 			currentSize = allyTerritory.size();
-			Broodwar << allyTerritory.size() << endl;
 			// For each region that is ally territory
 			for (auto *region : allyTerritory)
 			{
@@ -206,7 +211,7 @@ void CMProtoBot::onFrame()
 			// Find nearest bases, move to vector for easier use (TESTING ONLY HALF THE BASES, WANT ENEMY EXPANSIONS SEPARATE)
 			for (int i = 0; i < ((int)baseDistances.size() / (int)(Broodwar->getPlayers().size() - 1)); i++)
 			{
-				nearestBases.push_back(*min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));				
+				nearestBases.push_back(*min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
 				baseDistancesBuffer.erase(min_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
 				baseDistancesBuffer.erase(max_element(baseDistancesBuffer.begin(), baseDistancesBuffer.end()));
 
@@ -275,7 +280,7 @@ void CMProtoBot::onFrame()
 			BWTAhandling = true;
 		}
 	if (BWTAhandling)
-	{		
+	{
 		for (int i = 0; i <= (int)activeExpansion.size() - 1; i++)
 		{
 			//Broodwar->drawTextMap(activeExpansion.at(i).x * 32, activeExpansion.at(i).y * 32, "Base %d", i, Colors::White);
@@ -326,8 +331,8 @@ void CMProtoBot::onFrame()
 	Broodwar->drawTextScreen(500, 30, "Scouting %d", scouting);
 	Broodwar->drawTextScreen(500, 40, "Ally Supply: %d", allySupply);
 	Broodwar->drawTextScreen(500, 50, "Enemy Supply: %d", enemySupply);
-	Broodwar->drawTextScreen(500, 60, "Ally Strength: %f", allyStrength);
-	Broodwar->drawTextScreen(500, 70, "Enemy Strength: %f", enemyStrength);
+	Broodwar->drawTextScreen(500, 60, "Ally Strength: %.2f", allyStrength);
+	Broodwar->drawTextScreen(500, 70, "Enemy Strength: %.2f", enemyStrength);
 
 	// Display which worker is builder and scouter
 	if (Broodwar->getFrameCount() > 100)
@@ -340,7 +345,6 @@ void CMProtoBot::onFrame()
 	expectedRightCorner.x = buildTilePosition.x + currentBuilding.tileWidth();
 	expectedRightCorner.y = buildTilePosition.y + currentBuilding.tileHeight();
 	Broodwar->drawBoxMap(buildTilePosition.x * 32, buildTilePosition.y * 32, expectedRightCorner.x * 32, expectedRightCorner.y * 32, Colors::Black, false);
-
 
 	// Scouting if we can't find enemy bases
 	if (enemyBasePositions.size() < 1 && Broodwar->getFrameCount() > 10000 && Broodwar->getFrameCount() > enemyScoutedLast + 1000 && Broodwar->getUnitsInRadius(playerStartingPosition, 50000, Filter::IsBuilding && Filter::IsEnemy).size() < 1)
@@ -359,7 +363,7 @@ void CMProtoBot::onFrame()
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 	// Structure Information
 	// --------------------------------------------------------------------------------------------------------------------------------------------
-	
+
 	// If a structure is required, make sure we notify production that we have an additional cost to not eat into
 	queuedMineral = std::max(0, (nexusDesired + inactiveNexusCnt - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus))*(UnitTypes::Protoss_Nexus.mineralPrice()))
 		+ std::max(0, (pylonDesired - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))*(UnitTypes::Protoss_Pylon.mineralPrice()))
@@ -395,17 +399,7 @@ void CMProtoBot::onFrame()
 	allyStrength = 0.0;
 	for (auto u : Broodwar->self()->getUnits())
 	{
-		if (u->getType().groundWeapon().damageAmount() > 0 && !u->getType().isWorker() && u->getType() != UnitTypes::Protoss_Scarab && u->getType() != UnitTypes::Terran_Vulture_Spider_Mine)
-		{
-			if (u->getType() == UnitTypes::Protoss_Zealot)
-			{
-				allyStrength += (double(u->getShields() + u->getHitPoints()) / 100) + (double(u->getType().groundWeapon().damageAmount() * 2) / double(u->getType().groundWeapon().damageCooldown() + 1));
-			}
-			else
-			{
-				allyStrength += (double)(u->getHitPoints() + u->getShields()) / 100 + ((double)u->getType().groundWeapon().damageAmount() / ((double)u->getType().groundWeapon().damageCooldown() + 1.0));
-			}
-		}
+		allyStrength += unitGetStrength(u);
 	}
 
 	// Prevent spamming by only running our onFrame once every number of latency frames.
@@ -416,10 +410,9 @@ void CMProtoBot::onFrame()
 	// Iterate through all the units that we own
 	for (auto u : Broodwar->self()->getUnits())
 	{
-
 		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, loaded, not powered, stuck, not completed
 		if (!u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised()
-			|| u->isLoaded() || !u->isPowered() || u->isStuck() || !u->isCompleted())
+			|| u->isLoaded() || !u->isPowered() || /*u->isStuck() ||*/ !u->isCompleted())
 			continue;
 
 		// Probe commands
@@ -440,7 +433,7 @@ void CMProtoBot::onFrame()
 			}
 			// Builder commands
 			if (u->getID() == buildingWorkerID.front() && (!u->isConstructing() || !u->isMoving()))
-			{				
+			{
 				if (Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon) < pylonDesired && Broodwar->self()->minerals() >= UnitTypes::Protoss_Pylon.mineralPrice())
 				{
 					buildingManager(UnitTypes::Protoss_Pylon, u);
@@ -698,7 +691,7 @@ void CMProtoBot::onUnitCreate(BWAPI::Unit unit)
 		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus)
 		{
 			allyTerritory.push_back(BWTA::getRegion(unit->getPosition()));
-			Position nexusPosition = unit->getPosition();			
+			Position nexusPosition = unit->getPosition();
 			// When Nexus is placed, get IDs of gas and minerals around Nexus so we can train probes ahead of time
 			for (auto u : Broodwar->neutral()->getUnits())
 			{
@@ -754,13 +747,15 @@ void CMProtoBot::onUnitDestroy(BWAPI::Unit unit)
 			allySupply = allySupply - unit->getType().supplyRequired();
 		}
 	}
+
 	else if (unit->getPlayer() == Broodwar->enemy())
 	{
-		if (!unit->getType().isWorker() && unit->getType().groundWeapon().damageAmount() > 0 && unit->getType() != UnitTypes::Protoss_Scarab && unit->getType() != UnitTypes::Terran_Vulture_Spider_Mine)
+		// Strength and Supply
+		if (!unit->getType().isWorker())
 		{
 			enemySupply -= unit->getType().supplyRequired();
-			enemyStrength -= (double)(unit->getType().maxHitPoints() + unit->getType().maxShields()) / 100 + ((double)unit->getType().groundWeapon().damageAmount() / ((double)unit->getType().groundWeapon().damageCooldown() + 1.0));
 		}
+		enemyStrength -= unitGetStrength(unit);
 	}
 	// If a mineral field died that we are keeping track of, remove the mineral from the vector and the corresponding worker(s) that were tasked on it
 	// Removing the workers means we can re-assign them to new tasks immediately where necessary
@@ -808,7 +803,7 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 		// If it's the start of the game, gather the IDs of the gas and minerals around the Nexus, otherwise this is done during the Unit Create function
 		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus && Broodwar->getFrameCount() < 100)
 		{
-			Position nexusPosition = unit->getPosition();			
+			Position nexusPosition = unit->getPosition();
 			for (auto u : Broodwar->neutral()->getUnits())
 			{
 				if (u->getType() == UnitTypes::Resource_Vespene_Geyser && u->getDistance(nexusPosition) <= 400)
@@ -833,7 +828,7 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 
 	// If unit not owned by player
 	if (unit->getPlayer()->getID() == Broodwar->enemy()->getID())
-	{
+	{		
 		// If scouting
 		if (scouting)
 		{
@@ -863,6 +858,8 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 		}
 		if (unit->getType().isBuilding())
 		{
+			storeEnemyBuilding(unit,enemyBuildings);
+			Broodwar << enemyBuildings.size() << endl;
 			if (enemyBasePositions.size() == 0)
 			{
 				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
@@ -874,17 +871,15 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 		{
 			enemyBasePositions.push_back(unit->getPosition());
 		}
-		if (!unit->getType().isWorker() && unit->getType().groundWeapon().damageAmount() > 0 && unit->getType() != UnitTypes::Protoss_Scarab && unit->getType() != UnitTypes::Terran_Vulture_Spider_Mine)
+		// Strength and Supply
+		if (!unit->getType().isWorker())
 		{
 			enemySupply += unit->getType().supplyRequired();
-			enemyStrength += (double)(unit->getType().maxHitPoints() + unit->getType().maxShields()) / 100 + ((double)unit->getType().groundWeapon().damageAmount() / ((double)unit->getType().groundWeapon().damageCooldown() + 1.0));
 		}
-		if (unit->getType() == UnitTypes::Terran_Bunker)
-		{
-			enemyStrength += 1.6;
-		}
+		enemyStrength += unitGetStrength(unit);
 	}
 }
+
 DWORD WINAPI AnalyzeThread()
 {
 	BWTA::analyze();

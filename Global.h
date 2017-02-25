@@ -8,7 +8,6 @@
 #include "BuildOrder.h"
 #include "ProbeManager.h"
 #include "UnitManager.h"
-#include "StrategyManager.h"
 
 // Include standard libraries that are needed
 #include <vector>
@@ -19,17 +18,20 @@
 #include <iterator>
 #include <fstream>
 #include <BWTA.h>
+#include <utility>
 
 // Namespaces
 using namespace BWAPI;
 using namespace std;
 using namespace BWTA;
 
+
 bool BWTAhandling = false;
 bool scouting = true;
 
 // Building Variables
-int queuedMineral, queuedGas = 0;
+int queuedMineral = 0, queuedGas = 0;
+int reservedMineral = 0, reservedGas = 0;
 int nexusDesired = 0, inactiveNexusCnt = 0;
 int pylonDesired = 0;
 int	gasDesired = 0;
@@ -72,6 +74,7 @@ vector<int> reaverID;
 int enemyCountNearby = 0;
 int defendingUnitCount = 0;
 int enemyScoutedLast = 0;
+map <int, BuildingInfo> enemyBuildings;
 
 // Enemy build tracking
 bool fourPool, twoGate, twoRax = false;
@@ -79,7 +82,7 @@ int enemyGate, enemyRax = 0;
 
 // Threat calculations
 double allyStrength = 0.0, enemyStrength = 0.0;
-int threatArray[256][256] = { { 0 } };
+double threatArray[256][256] = { { 0 } };
 int allySupply = 0, enemySupply = 0;
 
 // Building Manager Variables
