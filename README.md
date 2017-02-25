@@ -1,4 +1,6 @@
 # CMProtoBot nicknamed McRave by BWAPI Community \o/
+# For any questions, email christianmccrave@gmail.com
+# Bot started 01/03/2017, latest update 24/02/2017
 A Broodwar AI Developed in C++ using Visual Basic. This bot is focused on ending the game early by applying pressure, using unit efficiency to take as many favorable fights, crippling the opponent slowly and pushing through for a final sweep of their main base. Currently the boss can do the following:
 
 Scouts:
