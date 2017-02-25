@@ -21,7 +21,7 @@ A Broodwar AI Developed in C++ using Visual Basic. This bot is focused on ending
 - Expands after first pressured attack with Shuttle/Reaver combo
 
 **Micro:**
-- Dragooons will attack and move if the target is:
+- Dragoons will attack and move if the target is:
   1. melee and currently too close to the Dragoon
   2. ranged and currently is currently attacking the Dragoon
   3. lower ranged unit to outrange and kite away from the Dragoon
