@@ -37,3 +37,4 @@ extern bool twoGate, twoRax;
 
 // Function declaration
 void getBuildOrder();
+void myBuilds(int whichBuild);
