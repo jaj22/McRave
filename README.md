@@ -4,13 +4,13 @@
 
 A Broodwar AI Developed in C++ using Visual Basic. This bot is focused on ending the game early by applying pressure, using unit efficiency to take as many favorable fights, crippling the opponent slowly and pushing through for a final sweep of their main base. Currently the boss can do the following:
 
-Scouts:
+**Scouts:**
 - Based on enemy strategy, react to any early aggresion or default to a regular mid-game power build
 - Scout stays in enemy base until a unit spawns
 - Enemy strength calculations (globally for all unique units that we have seen)
 - Local enemy strength calculations (locally around individual units to see if that unit can win the fight against the units around it)
 
-Production:
+**Production:**
 - Produces high quantity of Dragoons with range upgrade
 - Produces reavers and shuttles to transport them and keep them safe in fights
 - Techs up to tier 2 units
@@ -20,7 +20,7 @@ Production:
 - Sets probes to individual mineral fields to maximize mining rate
 - Expands after first pressured attack with Shuttle/Reaver combo
 
-Micro:
+**Micro:**
 - Dragooons will attack and move if the target is:
   A) melee and currently too close to the Dragoon
   B) ranged and currently is currently attacking the Dragoon
@@ -29,7 +29,7 @@ Micro:
 - Reavers will attack and then load themselves into a shuttle
 - Shuttles will drop a Reaver if there is enemies around that the Reaver can attack
 
-Strategy:
+**Strategy:**
 - Based on strength calculations, units decide whether it's a good time to attack or retreat
 - If attacking, it's a frontal assault on the enemys main base
 - If retreating, it's a regroup position that is equal to:
