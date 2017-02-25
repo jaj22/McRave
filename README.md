@@ -22,9 +22,9 @@ A Broodwar AI Developed in C++ using Visual Basic. This bot is focused on ending
 
 **Micro:**
 - Dragooons will attack and move if the target is:
-  1) melee and currently too close to the Dragoon
-  2) ranged and currently is currently attacking the Dragoon
-  3) lower ranged unit to outrange and kite away from the Dragoon
+  1. melee and currently too close to the Dragoon
+  2. ranged and currently is currently attacking the Dragoon
+  3. lower ranged unit to outrange and kite away from the Dragoon
 - Zealots will attack and move if the target is melee and the Zealot is low health
 - Reavers will attack and then load themselves into a shuttle
 - Shuttles will drop a Reaver if there is enemies around that the Reaver can attack
@@ -33,5 +33,5 @@ A Broodwar AI Developed in C++ using Visual Basic. This bot is focused on ending
 - Based on strength calculations, units decide whether it's a good time to attack or retreat
 - If attacking, it's a frontal assault on the enemys main base
 - If retreating, it's a regroup position that is equal to:
-  1) the average position of all my units if we dont need to retreat far
-  2) the closest nexus if we need to retreat far
+  1. the average position of all my units if we dont need to retreat far
+  2. the closest nexus if we need to retreat far
