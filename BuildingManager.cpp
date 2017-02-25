@@ -225,11 +225,11 @@ void productionManager(Unit building)
 			//{
 			//	building->train(UnitTypes::Protoss_Dark_Templar);
 			//}
-			if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
+			if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
 			{
 				building->train(UnitTypes::Protoss_Dragoon);
 			}
-			else if ((Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1 || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice()) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
+			else if ((Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1 || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice()) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
 			{
 				building->train(UnitTypes::Protoss_Zealot);
 			}
@@ -240,6 +240,19 @@ void productionManager(Unit building)
 				building->train(UnitTypes::Protoss_Carrier);
 			}
 		case UnitTypes::Enum::Protoss_Robotics_Facility:
+			if (building->isIdle() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay > 0))
+			{
+				reservedMineral = 200;
+				if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle))
+				{
+					reservedGas = 200;
+				}
+			}
+			else 
+			{
+				reservedGas = 0;
+				reservedMineral = 0;
+			}
 			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) + 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)
 			{
 				building->train(UnitTypes::Protoss_Observer);
@@ -254,4 +267,36 @@ void productionManager(Unit building)
 			}
 		}
 	}
+}
+
+void storeEnemyBuilding(Unit building, map<int, BuildingInfo>& enemyBuildings)
+{
+	BuildingInfo newBuilding(building->getType(), building->getPosition());
+	enemyBuildings.emplace(building->getID(), newBuilding);
+}
+
+BuildingInfo::BuildingInfo(UnitType newType, Position newPosition)
+{
+	unitType = newType;
+	position = newPosition;
+}
+
+BuildingInfo::BuildingInfo()
+{
+	unitType = UnitTypes::Enum::None;
+	position = Positions::None;
+}
+
+BuildingInfo::~BuildingInfo()
+{
+}
+
+Position BuildingInfo::getPosition() const
+{
+	return position;
+}
+
+UnitType BuildingInfo::getUnitType() const
+{
+	return unitType;
 }
