@@ -19,7 +19,7 @@ extern Position zealotPosition;
 extern int nexusDesired;
 extern int firstAttack;
 
-extern int threatArray[256][256];
+extern double threatArray[256][256];
 extern double enemyStrength, allyStrength;
 
 // Shuttle ID and Reaver ID pairing
@@ -41,6 +41,7 @@ extern int defendingUnitCount;
 // Function declarations
 void unitGetCommand(Unit unit);
 void unitMicro(Unit unit);
+double unitGetStrength(Unit unit);
 Position unitRegroup(Unit unit);
 Position fleeFrom(Unit unit, Unit currentTarget);
 void carrierManager(Unit unit);
