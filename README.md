@@ -4,9 +4,9 @@ vv# CMProtoBot nicknamed McRave by BWAPI Community \o/
 
 A Broodwar AI Developed in C++ using Visual Studio Express 2013, BWAPI, BWTA and BWEM. This bot is focused on ending the game early by applying pressure, using unit efficiency to take as many favorable fights, crippling the opponent slowly and pushing through for a final sweep of their main base. Currently the bot can do the following:
 
-**Scouts:**
-- Based on enemy strategy, react to any early aggresion or default to a regular mid-game power build
-- Scout stays in enemy base until a unit spawns
+**Information:**
+- Based on enemy strategy found through initial scouting, react to any early aggresion or default to a regular mid-game power build
+- Initial scout probe stays in enemy base until an enemy unit spawns that isn't a worker
 - Enemy strength calculations (globally for all unique units that we have seen)
 - Local enemy strength calculations (locally around individual units to see if that unit can win the fight against the units around it)
 
@@ -20,7 +20,7 @@ A Broodwar AI Developed in C++ using Visual Studio Express 2013, BWAPI, BWTA and
 - Sets probes to individual mineral fields to maximize mining rate
 - Expands after first pressured attack with Shuttle/Reaver combo
 
-**Micro-management:**
+**Micromanagement:**
 - Dragoons will attack and move if the target is:
   1. melee and currently too close to the Dragoon
   2. ranged and currently is currently attacking the Dragoon
