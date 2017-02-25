@@ -20,7 +20,7 @@ A Broodwar AI Developed in C++ using Visual Studio Express 2013, BWAPI, BWTA and
 - Sets probes to individual mineral fields to maximize mining rate
 - Expands after first pressured attack with Shuttle/Reaver combo
 
-**Micro:**
+**Micro-management:**
 - Dragoons will attack and move if the target is:
   1. melee and currently too close to the Dragoon
   2. ranged and currently is currently attacking the Dragoon
