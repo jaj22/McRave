@@ -1,4 +1,4 @@
-vv# CMProtoBot nicknamed McRave by BWAPI Community \o/
+# CMProtoBot nicknamed McRave by BWAPI Community \o/
 ## For any questions, email christianmccrave@gmail.com
 ## Bot started 01/03/2017, latest update 24/02/2017
 
