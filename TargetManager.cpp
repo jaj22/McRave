@@ -36,6 +36,7 @@ Unit targetPriority(Unit unit)
 	else if (unit->getUnitsInRadius(320, Filter::IsEnemy && Filter::IsVisible && Filter::IsDetected && Filter::GetType != UnitTypes::Zerg_Larva && Filter::GetType != UnitTypes::Zerg_Egg
 		&& (!Filter::IsBuilding || Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon
 		|| Filter::GetType == UnitTypes::Enum::Terran_Missile_Turret
+		|| Filter::GetType == UnitTypes::Enum::Terran_Bunker
 		|| Filter::GetType == UnitTypes::Enum::Zerg_Sunken_Colony
 		|| Filter::GetType == UnitTypes::Enum::Zerg_Spore_Colony)).size() > 0)
 	{
