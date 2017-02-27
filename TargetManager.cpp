@@ -1,6 +1,7 @@
 #include "TargetManager.h"
 
 using namespace BWAPI;
+using namespace std;
 
 
 Unit targetPriority(Unit unit)
@@ -55,4 +56,31 @@ Unit targetPriority(Unit unit)
 	{
 		return unit->getClosestUnit(Filter::IsEnemy && Filter::IsDetected);
 	}
+}
+
+Unit clusterTargetPriority(Unit unit)
+{
+	int highest = 0;
+	int range = unit->getType().groundWeapon().maxRange();
+	map <int, int> clusters;
+	for (Unit u : unit->getUnitsInRadius(range, Filter::IsEnemy))
+	{
+		if (u->getUnitsInRadius(u->getType().groundWeapon().innerSplashRadius(), Filter::IsEnemy).size() > 0)
+		{
+			clusters.emplace(u->getID(), u->getUnitsInRadius(u->getType().groundWeapon().innerSplashRadius(), Filter::IsEnemy).size());
+		}	
+	}
+	for (auto c : clusters)
+	{	
+		if (c.second > highest)
+		{
+			highest = c.first;
+		}
+	}
+	// If found no clusters (literally no enemy unit around)
+	if (highest == 0)
+	{
+		return NULL;
+	}
+	return Broodwar->getUnit(highest);
 }
