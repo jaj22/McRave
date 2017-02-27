@@ -78,7 +78,6 @@ map <int, BuildingInfo> enemyBuildings;
 
 // Enemy build tracking
 bool fourPool, twoGate, twoRax = false;
-int enemyGate, enemyRax = 0;
 
 // Threat calculations
 double allyStrength = 0.0, enemyStrength = 0.0;
@@ -95,6 +94,7 @@ vector<Position> defendHere;
 set <BWTA::Region*> territory;
 vector<BWTA::Region*> allyTerritory;
 vector<BWTA::Region> enemyTerritory;
+bool forceEngage = false;
 
 // --------------------------------------------
 // Variables that are unsorted: 

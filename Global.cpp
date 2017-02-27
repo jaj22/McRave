@@ -69,7 +69,7 @@ void CMProtoBot::onFrame()
 		{
 			if (threatArray[x][y] > 0)
 			{
-				Broodwar->drawTextMap(x * 32, y * 32, "%.2f", threatArray[x][y]);				
+				Broodwar->drawTextMap(x * 32, y * 32, "%.2f", threatArray[x][y]);
 			}
 			if (Broodwar->isVisible(x, y))
 			{
@@ -97,7 +97,7 @@ void CMProtoBot::onFrame()
 			{
 				for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
 				{
-					if (Broodwar->isVisible(x,y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
+					if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
 					{
 						threatArray[x][y] += unitGetStrength(u);
 					}
@@ -292,7 +292,7 @@ void CMProtoBot::onFrame()
 	// On-Screen Information
 	// --------------------------------------------------------------------------------------------------------------------------------------------
 
-	// display some information about our buildings
+	// Display some information about our buildings
 	Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
 	Broodwar->drawTextScreen(0, 10, "Nexus:");
 	Broodwar->drawTextScreen(0, 20, "Pylon:");
@@ -306,8 +306,8 @@ void CMProtoBot::onFrame()
 	Broodwar->drawTextScreen(0, 100, "Support:");
 	Broodwar->drawTextScreen(0, 110, "Fleet:");
 	Broodwar->drawTextScreen(0, 120, "Archives:");
-
-	// Counters	
+	
+	// Counters
 	Broodwar->drawTextScreen(50, 10, "%d  %d Inactive: %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus), nexusDesired, inactiveNexusCnt);
 	Broodwar->drawTextScreen(50, 20, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired);
 	Broodwar->drawTextScreen(50, 30, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Assimilator), gasDesired);
@@ -328,11 +328,12 @@ void CMProtoBot::onFrame()
 
 	// Display some information about our units
 	Broodwar->drawTextScreen(500, 20, "Unit Count");
-	Broodwar->drawTextScreen(500, 30, "Scouting %d", scouting);
+	Broodwar->drawTextScreen(500, 30, "Scouting: %d", scouting);	
 	Broodwar->drawTextScreen(500, 40, "Ally Supply: %d", allySupply);
 	Broodwar->drawTextScreen(500, 50, "Enemy Supply: %d", enemySupply);
 	Broodwar->drawTextScreen(500, 60, "Ally Strength: %.2f", allyStrength);
 	Broodwar->drawTextScreen(500, 70, "Enemy Strength: %.2f", enemyStrength);
+	Broodwar->drawTextScreen(500, 80, "Force Engage: %d", forceEngage);
 
 	// Display which worker is builder and scouter
 	if (Broodwar->getFrameCount() > 100)
@@ -341,6 +342,7 @@ void CMProtoBot::onFrame()
 		Broodwar->drawTextMap(Broodwar->getUnit(scoutWorkerID.front())->getPosition(), "Scouter", Colors::Yellow);
 	}
 
+	// Show building placement
 	TilePosition expectedRightCorner;
 	expectedRightCorner.x = buildTilePosition.x + currentBuilding.tileWidth();
 	expectedRightCorner.y = buildTilePosition.y + currentBuilding.tileHeight();
@@ -412,7 +414,7 @@ void CMProtoBot::onFrame()
 	{
 		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, loaded, not powered, stuck, not completed
 		if (!u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised()
-			|| u->isLoaded() || !u->isPowered() || /*u->isStuck() ||*/ !u->isCompleted())
+			|| u->isLoaded() || !u->isPowered() || !u->isCompleted())
 			continue;
 
 		// Probe commands
@@ -589,6 +591,10 @@ void CMProtoBot::onFrame()
 			{
 				enemyCountNearby = u->getUnitsInRadius(320, Filter::IsEnemy && !Filter::IsFlyer).size();
 			}
+			else
+			{
+				enemyCountNearby = 0;
+			}
 		}
 		// If it's a building capable of production, send to production manager
 		else if (u->getType().isBuilding() && u->getType() != UnitTypes::Protoss_Pylon && u->getType() != UnitTypes::Protoss_Nexus)
@@ -670,6 +676,49 @@ void CMProtoBot::onNukeDetect(BWAPI::Position target)
 
 void CMProtoBot::onUnitDiscover(BWAPI::Unit unit)
 {
+	if (unit->getPlayer() == Broodwar->enemy())
+	{
+		if (unit->getType().isBuilding())
+		{
+			if (scouting && storeEnemyBuilding(unit, enemyBuildings) == 1)
+			{
+				for (auto building : enemyBuildings)
+				{
+					int enemyGateCnt = 0, enemyPoolCnt = 0, enemyRaxCnt = 0;
+					if (building.second.getUnitType() == UnitTypes::Protoss_Gateway)
+					{
+						enemyGateCnt++;
+						// If two gateways and we haven't reported the pressure
+						if (enemyGateCnt >= 2 && !twoGate)
+						{
+							twoGate = true;
+							Broodwar << "Possible Early Gate Pressure" << endl;
+						}
+					}
+					else if (building.second.getUnitType() == UnitTypes::Zerg_Spawning_Pool)
+					{
+						enemyPoolCnt++;
+						// If early pool and we haven't reported the pressure
+						if (enemyPoolCnt >= 1 && !fourPool)
+						{
+							fourPool = true;
+							Broodwar << "Possible Early Pool Pressure" << endl;
+						}
+					}
+					if (building.second.getUnitType() == UnitTypes::Terran_Barracks)
+					{
+						enemyRaxCnt++;
+						// If two barracks and we haven't reported the pressure
+						if (enemyRaxCnt >= 2 && !twoRax)
+						{
+							twoRax = true;
+							Broodwar << "Possible Early Barracks Pressure" << endl;
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 void CMProtoBot::onUnitEvade(BWAPI::Unit unit)
@@ -705,7 +754,7 @@ void CMProtoBot::onUnitCreate(BWAPI::Unit unit)
 				}
 			}
 		}
-	}
+	}	
 }
 
 void CMProtoBot::onUnitDestroy(BWAPI::Unit unit)
@@ -828,38 +877,9 @@ void CMProtoBot::onUnitComplete(BWAPI::Unit unit)
 
 	// If unit not owned by player
 	if (unit->getPlayer()->getID() == Broodwar->enemy()->getID())
-	{		
-		// If scouting
-		if (scouting)
-		{
-			if (unit->getType() == UnitTypes::Enum::Zerg_Zergling || (unit->getType() == UnitTypes::Enum::Zerg_Spawning_Pool && unit->isCompleted()))
-			{
-				Broodwar << "Early Pool Pressure" << endl;
-				fourPool = true;
-			}
-			if (unit->getType() == UnitTypes::Enum::Protoss_Gateway && unit->isCompleted())
-			{
-				enemyGate++;
-				if (enemyGate >= 2)
-				{
-					Broodwar << "Early 2 Gate Pressure" << endl;
-					twoGate = true;
-				}
-			}
-			if (unit->getType() == UnitTypes::Enum::Terran_Barracks && unit->isCompleted())
-			{
-				enemyRax++;
-				if (enemyRax >= 2)
-				{
-					Broodwar << "Early 2 Rax Pressure" << endl;
-					twoRax = true;
-				}
-			}
-		}
+	{
 		if (unit->getType().isBuilding())
-		{
-			storeEnemyBuilding(unit,enemyBuildings);
-			Broodwar << enemyBuildings.size() << endl;
+		{		
 			if (enemyBasePositions.size() == 0)
 			{
 				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
