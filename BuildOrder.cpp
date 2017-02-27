@@ -8,7 +8,7 @@ void getBuildOrder()
 {
 	// Supply and expansions
 	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / 14)));
-	nexusDesired = max(1, 1 + (int)floor(Broodwar->self()->supplyUsed() / 200) + firstAttack);
+	nexusDesired = min(3, 1 + (int)floor(Broodwar->self()->supplyUsed() / 120) + firstAttack);
 
 	// If we just attacked, expand
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Shuttle) > 0)
@@ -59,7 +59,7 @@ void getBuildOrder()
 	// If we have at least 4 dragoons, time to tech up
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) > 4)
 	{
-		roboDesired = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
+		roboDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
 	}
 
 	// Assimilators
