@@ -68,13 +68,34 @@ void unitGetCommand(Unit unit)
 			unit->rightClick(battery);
 			return;
 		}
-	}
+	}	
 
 	// Check strategy manager to see what our next task is
 	// If 0, regroup
 	if (unitGetStrategy(unit) == 0)
 	{
 		Position regroupPosition = unitRegroup(unit);
+		// If we are close to a chokepoint, let's fight so we don't fight inside a chokepoint and have poor positioning
+		for (auto position : defendHere)
+		{
+			if (regroupPosition.getDistance(position) < 640)
+			{
+				forceEngage = true;
+				unitMicro(unit);
+				return;
+			}
+			else if (regroupPosition.getDistance(position) > 1280)
+			{
+				forceEngage = false;
+			}
+		}
+
+		// Make sure we force engage if we're too close to our regroup position
+		if (forceEngage == true)
+		{
+			unitMicro(unit);
+			return;
+		}		
 		// If regrouping, get reaver back into shuttle and run
 		if (unit->getType() == UnitTypes::Protoss_Reaver)
 		{
@@ -97,12 +118,7 @@ void unitGetCommand(Unit unit)
 			return;
 		}
 
-		// If regroup position is in ally Territory, fight
-		if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(regroupPosition)) != allyTerritory.end() && unit->getDistance(regroupPosition) < 640)
-		{
-			unitMicro(unit);
-			return;
-		}
+		
 
 		// If regroup position is in low threat and no enemies around, stop and move to it
 		if (Broodwar->getUnitsInRadius(regroupPosition, 512, Filter::IsEnemy).size() < 1 && threatArray[regroupPosition.x / 32][regroupPosition.y / 32] < 1)
@@ -125,7 +141,7 @@ void unitGetCommand(Unit unit)
 			// Otherwise, flee
 			else if (!unit->getLastCommand().getType() == UnitCommandTypes::Move)
 			{
-				unit->move(fleeFrom(unit, unit->getClosestUnit(Filter::IsEnemy)));
+				unit->move(unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy)));
 			}
 			return;
 		}
@@ -133,6 +149,7 @@ void unitGetCommand(Unit unit)
 	// If fighting and there's an enemy around, micro
 	else if (unitGetStrategy(unit) == 1 && unit->getClosestUnit(Filter::IsEnemy))
 	{
+		forceEngage = false;
 		unitMicro(unit);
 		return;
 	}
@@ -225,7 +242,16 @@ void unitMicro(Unit unit)
 	// Variables
 	bool kite;
 	int range = unit->getType().groundWeapon().maxRange();
-	Unit currentTarget = targetPriority(unit);
+	Unit currentTarget;
+
+	if (unit->getType() == UnitTypes::Protoss_Reaver)
+	{
+		currentTarget = clusterTargetPriority(unit);
+	}
+	else
+	{
+		currentTarget = targetPriority(unit);
+	}
 
 	// Range upgrade check
 	if (unit->getType() == UnitTypes::Protoss_Dragoon && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
@@ -269,7 +295,7 @@ void unitMicro(Unit unit)
 		// If kite is true and weapon on cooldown, move
 		if (kite && unit->getLastCommand().getType() != UnitCommandTypes::Move && Broodwar->getLatencyFrames() / 2 <= unit->getGroundWeaponCooldown())
 		{
-			Position correctedFleePosition = fleeFrom(unit, currentTarget);
+			Position correctedFleePosition = unitFlee(unit, currentTarget);
 			if (correctedFleePosition != BWAPI::Positions::None)
 			{
 				Broodwar->drawLineMap(unit->getPosition(), correctedFleePosition, Colors::Red);
@@ -302,7 +328,7 @@ Position unitRegroup(Unit unit)
 	}
 }
 
-Position fleeFrom(Unit unit, Unit currentTarget)
+Position unitFlee(Unit unit, Unit currentTarget)
 {
 	double slopeDegree;
 	int x, y;
@@ -416,7 +442,7 @@ void shuttleManager(Unit unit)
 			// If we are loaded and either under attack, cant unload or trying to retreat, move away
 			if (unit->isUnderAttack() || !unit->canUnloadAll() || unitGetStrategy(unit) == 0)
 			{
-				unit->move(fleeFrom(unit, unit->getClosestUnit(Filter::IsEnemy)));
+				unit->move(unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy)));
 				return;
 			}
 			else if (Broodwar->getLatencyFrames() > (*itr)->getGroundWeaponCooldown() && unitGetStrategy(unit) == 1)
@@ -429,7 +455,7 @@ void shuttleManager(Unit unit)
 		{
 			if (!unit->getTarget() && loadedUnits.size() < 1 && Broodwar->getLatencyFrames() + 30 >= Broodwar->getUnit(reaverID.at(find(shuttleID.begin(), shuttleID.end(), unit->getID()) - shuttleID.begin()))->getGroundWeaponCooldown())
 			{
-				Position correctedFleePosition = fleeFrom(unit, unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer));
+				Position correctedFleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer));
 				if (correctedFleePosition != BWAPI::Positions::None)
 				{
 					Broodwar->drawLineMap(unit->getPosition(), correctedFleePosition, Colors::Orange);
