@@ -32,6 +32,7 @@ extern vector<Position> fleePositions;
 extern vector<Position> unitsFleeing;
 
 // Other
+extern bool forceEngage;
 extern int currentSize;
 extern vector<BWTA::Region*> allyTerritory;
 extern vector<Position> defendHere;
@@ -43,7 +44,7 @@ void unitGetCommand(Unit unit);
 void unitMicro(Unit unit);
 double unitGetStrength(Unit unit);
 Position unitRegroup(Unit unit);
-Position fleeFrom(Unit unit, Unit currentTarget);
+Position unitFlee(Unit unit, Unit currentTarget);
 void carrierManager(Unit unit);
 void shuttleManager(Unit unit);
 void shuttleHarass(Unit unit);
