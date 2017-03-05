@@ -28,10 +28,10 @@ using namespace BWTA;
 
 bool BWTAhandling = false;
 bool scouting = true;
+bool clearCut = false;
 
 // Building Variables
-int queuedMineral = 0, queuedGas = 0;
-int reservedMineral = 0, reservedGas = 0;
+int queuedMineral = 0, queuedGas = 0, reservedMineral = 0, reservedGas = 0;
 int nexusDesired = 0, inactiveNexusCnt = 0;
 int pylonDesired = 0;
 int	gasDesired = 0;
@@ -69,24 +69,31 @@ vector<int> combatWorkerID;
 vector<int> shuttleID;
 vector<int> harassShuttleID;
 vector<int> reaverID;
+vector<int> harassReaverID;
 
 // Enemy unit tracking
 int enemyCountNearby = 0;
 int defendingUnitCount = 0;
 int enemyScoutedLast = 0;
-map <int, BuildingInfo> enemyBuildings;
+map <int, UnitInfo> enemyUnits;
 
 // Enemy build tracking
-bool fourPool, twoGate, twoRax = false;
+bool fourPool = false, twoGate = false, twoRax = false;
 
-// Threat calculations
+// Heatmaps
 double allyStrength = 0.0, enemyStrength = 0.0;
-double threatArray[256][256] = { { 0 } };
+double enemyHeatmap[256][256] = { { 0 } };
+double allyHeatmap[256][256] = { { 0 } };
+double airEnemyHeatmap[256][256] = { { 0 } }; 
+int shuttleHeatmap[256][256] = { { 0 } };
 int allySupply = 0, enemySupply = 0;
 
 // Building Manager Variables
 UnitType currentBuilding;
 TilePosition buildTilePosition;
+map <int, UnitType> idleBuildings;
+map <int, TechType> idleTech;
+map <int, UpgradeType> idleUpgrade;
 
 // Territory Variables
 int currentSize = 0;
@@ -96,34 +103,19 @@ vector<BWTA::Region*> allyTerritory;
 vector<BWTA::Region> enemyTerritory;
 bool forceEngage = false;
 
-// --------------------------------------------
-// Variables that are unsorted: 
-// --------------------------------------------
-
 // Base positions
-BWEM::CPPath path;
-vector<Position> basePositions;
-vector<TilePosition> baseTilePositions;
-vector<double> baseDistances;
-vector<double> baseDistancesBuffer;
-vector<double> expansionStartDistance;
-vector<double> expansionRawDistance;
-vector<double> nearestBases;
-vector<Position>nearestBasePositions;
-vector<TilePosition>nearestBaseTilePositions;
-vector<TilePosition>nearestBaseTilePositionsBuffer;
-vector<Position>enemyBasePositions;
 Position enemyStartingPosition;
 TilePosition enemyStartingTilePosition;
+vector<Position>enemyBasePositions;
 vector<TilePosition> nextExpansion;
 vector<TilePosition> activeExpansion;
 
 // Starting locations
 Position playerStartingPosition;
 TilePosition playerStartingTilePosition;
-vector<Position>startingLocationPositions;
-vector<TilePosition>startingLocationTilePositions;
 
-//Expanding
-int firstAttack = 0;
-
+//Unsorted
+map <int, TilePosition> testBases;
+bool doOnce = true;
+BWEM::CPPath path;
+Position arbiterPosition;
