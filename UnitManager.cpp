@@ -6,19 +6,30 @@ using namespace BWAPI;
 using namespace std;
 using namespace BWTA;
 
-int unitGetStrategy(Unit unit)
+bool harassing = false;
+int firstAttack = 0;
+
+int unitGetLocalStrategy(Unit unit)
 {
 	// Check for local strength, based on that make an adjustment
 	//	1) If our local strength is higher, fight
 	//  2) If our local strength is lower, regroup at regroupPosition
-
-	//// Check if we are in ally territory, if so, fight
-	if (find(allyTerritory.begin(), allyTerritory.end(), BWTA::getRegion(unit->getPosition())) != allyTerritory.end() && unit->getUnitsInRadius(640, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
+	// Check if we are in ally territory, if so, fight
+	if (unit->getUnitsInRadius(640, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
 	{
-		return 1;
+		if (find(allyTerritory.begin(), allyTerritory.end(), BWTA::getRegion(unit->getClosestUnit(Filter::IsEnemy)->getPosition())) != allyTerritory.end())
+		{
+			return 1;
+		}
 	}
+
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1)
+	{
+		return 2;
+	}
+
 	// Based on units around, check if we can fight it
-	if ((unit->getUnitsInRadius(640, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > unit->getUnitsInRadius(640, Filter::IsAlly && !Filter::IsWorker && Filter::CanAttack).size() || enemyStrength > allyStrength) && unit->getUnitsInRadius(640, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
+	if (unit->getUnitsInRadius(640, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
 	{
 		double enemyLocalStrength = 0, allyLocalStrength = 0;
 		// Add one frame to each to prevent divide by zero/huge numbers
@@ -57,137 +68,122 @@ int unitGetStrategy(Unit unit)
 	return 1;
 }
 
+int unitGetGlobalStrategy()
+{
+	/*if (Broodwar->self()->supplyUsed() > 300)
+	{
+		return 1;
+	}*/
+	if (allyStrength > enemyStrength && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
 void unitGetCommand(Unit unit)
 {
-	// Check if low shield and shield battery can be used
-	if (unit->getShields() < 10 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Shield_Battery) > 0)
-	{
-		Unit battery = Broodwar->getClosestUnit(unit->getPosition(), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Shield_Battery && Filter::Energy > 10);
-		if (unit->getDistance(battery) < 256 && unit->getLastCommandFrame() > Broodwar->getFrameCount() + 20)
-		{
-			unit->rightClick(battery);
-			return;
-		}
-	}	
+	// ++ No shield batteries currently ++
+	//// Check if low shield and shield battery can be used
+	//if (unit->getShields() < 10 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Shield_Battery) > 0)
+	//{
+	//	Unit battery = Broodwar->getClosestUnit(unit->getPosition(), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Shield_Battery && Filter::Energy > 10);
+	//	if (unit->getDistance(battery) < 256 && unit->getLastCommandFrame() > Broodwar->getFrameCount() + 20)
+	//	{
+	//		unit->rightClick(battery);
+	//		return;
+	//	}
+	//}
 
-	// Check strategy manager to see what our next task is
-	// If 0, regroup
-	if (unitGetStrategy(unit) == 0)
+	/* Check local strategy manager to see what our next task is.
+	If 0, regroup unless forced to engage.
+	If 1, send unit to micro-management. */
+	if (unitGetLocalStrategy(unit) == 0)
 	{
 		Position regroupPosition = unitRegroup(unit);
+		if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(TilePosition(regroupPosition))) != allyTerritory.end())
+		{
+			forceEngage = true;
+			unitMicro(unit);
+			return;
+		}
 		// If we are close to a chokepoint, let's fight so we don't fight inside a chokepoint and have poor positioning
 		for (auto position : defendHere)
 		{
-			if (regroupPosition.getDistance(position) < 640)
+			if (regroupPosition.getDistance(position) < 640 && Broodwar->self()->supplyUsed() > 100)
 			{
 				forceEngage = true;
 				unitMicro(unit);
 				return;
 			}
-			else if (regroupPosition.getDistance(position) > 1280)
+			else if (regroupPosition.getDistance(position) > 2560)
 			{
 				forceEngage = false;
 			}
-		}
-
-		// Make sure we force engage if we're too close to our regroup position
-		if (forceEngage == true)
-		{
-			unitMicro(unit);
-			return;
 		}		
-		// If regrouping, get reaver back into shuttle and run
-		if (unit->getType() == UnitTypes::Protoss_Reaver)
-		{
-			if (find(reaverID.begin(), reaverID.end(), unit->getID()) - reaverID.begin() < (int)shuttleID.size())
-			{
-				unit->rightClick(Broodwar->getUnit(shuttleID.at(find(reaverID.begin(), reaverID.end(), unit->getID()) - reaverID.begin())));
-				return;
-			}
-			else
-			{
-				unitMicro(unit);
-				return;
-			}
-		}
 
-		// If we are on top of our ramp, let's hold 
+		// If we are on top of our ramp, let's hold with zealots
 		if (unit->getDistance(defendHere.at(0)) < 32 && unit->getType() == UnitTypes::Protoss_Zealot && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) > 2 && BWTA::getRegion(unit->getPosition()) == BWTA::getRegion(playerStartingPosition))
 		{
 			unit->holdPosition();
 			return;
 		}
 
-		
-
 		// If regroup position is in low threat and no enemies around, stop and move to it
-		if (Broodwar->getUnitsInRadius(regroupPosition, 512, Filter::IsEnemy).size() < 1 && threatArray[regroupPosition.x / 32][regroupPosition.y / 32] < 1)
+		if (Broodwar->getUnitsInRadius(regroupPosition, 512, Filter::IsEnemy).size() < 1 && enemyHeatmap[regroupPosition.x / 32][regroupPosition.y / 32] < 1)
 		{
-			if (unit->getLastCommand().getType() != UnitCommandTypes::Move)
-			{
-				unit->stop();
-			}
-			unit->move(regroupPosition);
-			return;
+			unit->move(Position(defendHere.at(rand() % defendHere.size()).x + rand() % 100 - 50, defendHere.at(rand() % defendHere.size()).y + rand() % 100 - 50));
 		}
 		else
 		{
-			// If too many enemies around our regroup, micro if it's a dragoon
-			if (unit->getType() == UnitTypes::Protoss_Dragoon)
-			{
-				unitMicro(unit);
-				return;
-			}
-			// Otherwise, flee
-			else if (!unit->getLastCommand().getType() == UnitCommandTypes::Move)
-			{
-				unit->move(unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy)));
-			}
+			unit->move(Position(defendHere.at(rand() % defendHere.size()).x + rand() % 100 - 50, defendHere.at(rand() % defendHere.size()).y + rand() % 100 - 50));
 			return;
 		}
 	}
 	// If fighting and there's an enemy around, micro
-	else if (unitGetStrategy(unit) == 1 && unit->getClosestUnit(Filter::IsEnemy))
+	else if (unitGetLocalStrategy(unit) == 1 && unit->getClosestUnit(Filter::IsEnemy))
 	{
 		forceEngage = false;
 		unitMicro(unit);
 		return;
 	}
-	// Check our overall current strategy
-	else
+	/* Check our global strategy manager to see what our next task is.
+	If 0, regroup at a chokepoint connected to allied territory.
+	If 1, send units into a frontal attack.	*/
+	else if (unitGetLocalStrategy(unit) == 2 || unitGetGlobalStrategy() == 0)
 	{
-		// Check if we should defend
-		if (commandManager() == 0)
+		if (enemyBasePositions.size() > 0 && allyTerritory.size() > 0)
 		{
-			if (enemyBasePositions.size() > 0 && allyTerritory.size() > 0)
+			// Check if we are close enough to any defensive position
+			for (auto position : defendHere)
 			{
-				// Check if we are close enough to any defensive position
-				for (auto position : defendHere)
+				if (unit->getDistance(position) < 200)
 				{
-					if (unit->getDistance(position) < 200)
-					{
-						return;
-					}
+					return;
 				}
-				// Else defend at one of the vulnerable chokepoints
-				unit->attack(Position(defendHere.at(rand() % defendHere.size()).x + rand() % -50 + 50, defendHere.at(rand() % defendHere.size()).y + rand() % -50 + 50));
-				return;
 			}
-			else
-			{
-				// Else just defend at nearest chokepoint (starting of game without scout information)
-				unit->attack((BWTA::getNearestChokepoint(unit->getPosition()))->getCenter());
-				return;
-			}
+			// Else defend at one of the vulnerable chokepoints
+			unit->move(Position(defendHere.at(rand() % defendHere.size()).x + rand() % 100 - 50, defendHere.at(rand() % defendHere.size()).y + rand() % 100 - 50));
+			return;
 		}
-		// Check if we should attack
-		if (commandManager() == 1)
+		else
 		{
-			if (enemyBasePositions.size() > 0)
-			{
-				unit->attack(enemyBasePositions.front());
-				return;
-			}
+			// Else just defend at nearest chokepoint (starting of game without scout information)
+			unit->move((BWTA::getNearestChokepoint(unit->getPosition()))->getCenter());
+			return;
+		}
+	}
+
+	// Check if we should attack
+	else if (unitGetGlobalStrategy() == 1)
+	{
+		if (enemyBasePositions.size() > 0)
+		{
+			unit->attack(enemyBasePositions.front());
+			return;
 		}
 	}
 }
@@ -203,9 +199,17 @@ double unitGetStrength(Unit unit)
 	{
 		return 5.0;
 	}
+	if (unit->getType() == UnitTypes::Zerg_Lurker)
+	{
+		return 6.0;
+	}
+	if (unit->getType() == UnitTypes::Protoss_Arbiter)
+	{
+		return 20.0;
+	}
 
 	if (!unit->getType().isWorker() && unit->isCompleted() && unit->getType() != UnitTypes::Protoss_Scarab && unit->getType() != UnitTypes::Terran_Vulture_Spider_Mine && (unit->getType().groundWeapon().damageAmount() > 0 || !unit->getType().isBuilding()))
-	{		
+	{
 		double range, damage, hp;
 		// Range upgrade check
 		if (unit->getType() == UnitTypes::Protoss_Dragoon && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
@@ -229,12 +233,78 @@ double unitGetStrength(Unit unit)
 		{
 			hp = double(unit->getType().maxHitPoints() + unit->getType().maxShields());
 		}
-		return sqrt((1 + (range / 320.0)) * damage + hp / 1000);
+		return sqrt(sqrt(1 + (range / 320.0)) * damage * (hp / 100));
 	}
 	else
 	{
 		return 0;
 	}
+}
+
+Position unitGetPath(Unit unit)
+{
+	int x = unit->getTilePosition().x;
+	int y = unit->getTilePosition().y;
+	int cnt = 0;
+	//TilePosition target = Broodwar->getClosestUnit(enemyStartingPosition, Filter::IsMineralField)->getTilePosition();
+	TilePosition target = enemyStartingTilePosition;
+
+	// Reset path
+	for (int i = 0; i <= Broodwar->mapWidth(); i++)
+	{
+		for (int j = 0; j <= Broodwar->mapHeight(); j++)
+		{
+			if (shuttleHeatmap[i][j] < 256)
+			{
+				shuttleHeatmap[i][j] = 0;
+			}
+		}
+	}
+
+	shuttleHeatmap[x][y] = 0;
+	shuttleHeatmap[target.x][target.y] = 1;
+
+	// While current units tile is 0 (no path currently)
+	while (shuttleHeatmap[x][y] < 1)
+	{
+		cnt++;
+		// For each tile equal to cnt, move up and to the left, apply cnt + 1 to a 3x3 grid
+		for (int i = 0; i <= Broodwar->mapWidth(); i++)
+		{
+			for (int j = 0; j <= Broodwar->mapHeight(); j++)
+			{
+				// If it's equal
+				if (shuttleHeatmap[i][j] == cnt)
+				{
+					// Get 3x3 grid, set each tile to cnt + 1
+					for (int a = i - 1; a <= i + 1; a++)
+					{
+						for (int b = j - 1; b <= j + 1; b++)
+						{
+							if (a >= 0 && a <= 256 && b >= 0 && b <= 256 && shuttleHeatmap[a][b] == 0)
+							{
+								shuttleHeatmap[a][b] = cnt + 1;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	int lowestInt = 257;
+	Position lowestPosition = unit->getPosition();
+	for (int i = x - 3; i <= x + 4; i++)
+	{
+		for (int j = y - 3; j <= y + 4; j++)
+		{
+			if (airEnemyHeatmap[i][j] == 0 && shuttleHeatmap[i][j] > 0 && shuttleHeatmap[i][j] < lowestInt && i > 0 && i < Broodwar->mapWidth() && j > 0 && j < Broodwar->mapHeight())
+			{
+				lowestPosition = Position((i * 32) + 16, (j * 32) + 16);
+				lowestInt = shuttleHeatmap[i][j];
+			}
+		}
+	}
+	return lowestPosition;
 }
 
 void unitMicro(Unit unit)
@@ -244,16 +314,21 @@ void unitMicro(Unit unit)
 	int range = unit->getType().groundWeapon().maxRange();
 	Unit currentTarget;
 
+	// Get target priorities
 	if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
 		currentTarget = clusterTargetPriority(unit);
+	}
+	else if (unit->getType() == UnitTypes::Protoss_Zealot)
+	{
+		currentTarget = groundTargetPriority(unit);
 	}
 	else
 	{
 		currentTarget = targetPriority(unit);
 	}
 
-	// Range upgrade check
+	// Range upgrade check for Dragoons
 	if (unit->getType() == UnitTypes::Protoss_Dragoon && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 	{
 		range = 192;
@@ -275,7 +350,7 @@ void unitMicro(Unit unit)
 		}
 
 		// If units too far away, move back
-		if (unit->getDistance(unit->getClosestUnit(Filter::IsAlly && Filter::IsBuilding)) > 640 && commandManager == 0)
+		if (unit->getDistance(unit->getClosestUnit(Filter::IsAlly && Filter::IsBuilding)) > 640 && unitGetGlobalStrategy == 0)
 		{
 			unit->move((Position(defendHere.at(rand() % defendHere.size()).x + rand() % 100, defendHere.at(rand() % defendHere.size()).y + rand() % 100)));
 		}
@@ -312,7 +387,7 @@ void unitMicro(Unit unit)
 
 Position unitRegroup(Unit unit)
 {
-	Unitset regroupSet = unit->getUnitsInRadius(50000, Filter::IsAlly && !Filter::IsBuilding);
+	Unitset regroupSet = unit->getUnitsInRadius(50000, Filter::IsAlly && !Filter::IsBuilding && !Filter::IsWorker);
 	Position regroupPosition;
 	for (Unit re : regroupSet)
 	{
@@ -330,6 +405,11 @@ Position unitRegroup(Unit unit)
 
 Position unitFlee(Unit unit, Unit currentTarget)
 {
+	if (!unit || !currentTarget)
+	{
+		return BWAPI::Positions::None;
+	}
+
 	double slopeDegree;
 	int x, y;
 	Position currentTargetPosition = currentTarget->getPosition();
@@ -376,7 +456,7 @@ Position unitFlee(Unit unit, Unit currentTarget)
 		//If threat is low, move there
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
-			if (threatArray[x][y] < 1 && (Position(x * 32, y * 32).getDistance(BWTA::getNearestChokepoint(unit->getPosition())->getCenter()) < 256 || BWTA::getRegion(unit->getPosition()) == BWTA::getRegion(Position(x * 32, y * 32))))
+			if (enemyHeatmap[x][y] < 1 && (Position(x * 32, y * 32).getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 256 || (BWTA::getRegion(unit->getPosition()) == getRegion(Position(x * 32, y * 32)))))
 			{
 				return BWAPI::Position(x * 32, y * 32);
 			}
@@ -414,24 +494,17 @@ Position unitFlee(Unit unit, Unit currentTarget)
 	return initialPosition;
 }
 
-int commandManager()
-{
-	// If we have 6 dragoons ready, timing attack is ready
-	if (allyStrength > enemyStrength)
-	{		
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
 void shuttleManager(Unit unit)
 {
+	bool harassing = false;
 	if (find(shuttleID.begin(), shuttleID.end(), unit->getID()) == shuttleID.end())
 	{
 		shuttleID.push_back(unit->getID());
+	}
+
+	if (find(harassShuttleID.begin(), harassShuttleID.end(), unit->getID()) != harassShuttleID.end())
+	{
+		harassing = true;
 	}
 
 	if (unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() >= 1)
@@ -440,12 +513,12 @@ void shuttleManager(Unit unit)
 		for (Unitset::iterator itr = loadedUnits.begin(); itr != loadedUnits.end(); itr++)
 		{
 			// If we are loaded and either under attack, cant unload or trying to retreat, move away
-			if (unit->isUnderAttack() || !unit->canUnloadAll() || unitGetStrategy(unit) == 0)
+			if (unit->isUnderAttack() || !unit->canUnloadAll())
 			{
 				unit->move(unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy)));
 				return;
 			}
-			else if (Broodwar->getLatencyFrames() > (*itr)->getGroundWeaponCooldown() && unitGetStrategy(unit) == 1)
+			else if (Broodwar->getLatencyFrames() > (*itr)->getGroundWeaponCooldown() && (unitGetLocalStrategy(unit) == 1 || forceEngage == true || harassing == true))
 			{
 				unit->unload(*itr);
 				return;
@@ -455,7 +528,7 @@ void shuttleManager(Unit unit)
 		{
 			if (!unit->getTarget() && loadedUnits.size() < 1 && Broodwar->getLatencyFrames() + 30 >= Broodwar->getUnit(reaverID.at(find(shuttleID.begin(), shuttleID.end(), unit->getID()) - shuttleID.begin()))->getGroundWeaponCooldown())
 			{
-				Position correctedFleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer));
+				Position correctedFleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer && !Filter::IsWorker && Filter::CanAttack));
 				if (correctedFleePosition != BWAPI::Positions::None)
 				{
 					Broodwar->drawLineMap(unit->getPosition(), correctedFleePosition, Colors::Orange);
@@ -476,87 +549,48 @@ void shuttleManager(Unit unit)
 
 void shuttleHarass(Unit unit)
 {
-
-	//if (unit->getDistance(enemyStartingPosition) >= 320 && unit->getLoadedUnits().size() > 0 && unit->getLastCommand().getType() != UnitCommandTypes::Enum::Move)
-	//{		
-	//	// Move to furthest corner from enemy choke
-	//	Position enemyChoke = BWTA::getNearestChokepoint(enemyStartingPosition)->getCenter();
-	//	int x1, y1, x2, y2;
-	//	if (enemyChoke.x > Broodwar->mapWidth() * 16)
-	//	{
-	//		x1 = 0;
-	//	}
-	//	else
-	//	{
-	//		x1 = Broodwar->mapWidth() * 32;
-	//	}
-	//	if (enemyChoke.y > Broodwar->mapHeight() * 16)
-	//	{
-	//		y1 = 0;
-	//	}
-	//	else
-	//	{
-	//		y1 = Broodwar->mapWidth() * 32;
-	//	}
-	//	unit->move(Position(x1, y1));
-
-	//	// Move to whichever co-ordinate is the largest difference
-	//	if (abs(enemyStartingPosition.x - enemyChoke.x) >= abs(enemyStartingPosition.y - enemyChoke.y))
-	//	{
-	//		// If x distance is larger, move to matching either 0 or map width (whichever is best)
-	//		x2 = x1;
-	//		if (y1 == 0)
-	//		{
-	//			y2 = Broodwar->mapHeight() * 32;
-	//		}
-	//		else
-	//		{
-	//			y2 = 0;
-	//		}
-	//		
-	//	}
-	//	else
-	//	{
-	//		
-	//		y2 = enemyStartingPosition.y;
-	//		x2 = x1;
-	//	}
-	//	unit->move(Position(x2, y2), true);
-	//	unit->move(enemyStartingPosition, true);
-	//}
-	//else if (unit->getDistance(enemyStartingPosition) > 32 && unit->getDistance(enemyStartingPosition) < 320)
-	//{
-	//	unit->move(enemyStartingPosition);
-	//}
-	/*if (unit->getLoadedUnits().size() < 1)
+	if (unit->getLoadedUnits().size() > 0 && (shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] > 2 || shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0))
 	{
-	shuttleManager(unit);
-	}*/
+		unit->move(unitGetPath(unit));
+	}
+	else
+	{
+		shuttleManager(unit);
+	}
 }
 
 void reaverManager(Unit unit)
 {
+	/*bool harassing = false;*/
 	if (find(reaverID.begin(), reaverID.end(), unit->getID()) == reaverID.end())
 	{
 		reaverID.push_back(unit->getID());
 	}
+	/*if (find(harassReaverID.begin(), harassReaverID.end(), unit->getID()) != harassReaverID.end())
+	{
+		harassing = true;
+	}*/
 	if (unit->getScarabCount() < 10)
 	{
 		unit->train(UnitTypes::Protoss_Scarab);
 	}
-	if (unitGetStrategy(unit) == 0 || unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() < 1 || Broodwar->getLatencyFrames() + 30 < unit->getGroundWeaponCooldown())
+	if ((unitGetLocalStrategy(unit) == 0 && forceEngage == 0) || unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() < 1 || Broodwar->getLatencyFrames() + 30 < unit->getGroundWeaponCooldown())
 	{
 		// If a shuttle is following a unit, it is empty, see shuttle manager
 		if (find(reaverID.begin(), reaverID.end(), unit->getID()) - reaverID.begin() < (int)shuttleID.size())
 		{
 			unit->rightClick(Broodwar->getUnit(shuttleID.at(find(reaverID.begin(), reaverID.end(), unit->getID()) - reaverID.begin())));
 		}
-		else
+		else if (unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() > 0)
 		{
 			unitMicro(unit);
 		}
+		else
+		{
+			unitGetCommand(unit);
+		}
 	}
-	else if (unitGetStrategy(unit) == 1)
+	else if (unitGetLocalStrategy(unit) == 1 || forceEngage == 1)
 	{
 		unitGetCommand(unit);
 	}
@@ -586,6 +620,39 @@ void observerManager(Unit unit)
 	}
 }
 
+void templarManager(Unit unit)
+{
+	if (unit->getUnitsInRadius(320, Filter::IsEnemy).size() < 4)
+	{
+		unit->follow(Broodwar->getClosestUnit(enemyStartingPosition, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Dragoon));
+	}
+	else
+	{
+		Unit target = clusterTargetPriority(unit);
+		if (target)
+		{
+			unit->useTech(TechTypes::Psionic_Storm, target);
+		}
+	}
+}
+
+void arbiterManager(Unit unit)
+{
+
+	if (unit->getUnitsInRadius(640, Filter::IsEnemy).size() < 4)
+	{
+		unit->move(arbiterPosition);
+	}
+	else
+	{
+		Unit target = clusterTargetPriority(unit);
+		if (target)
+		{
+			unit->useTech(TechTypes::Stasis_Field, target);
+		}
+	}
+}
+
 void carrierManager(Unit unit)
 {
 	if (unit->getInterceptorCount() < 8)
@@ -596,4 +663,60 @@ void carrierManager(Unit unit)
 	{
 		unitGetCommand(unit);
 	}
+}
+
+int storeEnemyUnit(Unit unit, map<int, UnitInfo>& enemyUnits)
+{
+	/*if (unit->getType() == UnitTypes::Zerg_Egg || unit->getType() == UnitTypes::Zerg_Cocoon)
+	{
+		return 0;
+	}*/
+	int before = enemyUnits.size();
+	UnitInfo newBuilding(unit->getType(), unit->getPosition());
+	enemyUnits.emplace(unit->getID(), newBuilding);
+	int after = enemyUnits.size();
+
+	// If size is equal, we did not add a building, return 0, update anything that changed
+	if (before == after)
+	{
+		if (enemyUnits.at(unit->getID()).getUnitType() != unit->getType())
+		{			
+			enemyUnits.at(unit->getID()).setUnitType(unit->getType());
+			return 1;
+		}
+		return 0;
+	}
+	// If size changed, we added a building, return 1
+	return 1;
+}
+
+UnitInfo::UnitInfo(UnitType newType, Position newPosition)
+{
+	unitType = newType;
+	position = newPosition;
+}
+
+UnitInfo::UnitInfo()
+{
+	unitType = UnitTypes::Enum::None;
+	position = Positions::None;
+}
+
+UnitInfo::~UnitInfo()
+{
+}
+
+Position UnitInfo::getPosition() const
+{
+	return position;
+}
+
+UnitType UnitInfo::getUnitType() const
+{
+	return unitType;
+}
+
+void UnitInfo::setUnitType(UnitType newUnitType)
+{
+	unitType = newUnitType;
 }
