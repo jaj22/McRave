@@ -5,5 +5,7 @@
 using namespace BWAPI;
 
 extern Position playerStartingPosition;
+
 Unit targetPriority(Unit unit);
+Unit groundTargetPriority(Unit unit);
 Unit clusterTargetPriority(Unit unit);
