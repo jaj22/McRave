@@ -5,18 +5,21 @@
 using namespace BWAPI;
 using namespace std;
 
+// Variables for BuildingManager.cpp
+
+
 void buildingManager(UnitType building, Unit builder)
 {
 	// For each expansion, check if you can build near it, starting at the main
 	for (TilePosition tile : activeExpansion)
 	{
 		if (building == UnitTypes::Protoss_Shield_Battery)
-		{			
+		{
 			buildTilePosition = getBuildLocationNear(building, builder, TilePosition((BWTA::getNearestChokepoint(nextExpansion.at(0))->getCenter())));
 		}
 		else
 		{
-			buildTilePosition = getBuildLocationNear(building, builder, tile);			
+			buildTilePosition = getBuildLocationNear(building, builder, tile);
 		}
 		Position buildPosition = Position(32 * buildTilePosition.x, 32 * buildTilePosition.y);
 		// If build position available and not invalid (returns x > 1000)
@@ -69,7 +72,7 @@ bool canBuildHere(UnitType building, Unit builder, TilePosition buildTilePositio
 		}
 	}
 	// If building is on an expansion tile, don't build there
-	for (int i = 0; i <= nextExpansion.size() - 1; i++)
+	for (int i = 0; i <= (int)nextExpansion.size() - 1; i++)
 	{
 		for (int j = 0; j <= 3; j++)
 		{
@@ -187,21 +190,30 @@ void productionManager(Unit building)
 			{
 				building->upgrade(UpgradeTypes::Protoss_Ground_Armor);
 			}
-			break;		
+			break;
 		case UnitTypes::Enum::Protoss_Cybernetics_Core:
 
-			if (Broodwar->self()->minerals() >= UpgradeTypes::Singularity_Charge.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Singularity_Charge.gasPrice())
+			// If we need Dragoon range upgrade
+			if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 2)
 			{
-				building->upgrade(UpgradeTypes::Singularity_Charge);
+				if (Broodwar->self()->minerals() >= UpgradeTypes::Singularity_Charge.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Singularity_Charge.gasPrice())
+				{
+					building->upgrade(UpgradeTypes::Singularity_Charge);
+					idleUpgrade.erase(building->getID());
+				}
+				else
+				{
+					idleUpgrade.emplace(building->getID(), UpgradeTypes::Singularity_Charge);
+				}
 			}
 			break;
 		case UnitTypes::Enum::Protoss_Robotics_Support_Bay:
 
-			/*if (Broodwar->self()->minerals() >= UpgradeTypes::Scarab_Damage.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Scarab_Damage.gasPrice() + queuedGas)
+			if (Broodwar->self()->minerals() >= UpgradeTypes::Scarab_Damage.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Scarab_Damage.gasPrice() + queuedGas)
 			{
-			building->upgrade(UpgradeTypes::Scarab_Damage);
+				building->upgrade(UpgradeTypes::Scarab_Damage);
 			}
-			if (Broodwar->self()->minerals() >= UpgradeTypes::Reaver_Capacity.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Reaver_Capacity.gasPrice() + queuedGas)
+			/*if (Broodwar->self()->minerals() >= UpgradeTypes::Reaver_Capacity.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Reaver_Capacity.gasPrice() + queuedGas)
 			{
 			building->upgrade(UpgradeTypes::Reaver_Capacity);
 			}*/
@@ -221,82 +233,127 @@ void productionManager(Unit building)
 
 			// Production Buildings
 		case UnitTypes::Enum::Protoss_Gateway:
-			//if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Templar_Archives) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dark_Templar) < 10 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Dark_Templar.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dark_Templar.gasPrice() + queuedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dark_Templar.supplyRequired() <= Broodwar->self()->supplyTotal())
-			//{
-			//	building->train(UnitTypes::Protoss_Dark_Templar);
-			//}
-			if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
+			// If we need a High Templar
+			if (Broodwar->self()->hasResearched(TechTypes::Psionic_Storm) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Templar_Archives) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar) < 5)
 			{
-				building->train(UnitTypes::Protoss_Dragoon);
+				// If we can afford a High Temlar, train
+				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_High_Templar.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_High_Templar.gasPrice() + queuedGas + reservedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_High_Templar.supplyRequired() <= Broodwar->self()->supplyTotal())
+				{
+					building->train(UnitTypes::Protoss_High_Templar);
+					return;
+				}
 			}
-			else if ((Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1 || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice()) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
+			// If we need a Dragoon
+			if (Broodwar->self()->minerals() < Broodwar->self()->gas() * 5 || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1)
 			{
-				building->train(UnitTypes::Protoss_Zealot);
+				// If we can afford a Dragoon, train
+				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
+				{
+					building->train(UnitTypes::Protoss_Dragoon);
+					return;
+				}
+			}
+			// If we need a Zealot
+			if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1 || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) <= Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon))
+			{
+				// If we can afford a Zealot, train
+				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
+				{
+					building->train(UnitTypes::Protoss_Zealot);
+					return;
+				}
 			}
 			break;
 		case UnitTypes::Enum::Protoss_Stargate:
-			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Fleet_Beacon) >= 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Carrier.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Carrier.gasPrice() + queuedGas)
+			/*if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Fleet_Beacon) >= 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Carrier.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Carrier.gasPrice() + queuedGas)
 			{
-				building->train(UnitTypes::Protoss_Carrier);
-			}
-		case UnitTypes::Enum::Protoss_Robotics_Facility:
-			if (building->isIdle() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay > 0))
+			building->train(UnitTypes::Protoss_Carrier);
+			}*/
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter) < 3)
 			{
-				reservedMineral = 200;
-				if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle))
+				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Arbiter.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Arbiter.gasPrice() + queuedGas)
 				{
-					reservedGas = 200;
+					building->train(UnitTypes::Protoss_Arbiter);
+					idleBuildings.erase(building->getID());
+				}
+				else
+				{
+					idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Arbiter);
 				}
 			}
-			else 
+			break;
+		case UnitTypes::Enum::Protoss_Robotics_Facility:
+			// If we need an Observer
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) + 1)
 			{
-				reservedGas = 0;
-				reservedMineral = 0;
+				// If we can afford an Observer, train, otherwise, add to priority
+				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)
+				{
+					building->train(UnitTypes::Protoss_Observer);
+					idleBuildings.erase(building->getID());
+				}
+				else
+				{
+					idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Observer);
+				}
 			}
-			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) + 1 && Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)
+			// If we need a Reaver
+			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) >= 3)
 			{
-				building->train(UnitTypes::Protoss_Observer);
+				// If we can afford a Reaver, train, otherwise, add to priority
+				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + queuedGas)
+				{
+					building->train(UnitTypes::Protoss_Reaver);
+					idleBuildings.erase(building->getID());
+				}
+				else
+				{
+					idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Reaver);
+				}
 			}
-			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + queuedGas)
+			// If we need a Shuttle
+			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) < 3)
 			{
-				building->train(UnitTypes::Protoss_Reaver);
+				// If we can afford a Shuttle, train, otherwise, add to priority
+				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + queuedMineral)
+				{
+					building->train(UnitTypes::Protoss_Shuttle);
+					idleBuildings.erase(building->getID());
+				}
+				else
+				{
+					idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Shuttle);
+				}
 			}
-			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) && Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + queuedMineral)
+			break;
+			// Tech Research
+		case UnitTypes::Enum::Protoss_Templar_Archives:
+			if (!Broodwar->self()->hasResearched(TechTypes::Psionic_Storm))
 			{
-				building->train(UnitTypes::Protoss_Shuttle);
+				if (Broodwar->self()->minerals() >= TechTypes::Psionic_Storm.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= TechTypes::Psionic_Storm.gasPrice() + queuedGas)
+				{
+					building->research(TechTypes::Psionic_Storm);
+					idleTech.erase(building->getID());
+				}
+				else
+				{
+					idleTech.emplace(building->getID(), TechTypes::Psionic_Storm);
+				}
+			}
+		case UnitTypes::Enum::Protoss_Arbiter_Tribunal:
+			if (!Broodwar->self()->hasResearched(TechTypes::Stasis_Field))
+			{
+				if (Broodwar->self()->minerals() >= TechTypes::Stasis_Field.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= TechTypes::Stasis_Field.gasPrice() + queuedGas)
+				{
+					building->research(TechTypes::Stasis_Field);
+					idleTech.erase(building->getID());
+				}
+				else
+				{
+					idleTech.emplace(building->getID(), TechTypes::Stasis_Field);
+				}
 			}
 		}
 	}
 }
 
-void storeEnemyBuilding(Unit building, map<int, BuildingInfo>& enemyBuildings)
-{
-	BuildingInfo newBuilding(building->getType(), building->getPosition());
-	enemyBuildings.emplace(building->getID(), newBuilding);
-}
-
-BuildingInfo::BuildingInfo(UnitType newType, Position newPosition)
-{
-	unitType = newType;
-	position = newPosition;
-}
-
-BuildingInfo::BuildingInfo()
-{
-	unitType = UnitTypes::Enum::None;
-	position = Positions::None;
-}
-
-BuildingInfo::~BuildingInfo()
-{
-}
-
-Position BuildingInfo::getPosition() const
-{
-	return position;
-}
-
-UnitType BuildingInfo::getUnitType() const
-{
-	return unitType;
-}

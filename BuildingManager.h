@@ -15,7 +15,10 @@ extern TilePosition buildTilePosition;
 extern vector<int> buildingWorkerID;
 
 // External resource variables
-extern int queuedMineral, queuedGas, reservedMineral, reservedGas; 
+extern int queuedMineral, queuedGas, reservedMineral, reservedGas;
+extern map <int, UnitType> idleBuildings;
+extern map <int, TechType> idleTech;
+extern map <int, UpgradeType> idleUpgrade;
 
 // Function declarations
 void buildingManager(UnitType building, Unit builder);
@@ -25,29 +28,3 @@ void nexusManager(UnitType building, Unit builder, TilePosition expansion);
 void productionManager(Unit building);
 
 
-// Classes for enemy building tracking
-
-class BuildingInfo{
-	UnitType unitType;
-	Position position;
-public:	
-	BuildingInfo();
-	BuildingInfo(UnitType, Position);
-	~BuildingInfo();
-
-	UnitType getUnitType() const;
-		// getUnitType
-		// @return UnitType - BWAPI type of unit
-	Position getPosition() const;
-		// getPosition
-		// @return Position - BWAPI position of unit
-	//void setUnitType(UnitType) const;
-	//	// setUnitType
-	//	// @param UnitType - BWAPI type of unit
-	//void setPosition(Position) const;
-	//	// setPosition
-	//	// @param Position - BWAPI position of unit
-};
-
-extern map <int, BuildingInfo> enemyBuildings;
-void storeEnemyBuilding(Unit building, map<int, BuildingInfo>& enemyBuildings);
