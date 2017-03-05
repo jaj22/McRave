@@ -27,13 +27,16 @@ extern int tribunalDesired;
 extern vector<TilePosition>gasTilePosition;
 extern vector<int> mineralID, mineralWorkerID;
 extern vector<TilePosition> nextExpansion;
+extern vector<Position>enemyBasePositions;
 
 // External expansion paramaters
 extern int firstAttack;
 
+
 // External enemy build tracking
 extern bool fourPool;
 extern bool twoGate, twoRax;
+extern bool scouting;
 
 // Function declaration
 void getBuildOrder();
