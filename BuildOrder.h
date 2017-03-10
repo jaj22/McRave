@@ -30,14 +30,16 @@ extern vector<TilePosition> nextExpansion;
 extern vector<Position>enemyBasePositions;
 
 // External expansion paramaters
-extern int firstAttack;
+extern int forceExpand;
 
 
 // External enemy build tracking
 extern bool fourPool;
 extern bool twoGate, twoRax;
 extern bool scouting;
+extern string currentStrategy;
 
 // Function declaration
 void getBuildOrder();
 void myBuilds(int whichBuild);
+void myOpeners(int whichOpener);
