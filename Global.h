@@ -102,6 +102,8 @@ set <BWTA::Region*> territory;
 vector<BWTA::Region*> allyTerritory;
 vector<BWTA::Region> enemyTerritory;
 bool forceEngage = false;
+int forceExpand = 0;
+string currentStrategy;
 
 // Base positions
 Position enemyStartingPosition;
@@ -119,3 +121,8 @@ map <int, TilePosition> testBases;
 bool doOnce = true;
 BWEM::CPPath path;
 Position arbiterPosition;
+
+Color playerColor;
+map <int, double> localEnemy;
+map <int, double> localAlly;
+map <int, int> unitRadiusCheck;

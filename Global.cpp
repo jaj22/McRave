@@ -46,6 +46,7 @@ void McRave::onStart()
 	readMap();
 	analyzed = false;
 	analysis_just_finished = false;
+	playerColor = Broodwar->self()->getColor();
 }
 
 void McRave::onEnd(bool isWinner)
@@ -58,7 +59,7 @@ void McRave::onEnd(bool isWinner)
 }
 
 void McRave::onFrame()
-{
+{	
 #pragma region Heatmap Manager
 	{
 		double strongest = 0;
@@ -67,21 +68,21 @@ void McRave::onFrame()
 		{
 			for (int y = 0; y <= Broodwar->mapHeight(); y++)
 			{
-				
+
 				if (enemyHeatmap[x][y] > 0)
-				{					
+				{
 					//Broodwar->drawTextMap(x * 32, y * 32, "%.2f", enemyHeatmap[x][y]);
 				}
 				if (shuttleHeatmap[x][y] > 0)
-				{			
+				{
 					//Broodwar->drawTextMap(x * 32, y * 32, "%d", shuttleHeatmap[x][y]);
 				}
 				if (allyHeatmap[x][y] > 0)
 				{
 					//Broodwar->drawTextMap(x * 32, y * 32, "%.2f", allyHeatmap[x][y]);
 				}
-				
-				if (allyHeatmap[x][y] - enemyHeatmap[x][y] > strongest && allyHeatmap[x][y] > 0)
+
+				if ((allyHeatmap[x][y] - enemyHeatmap[x][y]) > strongest && allyHeatmap[x][y] > 0)
 				{
 					arbiterPosition = Position(x * 32, y * 32);
 					strongest = allyHeatmap[x][y] - enemyHeatmap[x][y];
@@ -117,7 +118,7 @@ void McRave::onFrame()
 					{
 						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
 						{
-							enemyHeatmap[x][y] += unitGetStrength(u);
+							enemyHeatmap[x][y] += unitGetStrength(u->getType());
 						}
 					}
 				}
@@ -132,7 +133,7 @@ void McRave::onFrame()
 					{
 						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
 						{
-							airEnemyHeatmap[x][y] += unitGetStrength(u);
+							airEnemyHeatmap[x][y] += unitGetAirStrength(u->getType());
 						}
 					}
 				}
@@ -140,7 +141,7 @@ void McRave::onFrame()
 		}
 		for (auto u : Broodwar->self()->getUnits())
 		{
-			if (u->getType().groundWeapon().damageAmount() > 0)
+			if (u->getType().groundWeapon().damageAmount() > 0 && u->isCompleted())
 			{
 				int range;
 				// Making sure we properly analyze the threat of melee units without adding range to ranged units
@@ -159,7 +160,7 @@ void McRave::onFrame()
 					{
 						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
 						{
-							allyHeatmap[x][y] += unitGetStrength(u);
+							allyHeatmap[x][y] += unitGetStrength(u->getType());
 						}
 					}
 				}
@@ -186,10 +187,23 @@ void McRave::onFrame()
 					// For each chokepoint
 					for (auto Chokepoint : region->getChokepoints())
 					{
+						if (region == getRegion(playerStartingTilePosition))
+						{
+							// If chokepoint is really wide, such as Andromeda, this will add the Territory of the natural
+							if (Chokepoint->getWidth() > 200 && find(allyTerritory.begin(), allyTerritory.end(), region) == allyTerritory.end())
+							{
+								allyTerritory.push_back(Chokepoint->getRegions().first);
+								allyTerritory.push_back(Chokepoint->getRegions().second);
+							}
+						}
 						// Check if every chokepoint is connected to an ally territory, in which case add this to our territory (connecting regions)
 						if (find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().first) != allyTerritory.end() || find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().second) != allyTerritory.end())
 						{
 							merge = true;
+							if (region->getChokepoints().size() == 1)
+							{								
+								break;
+							}
 						}
 						else
 						{
@@ -197,7 +211,7 @@ void McRave::onFrame()
 							break;
 						}
 					}
-					if (merge == true)
+					if (merge == true && find(allyTerritory.begin(), allyTerritory.end(), region) == allyTerritory.end())
 					{
 						allyTerritory.push_back(region);
 					}
@@ -213,11 +227,11 @@ void McRave::onFrame()
 						// Check if both territories are ally
 						if (find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().first) != allyTerritory.end() && find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().second) != allyTerritory.end())
 						{
-							// If both are ally, do nothing (we don't need to defend two ally regions
+							// If both are ally, do nothing (we don't need to defend two ally regions)							
 						}
 						else
 						{
-							defendHere.push_back(Chokepoint->getCenter());
+							defendHere.push_back(Chokepoint->getCenter());							
 						}
 					}
 				}
@@ -225,7 +239,7 @@ void McRave::onFrame()
 			// Draw territory boundaries
 			for (auto position : defendHere)
 			{
-				Broodwar->drawCircleMap(position, 80, Colors::Green);
+				Broodwar->drawCircleMap(position, 80, playerColor);
 			}
 		}
 	}
@@ -245,9 +259,9 @@ void McRave::onFrame()
 				// Find player starting position and tile position		
 				BaseLocation* playerStartingLocation = getStartLocation(Broodwar->self());
 				playerStartingPosition = playerStartingLocation->getPosition();
-				playerStartingTilePosition = playerStartingLocation->getTilePosition();		
+				playerStartingTilePosition = playerStartingLocation->getTilePosition();
 				nextExpansion.push_back(playerStartingTilePosition);
-				activeExpansion.push_back(playerStartingTilePosition);				
+				activeExpansion.push_back(playerStartingTilePosition);
 				BWTAhandling = true;
 			}
 		}
@@ -256,26 +270,25 @@ void McRave::onFrame()
 		{
 			if (enemyBasePositions.size() > 0)
 			{
-				analysis_just_finished = false;
-				set<BaseLocation*> allBases = getBaseLocations();
-				for (auto base : allBases)
+				analysis_just_finished = false;				
+				for (auto base : getBaseLocations())
 				{
 					int distances = getGroundDistance2(base->getTilePosition(), playerStartingTilePosition) - getGroundDistance2(base->getTilePosition(), enemyStartingTilePosition);
 					if (base->isMineralOnly())
 					{
 						distances += 1280;
 					}
-					if (base->getTilePosition() != playerStartingTilePosition)
+					if (base->getTilePosition() != playerStartingTilePosition && !base->isIsland() && base->getTilePosition() != enemyStartingTilePosition)
 					{
 						testBases.emplace(distances, base->getTilePosition());
-					}					
+					}
 				}
 
 				for (auto base : testBases)
 				{
 					nextExpansion.push_back(base.second);
 					activeExpansion.push_back(base.second);
-				}							
+				}
 			}
 		}
 
@@ -331,6 +344,7 @@ void McRave::onFrame()
 		Broodwar->drawTextScreen(200, 20, "Reserved Minerals: %d", reservedMineral);
 		Broodwar->drawTextScreen(200, 30, "Reserved Gas: %d", reservedGas);
 		Broodwar->drawTextScreen(200, 40, "%d", Broodwar->getFrameCount());
+		Broodwar->drawTextScreen(200, 50, "Current Strategy: %s", currentStrategy.c_str());
 
 		// Display some information about our units
 		Broodwar->drawTextScreen(500, 20, "Unit Count");
@@ -339,15 +353,30 @@ void McRave::onFrame()
 		Broodwar->drawTextScreen(500, 50, "Enemy Supply: %d", enemySupply);
 		Broodwar->drawTextScreen(500, 60, "Ally Strength: %.2f", allyStrength);
 		Broodwar->drawTextScreen(500, 70, "Enemy Strength: %.2f", enemyStrength);
-		Broodwar->drawTextScreen(500, 80, "Force Engage: %d", forceEngage);
+
 
 		// Display which worker is builder and scouter
 		if (Broodwar->getFrameCount() > 100)
 		{
-			Broodwar->drawTextMap(Broodwar->getUnit(buildingWorkerID.front())->getPosition(), "Builder", Colors::Yellow);
-			Broodwar->drawTextMap(Broodwar->getUnit(scoutWorkerID.front())->getPosition(), "Scouter", Colors::Yellow);
+
+			//Broodwar->drawTextMap(Broodwar->getUnit(buildingWorkerID.front())->getPosition(), "Builder");
+			//Broodwar->drawTextMap(Broodwar->getUnit(scoutWorkerID.front())->getPosition(), "Scouter");
 		}
-		
+
+		// Show local calculations
+		for (auto u : localEnemy)
+		{
+			Broodwar->drawTextMap(Broodwar->getUnit(u.first)->getPosition(), "E: %.2f", u.second);
+		}
+		for (auto u : localAlly)
+		{
+			Broodwar->drawTextMap(Broodwar->getUnit(u.first)->getPosition() + Position(0,10), "A: %.2f", u.second);
+		}
+		for (auto u : unitRadiusCheck)
+		{
+			Broodwar->drawCircleMap(Broodwar->getUnit(u.first)->getPosition(), u.second, playerColor);
+		}
+
 		// Arbiter Position showing
 		//Broodwar->drawCircleMap(arbiterPosition, 8, Colors::Purple, true);
 
@@ -355,7 +384,7 @@ void McRave::onFrame()
 		TilePosition expectedRightCorner;
 		expectedRightCorner.x = buildTilePosition.x + currentBuilding.tileWidth();
 		expectedRightCorner.y = buildTilePosition.y + currentBuilding.tileHeight();
-		Broodwar->drawBoxMap(buildTilePosition.x * 32, buildTilePosition.y * 32, expectedRightCorner.x * 32, expectedRightCorner.y * 32, Colors::Black, false);
+		Broodwar->drawBoxMap(buildTilePosition.x * 32, buildTilePosition.y * 32, expectedRightCorner.x * 32, expectedRightCorner.y * 32, playerColor, false);
 	}
 #pragma endregion
 #pragma region Scouting Midgame
@@ -423,14 +452,41 @@ void McRave::onFrame()
 		}
 	}
 #pragma endregion
-#pragma region UnitManager
+#pragma region Unit Manager
 	{
-		// Check all units for their current health, shields and damage capabilities to compare against enemy
-		allyStrength = 0.0;
-		for (auto u : Broodwar->self()->getUnits())
+#pragma region Strength Manager
 		{
-			allyStrength += unitGetStrength(u);
+			// Check all units for their current health, shields and damage capabilities to compare against enemy
+			allyStrength = 0.0;
+			enemyStrength = 0.0;
+			for (auto u : Broodwar->self()->getUnits())
+			{
+				if (u->isCompleted())
+				{
+					allyStrength += unitGetVisibleStrength(u);
+				}
+			}
+
+			for (auto u : Broodwar->enemy()->getUnits())
+			{
+				storeEnemyUnit(u, enemyUnits);
+				// Check for visibility (will include invisible units such as dark templars)
+				if (u->exists())
+				{
+					enemyStrength += unitGetVisibleStrength(u);
+				}
+			}
+
+			for (auto u : enemyUnits)
+			{
+				Broodwar->drawTextMap(u.second.getPosition(), "%d", u.first);
+				if (!Broodwar->getUnit(u.first)->exists())
+				{
+					enemyStrength += unitGetStrength(u.second.getUnitType());
+				}
+			}
 		}
+#pragma endregion
 
 		// Prevent spamming by only running our onFrame once every number of latency frames.
 		// Latency frames are the number of frames before commands are processed.
@@ -439,7 +495,8 @@ void McRave::onFrame()
 
 		// Iterate through all the units that we own
 		for (auto u : Broodwar->self()->getUnits())
-		{			
+		{
+
 			// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, loaded, not powered, stuck, not completed
 			if (!u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised()
 				|| u->isLoaded() || !u->isPowered() || !u->isCompleted() || u->isStuck())
@@ -592,27 +649,22 @@ void McRave::onFrame()
 								scouting = false;
 							}
 						}
-						if (!scouting && !clearCut)
+					}
+					if (find(scoutWorkerID.begin(), scoutWorkerID.end(), u->getID()) == scoutWorkerID.end() && find(buildingWorkerID.begin(), buildingWorkerID.end(), u->getID()) == buildingWorkerID.end())
+					{
+						for (auto position : defendHere)
 						{
-							for (auto position : defendHere)
+							if (u->getDistance(position) < 320 && Broodwar->getUnitsInRadius(position, 128, Filter::IsMineralField).size() > 0 && !u->isGatheringMinerals())
 							{
-								if (Broodwar->getUnitsInRadius(position, 128, Filter::IsMineralField).size() > 0 && !u->isGatheringMinerals())
-								{
-									clearCut = true;
-									u->gather(Broodwar->getClosestUnit(position, Filter::IsMineralField));
-									return;
-								}
-								else
-								{
-									clearCut = false;
-								}
+								u->gather(Broodwar->getClosestUnit(position, Filter::IsMineralField));
+								return;
 							}
 						}
 					}
 					// Assign the probe a task (mineral, gas)
 					assignProbe(u);
 					continue;
-				}				
+				}
 			}
 #pragma endregion
 #pragma region Building Manager
@@ -653,10 +705,9 @@ void McRave::onFrame()
 				{
 					productionManager(u);
 					continue;
-				}				
+				}
 			}
 #pragma endregion
-
 #pragma region Army Unit Manager	
 			{
 				if (u->getType() == UnitTypes::Protoss_Dragoon || u->getType() == UnitTypes::Protoss_Zealot || u->getType() == UnitTypes::Protoss_Dark_Templar)
@@ -754,11 +805,12 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 			{
 				enemySupply += unit->getType().supplyRequired();
 			}
-			enemyStrength += unitGetStrength(unit);
-			int enemyGateCnt = 0, enemyPoolCnt = 0, enemyRaxCnt = 0;
-			if ((!twoGate || !fourPool || !twoRax) && scouting)
+			int enemyGateCnt = 0, enemyPoolCnt = 0, enemyRaxCnt = 0, enemySunkenCnt = 0;
+
+			// Check enemy buildings for build order adaptions
+			for (auto building : enemyUnits)
 			{
-				for (auto building : enemyUnits)
+				if ((!twoGate || !fourPool || !twoRax) && scouting)
 				{
 					if (building.second.getUnitType() == UnitTypes::Protoss_Gateway)
 					{
@@ -796,6 +848,18 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 						}
 					}
 				}
+				if (unit->getType() == UnitTypes::Terran_Bunker)
+				{
+					forceExpand = 1;
+				}
+				if (unit->getType() == UnitTypes::Zerg_Sunken_Colony)
+				{
+					enemySunkenCnt++;
+					if (enemySunkenCnt > 1)
+					{
+						forceExpand = 1;
+					}
+				}
 			}
 		}
 	}
@@ -828,7 +892,7 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 				{
 					gasTilePosition.push_back(u->getTilePosition());
 				}
-				if (u->getType().isMineralField() == true && u->getDistance(nexusPosition) <= 400)
+				if (u->getType().isMineralField() == true && u->getDistance(nexusPosition) <= 400 && u->getInitialResources() > 0)
 				{
 					mineralID.push_back(u->getID());
 				}
@@ -885,7 +949,8 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 		{
 			enemySupply -= unit->getType().supplyRequired();
 		}
-		enemyStrength -= unitGetStrength(unit);
+		enemyUnits.erase(unit->getID());
+		enemyStrength -= unitGetStrength(unit->getType());
 	}
 	// If a mineral field died that we are keeping track of, remove the mineral from the vector and the corresponding worker(s) that were tasked on it
 	// Removing the workers means we can re-assign them to new tasks immediately where necessary
