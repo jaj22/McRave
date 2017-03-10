@@ -3,7 +3,6 @@
 using namespace BWAPI;
 using namespace std;
 
-
 Unit targetPriority(Unit unit)
 {
 	int searchRadius = 128;
@@ -42,7 +41,6 @@ Unit targetPriority(Unit unit)
 	}
 	return unit->getClosestUnit(Filter::IsEnemy && Filter::IsDetected);
 }
-
 Unit groundTargetPriority(Unit unit)
 {
 	int searchRadius = 128;
@@ -59,7 +57,7 @@ Unit groundTargetPriority(Unit unit)
 	{
 		return unit->getClosestUnit(Filter::IsEnemy && (Filter::GetType == UnitTypes::Terran_SCV && Filter::IsRepairing || Filter::GetType == UnitTypes::Terran_SCV && Filter::IsConstructing));
 	}
-	else if (unit->getUnitsInRadius(320, Filter::IsEnemy && Filter::IsVisible && Filter::IsDetected && Filter::GetType != UnitTypes::Zerg_Larva && Filter::GetType != UnitTypes::Zerg_Egg
+	else if (unit->getUnitsInRadius(320, Filter::IsEnemy && !Filter::IsFlyer && Filter::IsVisible && Filter::IsDetected && Filter::GetType != UnitTypes::Zerg_Larva && Filter::GetType != UnitTypes::Zerg_Egg
 		&& (!Filter::IsBuilding || Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon
 		|| Filter::GetType == UnitTypes::Enum::Terran_Missile_Turret
 		|| Filter::GetType == UnitTypes::Enum::Terran_Bunker
@@ -67,7 +65,7 @@ Unit groundTargetPriority(Unit unit)
 		|| Filter::GetType == UnitTypes::Enum::Zerg_Spore_Colony)).size() > 0)
 	{
 
-		return unit->getClosestUnit(Filter::IsEnemy && Filter::IsVisible && Filter::IsDetected && Filter::GetType != UnitTypes::Zerg_Larva && Filter::GetType != UnitTypes::Zerg_Egg
+		return unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer && Filter::IsVisible && Filter::IsDetected && Filter::GetType != UnitTypes::Zerg_Larva && Filter::GetType != UnitTypes::Zerg_Egg
 			&& (!Filter::IsBuilding || Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon
 			|| Filter::GetType == UnitTypes::Enum::Terran_Missile_Turret
 			|| Filter::GetType == UnitTypes::Enum::Terran_Bunker
@@ -80,7 +78,6 @@ Unit groundTargetPriority(Unit unit)
 	}
 	return unit->getClosestUnit(Filter::IsEnemy && Filter::IsDetected && !Filter::IsFlyer);
 }
-
 Unit clusterTargetPriority(Unit unit)
 {
 	int highest = 0;
@@ -109,11 +106,11 @@ Unit clusterTargetPriority(Unit unit)
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
-		for (Unit u : unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsStasised))
+		for (Unit u : unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsStasised && !Filter::IsFlyer))
 		{
 			if (u->getUnitsInRadius(radius, Filter::IsEnemy).size() > 0)
 			{
-				clusters.emplace(u->getID(), u->getUnitsInRadius(radius, Filter::IsEnemy && !Filter::IsStasised).size());
+				clusters.emplace(u->getID(), u->getUnitsInRadius(radius, Filter::IsEnemy && !Filter::IsStasised && !Filter::IsFlyer).size());
 			}
 		}
 	}
