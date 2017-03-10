@@ -4,6 +4,7 @@
 
 using namespace BWAPI;
 using namespace std;
+using namespace BWTA;
 
 // Variables for BuildingManager.cpp
 
@@ -26,7 +27,7 @@ void buildingManager(UnitType building, Unit builder)
 		if (buildTilePosition != TilePositions::None)
 		{
 			// If builder is too far away, let's just get a different one, also helps prevent probes from pathing weird and getting stuck
-			if (builder->getDistance(Position(32 * buildTilePosition.x, 32 * buildTilePosition.y)) > 640)
+			if (getGroundDistance2(buildTilePosition, builder->getTilePosition()) > 640)
 			{
 				buildingWorkerID.pop_back();
 				buildingWorkerID.push_back((Broodwar->getClosestUnit(buildPosition, Filter::IsAlly && Filter::IsWorker))->getID());
@@ -149,7 +150,7 @@ TilePosition getBuildLocationNear(UnitType building, Unit builder, TilePosition 
 
 void nexusManager(UnitType building, Unit builder, TilePosition expansion)
 {
-	Unitset unitsBlocking = Broodwar->getUnitsInRectangle(Position(expansion.x * 32, expansion.y * 32), Position(expansion.x * 32 + 128, expansion.y * 32 + 128));
+	Unitset unitsBlocking = Broodwar->getUnitsInRectangle(Position(expansion.x * 32, expansion.y * 32), Position(expansion.x * 32 + 128, expansion.y * 32 + 128), !Filter::IsWorker);
 	for (Unitset::iterator itr = unitsBlocking.begin(); itr != unitsBlocking.end(); itr++)
 	{
 		(*itr)->move(Position(Broodwar->self()->getStartLocation().x * 32, Broodwar->self()->getStartLocation().y * 32));
@@ -244,7 +245,7 @@ void productionManager(Unit building)
 				}
 			}
 			// If we need a Dragoon
-			if (Broodwar->self()->minerals() < Broodwar->self()->gas() * 5 || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1)
+			if ((Broodwar->self()->minerals() < Broodwar->self()->gas() * 5 || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon)) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1)
 			{
 				// If we can afford a Dragoon, train
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
