@@ -1,160 +1,184 @@
 #include "BuildOrder.h"
 
 using namespace BWAPI;
-int gateNum;
+int gateNum = 0;
+int secondExpand = 0;
+bool getOpener = true;
 
 // Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
 
 void getBuildOrder()
-{	
-	// Supply and expansions
-	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / 14)));	
+{
+	// Pylon, Forge, Nexus
+	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / 14)));
+	forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
+	nexusDesired = min(3, 1 + forceExpand + secondExpand);
+	gateNum = 1 + (Broodwar->self()->supplyUsed() / 60);
 
 	// If we just attacked, expand
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Shuttle) > 0)
 	{
-		firstAttack = 1;
+		forceExpand = 1;
 	}
 
-	// If we are teching up, ignore build order changes
+	// If our minerals exceed 800, expand
+	if (Broodwar->self()->minerals() > 800)
+	{
+		secondExpand = 1;
+	}
+
+	// If we are teching up, ignore opener and rush adaptations
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 	{
 		fourPool = false;
 		twoGate = false;
 		twoRax = false;
+		getOpener = false;
 	}
 
-	// Gateways
-	if (fourPool || twoGate || twoRax || enemyBasePositions.size() < 1)
+	// If not opener, gas is based on whether we need more or not
+	if (!getOpener)
 	{
-		if (Broodwar->self()->supplyUsed() >= 18 && Broodwar->self()->supplyUsed() < 26)
+		if (Broodwar->self()->gas() * 2 < Broodwar->self()->minerals())
 		{
-			gateDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
-		}
-		else if (Broodwar->self()->supplyUsed() >= 26 && Broodwar->self()->supplyUsed() <= 70)
-		{
-			gateDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + 1;
-		}
-		else if (Broodwar->self()->supplyUsed() > 70)
-		{
-			gateDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) + 1;
-		}
-		else
-		{
-			gateDesired = 0;
+			gasDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway), (int)gasTilePosition.size());
 		}
 	}
-	else
-	{		
-		if (Broodwar->self()->supplyUsed() >= 18 && Broodwar->self()->supplyUsed() < 26)
-		{
-			gateDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
-		}
-		else if (Broodwar->self()->supplyUsed() >= 26 && Broodwar->self()->supplyUsed() <= 70)
-		{
-			gateDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core);
-		}
-		else if (Broodwar->self()->supplyUsed() >= 70)
-		{
-			gateDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) + 1;		
-		}
-		else
-		{
-			gateDesired = 0;
-		}
-	}	
+
+	// Robotics 
+	if (Broodwar->self()->supplyUsed() >= 160)
+	{
+		roboDesired = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
+	}
+	else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) > 4)
+	{
+		roboDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
+	}
+
+
 
 	switch (Broodwar->enemy()->getRace())
 	{
-	case Races::Enum::Zerg:	
-		myBuilds(1);	
-		break;
-	case Races::Enum::Terran:
-		if (twoRax)
+	case Races::Enum::Zerg:
+		// Currently use the same opener regardless of four pool or not
+		if (fourPool || getOpener)
 		{
-			myBuilds(0);
+			myOpeners(0);
+			currentStrategy.assign("Two Gate Core");
 		}
 		else
 		{
-			myBuilds(2);
+			currentStrategy.assign("Three Gate Reaver");
+			myBuilds(0);
 		}
 		break;
-	case Races::Enum::Protoss:
-		if (twoGate || enemyBasePositions.size() < 1)
+	case Races::Enum::Terran:
+		if (twoRax && getOpener)
 		{
-			myBuilds(0);
+			myOpeners(0);
+			currentStrategy.assign("Two Gate Core");
+		}
+		else if (getOpener)
+		{
+			myOpeners(1);
+			currentStrategy.assign("One Gate Core");
 		}
 		else
 		{
 			myBuilds(1);
+			currentStrategy.assign("Two Base Arbiter");
+		}
+		break;
+	case Races::Enum::Protoss:
+		if (twoGate && getOpener)
+		{
+			myOpeners(0); // 2 gate
+			currentStrategy.assign("Two Gate Core");
+		}
+		else if (getOpener)
+		{
+			myOpeners(1); // 1 gate 
+			currentStrategy.assign("One Gate Core");
+		}
+		else
+		{
+			myBuilds(0);
+			currentStrategy.assign("Three Gate Reaver");
 		}
 		break;
 	case Races::Enum::Random:
-		{
-			myBuilds(0);
-		}
-		break;
+	{
+		myOpeners(0); // 2 Gate opener
+		currentStrategy.assign("Two Gate Core");
+	}
+	break;
+	case Races::Enum::Unknown:
+	{
+		myOpeners(0); // 2 Gate opener
+		currentStrategy.assign("Two Gate Core");
+	}
+	break;
 	}
 }
 
 void myBuilds(int whichBuild)
 {
 	switch (whichBuild){
-	case 0: // Temporary Defensive Build
-		gateNum = 1;
-		forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
-		coreDesired = min(1, (int)floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) / 4));
-		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) / 4));		
-		break;		
-	case 1: 
-		// 3 Gate Robo into HT		
-		gasDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway), (int)gasTilePosition.size());
-		forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
-		nexusDesired = min(3, 1 + (int)floor(Broodwar->self()->supplyUsed() / 120));
-
-		// First Base Tech - Goons and Reavers
-		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
-		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) > 4 && Broodwar->self()->supplyUsed() < 160)
-		{
-			roboDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-		}
-		if (Broodwar->self()->supplyUsed() >= 160)
-		{
-			roboDesired = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-		}
-		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory));
+		// -- Robo and High Templar Lategame --
+	case 0:
+		// First Base Tech - Reavers		
+		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		
+		gateDesired = min(6, 1 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+
 		// Second Base Tech - Speedlots and High Templars
-		citadelDesired = min(1, max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) - 1));
-		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));		
+		citadelDesired = min(1, max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility) - 2));
+		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
 		break;
-	case 2: 
-		// 2 Base Arbiter
-		gateNum = 1;
-		gasDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway), (int)gasTilePosition.size());
-		forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
-		nexusDesired = min(3, 1 + (int)floor(Broodwar->self()->supplyUsed() / 100));
-
-		// First Base Tech - Goons and Reavers
-		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
-		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) > 4 && Broodwar->self()->supplyUsed() < 160)
-		{
-			roboDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-		}
-		if (Broodwar->self()->supplyUsed() >= 160)
-		{
-			roboDesired = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-		}
-		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory));
+		// -- Robo and Arbiter Lategame	--	
+	case 1:
+		// First Base Tech - Reavers
+		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		gateDesired = min(6, 1 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 
 		// Second Base Tech	- Speedlots and Arbiters		
-		stargateDesired = min(1, max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) - 1));
-		
-		tribunalDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
-		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));	
+		stargateDesired = min(1, Broodwar->self()->supplyUsed()/160);
+		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
 		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
+		tribunalDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
+		break;
+	}
+}
+
+void myOpeners(int whichOpener)
+{
+	switch (whichOpener)
+	{
+	case 0:
+		// 2 Gate Core		
+		coreDesired = min(1, (int)floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) / 3));
+		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) / 3));
+		if (Broodwar->self()->supplyUsed() >= 20 && Broodwar->self()->supplyUsed() < 24)
+		{
+			gateDesired = 1;
+		}
+		else if (Broodwar->self()->supplyUsed() >= 24)
+		{
+			gateDesired = 2;
+		}
+		break;
+	case 1:
+		// 1 Gate Core		
+		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
+		if (Broodwar->self()->supplyUsed() >= 20)
+		{
+			gateDesired = 1;
+		}
+		if (Broodwar->self()->supplyUsed() >= 24)
+		{
+			gasDesired = 1;
+		}
 		break;
 	}
 }
