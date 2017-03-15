@@ -25,12 +25,11 @@ using namespace BWAPI;
 using namespace std;
 using namespace BWTA;
 
-
 bool BWTAhandling = false;
 bool scouting = true;
-bool clearCut = false;
+bool outsideBase = false;
 
-// Building Variables
+// Building Tracker Variables
 int queuedMineral = 0, queuedGas = 0, reservedMineral = 0, reservedGas = 0;
 int nexusDesired = 0, inactiveNexusCnt = 0;
 int pylonDesired = 0;
@@ -39,8 +38,6 @@ int gateDesired = 0;
 int forgeDesired = 0;
 int batteryDesired = 0;
 int coreDesired = 0;
-
-// Advanced Building Variables
 int roboDesired = 0;
 int stargateDesired = 0;
 int citadelDesired = 0;
@@ -50,79 +47,60 @@ int archivesDesired = 0;
 int observatoryDesired = 0;
 int tribunalDesired = 0;
 
-// Resource IDs
-vector<int> mineralID;
-vector<int> assimilatorID;
-vector<TilePosition> gasTilePosition;
+// Building Manager Variables
+map <int, UnitType> idleBuildings;
+map <int, TechType> idleTech;
+map <int, UpgradeType> idleUpgrade;
+map <UnitType, int> buildingDesired;
+map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
 
-// Probe ID and their assignments
-vector<int> probeID;
-vector<int> deadProbeID;
-vector<int> gasWorkerID;
-vector<int> mineralWorkerID;
-vector<int> additionalMineralWorkerID;
-vector<int> buildingWorkerID;
+// Probe Manager Variables
+map <Unit, Unit> gasProbeMap;
+map <Unit, Unit> mineralProbeMap;
 vector<int> scoutWorkerID;
-vector<int> combatWorkerID;
 
-// Shuttle ID and Reaver ID pairing
+// Resource Manager Variables
+vector<TilePosition> gasTilePosition;
+vector <Unit> geysers;
+map <Unit, int> gasMap;
+map <Unit, int> mineralMap;
+
+// Unit Manager Variables
+map <int, double> localEnemy;
+map <int, double> localAlly;
+map <int, int> unitRadiusCheck;
+map <int, Position> unitsCurrentCommand;
+map <int, UnitInfo> enemyUnits;
 vector<int> shuttleID;
 vector<int> harassShuttleID;
 vector<int> reaverID;
 vector<int> harassReaverID;
-
-// Enemy unit tracking
 int enemyCountNearby = 0;
 int defendingUnitCount = 0;
 int enemyScoutedLast = 0;
-map <int, UnitInfo> enemyUnits;
+Position arbiterPosition;
 
-// Enemy build tracking
+// Strategy Variables
 bool fourPool = false, twoGate = false, twoRax = false;
-
-// Heatmaps
-double allyStrength = 0.0, enemyStrength = 0.0;
-double enemyHeatmap[256][256] = { { 0 } };
-double allyHeatmap[256][256] = { { 0 } };
-double airEnemyHeatmap[256][256] = { { 0 } }; 
-int shuttleHeatmap[256][256] = { { 0 } };
-int allySupply = 0, enemySupply = 0;
-
-// Building Manager Variables
-UnitType currentBuilding;
-TilePosition buildTilePosition;
-map <int, UnitType> idleBuildings;
-map <int, TechType> idleTech;
-map <int, UpgradeType> idleUpgrade;
-
-// Territory Variables
-int currentSize = 0;
-vector<Position> defendHere;
-set <BWTA::Region*> territory;
-vector<BWTA::Region*> allyTerritory;
-vector<BWTA::Region> enemyTerritory;
-bool forceEngage = false;
 int forceExpand = 0;
 string currentStrategy;
 
-// Base positions
-Position enemyStartingPosition;
-TilePosition enemyStartingTilePosition;
+// Heatmaps
+double allyStrength = 0.0, enemyStrength = 0.0;
+double allyHeatmap[256][256] = { { 0 } };
+double enemyHeatmap[256][256] = { { 0 } };
+double airEnemyHeatmap[256][256] = { { 0 } }; 
+int shuttleHeatmap[256][256] = { { 0 } };
+
+// Terrain Variables
+int currentSize = 0;
+BWEM::CPPath path;
+set <BWTA::Region*> territory;
+vector<BWTA::Region*> allyTerritory;
+vector<BWTA::Region> enemyTerritory;
+vector<Position> defendHere;
 vector<Position>enemyBasePositions;
 vector<TilePosition> nextExpansion;
 vector<TilePosition> activeExpansion;
-
-// Starting locations
-Position playerStartingPosition;
-TilePosition playerStartingTilePosition;
-
-//Unsorted
-map <int, TilePosition> testBases;
-bool doOnce = true;
-BWEM::CPPath path;
-Position arbiterPosition;
-
-Color playerColor;
-map <int, double> localEnemy;
-map <int, double> localAlly;
-map <int, int> unitRadiusCheck;
+Position enemyStartingPosition, playerStartingPosition;
+TilePosition enemyStartingTilePosition, playerStartingTilePosition;
