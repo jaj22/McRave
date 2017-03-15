@@ -14,6 +14,7 @@ extern vector <TilePosition> nextExpansion;
 extern Position enemyStartingPosition;
 extern TilePosition enemyStartingTilePosition;
 extern Position playerStartingPosition;
+extern TilePosition playerStartingTilePosition;
 extern Position arbiterPosition;
 
 // External heatmaps and strength
@@ -29,13 +30,14 @@ extern vector<int> reaverID;
 extern vector<int> harassReaverID;
 
 // Other
-extern bool forceEngage;
 extern vector<BWTA::Region*> allyTerritory;
 extern vector<Position> defendHere;
 extern map <int, double> localEnemy;
 extern map <int, double> localAlly;
 extern map <int, int> unitRadiusCheck;
+extern map <int, Position> unitsCurrentCommand;
 extern Color playerColor;
+extern bool outsideBase;
 
 
 // Function declarations
