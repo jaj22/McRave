@@ -19,9 +19,15 @@ extern vector<TilePosition> gasTilePosition;
 extern vector<int> assimilatorID;
 
 //Other
-extern int allySupply;
+extern double enemyStrength, allyStrength;
 extern int enemyCountNearby;
 extern vector<TilePosition> activeExpansion;
+
+// Unsorted
+extern map <Unit, Unit> gasProbeMap;
+extern map <Unit, Unit> mineralProbeMap;
+extern map <Unit, int> gasMap;
+extern map <Unit, int> mineralMap;
 
 // Functions
 void assignProbe(BWAPI::Unit probe);
