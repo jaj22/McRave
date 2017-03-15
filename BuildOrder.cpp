@@ -7,13 +7,31 @@ bool getOpener = true;
 
 // Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
 
+void myBuildings()
+{
+	buildingDesired[UnitTypes::Protoss_Nexus] = nexusDesired;
+	buildingDesired[UnitTypes::Protoss_Pylon] = pylonDesired;
+	buildingDesired[UnitTypes::Protoss_Assimilator] = gasDesired;
+	buildingDesired[UnitTypes::Protoss_Gateway] = gateDesired;
+	buildingDesired[UnitTypes::Protoss_Forge] = forgeDesired;	
+	buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = coreDesired;
+	buildingDesired[UnitTypes::Protoss_Robotics_Facility] = roboDesired;
+	buildingDesired[UnitTypes::Protoss_Stargate] = stargateDesired;
+	buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = citadelDesired;
+	buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = supportBayDesired;
+	buildingDesired[UnitTypes::Protoss_Fleet_Beacon] = fleetBeaconDesired;
+	buildingDesired[UnitTypes::Protoss_Templar_Archives] = archivesDesired;
+	buildingDesired[UnitTypes::Protoss_Observatory] = observatoryDesired;
+	buildingDesired[UnitTypes::Protoss_Arbiter_Tribunal] = tribunalDesired;
+}
+
 void getBuildOrder()
 {
 	// Pylon, Forge, Nexus
 	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / 14)));
 	forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
-	nexusDesired = min(3, 1 + forceExpand + secondExpand);
-	gateNum = 1 + (Broodwar->self()->supplyUsed() / 60);
+	nexusDesired = min(3, 1 + forceExpand + secondExpand + inactiveNexusCnt);
+	gateNum = 2 + (Broodwar->self()->supplyUsed() / 60);
 
 	// If we just attacked, expand
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Shuttle) > 0)
@@ -22,13 +40,13 @@ void getBuildOrder()
 	}
 
 	// If our minerals exceed 800, expand
-	if (Broodwar->self()->minerals() > 800)
+	if (Broodwar->self()->minerals() > 500)
 	{
 		secondExpand = 1;
 	}
 
 	// If we are teching up, ignore opener and rush adaptations
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 	{
 		fourPool = false;
 		twoGate = false;
@@ -41,9 +59,9 @@ void getBuildOrder()
 	{
 		if (Broodwar->self()->gas() * 2 < Broodwar->self()->minerals())
 		{
-			gasDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway), (int)gasTilePosition.size());
+			gasDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway), (int)geysers.size());
 		}
-	}
+	}	
 
 	// Robotics 
 	if (Broodwar->self()->supplyUsed() >= 160)
@@ -119,6 +137,10 @@ void getBuildOrder()
 	}
 	break;
 	}
+
+
+	// Annoying mapping process
+	myBuildings();
 }
 
 void myBuilds(int whichBuild)
@@ -129,7 +151,7 @@ void myBuilds(int whichBuild)
 		// First Base Tech - Reavers		
 		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		gateDesired = min(6, 1 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		gateDesired = min(1 + 2*Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus), gateNum);
 
 		// Second Base Tech - Speedlots and High Templars
 		citadelDesired = min(1, max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility) - 2));
@@ -140,7 +162,7 @@ void myBuilds(int whichBuild)
 		// First Base Tech - Reavers
 		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		gateDesired = min(6, 1 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		gateDesired = min(1 + 2 * Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus), gateNum);
 
 		// Second Base Tech	- Speedlots and Arbiters		
 		stargateDesired = min(1, Broodwar->self()->supplyUsed()/160);
@@ -157,8 +179,8 @@ void myOpeners(int whichOpener)
 	{
 	case 0:
 		// 2 Gate Core		
-		coreDesired = min(1, (int)floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) / 3));
-		gasDesired = min((int)gasTilePosition.size(), (int)floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot) / 3));
+		coreDesired = min(1, (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4));
+		gasDesired = min((int)geysers.size(), (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4));
 		if (Broodwar->self()->supplyUsed() >= 20 && Broodwar->self()->supplyUsed() < 24)
 		{
 			gateDesired = 1;
@@ -182,3 +204,4 @@ void myOpeners(int whichOpener)
 		break;
 	}
 }
+

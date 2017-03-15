@@ -5,38 +5,22 @@ using namespace std;
 using namespace BWAPI;
 
 // External building variables
-extern int nexusDesired;
-extern int pylonDesired;
-extern int gasDesired;
-extern int gateDesired;
-extern int forgeDesired;
-extern int batteryDesired;
-extern int coreDesired;
-
-// External advanced building variables
-extern int roboDesired;
-extern int stargateDesired;
-extern int citadelDesired;
-extern int supportBayDesired;
-extern int fleetBeaconDesired;
-extern int archivesDesired;
-extern int observatoryDesired;
-extern int tribunalDesired;
+extern int nexusDesired, pylonDesired, gasDesired, gateDesired, forgeDesired, batteryDesired, coreDesired, roboDesired, stargateDesired, citadelDesired, supportBayDesired, fleetBeaconDesired, archivesDesired, observatoryDesired, tribunalDesired;
+extern map <UnitType, int> buildingDesired;
 
 // External resource and expansion variables
 extern vector<TilePosition>gasTilePosition;
+extern vector<Unit> geysers;
 extern vector<int> mineralID, mineralWorkerID;
 extern vector<TilePosition> nextExpansion;
 extern vector<Position>enemyBasePositions;
 
 // External expansion paramaters
 extern int forceExpand;
-
+extern int inactiveNexusCnt;
 
 // External enemy build tracking
-extern bool fourPool;
-extern bool twoGate, twoRax;
-extern bool scouting;
+extern bool fourPool, twoGate, twoRax, scouting;
 extern string currentStrategy;
 
 // Function declaration
