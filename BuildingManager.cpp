@@ -7,48 +7,58 @@ using namespace std;
 using namespace BWTA;
 
 // Variables for BuildingManager.cpp
+TilePosition buildTilePosition;
 
-
-void buildingManager(UnitType building, Unit builder)
+TilePosition nexusManager()
 {
+	for (auto base : nextExpansion)
+	{		
+		if (Broodwar->isBuildable(base,true))
+		{			
+			return base;
+		}
+	}	
+	return TilePositions::None;
+}
+
+TilePosition buildingManager(UnitType building)
+{
+	if (building == UnitTypes::Protoss_Nexus)
+	{
+		return nexusManager();
+	}
 	// For each expansion, check if you can build near it, starting at the main
 	for (TilePosition tile : activeExpansion)
 	{
 		if (building == UnitTypes::Protoss_Shield_Battery)
 		{
-			buildTilePosition = getBuildLocationNear(building, builder, TilePosition((BWTA::getNearestChokepoint(nextExpansion.at(0))->getCenter())));
+			buildTilePosition = getBuildLocationNear(building, TilePosition((BWTA::getNearestChokepoint(nextExpansion.at(0))->getCenter())));
 		}
+		else if (building == UnitTypes::Protoss_Assimilator)
+		{
+			for (auto gas : geysers)
+			{
+				if (Broodwar->canBuildHere(gas->getTilePosition(), UnitTypes::Protoss_Assimilator))
+				{
+					return gas->getTilePosition();
+				}
+			}
+		}		
 		else
 		{
-			buildTilePosition = getBuildLocationNear(building, builder, tile);
+			buildTilePosition = getBuildLocationNear(building, tile);
 		}
 		Position buildPosition = Position(32 * buildTilePosition.x, 32 * buildTilePosition.y);
 		// If build position available and not invalid (returns x > 1000)
-		if (buildTilePosition != TilePositions::None)
-		{
-			// If builder is too far away, let's just get a different one, also helps prevent probes from pathing weird and getting stuck
-			if (getGroundDistance2(buildTilePosition, builder->getTilePosition()) > 640)
-			{
-				buildingWorkerID.pop_back();
-				buildingWorkerID.push_back((Broodwar->getClosestUnit(buildPosition, Filter::IsAlly && Filter::IsWorker))->getID());
-				builder = Broodwar->getClosestUnit(buildPosition, Filter::IsAlly && Filter::IsWorker);
-			}
-			if (!Broodwar->isVisible(buildTilePosition))
-			{
-				builder->move(buildPosition);
-			}
-			else
-			{
-				// Build
-				builder->build(building, buildTilePosition);
-				currentBuilding = building;
-			}
-			break;
+		if (buildTilePosition != TilePositions::None && buildTilePosition != TilePositions::Invalid)
+		{			
+			return buildTilePosition;
 		}
 	}
+	return TilePositions::None;
 }
 
-bool canBuildHere(UnitType building, Unit builder, TilePosition buildTilePosition)
+bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 {
 	// Start at one tile vertically above the build site and check the tile width and height + 1 to make sure units can move past and dont get stuck
 	for (int x = buildTilePosition.x; x < buildTilePosition.x + building.tileWidth() + 1; x++)
@@ -61,7 +71,7 @@ bool canBuildHere(UnitType building, Unit builder, TilePosition buildTilePositio
 				return false;
 			}
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			else if (!builder->canBuild(building, buildTilePosition, true) || Broodwar->isBuildable(TilePosition(x, y), true) == false || Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::IsMineralField).empty() == false)
+			else if (!Broodwar->canBuildHere(buildTilePosition, building) || Broodwar->isBuildable(TilePosition(x, y), true) == false || Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::IsMineralField).empty() == false)
 			{
 				return false;
 			}
@@ -95,7 +105,7 @@ bool canBuildHere(UnitType building, Unit builder, TilePosition buildTilePositio
 	return false;
 }
 
-TilePosition getBuildLocationNear(UnitType building, Unit builder, TilePosition buildTilePosition)
+TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosition)
 {
 	int x = buildTilePosition.x;
 	int y = buildTilePosition.y;
@@ -110,7 +120,7 @@ TilePosition getBuildLocationNear(UnitType building, Unit builder, TilePosition 
 		//If we can build here, return this tile position
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
-			if (canBuildHere(building, builder, TilePosition(x, y)) == true)
+			if (canBuildHere(building, TilePosition(x, y)) == true)
 			{
 				return BWAPI::TilePosition(x, y);
 			}
@@ -148,29 +158,6 @@ TilePosition getBuildLocationNear(UnitType building, Unit builder, TilePosition 
 	return BWAPI::TilePositions::None;
 }
 
-void nexusManager(UnitType building, Unit builder, TilePosition expansion)
-{
-	Unitset unitsBlocking = Broodwar->getUnitsInRectangle(Position(expansion.x * 32, expansion.y * 32), Position(expansion.x * 32 + 128, expansion.y * 32 + 128), !Filter::IsWorker);
-	for (Unitset::iterator itr = unitsBlocking.begin(); itr != unitsBlocking.end(); itr++)
-	{
-		(*itr)->move(Position(Broodwar->self()->getStartLocation().x * 32, Broodwar->self()->getStartLocation().y * 32));
-	}
-	// If builder is too far away, let's just get a different one, also helps prevent probes from pathing weird and getting stuck
-	if (builder->getDistance(Position(32 * expansion.x, 32 * expansion.y)) > 1280)
-	{
-		builder = Broodwar->getClosestUnit(Position(32 * expansion.x, 32 * expansion.y), Filter::IsAlly && Filter::IsWorker);
-	}
-
-	if (!Broodwar->isVisible(expansion))
-	{
-		builder->move(Position(expansion.x * 32, expansion.y * 32));
-	}
-	else
-	{
-		builder->build(building, expansion);
-	}
-}
-
 void productionManager(Unit building)
 {
 	if (building->isIdle())
@@ -195,7 +182,7 @@ void productionManager(Unit building)
 		case UnitTypes::Enum::Protoss_Cybernetics_Core:
 
 			// If we need Dragoon range upgrade
-			if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 2)
+			if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon) >= 1)
 			{
 				if (Broodwar->self()->minerals() >= UpgradeTypes::Singularity_Charge.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Singularity_Charge.gasPrice())
 				{
@@ -214,9 +201,14 @@ void productionManager(Unit building)
 			{
 				building->upgrade(UpgradeTypes::Scarab_Damage);
 			}
-			/*if (Broodwar->self()->minerals() >= UpgradeTypes::Reaver_Capacity.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Reaver_Capacity.gasPrice() + queuedGas)
+			if (Broodwar->self()->minerals() >= UpgradeTypes::Reaver_Capacity.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Reaver_Capacity.gasPrice() + queuedGas)
 			{
-			building->upgrade(UpgradeTypes::Reaver_Capacity);
+				building->upgrade(UpgradeTypes::Reaver_Capacity);
+			}
+			/*
+			if (Broodwar->self()->minerals() >= UpgradeTypes::Gravitic_Boosters.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Gravitic_Boosters.gasPrice() + queuedGas)
+			{
+			building->upgrade(UpgradeTypes::Gravitic_Boosters);
 			}*/
 			break;
 		case UnitTypes::Enum::Protoss_Fleet_Beacon:
@@ -299,7 +291,8 @@ void productionManager(Unit building)
 				}
 			}
 			// If we need a Reaver
-			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) >= 3)
+			//else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) >= 3)
+			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) < 10 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0)
 			{
 				// If we can afford a Reaver, train, otherwise, add to priority
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + queuedGas)
@@ -313,19 +306,19 @@ void productionManager(Unit building)
 				}
 			}
 			// If we need a Shuttle
-			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) < 3)
-			{
-				// If we can afford a Shuttle, train, otherwise, add to priority
-				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + queuedMineral)
-				{
-					building->train(UnitTypes::Protoss_Shuttle);
-					idleBuildings.erase(building->getID());
-				}
-				else
-				{
-					idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Shuttle);
-				}
-			}
+			//else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) < 3)
+			//{
+			//	// If we can afford a Shuttle, train, otherwise, add to priority
+			//	if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + queuedMineral)
+			//	{
+			//		building->train(UnitTypes::Protoss_Shuttle);
+			//		idleBuildings.erase(building->getID());
+			//	}
+			//	else
+			//	{
+			//		idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Shuttle);
+			//	}
+			//}
 			break;
 			// Tech Research
 		case UnitTypes::Enum::Protoss_Templar_Archives:
@@ -341,6 +334,7 @@ void productionManager(Unit building)
 					idleTech.emplace(building->getID(), TechTypes::Psionic_Storm);
 				}
 			}
+			break;
 		case UnitTypes::Enum::Protoss_Arbiter_Tribunal:
 			if (!Broodwar->self()->hasResearched(TechTypes::Stasis_Field))
 			{
@@ -354,7 +348,7 @@ void productionManager(Unit building)
 					idleTech.emplace(building->getID(), TechTypes::Stasis_Field);
 				}
 			}
+			break;
 		}
 	}
 }
-
