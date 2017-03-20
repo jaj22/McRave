@@ -61,7 +61,7 @@ TilePosition buildingManager(UnitType building)
 bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 {
 	// Start at one tile vertically above the build site and check the tile width and height + 1 to make sure units can move past and dont get stuck
-	for (int x = buildTilePosition.x; x < buildTilePosition.x + building.tileWidth() + 1; x++)
+	for (int x = buildTilePosition.x - 1; x < buildTilePosition.x + building.tileWidth() + 1; x++)
 	{
 		for (int y = buildTilePosition.y - 1; y < buildTilePosition.y + building.tileHeight() + 1; y++)
 		{
@@ -272,6 +272,14 @@ void productionManager(Unit building)
 				else
 				{
 					idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Arbiter);
+				}
+			}
+			// Only build corsairs against Zerg
+			if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Corsair) < 10)
+			{
+				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Corsair.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Corsair.gasPrice() + queuedGas)
+				{
+					building->train(UnitTypes::Protoss_Corsair);
 				}
 			}
 			break;
