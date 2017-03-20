@@ -15,12 +15,13 @@ extern Position enemyStartingPosition;
 extern TilePosition enemyStartingTilePosition;
 extern Position playerStartingPosition;
 extern TilePosition playerStartingTilePosition;
-extern Position arbiterPosition;
+extern Position supportPosition;
 
 // External heatmaps and strength
 extern double enemyHeatmap[256][256];
 extern double airEnemyHeatmap[256][256];
 extern int shuttleHeatmap[256][256];
+extern int clusterHeatmap[256][256];
 extern double enemyStrength, allyStrength;
 
 // Shuttle ID and Reaver ID pairing
@@ -35,10 +36,13 @@ extern vector<Position> defendHere;
 extern map <int, double> localEnemy;
 extern map <int, double> localAlly;
 extern map <int, int> unitRadiusCheck;
-extern map <int, Position> unitsCurrentCommand;
+extern map <int, Position> unitsCurrentTarget;
+extern map <Unit, int> unitsCurrentLocalCommand;
 extern Color playerColor;
 extern bool outsideBase;
-
+extern vector<Unit> combatProbe;
+extern int aSmall, aMedium, aLarge, eSmall, eMedium, eLarge;
+extern bool enemyAggresion;
 
 // Function declarations
 void unitGetCommand(Unit unit);
@@ -46,6 +50,7 @@ void unitMicro(Unit unit);
 double unitGetStrength(UnitType unitType);
 double unitGetAirStrength(UnitType unitType);
 double unitGetVisibleStrength(Unit unit);
+double unitDamageMod(UnitType ally, UnitType enemy);
 Position unitRegroup(Unit unit);
 Position unitFlee(Unit unit, Unit currentTarget);
 void shuttleManager(Unit unit);
@@ -53,9 +58,12 @@ void shuttleHarass(Unit unit);
 void observerManager(Unit unit);
 void reaverManager(Unit unit);
 void carrierManager(Unit unit);
+void corsairManager(Unit unit);
 void templarManager(Unit unit);
 void arbiterManager(Unit unit);
 int unitGetGlobalStrategy();
+Unit getTarget(Unit unit);
+Unit getClusterTarget(Unit unit);
 
 // Classes for enemy building tracking
 
