@@ -11,16 +11,16 @@ extern map <UnitType, int> buildingDesired;
 // External resource and expansion variables
 extern vector<TilePosition>gasTilePosition;
 extern vector<Unit> geysers;
-extern vector<int> mineralID, mineralWorkerID;
 extern vector<TilePosition> nextExpansion;
 extern vector<Position>enemyBasePositions;
 
 // External expansion paramaters
 extern int forceExpand;
 extern int inactiveNexusCnt;
+extern bool saturated;
 
 // External enemy build tracking
-extern bool fourPool, twoGate, twoRax, scouting;
+extern bool enemyAggresion, scouting;
 extern string currentStrategy;
 
 // Function declaration
