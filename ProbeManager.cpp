@@ -5,7 +5,15 @@ using namespace std;
 
 void assignCombat(Unit probe)
 {
+	if (find(combatProbe.begin(), combatProbe.end(), probe) == combatProbe.end())
+	{
+		combatProbe.push_back(probe);
+	}	
+}
 
+void unAssignCombat(Unit probe)
+{
+	combatProbe.erase(find(combatProbe.begin(), combatProbe.end(), probe));
 }
 
 void assignGas(Unit probe, Unit gas)
@@ -23,15 +31,19 @@ void assignMinerals(Unit probe, Unit mineral)
 }
 
 void assignProbe(Unit probe)
-{
+{	
 	int cnt = 1;
-	for (auto gas : gasMap)
+	// Only update gas probes if we really need gas (helps with expansion timing)
+	if (Broodwar->self()->gas() * 2 < Broodwar->self()->minerals())
 	{
-		if (gas.second < 3)
+		for (auto gas : gasMap)
 		{
-			assignGas(probe, gas.first);
-			gasMap[gas.first] = gas.second + 1;
-			return;
+			if (gas.second < 3)
+			{
+				assignGas(probe, gas.first);
+				gasMap[gas.first] = gas.second + 1;
+				return;
+			}
 		}
 	}
 
@@ -42,12 +54,18 @@ void assignProbe(Unit probe)
 			// First round on minerals
 			if (mineral.second < cnt)
 			{
+				saturated = false;
 				assignMinerals(probe, mineral.first);
 				mineralMap[mineral.first] = cnt;
 				return;
 			}
 		}
 		cnt++;
-	}	
-	probe->gather(probe->getClosestUnit(Filter::IsMineralField));
+	}
+	saturated = true;
+	if (probe->isIdle())
+	{
+		probe->gather(probe->getClosestUnit(Filter::IsMineralField));
+	}
+	return;
 }
