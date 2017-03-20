@@ -11,7 +11,7 @@
 Color playerColor;
 bool analyzed;
 bool analysis_just_finished;
-bool masterDraw = true;
+bool masterDraw = false;
 bool doOnce = true;
 namespace { auto & theMap = BWEM::Map::Instance(); }
 
@@ -78,10 +78,14 @@ void McRave::onFrame()
 				{
 					//Broodwar->drawTextMap(x * 32, y * 32, "%.2f", allyHeatmap[x][y]);
 				}
+				if (clusterHeatmap[x][y] > 0)
+				{
+					//Broodwar->drawTextMap(x * 32, y * 32, "%d", clusterHeatmap[x][y]);
+				}
 
 				if ((allyHeatmap[x][y] - enemyHeatmap[x][y]) > strongest && allyHeatmap[x][y] > 0)
 				{
-					arbiterPosition = Position(x * 32, y * 32);
+					supportPosition = Position(x * 32, y * 32);
 					strongest = allyHeatmap[x][y] - enemyHeatmap[x][y];
 				}
 
@@ -89,8 +93,10 @@ void McRave::onFrame()
 				{
 					enemyHeatmap[x][y] = 0;
 					allyHeatmap[x][y] = 0;
-					airEnemyHeatmap[x][y] = 0;
+					airEnemyHeatmap[x][y] = 0;					
 				}
+				// Reset clusters regardless
+				clusterHeatmap[x][y] = 0;
 			}
 		}
 		// For each enemy unit, add its attack value to each tile it is in range of
@@ -113,7 +119,7 @@ void McRave::onFrame()
 				{
 					for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
 					{
-						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
+						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
 						{
 							enemyHeatmap[x][y] += unitGetStrength(u->getType());
 						}
@@ -128,21 +134,41 @@ void McRave::onFrame()
 				{
 					for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
 					{
-						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
+						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
 						{
 							airEnemyHeatmap[x][y] += unitGetAirStrength(u->getType());
 						}
 					}
 				}
 			}
+			if (!u->getType().isBuilding())
+			{
+				// Cluster heatmap for psi/stasis (96x96)			
+				for (int x = u->getTilePosition().x - 1; x <= u->getTilePosition().x + 1; x++)
+				{
+					for (int y = u->getTilePosition().y - 1; y <= u->getTilePosition().y + 1; y++)
+					{
+						if ((x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()))
+						{
+							clusterHeatmap[x][y] += 1;
+						}
+					}
+				}
+			}
 		}
+		aSmall = 0, aMedium = 0, aLarge = 0;
 		for (auto u : Broodwar->self()->getUnits())
 		{
-			if (u->getType().groundWeapon().damageAmount() > 0 && u->isCompleted())
+			if (u->getType() == UnitTypes::Protoss_Reaver || (u->getType().groundWeapon().damageAmount() > 0 && u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding()))
 			{
 				int range;
+
+				if (u->getType() == UnitTypes::Protoss_Reaver)
+				{
+					range = 8;
+				}
 				// Making sure we properly analyze the threat of melee units without adding range to ranged units
-				if (u->getType().groundWeapon().maxRange() < 32)
+				else if (u->getType().groundWeapon().maxRange() < 32)
 				{
 					range = (u->getType().groundWeapon().maxRange() + 64) / 32;
 				}
@@ -155,7 +181,7 @@ void McRave::onFrame()
 				{
 					for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
 					{
-						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x > 0 || x <= Broodwar->mapWidth() || y > 0 || y <= Broodwar->mapHeight()))
+						if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()))
 						{
 							allyHeatmap[x][y] += unitGetStrength(u->getType());
 						}
@@ -171,7 +197,7 @@ void McRave::onFrame()
 		{
 			if (territory.size() < 1)
 			{
-				allyTerritory.push_back(BWTA::getRegion(playerStartingPosition));
+				allyTerritory.push_back(getRegion(playerStartingPosition));
 				territory = BWTA::getRegions();
 			}
 			// In each ally territory there are chokepoints to defend, find and store those chokepoints
@@ -368,15 +394,15 @@ void McRave::onFrame()
 			{
 				Broodwar->drawCircleMap(Broodwar->getUnit(u.first)->getPosition(), u.second, playerColor);
 			}
-			for (auto u : unitsCurrentCommand)
+			for (auto u : unitsCurrentTarget)
 			{
 				Broodwar->drawLineMap(Broodwar->getUnit(u.first)->getPosition(), u.second, playerColor);
 			}
 
 			// Show probe information
 			for (auto p : mineralProbeMap)
-			{				
-				Broodwar->drawLineMap(p.first->getPosition(), p.second->getPosition(), playerColor);				
+			{
+				Broodwar->drawLineMap(p.first->getPosition(), p.second->getPosition(), playerColor);
 			}
 			for (auto p : gasProbeMap)
 			{
@@ -393,7 +419,7 @@ void McRave::onFrame()
 			}
 
 			// Arbiter Position showing
-			Broodwar->drawCircleMap(arbiterPosition, 8, playerColor, true);
+			Broodwar->drawCircleMap(supportPosition, 8, playerColor, true);
 
 			// Show building placement
 			if (BWTAhandling)
@@ -453,7 +479,7 @@ void McRave::onFrame()
 			{
 				TilePosition here = buildingManager(b.first);
 				Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
-				if (here != TilePositions::None)
+				if (here != TilePositions::None && builder->exists())
 				{
 					queuedBuildings.emplace(b.first, make_pair(here, builder));
 				}
@@ -461,33 +487,43 @@ void McRave::onFrame()
 		}
 
 		// Queued minerals for buildings needed
-		queuedMineral = 0, queuedGas = 0;
+		queuedMineral = 0.0, queuedGas = 0.0;
 		for (auto b : queuedBuildings)
 		{
+			// If probe died, remove it and the building from the queue
+			if (!b.second.second->exists())
+			{
+				queuedBuildings.erase(b.first);
+				continue;
+			}
 			queuedMineral += b.first.mineralPrice();
 			queuedGas += b.first.gasPrice();
-
+			if (masterDraw)
+			{
+				Broodwar->drawLineMap(Position(b.second.first), b.second.second->getPosition(), playerColor);
+			}
+			if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second))
+			{
+				// If Nexus, check units in rectangle of build position, if no ally units, send observer
+				queuedBuildings.erase(b.first);
+			}
 			if (b.second.second->getUnitsInRadius(320, Filter::IsMineralField && Filter::Resources == 0).size() > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) >= 2)
-			{				
+			{
 				if (!b.second.second->isGatheringMinerals())
 				{
 					b.second.second->gather(b.second.second->getClosestUnit(Filter::IsMineralField && Filter::Resources == 0));
 				}
 				continue;
 			}
-			if (Broodwar->self()->minerals() > 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() < b.first.mineralPrice() && b.second.first != TilePositions::None || !Broodwar->isVisible(b.second.first))
+			if (Broodwar->self()->minerals() > 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() < b.first.mineralPrice() && Broodwar->self()->gas() > 0.8*b.first.gasPrice() && Broodwar->self()->gas() < b.first.gasPrice() && b.second.first != TilePositions::None || !Broodwar->isVisible(b.second.first))
 			{
 				b.second.second->move(Position(b.second.first));
 				continue;
 			}
-			else if (b.second.first != TilePositions::None && !b.second.second->isConstructing())
+			else if (b.second.second->isGatheringMinerals() && b.second.first != TilePositions::None && !b.second.second->isConstructing() && Broodwar->self()->minerals() >= b.first.mineralPrice() && Broodwar->self()->gas() >= b.first.gasPrice())
 			{
 				b.second.second->build(b.first, b.second.first);
 				continue;
-			}
-			if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second))
-			{
-				queuedBuildings.erase(b.first);
 			}
 		}
 	}
@@ -513,6 +549,21 @@ void McRave::onFrame()
 						outsideBase = true;
 					}
 				}
+				if (!u->getType().isWorker() && !u->getType().isBuilding())
+				{
+					if (u->getType().size() == UnitSizeTypes::Small)
+					{
+						aSmall++;
+					}
+					else if (u->getType().size() == UnitSizeTypes::Medium)
+					{
+						aMedium++;
+					}
+					else
+					{
+						aLarge++;
+					}
+				}
 			}
 
 			for (auto u : Broodwar->enemy()->getUnits())
@@ -522,7 +573,14 @@ void McRave::onFrame()
 				// Check for visibility (will include invisible units such as dark templars)
 				if (u->exists())
 				{
-					thisUnit = unitGetVisibleStrength(u);
+					if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
+					{
+						thisUnit = unitGetStrength(u->getType());
+					}
+					else
+					{
+						thisUnit = unitGetVisibleStrength(u);
+					}
 					enemyStrength += thisUnit;
 					if (thisUnit > 0.0 && masterDraw)
 					{
@@ -530,7 +588,7 @@ void McRave::onFrame()
 					}
 				}
 			}
-
+			eSmall = 0, eMedium = 0, eLarge = 0;
 			for (auto u : enemyUnits)
 			{
 				double thisUnit = 0.0;
@@ -541,6 +599,21 @@ void McRave::onFrame()
 					if (thisUnit > 0.0 && masterDraw)
 					{
 						Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
+					}
+				}
+				if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
+				{
+					if (u.second.getUnitType().size() == UnitSizeTypes::Small)
+					{
+						eSmall++;
+					}
+					else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
+					{
+						eMedium++;
+					}
+					else
+					{
+						eLarge++;
 					}
 				}
 			}
@@ -554,8 +627,12 @@ void McRave::onFrame()
 		// Assigned Probe iterator
 		for (auto u : mineralProbeMap)
 		{
-			if (u.first->isIdle() || (u.first->isGatheringMinerals() && !u.first->isCarryingMinerals() && u.first->getTarget() != u.second))
-			{	
+			if (u.first->isIdle() && (u.first->isCarryingMinerals() || u.first->isCarryingGas()))
+			{
+				u.first->returnCargo();
+			}
+			else if (u.first->isIdle() || (u.first->isGatheringMinerals() && !u.first->isCarryingMinerals() && u.first->getTarget() != u.second))
+			{
 				if (u.first->getTarget())
 				{
 					if (u.first->getTarget()->getResources() != 0)
@@ -565,10 +642,6 @@ void McRave::onFrame()
 					continue;
 				}
 				u.first->gather(u.second);
-			}
-			if (!u.second->exists())
-			{
-				mineralProbeMap.erase(u.first);
 			}
 		}
 		for (auto u : gasProbeMap)
@@ -601,6 +674,24 @@ void McRave::onFrame()
 			{
 				if (u->getType() == UnitTypes::Protoss_Probe)
 				{
+					if (u->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && allyStrength < enemyStrength && (u->getHitPoints() + u->getShields()) > 20)
+					{
+						assignCombat(u);
+					}
+					else if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end() && (u->getUnitsInRadius(64, Filter::IsEnemy).size() == 0 || allyStrength > enemyStrength || (u->getHitPoints() + u->getShields()) <= 20))
+					{
+						unAssignCombat(u);
+						u->stop();
+					}
+					if (combatProbe.size() > 2)
+					{
+						// SCV rush probable
+						enemyAggresion = true;
+					}
+					if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end())
+					{
+						u->attack(Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy));
+					}
 					if (mineralProbeMap.find(u) == mineralProbeMap.end() && gasProbeMap.find(u) == gasProbeMap.end())
 					{
 						// Assign the probe a task (mineral, gas)
@@ -668,10 +759,6 @@ void McRave::onFrame()
 							}
 						}
 					}
-					/*if (u->getUnitsInRadius(320, Filter::IsMineralField && Filter::Resources == 0).size() > 0 && Broodwar->self()->supplyUsed() > 140 && !u->isGatheringMinerals())
-					{
-						u->gather(u->getClosestUnit(Filter::IsMineralField && Filter::Resources == 0));
-					}*/
 				}
 			}
 #pragma endregion
@@ -683,6 +770,17 @@ void McRave::onFrame()
 					for (auto m : mineralMap)
 					{
 						if (m.second < 2)
+						{
+							if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral + reservedMineral))
+							{
+								u->train(UnitTypes::Protoss_Probe);
+								break;
+							}
+						}
+					}
+					for (auto g : gasMap)
+					{
+						if (g.second < 3)
 						{
 							if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral + reservedMineral))
 							{
@@ -706,16 +804,7 @@ void McRave::onFrame()
 						Unit builder = Broodwar->getClosestUnit(u->getPosition(), Filter::IsAlly && Filter::IsWorker);
 						builder->build(UnitTypes::Protoss_Photon_Cannon, here);
 					}
-
-					// If there are enemies nearby, request help
-					if (u->getUnitsInRadius(320, Filter::IsEnemy).size() > 0)
-					{
-						enemyCountNearby = u->getUnitsInRadius(320, Filter::IsEnemy && !Filter::IsFlyer).size();
-					}
-					else
-					{
-						enemyCountNearby = 0;
-					}
+					enemyCountNearby = Broodwar->getUnitsInRadius(Position(u->getPosition().x + 64, u->getPosition().y + 64), 128, Filter::IsEnemy && !Filter::IsFlyer).size();
 				}
 				else if (u->getType() == UnitTypes::Protoss_Assimilator && gasMap.find(u) == gasMap.end())
 				{
@@ -732,7 +821,7 @@ void McRave::onFrame()
 #pragma endregion
 #pragma region Army Unit Manager	
 			{
-				if (u->getType() == UnitTypes::Protoss_Dragoon || u->getType() == UnitTypes::Protoss_Zealot || u->getType() == UnitTypes::Protoss_Dark_Templar)
+				if (u->getType() == UnitTypes::Protoss_Dragoon || u->getType() == UnitTypes::Protoss_Zealot || u->getType() == UnitTypes::Protoss_Dark_Templar || u->getType() == UnitTypes::Protoss_Archon)
 				{
 					unitGetCommand(u);
 				}
@@ -773,6 +862,10 @@ void McRave::onFrame()
 				{
 					arbiterManager(u);
 				}
+				if (u->getType() == UnitTypes::Protoss_Corsair)
+				{
+					corsairManager(u);
+				}
 			}
 #pragma endregion
 		}
@@ -783,20 +876,23 @@ void McRave::onFrame()
 		// Constant update of mineral fields
 		for (auto r : Broodwar->neutral()->getUnits())
 		{
-			if (r->getType().isMineralField() && r->getDistance(r->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition()) < 320)
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) > 0)
 			{
-				// If the mineral field isn't found in the map, it creates it with 0 workers currently assigned to it
-				if (mineralMap.find(r) == mineralMap.end())
+				if (r->getType().isMineralField() && r->getDistance(r->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition()) < 320)
 				{
-					mineralMap.emplace(r, 0);
+					// If the mineral field isn't found in the map, it creates it with 0 workers currently assigned to it
+					if (mineralMap.find(r) == mineralMap.end())
+					{
+						mineralMap.emplace(r, 0);
+					}
 				}
-			}
-			if (r->getType() == UnitTypes::Resource_Vespene_Geyser && r->getDistance(r->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition()) < 320)
-			{
-				// If the vespene geyser isn't found in the map, it creates it with 0 workers currently assigned to it
-				if (find(geysers.begin(), geysers.end(), r) == geysers.end())
+				if (r->getType() == UnitTypes::Resource_Vespene_Geyser && r->getDistance(r->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition()) < 320)
 				{
-					geysers.push_back(r);
+					// If the vespene geyser isn't found in the map, it creates it with 0 workers currently assigned to it
+					if (find(geysers.begin(), geysers.end(), r) == geysers.end())
+					{
+						geysers.push_back(r);
+					}
 				}
 			}
 		}
@@ -856,20 +952,20 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 	if (unit->getPlayer() == Broodwar->enemy())
 	{
 		if (storeEnemyUnit(unit, enemyUnits) == 1)
-		{			
+		{
 			int enemyGateCnt = 0, enemyPoolCnt = 0, enemyRaxCnt = 0, enemySunkenCnt = 0;
 			// Check enemy buildings for build order adaptions
 			for (auto building : enemyUnits)
 			{
-				if ((!twoGate || !fourPool || !twoRax) && scouting)
+				if ((!enemyAggresion) && scouting)
 				{
 					if (building.second.getUnitType() == UnitTypes::Protoss_Gateway)
 					{
 						enemyGateCnt++;
 						// If two gateways and we haven't reported the pressure
-						if (enemyGateCnt >= 2 && !twoGate)
+						if (enemyGateCnt >= 2 && !enemyAggresion)
 						{
-							twoGate = true;
+							enemyAggresion = true;
 							Broodwar << "Possible Early Gate Pressure" << endl;
 						}
 					}
@@ -877,9 +973,9 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 					{
 						enemyPoolCnt++;
 						// If early pool and we haven't reported the pressure
-						if (enemyPoolCnt >= 1 && !fourPool)
+						if (enemyPoolCnt >= 1 && !enemyAggresion)
 						{
-							fourPool = true;
+							enemyAggresion = true;
 							Broodwar << "Possible Early Pool Pressure" << endl;
 						}
 					}
@@ -887,14 +983,14 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 					{
 						enemyRaxCnt++;
 						// If two barracks and we haven't reported the pressure
-						if (enemyRaxCnt >= 2 && !twoRax)
+						if (enemyRaxCnt >= 2 && !enemyAggresion)
 						{
-							twoRax = true;
+							enemyAggresion = true;
 							Broodwar << "Possible Early Barracks Pressure" << endl;
 						}
-						if (enemyRaxCnt == 0 && !twoRax)
+						if (enemyRaxCnt == 0 && !enemyAggresion)
 						{
-							twoRax = true;
+							enemyAggresion = true;
 							Broodwar << "Possible Proxy Barracks" << endl;
 						}
 					}
@@ -947,7 +1043,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 		localEnemy.erase(unit->getID());
 		localAlly.erase(unit->getID());
 		unitRadiusCheck.erase(unit->getID());
-		unitsCurrentCommand.erase(unit->getID());
+		unitsCurrentTarget.erase(unit->getID());
 		// For probes, adjust the resource maps to align properly
 		if (unit->getType() == UnitTypes::Protoss_Probe)
 		{
@@ -960,6 +1056,10 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 			{
 				mineralMap[(mineralProbeMap.at(unit))] -= 1;
 				mineralProbeMap.erase(unit);
+			}
+			if (find(combatProbe.begin(), combatProbe.end(), unit) != combatProbe.end())
+			{
+				combatProbe.erase(find(combatProbe.begin(), combatProbe.end(), unit));
 			}
 		}
 		if (unit->getType() == UnitTypes::Protoss_Reaver && find(reaverID.begin(), reaverID.end(), unit->getID()) != reaverID.end())
@@ -988,6 +1088,14 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 		{
 			activeExpansion.erase(find(activeExpansion.begin(), activeExpansion.end(), closestNexus));
 			inactiveNexusCnt++;
+		}
+		mineralMap.erase(unit);
+		for (auto m : mineralProbeMap)
+		{
+			if (m.second == unit)
+			{
+				mineralProbeMap.erase(m.first);
+			}
 		}
 	}
 }

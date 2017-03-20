@@ -58,6 +58,8 @@ map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
 map <Unit, Unit> gasProbeMap;
 map <Unit, Unit> mineralProbeMap;
 vector<int> scoutWorkerID;
+vector<Unit> combatProbe;
+bool saturated = false;
 
 // Resource Manager Variables
 vector<TilePosition> gasTilePosition;
@@ -69,8 +71,9 @@ map <Unit, int> mineralMap;
 map <int, double> localEnemy;
 map <int, double> localAlly;
 map <int, int> unitRadiusCheck;
-map <int, Position> unitsCurrentCommand;
+map <int, Position> unitsCurrentTarget;
 map <int, UnitInfo> enemyUnits;
+map <Unit, int> unitsCurrentLocalCommand;
 vector<int> shuttleID;
 vector<int> harassShuttleID;
 vector<int> reaverID;
@@ -78,10 +81,11 @@ vector<int> harassReaverID;
 int enemyCountNearby = 0;
 int defendingUnitCount = 0;
 int enemyScoutedLast = 0;
-Position arbiterPosition;
+int aSmall = 0, aMedium = 0, aLarge = 0, eSmall = 0, eMedium = 0, eLarge = 0;
+Position supportPosition;
 
 // Strategy Variables
-bool fourPool = false, twoGate = false, twoRax = false;
+bool enemyAggresion = false;
 int forceExpand = 0;
 string currentStrategy;
 
@@ -91,6 +95,7 @@ double allyHeatmap[256][256] = { { 0 } };
 double enemyHeatmap[256][256] = { { 0 } };
 double airEnemyHeatmap[256][256] = { { 0 } }; 
 int shuttleHeatmap[256][256] = { { 0 } };
+int clusterHeatmap[256][256] = { { 0 } };
 
 // Terrain Variables
 int currentSize = 0;
