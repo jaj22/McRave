@@ -22,6 +22,7 @@ extern double enemyHeatmap[256][256];
 extern double airEnemyHeatmap[256][256];
 extern int shuttleHeatmap[256][256];
 extern int clusterHeatmap[256][256];
+extern int tankClusterHeatmap[256][256];
 extern double enemyStrength, allyStrength;
 
 // Shuttle ID and Reaver ID pairing

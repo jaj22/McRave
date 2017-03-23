@@ -25,7 +25,6 @@ using namespace BWAPI;
 using namespace std;
 using namespace BWTA;
 
-bool BWTAhandling = false;
 bool scouting = true;
 bool outsideBase = false;
 
@@ -63,7 +62,6 @@ vector<Unit> combatProbe;
 bool saturated = false;
 
 // Resource Manager Variables
-vector<TilePosition> gasTilePosition;
 vector <Unit> geysers;
 map <Unit, int> gasMap;
 map <Unit, int> mineralMap;
@@ -97,6 +95,7 @@ double enemyHeatmap[256][256] = { { 0 } };
 double airEnemyHeatmap[256][256] = { { 0 } }; 
 int shuttleHeatmap[256][256] = { { 0 } };
 int clusterHeatmap[256][256] = { { 0 } };
+int tankClusterHeatmap[256][256] = { { 0 } };
 
 // Terrain Variables
 int currentSize = 0;
