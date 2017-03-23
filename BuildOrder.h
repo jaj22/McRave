@@ -7,6 +7,7 @@ using namespace BWAPI;
 // External building variables
 extern int nexusDesired, pylonDesired, gasDesired, gateDesired, forgeDesired, batteryDesired, coreDesired, roboDesired, stargateDesired, citadelDesired, supportBayDesired, fleetBeaconDesired, archivesDesired, observatoryDesired, tribunalDesired;
 extern map <UnitType, int> buildingDesired;
+extern map <int, UnitType> idleGates;
 
 // External resource and expansion variables
 extern vector<TilePosition>gasTilePosition;
@@ -17,6 +18,7 @@ extern vector<Position>enemyBasePositions;
 // External expansion paramaters
 extern int forceExpand;
 extern int inactiveNexusCnt;
+extern vector<TilePosition> activeExpansion;
 extern bool saturated;
 
 // External enemy build tracking
@@ -25,5 +27,6 @@ extern string currentStrategy;
 
 // Function declaration
 void getBuildOrder();
-void myBuilds(int whichBuild);
-void myOpeners(int whichOpener);
+void earlyBuilds(int whichBuild);
+void midBuilds(int whichBuild);
+void lateBuilds(int whichBuild);

@@ -148,7 +148,7 @@ int unitGetLocalStrategy(Unit unit)
 		return 0;
 	}
 	// Else, disregard local
-	return 2;
+	return 3;
 }
 
 int unitGetGlobalStrategy()
@@ -176,9 +176,8 @@ void unitGetCommand(Unit unit)
 	double closestD = 0;
 	Position closestP;
 
-	if (unitGetLocalStrategy(unit) == 0)
+	if (unitGetLocalStrategy(unit) == 2)
 	{
-		Position regroupPosition = unitRegroup(unit);
 		// If we are on top of our ramp, let's hold with zealots
 		if (unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && getRegion(unit->getPosition()) == getRegion(playerStartingPosition))
 		{
@@ -193,11 +192,16 @@ void unitGetCommand(Unit unit)
 				return;
 			}
 		}
+	}
+	if (unitGetLocalStrategy(unit) == 0)
+	{
+		Position regroupPosition = unitRegroup(unit);
+		
 		for (auto position : defendHere)
 		{
 			if (unit->getDistance(position) < 320)
 			{
-				unit->move(Broodwar->getClosestUnit(position, Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition());
+				unit->move(unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy)));
 				return;
 			}
 			else if (unit->getDistance(position) <= closestD || closestD == 0.0)
@@ -206,7 +210,7 @@ void unitGetCommand(Unit unit)
 				closestP = position;
 			}
 		}
-		unit->move(closestP);
+		unit->move(Position(closestP.x + rand() % 2 - 1, closestP.y + rand() % 2 - 1));
 	}
 	// If fighting and there's an enemy around, micro
 	else if (unitGetLocalStrategy(unit) == 1 && unit->getClosestUnit(Filter::IsEnemy && Filter::IsDetected))
@@ -239,7 +243,7 @@ void unitGetCommand(Unit unit)
 			}
 			if (unit->getLastCommand().getTargetPosition() != closestP)
 			{
-				unit->move(closestP);
+				unit->move(Position(closestP.x + rand() % 2 - 1, closestP.y + rand() % 2 - 1));
 			}
 		}
 		else
@@ -331,7 +335,7 @@ void unitMicro(Unit unit)
 			}
 			else if (correctedFleePosition != BWAPI::Positions::None)
 			{
-				unit->move(correctedFleePosition);
+				unit->move(Position(correctedFleePosition.x + rand() % 2 - 1, correctedFleePosition.y + rand() % 2 - 1));
 				unitsCurrentTarget[unit->getID()] = correctedFleePosition;
 			}
 		}
@@ -596,7 +600,7 @@ Unit getClusterTarget(Unit unit)
 			{
 				if (unit->getType() == UnitTypes::Protoss_Reaver)
 				{
-					if (clusterHeatmap[x][y] > highest && clusterHeatmap[x][y] > 0 && Broodwar->getUnitsOnTile(TilePosition(x, y), Filter::IsEnemy && !Filter::IsFlyer).size() > 0)
+					if (clusterHeatmap[x][y] > highest && clusterHeatmap[x][y] > 0)
 					{
 						highest = clusterHeatmap[x][y];
 						clusterTile = TilePosition(x, y);

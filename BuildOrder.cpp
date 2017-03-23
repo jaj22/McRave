@@ -3,7 +3,7 @@
 using namespace BWAPI;
 int gateNum = 0;
 int secondExpand = 0;
-bool getOpener = true;
+bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
 
 // Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
 
@@ -25,161 +25,189 @@ void myBuildings()
 	buildingDesired[UnitTypes::Protoss_Arbiter_Tribunal] = tribunalDesired;
 }
 
-void getBuildOrder()
+void desiredBuildings()
 {
 	// Pylon, Forge, Nexus
 	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 	forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
-	nexusDesired = 1 + forceExpand + secondExpand + inactiveNexusCnt;
+
 	gateNum = 2 + (Broodwar->self()->supplyUsed() / 60);
 
-	// If we just attacked, expand
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) > 0)
+	// If we are saturated, expand
+	if (saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)))
 	{
-		forceExpand = 1;
-	}	
-
-	if (saturated)
+		nexusDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + inactiveNexusCnt + 1;
+	}
+	else
 	{
-		nexusDesired = 2 + forceExpand + secondExpand + inactiveNexusCnt;
+		nexusDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + inactiveNexusCnt;
 	}
 
-	// If we are teching up, ignore opener and rush adaptations
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+	if (forceExpand && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == 1)
+	{
+		nexusDesired++;
+	}
+
+	// If no idle gates and we are floating minerals, add 1 more
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && idleGates.size() == 0 && Broodwar->self()->minerals() > 300 && nexusDesired == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))
+	{
+		gateDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) + 1);
+	}
+
+	// If we have stabilized and have 4 dragoons, time to tech to mid game
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && !getLateBuild)
 	{
 		enemyAggresion = false;
-		getOpener = false;
+		getEarlyBuild = false;
+		getMidBuild = true;
 	}
 
-	// If not opener, gas is based on whether we need more or not
-	if (!getOpener)
+	// If not early build, gas is based on whether we need more or not
+	if (!getEarlyBuild)
 	{
 		if (Broodwar->self()->gas() * 2 < Broodwar->self()->minerals())
 		{
 			gasDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway), (int)geysers.size());
 		}
 	}
+}
 
-	// Robotics 
-	if (Broodwar->self()->supplyUsed() >= 160)
+void getBuildOrder()
+{
+	desiredBuildings();
 	{
-		roboDesired = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-	}
-	else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) > 4)
-	{
-		roboDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-	}
-
-
-
-	switch (Broodwar->enemy()->getRace())
-	{
-	case Races::Enum::Zerg:
-		// Currently use the same opener regardless of four pool or not
-		if (enemyAggresion || getOpener)
+		switch (Broodwar->enemy()->getRace())
 		{
-			myOpeners(0);
-			currentStrategy.assign("Two Gate Core");
-		}
-		else
+			/* Protoss vs Zerg		Early Game: 2 Gate Core		Mid Game Tech: Speedlots		Late Game Tech: High Temps and Dark Archons	*/
+		case Races::Enum::Zerg:			
+			if (enemyAggresion || getEarlyBuild)
+			{
+				earlyBuilds(0);				
+			}
+			else if (getMidBuild)
+			{
+				midBuilds(0);				
+			}
+			else if (getLateBuild)
+			{
+				lateBuilds(1);
+			}
+			break;
+
+			/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Speedlots		Late Game Tech: High Temps and Arbiters	*/
+		case Races::Enum::Terran:
+			if (enemyAggresion && getEarlyBuild)
+			{
+				earlyBuilds(1);				
+			}
+			else if (getEarlyBuild)
+			{
+				earlyBuilds(1);				
+			}
+			else if (getMidBuild)
+			{
+				midBuilds(0);				
+			}
+			else if (getLateBuild)
+			{
+				lateBuilds(0);
+			}
+			break;
+
+			/* Protoss vs Protoss		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps */
+		case Races::Enum::Protoss:
+			if (enemyAggresion || getEarlyBuild)
+			{
+				earlyBuilds(0); 	
+			}
+			else if (getMidBuild)
+			{
+				midBuilds(0);
+				
+			}
+			else if (getLateBuild)
+			{
+				lateBuilds(1);
+			}
+			break;
+		case Races::Enum::Random:
 		{
-			currentStrategy.assign("Three Gate Reaver");
-			myBuilds(0);
+			earlyBuilds(0);
 		}
 		break;
-	case Races::Enum::Terran:
-		if (enemyAggresion && getOpener)
+		case Races::Enum::Unknown:
 		{
-			myOpeners(0);
-			currentStrategy.assign("Two Gate Core");
-		}
-		else if (getOpener)
-		{
-			myOpeners(1);
-			currentStrategy.assign("One Gate Core");
-		}
-		else
-		{
-			myBuilds(1);
-			currentStrategy.assign("Two Base Arbiter");
+			earlyBuilds(0);
 		}
 		break;
-	case Races::Enum::Protoss:
-		if (enemyAggresion && getOpener)
-		{
-			myOpeners(0); // 2 gate
-			currentStrategy.assign("Two Gate Core");
 		}
-		else if (getOpener)
-		{
-			myOpeners(0); // 2 gate 
-			currentStrategy.assign("Two Gate Core");
-		}
-		else
-		{
-			myBuilds(0);
-			currentStrategy.assign("Three Gate Reaver");
-		}
-		break;
-	case Races::Enum::Random:
-	{
-		myOpeners(0); // 2 Gate opener
-		currentStrategy.assign("Two Gate Core");
 	}
-	break;
-	case Races::Enum::Unknown:
-	{
-		myOpeners(0); // 2 Gate opener
-		currentStrategy.assign("Two Gate Core");
-	}
-	break;
-	}
-
-
 	// Annoying mapping process
 	myBuildings();
 }
 
-void myBuilds(int whichBuild)
+void midBuilds(int whichBuild)
 {
 	switch (whichBuild){
-		// -- Robo and High Templar Lategame --
 	case 0:
-		// First Base Tech - Reavers		
+		// -- Reavers --		
+		roboDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
 		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		gateDesired = min(1 + 2 * Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus), gateNum);
-
-		// Second Base Tech - Speedlots and High Templars
-		citadelDesired = min(1, max(0, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility) - 2));
-		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
+		currentStrategy.assign("Robo Tech");
 		break;
-		// -- Robo and Arbiter Lategame	--	
+
 	case 1:
-		// First Base Tech - Reavers
-		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		observatoryDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		gateDesired = min(1 + 2 * Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus), gateNum);
+		// -- Speedlots	--	
+		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));		
+		currentStrategy.assign("Speedlot Tech");
+		break;
 
-		// Second Base Tech	- Speedlots and Arbiters		
-		stargateDesired = min(1, Broodwar->self()->supplyUsed() / 160);
-		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
-		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
-		tribunalDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
-		break;
 	case 2:
-		// Corsairs
+		// -- Corsairs --
 		stargateDesired = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 4);
+		currentStrategy.assign("Corsair Tech");
 		break;
+	}
+
+	// If we are in mid game builds and we hit 5 gates, chances are we need to tech again
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) > 5)
+	{
+		getLateBuild = true;
+		getMidBuild = false;
 	}
 }
 
-void myOpeners(int whichOpener)
+void lateBuilds(int whichBuild)
 {
-	switch (whichOpener)
+	switch (whichBuild)
 	{
 	case 0:
-		// 2 Gate Core		
+		// -- Arbiters and High Templars -- 
+		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
+		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
+		tribunalDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
+		currentStrategy.assign("Arbiter and Templar Tech");
+		break;
+	case 1:
+		// -- High Templars --
+		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
+		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
+		currentStrategy.assign("Templar Tech");
+		break;
+	case 2:
+		// -- Carriers --
+		break;
+	}
+
+}
+
+void earlyBuilds(int whichBuild)
+{
+	switch (whichBuild)
+	{
+	case 0:
+		// -- 2 Gate Core --
 		coreDesired = min(1, (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4));
 		gasDesired = min((int)geysers.size(), (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2));
 		if (Broodwar->self()->supplyUsed() >= 20 && Broodwar->self()->supplyUsed() < 24)
@@ -190,18 +218,20 @@ void myOpeners(int whichOpener)
 		{
 			gateDesired = 2;
 		}
+		currentStrategy.assign("Two Gate Core");
 		break;
 	case 1:
-		// 1 Gate Core		
+		// -- 1 Gate Core --	
 		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
 		if (Broodwar->self()->supplyUsed() >= 20)
 		{
-			gateDesired = 1;
+			gateDesired = 1 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core);
 		}
-		if (Broodwar->self()->supplyUsed() >= 24)
+		if (Broodwar->self()->supplyUsed() >= 22)
 		{
 			gasDesired = 1;
 		}
+		currentStrategy.assign("One Gate Core");
 		break;
 	}
 }

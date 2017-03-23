@@ -366,6 +366,7 @@ void McRave::onFrame()
 			Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
 			Broodwar->drawTextScreen(200, 10, "QM: %d", queuedMineral);
 			Broodwar->drawTextScreen(200, 20, "QG: %d", queuedGas);
+			Broodwar->drawTextScreen(200, 30, "IG: %d", idleGates.size());
 
 			// Display global strength calculations	
 			Broodwar->drawTextScreen(500, 20, "Ally Strength: %.2f", allyStrength);
@@ -471,7 +472,7 @@ void McRave::onFrame()
 		{
 			reservedMineral += u.second.mineralPrice();
 			reservedGas += u.second.gasPrice();
-		}
+		}		
 
 		for (auto b : buildingDesired)
 		{
@@ -502,8 +503,8 @@ void McRave::onFrame()
 			{
 				Broodwar->drawLineMap(Position(b.second.first), b.second.second->getPosition(), playerColor);
 			}
-			if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second))
-			{
+			if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second) && Broodwar->isVisible(b.second.first))
+			{				
 				// If Nexus, check units in rectangle of build position, if no ally units, send observer
 				queuedBuildings.erase(b.first);
 			}
@@ -515,7 +516,7 @@ void McRave::onFrame()
 				}
 				continue;
 			}
-			if (Broodwar->self()->minerals() > 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() < b.first.mineralPrice() && Broodwar->self()->gas() > 0.8*b.first.gasPrice() && Broodwar->self()->gas() < b.first.gasPrice() && b.second.first != TilePositions::None || !Broodwar->isVisible(b.second.first))
+			if (Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() <= b.first.mineralPrice() && Broodwar->self()->gas() >= 0.8*b.first.gasPrice() && Broodwar->self()->gas() <= b.first.gasPrice() && b.second.first != TilePositions::None || !Broodwar->isVisible(b.second.first))
 			{
 				b.second.second->move(Position(b.second.first));
 				continue;
@@ -795,7 +796,10 @@ void McRave::onFrame()
 					{
 						TilePosition here = getBuildLocationNear(UnitTypes::Protoss_Pylon, u->getTilePosition());
 						Unit builder = Broodwar->getClosestUnit(u->getPosition(), Filter::IsAlly && Filter::IsWorker);
-						builder->build(UnitTypes::Protoss_Pylon, here);
+						if (builder)
+						{
+							builder->build(UnitTypes::Protoss_Pylon, here);
+						}
 					}
 					// If not at least two cannons, build two cannons, good for anti harass and detection
 					if (u->getUnitsInRadius(640, Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon).size() < 2 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 2)
@@ -814,7 +818,7 @@ void McRave::onFrame()
 				// If it's a building capable of production, send to production manager
 				else if (u->getType().isBuilding() && u->getType() != UnitTypes::Protoss_Pylon && u->getType() != UnitTypes::Protoss_Nexus)
 				{
-					productionManager(u);
+					productionManager(u);					
 					continue;
 				}
 			}
@@ -975,8 +979,7 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 						// If early pool and we haven't reported the pressure
 						if (enemyPoolCnt >= 1 && !enemyAggresion)
 						{
-							enemyAggresion = true;
-							Broodwar << "Possible Early Pool Pressure" << endl;
+							enemyAggresion = true;							
 						}
 					}
 					else if (building.second.getUnitType() == UnitTypes::Terran_Barracks)
@@ -985,13 +988,11 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 						// If two barracks and we haven't reported the pressure
 						if (enemyRaxCnt >= 2 && !enemyAggresion)
 						{
-							enemyAggresion = true;
-							Broodwar << "Possible Early Barracks Pressure" << endl;
+							enemyAggresion = true;						
 						}
 						if (enemyRaxCnt == 0 && !enemyAggresion)
 						{
-							enemyAggresion = true;
-							Broodwar << "Possible Proxy Barracks" << endl;
+							enemyAggresion = true;							
 						}
 					}
 				}
@@ -1062,7 +1063,11 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 				combatProbe.erase(find(combatProbe.begin(), combatProbe.end(), unit));
 			}
 		}
-		if (unit->getType() == UnitTypes::Protoss_Reaver && find(reaverID.begin(), reaverID.end(), unit->getID()) != reaverID.end())
+		else if (unit->getType() == UnitTypes::Protoss_Assimilator)
+		{
+			gasMap.erase(unit);
+		}
+		else if (unit->getType() == UnitTypes::Protoss_Reaver && find(reaverID.begin(), reaverID.end(), unit->getID()) != reaverID.end())
 		{
 			reaverID.erase(find(reaverID.begin(), reaverID.end(), unit->getID()));
 		}

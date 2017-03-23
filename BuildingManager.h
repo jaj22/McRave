@@ -7,8 +7,7 @@ using namespace std;
 // External building positioning variables
 extern vector <TilePosition> activeExpansion;
 extern vector <TilePosition> nextExpansion;
-
-
+extern TilePosition playerStartingTilePosition;
 
 // External unit variables
 extern vector<int> buildingWorkerID;
@@ -17,6 +16,7 @@ extern vector<int> buildingWorkerID;
 extern int queuedMineral, queuedGas, reservedMineral, reservedGas;
 extern vector<Unit> geysers;
 extern map <int, UnitType> idleBuildings;
+extern map <int, UnitType> idleGates;
 extern map <int, TechType> idleTech;
 extern map <int, UpgradeType> idleUpgrade;
 

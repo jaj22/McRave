@@ -75,11 +75,16 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 			{
 				return false;
 			}
-			// If the pylon is within 3 tiles of another pylon, return false
-			else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 1)
+			/*// If it's the first pylon, build further away
+			else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Pylon) == 0 && !Broodwar->getUnitsInRadius(x * 32, y * 32, 256, Filter::IsResourceDepot).empty())
 			{
 				return false;
-			}
+			}*/
+			// If the pylon is within 3 tiles of another pylon, return false
+			/*else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 160, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
+			{
+				return false;
+			}*/
 		}
 	}
 	// If building is on an expansion tile, don't build there
@@ -233,7 +238,12 @@ void productionManager(Unit building)
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_High_Templar.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_High_Templar.gasPrice() + queuedGas + reservedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_High_Templar.supplyRequired() <= Broodwar->self()->supplyTotal())
 				{
 					building->train(UnitTypes::Protoss_High_Templar);
+					idleGates.erase(building->getID());
 					return;
+				}
+				else
+				{
+					idleGates.emplace(building->getID(), UnitTypes::Protoss_High_Templar);
 				}
 			}
 			// If we need a Dragoon
@@ -243,7 +253,12 @@ void productionManager(Unit building)
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
 				{
 					building->train(UnitTypes::Protoss_Dragoon);
+					idleGates.erase(building->getID());
 					return;
+				}
+				else
+				{
+					idleGates.emplace(building->getID(), UnitTypes::Protoss_Dragoon);
 				}
 			}
 			// If we need a Zealot
@@ -253,7 +268,12 @@ void productionManager(Unit building)
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->supplyUsed() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
 				{
 					building->train(UnitTypes::Protoss_Zealot);
+					idleGates.erase(building->getID());
 					return;
+				}
+				else
+				{
+					idleGates.emplace(building->getID(), UnitTypes::Protoss_Zealot);
 				}
 			}
 			break;

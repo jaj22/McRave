@@ -51,6 +51,7 @@ int tribunalDesired = 0;
 map <int, UnitType> idleBuildings;
 map <int, TechType> idleTech;
 map <int, UpgradeType> idleUpgrade;
+map <int, UnitType> idleGates;
 map <UnitType, int> buildingDesired;
 map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
 
