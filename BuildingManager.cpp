@@ -32,7 +32,7 @@ TilePosition buildingManager(UnitType building)
 	{
 		if (building == UnitTypes::Protoss_Shield_Battery)
 		{
-			buildTilePosition = getBuildLocationNear(building, TilePosition((BWTA::getNearestChokepoint(nextExpansion.at(0))->getCenter())));
+			buildTilePosition = getBuildLocationNear(building, TilePosition((getNearestChokepoint(nextExpansion.at(0))->getCenter())));
 		}
 		else if (building == UnitTypes::Protoss_Assimilator)
 		{
@@ -88,15 +88,22 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 		}
 	}
 	// If building is on an expansion tile, don't build there
-	for (int i = 0; i <= (int)nextExpansion.size() - 1; i++)
+	// TESTING -- Currently still builds on the tiles (building extends INTO the area) add offset to check?
+	for (auto base : nextExpansion)
 	{
 		for (int j = 0; j <= 3; j++)
 		{
 			for (int k = 0; k <= 3; k++)
 			{
-				if (buildTilePosition.x == nextExpansion.at(i).x + j && buildTilePosition.y == nextExpansion.at(i).y + k)
+				for (int offsetX = 0; offsetX <= building.tileWidth(); offsetX++)
 				{
-					return false;
+					for (int offsetY = 0; offsetY <= building.tileHeight(); offsetY++)
+					{
+						if (buildTilePosition.x == (base.x + j + offsetX) && buildTilePosition.y == (base.y + k + offsetY))
+						{
+							return false;
+						}
+					}
 				}
 			}
 		}

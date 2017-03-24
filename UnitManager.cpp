@@ -36,7 +36,7 @@ int unitGetLocalStrategy(Unit unit)
 
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
 	for (auto enemy : enemyUnits)
-	{		
+	{
 		Unit u = Broodwar->getUnit(enemy.first);
 		if (enemy.second.getPosition().getDistance(unit->getPosition()) < radius)
 		{
@@ -196,7 +196,7 @@ void unitGetCommand(Unit unit)
 	if (unitGetLocalStrategy(unit) == 0)
 	{
 		Position regroupPosition = unitRegroup(unit);
-		
+
 		for (auto position : defendHere)
 		{
 			if (unit->getDistance(position) < 320)
@@ -214,7 +214,7 @@ void unitGetCommand(Unit unit)
 	}
 	// If fighting and there's an enemy around, micro
 	else if (unitGetLocalStrategy(unit) == 1 && unit->getClosestUnit(Filter::IsEnemy && Filter::IsDetected))
-	{		
+	{
 		unitMicro(unit);
 		return;
 	}
@@ -275,7 +275,7 @@ void unitMicro(Unit unit)
 	bool kite;
 	int range = unit->getType().groundWeapon().maxRange();
 	Unit currentTarget;
-	
+
 	// Get target priorities
 	if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
@@ -327,7 +327,7 @@ void unitMicro(Unit unit)
 		if (kite && Broodwar->getLatencyFrames() / 2 <= unit->getGroundWeaponCooldown())
 		{
 			Position correctedFleePosition = unitFlee(unit, currentTarget);
-			// Want Corsairs to move closer always
+			// Want Corsairs to move closer always if possible
 			if (unit->getType() == UnitTypes::Protoss_Corsair)
 			{
 				unit->move(currentTarget->getPosition());
@@ -345,6 +345,7 @@ void unitMicro(Unit unit)
 			unit->attack(currentTarget);
 		}
 	}
+	return;
 }
 
 double unitGetStrength(UnitType unitType)
@@ -452,6 +453,7 @@ double unitGetAirStrength(UnitType unitType)
 
 double unitGetVisibleStrength(Unit unit)
 {
+	// If a unit is visible, we want to get its current strength based on current health, shield and any buffs
 	if (unit->getType().isWorker() && getRegion(unit->getTilePosition()) == getRegion(playerStartingTilePosition))
 	{
 		if (unit->getPlayer() == Broodwar->self() && find(combatProbe.begin(), combatProbe.end(), unit) != combatProbe.end())
@@ -471,86 +473,42 @@ double unitGetVisibleStrength(Unit unit)
 	double hp = double(unit->getHitPoints() + (unit->getShields() / 2)) / double(unit->getType().maxHitPoints() + (unit->getType().maxShields() / 2));
 	if (unit->isStimmed())
 	{
+		// If a unit is stimmed, it attacks and moves twice as fast
 		return 2 * hp * unitGetStrength(unit->getType());
 	}
 	return hp * unitGetStrength(unit->getType());
 }
 
-double unitDamageMod(UnitType ally, UnitType enemy)
-{
-	if (ally.groundWeapon().damageType() == DamageTypes::Explosive)
-	{
-		if (enemy.size() == UnitSizeTypes::Small)
-		{
-			return 0.5;
-		}
-		else if (enemy.size() == UnitSizeTypes::Medium)
-		{
-			return 0.75;
-		}
-		else
-		{
-			return 1.0;
-		}
-	}
-	else if (ally.groundWeapon().damageType() == DamageTypes::Concussive)
-	{
-		if (enemy.size() == UnitSizeTypes::Large)
-		{
-			return 0.25;
-		}
-		else if (enemy.size() == UnitSizeTypes::Medium)
-		{
-			return 0.5;
-		}
-		else
-		{
-			return 1.0;
-		}
-	}
-	return 1.0;
-}
+
 
 Unit getTarget(Unit unit)
 {
-	// Check units only in local radius
+	// Check units only in local calculation radius that are in view
 	int radius = min(1280, 32 * (int)unit->getUnitsInRadius(320, Filter::IsAlly).size() + 400);
 	double highest = 0.0, thisUnit = 0.0;
 	Unit target;
 
+	// If we are being rushed, only focus the closest units to our starting position to fend them off
 	if (enemyAggresion)
 	{
 		return Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy);
 	}
 
-	// If Zealot, don't return air
+	// If Zealot or Reaver
 	if (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver)
 	{
-		target = unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlying);
-		for (auto enemy : unit->getUnitsInRadius(radius, Filter::IsEnemy && !Filter::IsFlying))
+		target = unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer);
+		// Iterate through all enemies in a visible radius that are not air
+		for (auto enemy : unit->getUnitsInRadius(radius, Filter::IsEnemy && !Filter::IsFlyer))
 		{
 			if (enemy->getType().isWorker() || (enemy->getType().isBuilding() && enemy->canAttack()))
 			{
-				thisUnit = 0.1 / (1 + double(unit->getDistance(enemy))/32);
-			}			
+				thisUnit = 0.1 / (1 + double(unit->getDistance(enemy)) / 32);
+			}
 			else
 			{
-				thisUnit = unitGetStrength(enemy->getType()) / (1 + double(unit->getDistance(enemy))/32);
-			}			
-			if (thisUnit > highest)
-			{
-				target = enemy;
-				highest = thisUnit;
-			}			
-		}
-	}
-	// If Corsair, don't return ground
-	else if (unit->getType() == UnitTypes::Protoss_Corsair)
-	{
-		target = unit->getClosestUnit(Filter::IsEnemy && Filter::IsFlying);
-		for (auto enemy : unit->getUnitsInRadius(radius, Filter::IsEnemy && Filter::IsFlying))
-		{
-			thisUnit = unitGetStrength(enemy->getType()) / (1 + double(unit->getDistance(enemy))/32);
+				thisUnit = unitGetStrength(enemy->getType()) / (1 + double(unit->getDistance(enemy)) / 32);
+			}
 			if (thisUnit > highest)
 			{
 				target = enemy;
@@ -558,19 +516,35 @@ Unit getTarget(Unit unit)
 			}
 		}
 	}
-	// Else return the strongest unit nearby
+	// If Corsair
+	else if (unit->getType() == UnitTypes::Protoss_Corsair)
+	{
+		target = unit->getClosestUnit(Filter::IsEnemy && Filter::IsFlyer);
+		// Iterate through all enemies in a visible radius that are air
+		for (auto enemy : unit->getUnitsInRadius(radius, Filter::IsEnemy && Filter::IsFlyer))
+		{
+			thisUnit = unitGetStrength(enemy->getType()) / (1 + double(unit->getDistance(enemy)) / 32);
+			if (thisUnit > highest)
+			{
+				target = enemy;
+				highest = thisUnit;
+			}
+		}
+	}
+	// Else
 	else
 	{
 		target = unit->getClosestUnit(Filter::IsEnemy);
+		// Iterate through all enemies in a visible radius
 		for (auto enemy : unit->getUnitsInRadius(radius, Filter::IsEnemy))
 		{
 			if (enemy->getType().isWorker())
 			{
-				thisUnit = 1 / (1 + double(unit->getDistance(enemy)/32));
+				thisUnit = 1 / (1 + double(unit->getDistance(enemy) / 32));
 			}
 			else
 			{
-				thisUnit = unitGetStrength(enemy->getType()) / (1 + double(unit->getDistance(enemy))/32);
+				thisUnit = unitGetStrength(enemy->getType()) / (1 + double(unit->getDistance(enemy)) / 32);
 			}
 			if (thisUnit > highest)
 			{
@@ -578,45 +552,53 @@ Unit getTarget(Unit unit)
 				highest = thisUnit;
 			}
 		}
-	}	
+	}
+	// The highest strength unit is returned
 	return target;
 }
 
 Unit getClusterTarget(Unit unit)
 {
+	// Cluster variables, range of spells is 10
 	int highest = 0, range = 10;
 	TilePosition clusterTile;
 
+	// Reaver range is 8
 	if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
 		range = 8;
 	}
 
+	// Iterate through every tile in range to see what clusters are in range
 	for (int x = unit->getTilePosition().x - range; x <= unit->getTargetPosition().x + range; x++)
 	{
 		for (int y = unit->getTilePosition().y + range; y <= unit->getTilePosition().y + range; y++)
 		{
 			if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
 			{
+				// For each unit, we only want clusters of specific targets
+				// Reavers want ground clusters
 				if (unit->getType() == UnitTypes::Protoss_Reaver)
 				{
-					if (clusterHeatmap[x][y] > highest && clusterHeatmap[x][y] > 0)
+					if (clusterHeatmap[x][y] > highest)
 					{
 						highest = clusterHeatmap[x][y];
 						clusterTile = TilePosition(x, y);
 					}
 				}
+				// Arbiters want Siege Tank clusters
 				else if (unit->getType() == UnitTypes::Protoss_Arbiter)
 				{
-					if (clusterHeatmap[x][y] > highest && clusterHeatmap[x][y] > 0 && Broodwar->getUnitsOnTile(TilePosition(x, y), Filter::IsEnemy && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode)).size() > 0)
+					if (tankClusterHeatmap[x][y] > highest)
 					{
 						highest = clusterHeatmap[x][y];
 						clusterTile = TilePosition(x, y);
 					}
-				}	
+				}
+				// High Templars can have air or ground clusters
 				else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 				{
-					if (clusterHeatmap[x][y] > highest && clusterHeatmap[x][y] > 0 && Broodwar->getUnitsOnTile(TilePosition(x, y), Filter::IsEnemy).size() > 0)
+					if (clusterHeatmap[x][y] > highest)
 					{
 						highest = clusterHeatmap[x][y];
 						clusterTile = TilePosition(x, y);
@@ -625,13 +607,20 @@ Unit getClusterTarget(Unit unit)
 			}
 		}
 	}
+	// If there is no cluster, return a getTarget unit
 	if (highest < 2)
 	{
 		return getTarget(unit);
 	}
+	// Else if there is a cluster, ensure Reaver doesn't target a flying unit near the cluster tile
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
 		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer);
+	}
+	// If there is no tank cluster, return NULL so Arbiter saves energy
+	else if (unit->getType() == UnitTypes::Protoss_Arbiter)
+	{
+		return NULL;
 	}
 	return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding);
 }
@@ -658,6 +647,7 @@ bool isThisACorner(Position position)
 
 Position unitRegroup(Unit unit)
 {
+	// Currently not being used
 	Unitset regroupSet = unit->getUnitsInRadius(50000, Filter::IsAlly && !Filter::IsBuilding && !Filter::IsWorker);
 	Position regroupPosition;
 	for (Unit re : regroupSet)
@@ -676,45 +666,48 @@ Position unitRegroup(Unit unit)
 
 Position unitFlee(Unit unit, Unit currentTarget)
 {
+	// If either the unit or current target are invalid, return
 	if (!unit || !currentTarget)
 	{
-		return BWAPI::Positions::None;
+		return Positions::None;
 	}
 
+	// Unit Flee Variables
 	double slopeDegree;
 	int x, y;
 	Position currentTargetPosition = currentTarget->getPosition();
+	Position currentUnitPosition = unit->getPosition();
+	TilePosition currentUnitTilePosition = unit->getTilePosition();
 
 	// Divide by zero check, if zero then we are fleeing horizontally, no problem if fleeing vertically.
-	if ((unit->getPosition().x - currentTargetPosition.x) == 0)
+	if ((currentUnitPosition.x - currentTargetPosition.x) == 0)
 	{
 		slopeDegree = 1.571;
 	}
-
 	else
 	{
-		slopeDegree = atan((unit->getPosition().y - currentTargetPosition.y) / (unit->getPosition().x - currentTargetPosition.x));
+		slopeDegree = atan((currentUnitPosition.y - currentTargetPosition.y) / (currentUnitPosition.x - currentTargetPosition.x));
 	}
 
-	// Need to make sure we are fleeing in the correct direction
-	if (unit->getPosition().x > currentTargetPosition.x)
+	// Need to make sure we are fleeing at the same angle the units are attacking each other at
+	if (currentUnitPosition.x > currentTargetPosition.x)
 	{
-		x = (int)(5 * cos(slopeDegree)) + unit->getTilePosition().x;
-	}
-	else
-	{
-		x = (int)(unit->getTilePosition().x - (5 * cos(slopeDegree)));
-	}
-	if (unit->getPosition().y > currentTargetPosition.y)
-	{
-		y = (int)(unit->getTilePosition().y + abs(5 * sin(slopeDegree)));
+		x = (int)(currentUnitTilePosition.x + (5 * cos(slopeDegree)));
 	}
 	else
 	{
-		y = (int)(unit->getTilePosition().y - abs(5 * sin(slopeDegree)));
+		x = (int)(currentUnitTilePosition.x - (5 * cos(slopeDegree)));
+	}
+	if (currentUnitPosition.y > currentTargetPosition.y)
+	{
+		y = (int)(currentUnitTilePosition.y + abs(5 * sin(slopeDegree)));
+	}
+	else
+	{
+		y = (int)(currentUnitTilePosition.y - abs(5 * sin(slopeDegree)));
 	}
 
-	Position initialPosition = Position(x * 32, y * 32);
+	Position initialPosition = Position(TilePosition(x, y));
 	// Spiral variables
 	int length = 1;
 	int j = 0;
@@ -728,24 +721,14 @@ Position unitFlee(Unit unit, Unit currentTarget)
 		//If threat is low, move there
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
-			if (enemyHeatmap[x][y] < 1 && (Position(x * 32, y * 32).getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 128 || (BWTA::getRegion(unit->getPosition()) == getRegion(Position(x * 32, y * 32)) && !isThisACorner(Position(x * 32, y * 32)))))
+			Position newPosition = Position(TilePosition(x, y));
+			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)))
 			{
+				// Not a fully functional walkable check -- IMPLEMENTING
 				if (Broodwar->isWalkable((x * 4), (y * 4)))
 				{
-					return BWAPI::Position(x * 32, y * 32);
+					return newPosition;
 				}
-
-				//// Check if one of the tiles is walkable
-				//for (int i = 0; i <= 1; i++)
-				//{
-				//	for (int j = 0; j <= 1; j++)
-				//	{
-				//		if (Broodwar->isWalkable((x * 4) + i, (y * 4) + j))
-				//		{
-				//			return BWAPI::Position(x * 32, y * 32);
-				//		}
-				//	}
-				//}				
 			}
 		}
 		//Otherwise, move to another position

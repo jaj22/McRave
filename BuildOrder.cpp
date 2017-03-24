@@ -1,8 +1,6 @@
 #include "BuildOrder.h"
 
 using namespace BWAPI;
-int gateNum = 0;
-int secondExpand = 0;
 bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
 
 // Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
@@ -31,8 +29,6 @@ void desiredBuildings()
 	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 	forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
 
-	gateNum = 2 + (Broodwar->self()->supplyUsed() / 60);
-
 	// If we are saturated, expand
 	if (saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)))
 	{
@@ -43,6 +39,7 @@ void desiredBuildings()
 		nexusDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + inactiveNexusCnt;
 	}
 
+	// If forcing an early natural expansion
 	if (forceExpand && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{
 		nexusDesired++;
@@ -54,20 +51,27 @@ void desiredBuildings()
 		gateDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
 
-	// If we have stabilized and have 4 dragoons, time to tech to mid game
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && !getLateBuild)
+	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && getEarlyBuild)
 	{
 		enemyAggresion = false;
 		getEarlyBuild = false;
 		getMidBuild = true;
 	}
 
-	// If not early build, gas is based on whether we need more or not
+	// If we are in mid game builds and we hit at least 4 gates, chances are we need to tech again
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 4 && getMidBuild)
+	{		
+		getMidBuild = false;
+		getLateBuild = true;
+	}
+
+	// If not early build, gas is now based on whether we need more or not rather than a supply amount
 	if (!getEarlyBuild)
 	{
-		if (Broodwar->self()->gas() * 2 < Broodwar->self()->minerals())
+		if (Broodwar->self()->gas() * 4 < Broodwar->self()->minerals())
 		{
-			gasDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway), (int)geysers.size());
+			gasDesired = geysers.size();
 		}
 	}
 }
@@ -79,6 +83,7 @@ void getBuildOrder()
 		switch (Broodwar->enemy()->getRace())
 		{
 			/* Protoss vs Zerg		Early Game: 2 Gate Core		Mid Game Tech: Speedlots		Late Game Tech: High Temps and Dark Archons	*/
+			// IMPLEMENTING -- If Muta, mid build 2 (corsairs)
 		case Races::Enum::Zerg:			
 			if (enemyAggresion || getEarlyBuild)
 			{
@@ -94,7 +99,8 @@ void getBuildOrder()
 			}
 			break;
 
-			/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Speedlots		Late Game Tech: High Temps and Arbiters	*/
+			/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
+			// IMPLEMENTING -- If mech, mid build 1 (more gates and speedlots)
 		case Races::Enum::Terran:
 			if (enemyAggresion && getEarlyBuild)
 			{
@@ -169,13 +175,6 @@ void midBuilds(int whichBuild)
 		currentStrategy.assign("Corsair Tech");
 		break;
 	}
-
-	// If we are in mid game builds and we hit 5 gates, chances are we need to tech again
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) > 5)
-	{
-		getLateBuild = true;
-		getMidBuild = false;
-	}
 }
 
 void lateBuilds(int whichBuild)
@@ -197,6 +196,9 @@ void lateBuilds(int whichBuild)
 		break;
 	case 2:
 		// -- Carriers --
+		stargateDesired = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Fleet_Beacon));
+		fleetBeaconDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
+		currentStrategy.assign("Carrier Tech");
 		break;
 	}
 
@@ -232,6 +234,13 @@ void earlyBuilds(int whichBuild)
 			gasDesired = 1;
 		}
 		currentStrategy.assign("One Gate Core");
+	case 2:
+		// -- 12 Nexus --
+		if (Broodwar->self()->supplyUsed() >= 24)
+		{
+			nexusDesired = 2;
+		}
+		currentStrategy.assign("Early Expand");
 		break;
 	}
 }

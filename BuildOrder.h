@@ -10,14 +10,12 @@ extern map <UnitType, int> buildingDesired;
 extern map <int, UnitType> idleGates;
 
 // External resource and expansion variables
-extern vector<TilePosition>gasTilePosition;
 extern vector<Unit> geysers;
 extern vector<TilePosition> nextExpansion;
 extern vector<Position>enemyBasePositions;
 
 // External expansion paramaters
-extern int forceExpand;
-extern int inactiveNexusCnt;
+extern int forceExpand, inactiveNexusCnt;
 extern vector<TilePosition> activeExpansion;
 extern bool saturated;
 
