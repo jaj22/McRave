@@ -17,7 +17,7 @@ extern vector<Position>enemyBasePositions;
 // External expansion paramaters
 extern int forceExpand, inactiveNexusCnt;
 extern vector<TilePosition> activeExpansion;
-extern bool saturated;
+extern bool saturated, gasNeeded;
 
 // External enemy build tracking
 extern bool enemyAggresion, scouting;

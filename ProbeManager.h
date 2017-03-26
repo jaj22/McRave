@@ -7,7 +7,7 @@ using namespace BWAPI;
 extern vector<Unit> combatProbe;
 extern map <Unit, Unit> mineralProbeMap, gasProbeMap;
 extern map <Unit, int> mineralMap, gasMap;
-extern bool saturated;
+extern bool saturated, gasNeeded;
 
 // Functions
 void assignProbe(BWAPI::Unit probe);

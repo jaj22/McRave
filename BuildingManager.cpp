@@ -13,8 +13,8 @@ TilePosition nexusManager()
 {
 	for (auto base : nextExpansion)
 	{		
-		if (Broodwar->isBuildable(base,true))
-		{			
+		if (Broodwar->getUnitsInRadius(Position(base), 128, Filter::IsResourceDepot).size() <= 0)
+		{
 			return base;
 		}
 	}	
@@ -55,6 +55,10 @@ TilePosition buildingManager(UnitType building)
 			return buildTilePosition;
 		}
 	}
+	if (Broodwar->getFrameCount() > 5000)
+	{
+		antiLag = true;
+	}	
 	return TilePositions::None;
 }
 
@@ -74,17 +78,17 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 			else if (!Broodwar->canBuildHere(buildTilePosition, building) || Broodwar->isBuildable(TilePosition(x, y), true) == false || Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::IsMineralField).empty() == false)
 			{
 				return false;
-			}
+			}			
 			/*// If it's the first pylon, build further away
 			else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Pylon) == 0 && !Broodwar->getUnitsInRadius(x * 32, y * 32, 256, Filter::IsResourceDepot).empty())
 			{
 				return false;
 			}*/
 			// If the pylon is within 3 tiles of another pylon, return false
-			/*else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 160, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
+			else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 64, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 1)
 			{
 				return false;
-			}*/
+			}
 		}
 	}
 	// If building is on an expansion tile, don't build there

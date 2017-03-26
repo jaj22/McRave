@@ -53,13 +53,14 @@ map <int, UpgradeType> idleUpgrade;
 map <int, UnitType> idleGates;
 map <UnitType, int> buildingDesired;
 map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
+bool antiLag = false;
 
 // Probe Manager Variables
 map <Unit, Unit> gasProbeMap;
 map <Unit, Unit> mineralProbeMap;
 vector<int> scoutWorkerID;
 vector<Unit> combatProbe;
-bool saturated = false;
+bool saturated = false, gasNeeded = false;
 
 // Resource Manager Variables
 vector <Unit> geysers;

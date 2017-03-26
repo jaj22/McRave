@@ -7,6 +7,7 @@ using namespace std;
 using namespace BWTA;
 
 bool harassing = false;
+bool stimResearched = false;
 
 int unitGetLocalStrategy(Unit unit)
 {
@@ -37,6 +38,7 @@ int unitGetLocalStrategy(Unit unit)
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
 	for (auto enemy : enemyUnits)
 	{
+		double thisUnit = 0.0;
 		Unit u = Broodwar->getUnit(enemy.first);
 		if (enemy.second.getPosition().getDistance(unit->getPosition()) < radius)
 		{
@@ -46,36 +48,46 @@ int unitGetLocalStrategy(Unit unit)
 				// If unit is cloaked and not detected, make units very scared of them
 				if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
 				{
-					enemyLocalStrength += 20 * unitGetStrength(u->getType());
+					thisUnit = 20 * unitGetStrength(u->getType());
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
-					enemyLocalStrength += unitGetVisibleStrength(u) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / (aLarge + aMedium + aSmall));
+					if (unit->getType() == UnitTypes::Zerg_Sunken_Colony)
+					{
+						Broodwar << "Test" << endl;
+					}
+					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / (aLarge + aMedium + aSmall));
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 				{
-					enemyLocalStrength += unitGetVisibleStrength(u) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / (aLarge + aMedium + aSmall));
+					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / (aLarge + aMedium + aSmall));
 				}
 				else
 				{
-					enemyLocalStrength += unitGetVisibleStrength(u);
+					thisUnit = unitGetVisibleStrength(u);
 				}
 			}
 			// Else used stored information
-			else if (u->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+			else if (enemy.second.getUnitType().groundWeapon().damageType() == DamageTypes::Explosive)
 			{
-				enemyLocalStrength += unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / (aLarge + aMedium + aSmall));
+				thisUnit = unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / (aLarge + aMedium + aSmall));
 			}
-			else if (u->getType().groundWeapon().damageType() == DamageTypes::Concussive)
+			else if (enemy.second.getUnitType().groundWeapon().damageType() == DamageTypes::Concussive)
 			{
-				enemyLocalStrength += unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / (aLarge + aMedium + aSmall));
+				thisUnit = unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / (aLarge + aMedium + aSmall));
 			}
 			else
 			{
-				enemyLocalStrength += unitGetStrength(enemy.second.getUnitType());
+				thisUnit = unitGetStrength(enemy.second.getUnitType());
 			}
+			// TESTING -- If it's a building, make it an exponential decay based on distance 
+			/*if (enemy.second.getUnitType().isBuilding() && unit->getDistance(enemy.second.getPosition()) < 320)
+			{
+				thisUnit = thisUnit / exp(-1.0*((double)u->getDistance(unit)/320.0));
+				Broodwar << thisUnit << endl;
+			}*/
 		}
-
+		enemyLocalStrength += thisUnit;
 	}
 
 	for (Unit ally : unit->getUnitsInRadius(radius, Filter::IsAlly && !Filter::IsBuilding && !Filter::IsWorker))
@@ -91,29 +103,37 @@ int unitGetLocalStrategy(Unit unit)
 		}
 		else
 		{
-			// Damage type calculations
-			if (ally->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
 			{
-				allyLocalStrength += unitGetVisibleStrength(ally) * ((((double)eLarge * 1) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / (eLarge + eMedium + eSmall));
-			}
-			else if (ally->getType().groundWeapon().damageType() == DamageTypes::Concussive)
-			{
-				allyLocalStrength += unitGetVisibleStrength(ally) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1)) / (eLarge + eMedium + eSmall));
+				// Damage type calculations
+				if (ally->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+				{
+					allyLocalStrength += unitGetVisibleStrength(ally) * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / (eLarge + eMedium + eSmall));
+				}
+				else if (ally->getType().groundWeapon().damageType() == DamageTypes::Concussive)
+				{
+					allyLocalStrength += unitGetVisibleStrength(ally) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1.0)) / (eLarge + eMedium + eSmall));
+				}
+				else
+				{
+					allyLocalStrength += unitGetVisibleStrength(ally);
+				}
 			}
 			else
 			{
 				allyLocalStrength += unitGetVisibleStrength(ally);
 			}
+
 		}
 	}
 	// Include the unit itself into its calculations based on damage type
 	if (unit->getType().groundWeapon().damageType() == DamageTypes::Explosive)
-	{
-		allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 1) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / (eLarge + eMedium + eSmall));
+	{		
+		allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / (eLarge + eMedium + eSmall));
 	}
 	else if (unit->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 	{
-		allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1)) / (eLarge + eMedium + eSmall));
+		allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1.0)) / (eLarge + eMedium + eSmall));
 	}
 	else
 	{
@@ -157,10 +177,14 @@ int unitGetGlobalStrategy()
 	{
 	return 1;
 	}*/
-	if (allyStrength > enemyStrength && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+	if (Broodwar->enemy()->getRace() == Races::Terran && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 	{
 		return 1;
 	}
+	if (allyStrength > enemyStrength && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+	{
+		return 1;
+	}	
 	else
 	{
 		return 0;
@@ -173,6 +197,7 @@ void unitGetCommand(Unit unit)
 	If 0, regroup unless forced to engage.
 	If 1, send unit to micro-management. */
 	unitsCurrentTarget.erase(unit->getID());
+	int radius = 32 * unit->getUnitsInRadius(320, Filter::IsAlly).size() + 500;
 	double closestD = 0;
 	Position closestP;
 
@@ -186,7 +211,7 @@ void unitGetCommand(Unit unit)
 				unitMicro(unit);
 				return;
 			}
-			else
+			else if (forceExpand == 0)
 			{
 				unit->holdPosition();
 				return;
@@ -199,12 +224,20 @@ void unitGetCommand(Unit unit)
 
 		for (auto position : defendHere)
 		{
-			if (unit->getDistance(position) < 320)
+			if (unit->getDistance(position) < 320 && find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
 			{
 				unit->move(unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy)));
 				return;
 			}
-			else if (unit->getDistance(position) <= closestD || closestD == 0.0)
+			if (unit->getClosestUnit(Filter::IsEnemy))
+			{
+				if (unit->getClosestUnit(Filter::IsEnemy)->getDistance(position) < unit->getDistance(position) && unit->getDistance(playerStartingPosition) < unit->getDistance(enemyStartingPosition))
+				{
+					unit->move(unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy)));
+					return;
+				}
+			}
+			if (unit->getDistance(position) <= closestD || closestD == 0.0)
 			{
 				closestD = unit->getDistance(position);
 				closestP = position;
@@ -241,6 +274,11 @@ void unitGetCommand(Unit unit)
 					closestP = position;
 				}
 			}
+			// If we forced to expand, move to next choke to prevent blocking 
+			if (forceExpand == 1)
+			{
+				closestP = Position(path.at(1)->Center());
+			}
 			if (unit->getLastCommand().getTargetPosition() != closestP)
 			{
 				unit->move(Position(closestP.x + rand() % 2 - 1, closestP.y + rand() % 2 - 1));
@@ -256,7 +294,7 @@ void unitGetCommand(Unit unit)
 
 	// Check if we should attack
 	else if (unitGetGlobalStrategy() == 1)
-	{
+	{		
 		if (unit->getClosestUnit(Filter::IsEnemy))
 		{
 			unitMicro(unit);
@@ -378,7 +416,7 @@ double unitGetStrength(UnitType unitType)
 
 	if (!unitType.isWorker() && unitType != UnitTypes::Protoss_Scarab && unitType != UnitTypes::Terran_Vulture_Spider_Mine && unitType.groundWeapon().damageAmount() > 0 || (unitType.isBuilding() && unitType.groundWeapon().damageAmount() > 0))
 	{
-		double range, damage, hp;
+		double range, damage, hp, speed;
 		// Range upgrade check (applies to enemy Dragoons, not a big issue currently)
 		if (unitType == UnitTypes::Protoss_Dragoon && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 		{
@@ -399,6 +437,9 @@ double unitGetStrength(UnitType unitType)
 		// Damage
 		damage = double(unitType.groundWeapon().damageAmount()) / double(unitType.groundWeapon().damageCooldown());
 
+		// Speed
+
+		speed = double(unitType.topSpeed());
 		// Zealot and Firebat has to be doubled for two attacks
 		if (unitType == UnitTypes::Protoss_Zealot || unitType == UnitTypes::Terran_Firebat)
 		{
@@ -411,12 +452,20 @@ double unitGetStrength(UnitType unitType)
 			damage = damage * 1.33;
 		}
 
+		// Check for movement speed upgrades
+		
+		
 		// Hp		
 		hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
 
+		if (stimResearched && (unitType == UnitTypes::Terran_Marine || unitType == UnitTypes::Terran_Firebat))
+		{
+			return 2 * ((1 + (range / 320.0)) * damage * (hp / 100));
+		}
+
 		return (1 + (range / 320.0)) * damage * (hp / 100);
 	}
-	return 0;
+	return 0.0;
 }
 
 double unitGetAirStrength(UnitType unitType)
@@ -473,8 +522,7 @@ double unitGetVisibleStrength(Unit unit)
 	double hp = double(unit->getHitPoints() + (unit->getShields() / 2)) / double(unit->getType().maxHitPoints() + (unit->getType().maxShields() / 2));
 	if (unit->isStimmed())
 	{
-		// If a unit is stimmed, it attacks and moves twice as fast
-		return 2 * hp * unitGetStrength(unit->getType());
+		stimResearched = true;
 	}
 	return hp * unitGetStrength(unit->getType());
 }

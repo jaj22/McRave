@@ -8,6 +8,8 @@ using namespace std;
 extern vector <TilePosition> activeExpansion;
 extern vector <TilePosition> nextExpansion;
 extern TilePosition playerStartingTilePosition;
+extern map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
+extern bool antiLag;
 
 // External unit variables
 extern vector<int> buildingWorkerID;

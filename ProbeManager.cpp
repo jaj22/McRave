@@ -62,13 +62,19 @@ void assignProbe(Unit probe)
 			// First round on minerals
 			if (mineral.second < cnt)
 			{
-				saturated = false;
+				saturated = false;	
+				// If we have at least 1 Probe on every mineral, we can get another gas
+				if (cnt == 1)
+				{
+					gasNeeded = false;
+				}				
 				assignMinerals(probe, mineral.first);
 				mineralMap[mineral.first] = cnt;
 				return;
 			}
 		}
 		cnt++;
+		gasNeeded = true;
 	}
 	// If we reached the enemy of our map and no Probes were assigned, we are saturated and don't need any more Probes
 	saturated = true;

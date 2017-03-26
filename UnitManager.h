@@ -44,6 +44,7 @@ extern bool outsideBase;
 extern vector<Unit> combatProbe;
 extern int aSmall, aMedium, aLarge, eSmall, eMedium, eLarge;
 extern bool enemyAggresion;
+extern int forceExpand;
 
 // Function declarations
 void unitGetCommand(Unit unit);

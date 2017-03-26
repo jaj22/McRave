@@ -28,19 +28,16 @@ void desiredBuildings()
 	// Pylon, Forge, Nexus
 	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 	forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
+	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
-	if (saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)))
+	if (saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && idleGates.size() == 0)
 	{
-		nexusDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + inactiveNexusCnt + 1;
-	}
-	else
-	{
-		nexusDesired = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + inactiveNexusCnt;
-	}
-
+		nexusDesired++;
+	}		
+	
 	// If forcing an early natural expansion
-	if (forceExpand && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == 1)
+	if (forceExpand && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{
 		nexusDesired++;
 	}
@@ -48,11 +45,11 @@ void desiredBuildings()
 	// If no idle gates and we are floating minerals, add 1 more
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && idleGates.size() == 0 && Broodwar->self()->minerals() > 300 && nexusDesired == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))
 	{
-		gateDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) + 1);
+		gateDesired = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && getEarlyBuild)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) > 2 && getEarlyBuild)
 	{
 		enemyAggresion = false;
 		getEarlyBuild = false;
@@ -60,25 +57,21 @@ void desiredBuildings()
 	}
 
 	// If we are in mid game builds and we hit at least 4 gates, chances are we need to tech again
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 4 && getMidBuild)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 4 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 2 && getMidBuild)
 	{		
 		getMidBuild = false;
 		getLateBuild = true;
 	}
 
 	// If not early build, gas is now based on whether we need more or not rather than a supply amount
-	if (!getEarlyBuild)
-	{
-		if (Broodwar->self()->gas() * 4 < Broodwar->self()->minerals())
-		{
-			gasDesired = geysers.size();
-		}
+	if (!getEarlyBuild && gasNeeded)
+	{		
+		gasDesired = geysers.size();		
 	}
 }
 
 void getBuildOrder()
 {
-	desiredBuildings();
 	{
 		switch (Broodwar->enemy()->getRace())
 		{
@@ -104,7 +97,7 @@ void getBuildOrder()
 		case Races::Enum::Terran:
 			if (enemyAggresion && getEarlyBuild)
 			{
-				earlyBuilds(1);				
+				earlyBuilds(0);				
 			}
 			else if (getEarlyBuild)
 			{
@@ -149,6 +142,7 @@ void getBuildOrder()
 		}
 	}
 	// Annoying mapping process
+	desiredBuildings();
 	myBuildings();
 }
 
@@ -211,7 +205,7 @@ void earlyBuilds(int whichBuild)
 	case 0:
 		// -- 2 Gate Core --
 		coreDesired = min(1, (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4));
-		gasDesired = min((int)geysers.size(), (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2));
+		gasDesired = min(1, (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2));
 		if (Broodwar->self()->supplyUsed() >= 20 && Broodwar->self()->supplyUsed() < 24)
 		{
 			gateDesired = 1;
@@ -234,6 +228,7 @@ void earlyBuilds(int whichBuild)
 			gasDesired = 1;
 		}
 		currentStrategy.assign("One Gate Core");
+		break;
 	case 2:
 		// -- 12 Nexus --
 		if (Broodwar->self()->supplyUsed() >= 24)
