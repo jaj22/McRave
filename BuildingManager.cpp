@@ -21,6 +21,13 @@ TilePosition nexusManager()
 	return TilePositions::None;
 }
 
+TilePosition cannonManager(Unit nexus)
+{
+	// Each Nexus should have 2 cannons placed as close to minerals as possible
+
+	
+}
+
 TilePosition buildingManager(UnitType building)
 {
 	if (building == UnitTypes::Protoss_Nexus)
@@ -54,10 +61,6 @@ TilePosition buildingManager(UnitType building)
 		{			
 			return buildTilePosition;
 		}
-	}
-	if (Broodwar->getFrameCount() > 5000)
-	{
-		antiLag = true;
 	}	
 	return TilePositions::None;
 }
@@ -316,7 +319,7 @@ void productionManager(Unit building)
 			break;
 		case UnitTypes::Enum::Protoss_Robotics_Facility:
 			// If we need an Observer
-			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) + 1)
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver)/3) + 1)
 			{
 				// If we can afford an Observer, train, otherwise, add to priority
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)

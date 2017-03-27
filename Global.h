@@ -53,13 +53,13 @@ map <int, UpgradeType> idleUpgrade;
 map <int, UnitType> idleGates;
 map <UnitType, int> buildingDesired;
 map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
-bool antiLag = false;
+map <Unit, int> nexusCannonMap;
 
 // Probe Manager Variables
 map <Unit, Unit> gasProbeMap;
 map <Unit, Unit> mineralProbeMap;
-vector<int> scoutWorkerID;
 vector<Unit> combatProbe;
+Unit scout;
 bool saturated = false, gasNeeded = false;
 
 // Resource Manager Variables
@@ -78,9 +78,6 @@ vector<int> shuttleID;
 vector<int> harassShuttleID;
 vector<int> reaverID;
 vector<int> harassReaverID;
-int enemyCountNearby = 0;
-int defendingUnitCount = 0;
-int enemyScoutedLast = 0;
 int aSmall = 0, aMedium = 0, aLarge = 0, eSmall = 0, eMedium = 0, eLarge = 0;
 Position supportPosition;
 
@@ -93,7 +90,7 @@ string currentStrategy;
 double allyStrength = 0.0, enemyStrength = 0.0;
 double allyHeatmap[256][256] = { { 0 } };
 double enemyHeatmap[256][256] = { { 0 } };
-double airEnemyHeatmap[256][256] = { { 0 } }; 
+double airEnemyHeatmap[256][256] = { { 0 } };
 int shuttleHeatmap[256][256] = { { 0 } };
 int clusterHeatmap[256][256] = { { 0 } };
 int tankClusterHeatmap[256][256] = { { 0 } };
@@ -105,7 +102,7 @@ set <BWTA::Region*> territory;
 vector<BWTA::Region*> allyTerritory;
 vector<BWTA::Region> enemyTerritory;
 vector<Position> defendHere;
-vector<Position>enemyBasePositions;
+vector<Position> enemyBasePositions;
 vector<TilePosition> nextExpansion;
 vector<TilePosition> activeExpansion;
 Position enemyStartingPosition, playerStartingPosition;

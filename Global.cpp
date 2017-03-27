@@ -9,11 +9,12 @@
 
 // Variables for Global.cpp
 Color playerColor;
-bool analyzed;
-bool analysis_just_finished;
+bool analyzed = false;
+bool analysis_just_finished = false;
 bool masterDraw = true;
 bool doOnce = true;
 bool BWTAhandling = false;
+int enemyScoutedLast = 0;
 namespace { auto & theMap = BWEM::Map::Instance(); }
 
 void McRave::onStart()
@@ -362,9 +363,7 @@ void McRave::onFrame()
 			// Display some information about our queued resources required for structure building			
 			Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
 			Broodwar->drawTextScreen(200, 10, "QM: %d", queuedMineral);
-			Broodwar->drawTextScreen(200, 20, "QG: %d", queuedGas);
-			Broodwar->drawTextScreen(200, 30, "IG: %d", idleGates.size());
-			Broodwar->drawTextScreen(200, 40, "AS: %d", antiLag);
+			Broodwar->drawTextScreen(200, 20, "QG: %d", queuedGas);			
 
 			// Display global strength calculations	
 			Broodwar->drawTextScreen(500, 20, "Ally Strength: %.2f", allyStrength);
@@ -483,9 +482,7 @@ void McRave::onFrame()
 			reservedMineral += u.second.mineralPrice();
 			reservedGas += u.second.gasPrice();
 		}
-		// TEMPORARY ANTI LAG TO PREVENT BUILDING UNITS UNLESS I HAVE POWER
-		if (!antiLag)
-		{
+		
 			// For each building in the protoss race
 			for (auto b : buildingDesired)
 			{
@@ -503,7 +500,7 @@ void McRave::onFrame()
 					}
 				}
 			}
-		}
+		
 
 		// Queued minerals for buildings needed
 		queuedMineral = 0, queuedGas = 0;
@@ -674,6 +671,7 @@ void McRave::onFrame()
 			if (u.first->isIdle() && u.first->isCarryingMinerals())
 			{
 				u.first->returnCargo();
+				continue;
 			}
 			if (u.first->getLastCommandFrame() >= Broodwar->getFrameCount() && (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build))
 			{
@@ -703,6 +701,7 @@ void McRave::onFrame()
 				}
 				// If no target, force to gather from the assigned mineral field
 				u.first->gather(u.second);
+				continue;
 			}
 		}
 		// For each Probe mapped to gather gas
@@ -712,11 +711,13 @@ void McRave::onFrame()
 			if (u.first->isIdle() && u.first->isCarryingGas())
 			{
 				u.first->returnCargo();
+				continue;
 			}
 			// If idle, gather gas
 			else if (u.first->isIdle())
 			{
 				u.first->gather(u.second);
+				continue;
 			}
 		}
 
@@ -744,7 +745,7 @@ void McRave::onFrame()
 				{
 					if (u->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && allyStrength < enemyStrength && (u->getHitPoints() + u->getShields()) > 20)
 					{
-						assignCombat(u);
+						assignCombat(u);					
 					}
 					else if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end() && (u->getUnitsInRadius(64, Filter::IsEnemy).size() == 0 || allyStrength > enemyStrength || (u->getHitPoints() + u->getShields()) <= 20))
 					{
@@ -764,14 +765,15 @@ void McRave::onFrame()
 					{
 						// Assign the probe a task (mineral, gas)
 						assignProbe(u);
+						continue;
 					}
 
 					// Crappy scouting method
-					if (scoutWorkerID.size() < 1)
+					if (!scout)
 					{
-						scoutWorkerID.push_back(u->getID());
+						scout = u;
 					}
-					if (u->getID() == scoutWorkerID.front() && BWTAhandling)
+					if (u == scout && BWTAhandling)
 					{
 						if (Broodwar->self()->supplyUsed() >= 18 && scouting)
 						{
@@ -832,7 +834,7 @@ void McRave::onFrame()
 #pragma endregion
 #pragma region Building Manager
 			{
-				// If it's a Nexus and we need probes, check if we need probes, then train if needed
+				// If it's a Nexus and we need probes, check if we need probes, then train if needed (max 60 Probes)
 				if (u->getType().isResourceDepot())
 				{
 					for (auto m : mineralMap)
@@ -867,6 +869,7 @@ void McRave::onFrame()
 							if (builder)
 							{
 								builder->build(UnitTypes::Protoss_Pylon, here);
+								continue;
 							}
 						}
 						// DISABLED DUE TO CAUSING HUGE LAG AND DQ FROM SSCAIT
@@ -877,8 +880,7 @@ void McRave::onFrame()
 						//	Unit builder = Broodwar->getClosestUnit(u->getPosition(), Filter::IsAlly && Filter::IsWorker);
 						//	builder->build(UnitTypes::Protoss_Photon_Cannon, here);
 						//}
-					}
-					enemyCountNearby = Broodwar->getUnitsInRadius(Position(u->getPosition().x + 64, u->getPosition().y + 64), 128, Filter::IsEnemy && !Filter::IsFlyer).size();
+					}				
 				}
 				else if (u->getType() == UnitTypes::Protoss_Assimilator && gasMap.find(u) == gasMap.end())
 				{
@@ -898,10 +900,12 @@ void McRave::onFrame()
 				if (u->getType() == UnitTypes::Protoss_Dragoon || u->getType() == UnitTypes::Protoss_Zealot || u->getType() == UnitTypes::Protoss_Dark_Templar || u->getType() == UnitTypes::Protoss_Archon)
 				{
 					unitGetCommand(u);
+					continue;
 				}
-				if (u->getType() == UnitTypes::Protoss_Shuttle)
+				else if (u->getType() == UnitTypes::Protoss_Shuttle)
 				{
 					shuttleManager(u);
+					continue;
 					/*if (harassShuttleID.size() < 1 || find(harassShuttleID.begin(), harassShuttleID.end(), u->getID()) != harassShuttleID.end())
 					{
 					shuttleHarass(u);
@@ -912,33 +916,44 @@ void McRave::onFrame()
 					shuttleManager(u);
 					}*/
 				}
-				if (u->getType() == UnitTypes::Protoss_Observer)
+				else if (u->getType() == UnitTypes::Protoss_Observer)
 				{
 					observerManager(u);
+					continue;
 				}
-				if (u->getType() == UnitTypes::Protoss_Reaver)
+				else if (u->getType() == UnitTypes::Protoss_Reaver)
 				{
 					reaverManager(u);
+					continue;
 					/*if (harassReaverID.size() < 1 || find(harassReaverID.begin(), harassReaverID.end(), u->getID()) != harassReaverID.end())
 					{
 					harassReaverID.push_back(u->getID());
 					}*/
 				}
-				if (u->getType() == UnitTypes::Protoss_High_Templar)
+				else if (u->getType() == UnitTypes::Protoss_High_Templar)
 				{
 					templarManager(u);
+					continue;
 				}
-				if (u->getType() == UnitTypes::Protoss_Carrier)
+				else if (u->getType() == UnitTypes::Protoss_Carrier)
 				{
 					carrierManager(u);
+					continue;
 				}
-				if (u->getType() == UnitTypes::Protoss_Arbiter)
+				else if (u->getType() == UnitTypes::Protoss_Arbiter)
 				{
 					arbiterManager(u);
+					continue;
 				}
-				if (u->getType() == UnitTypes::Protoss_Corsair)
+				else if (u->getType() == UnitTypes::Protoss_Corsair)
 				{
 					corsairManager(u);
+					continue;
+				}
+				else
+				{
+					unitGetCommand(u);
+					continue;
 				}
 			}
 #pragma endregion
@@ -1227,11 +1242,7 @@ void McRave::onUnitComplete(BWAPI::Unit unit)
 		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) == enemyBasePositions.end())
 		{
 			enemyBasePositions.push_back(unit->getPosition());
-		}
-		if (unit->getType() == UnitTypes::Protoss_Pylon)
-		{
-			antiLag = false;
-		}
+		}		
 	}
 }
 
