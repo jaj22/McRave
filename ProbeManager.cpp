@@ -9,7 +9,7 @@ void assignCombat(Unit probe)
 	if (find(combatProbe.begin(), combatProbe.end(), probe) == combatProbe.end())
 	{
 		combatProbe.push_back(probe);
-	}	
+	}
 	return;
 }
 
@@ -31,13 +31,14 @@ void assignGas(Unit probe, Unit gas)
 void assignMinerals(Unit probe, Unit mineral)
 {
 	// If Probe is assigned to minerals, match with mineral field that needs the Probe
-	mineralProbeMap[probe] = mineral;
+	mineralProbeMap[probe].first = mineral;
+	mineralProbeMap[probe].second = mineral->getPosition();
 	probe->gather(mineral);
 	return;
 }
 
 void assignProbe(Unit probe)
-{	
+{
 	int cnt = 1;
 	// Only update gas probes if we really need gas (helps with expansion timing)
 	if (Broodwar->self()->gas() * 4 < Broodwar->self()->minerals())
@@ -62,12 +63,12 @@ void assignProbe(Unit probe)
 			// First round on minerals
 			if (mineral.second < cnt)
 			{
-				saturated = false;	
+				saturated = false;
 				// If we have at least 1 Probe on every mineral, we can get another gas
 				if (cnt == 1)
 				{
 					gasNeeded = false;
-				}				
+				}
 				assignMinerals(probe, mineral.first);
 				mineralMap[mineral.first] = cnt;
 				return;

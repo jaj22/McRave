@@ -5,7 +5,8 @@ using namespace BWAPI;
 
 // External Variables
 extern vector<Unit> combatProbe;
-extern map <Unit, Unit> mineralProbeMap, gasProbeMap;
+extern map <Unit, pair<Unit, Position>> mineralProbeMap;
+extern map <Unit, Unit> gasProbeMap;
 extern map <Unit, int> mineralMap, gasMap;
 extern bool saturated, gasNeeded;
 

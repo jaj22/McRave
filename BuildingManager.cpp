@@ -12,20 +12,13 @@ TilePosition buildTilePosition;
 TilePosition nexusManager()
 {
 	for (auto base : nextExpansion)
-	{		
+	{
 		if (Broodwar->getUnitsInRadius(Position(base), 128, Filter::IsResourceDepot).size() <= 0)
 		{
 			return base;
 		}
-	}	
+	}
 	return TilePositions::None;
-}
-
-TilePosition cannonManager(Unit nexus)
-{
-	// Each Nexus should have 2 cannons placed as close to minerals as possible
-
-	
 }
 
 TilePosition buildingManager(UnitType building)
@@ -50,7 +43,7 @@ TilePosition buildingManager(UnitType building)
 					return gas->getTilePosition();
 				}
 			}
-		}		
+		}
 		else
 		{
 			buildTilePosition = getBuildLocationNear(building, tile);
@@ -58,37 +51,48 @@ TilePosition buildingManager(UnitType building)
 		Position buildPosition = Position(32 * buildTilePosition.x, 32 * buildTilePosition.y);
 		// If build position available and not invalid (returns x > 1000)
 		if (buildTilePosition != TilePositions::None && buildTilePosition != TilePositions::Invalid)
-		{			
+		{
 			return buildTilePosition;
 		}
-	}	
+	}
 	return TilePositions::None;
 }
 
 bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 {
+	// TEMPEORARY CHANGES:
+	// +1 and -1 on end/start
+	// mod 2 x mod 3 y
 	// Start at one tile vertically above the build site and check the tile width and height + 1 to make sure units can move past and dont get stuck
-	for (int x = buildTilePosition.x - 1; x < buildTilePosition.x + building.tileWidth() + 1; x++)
+
+	if (buildTilePosition.x % 2 == 0 || buildTilePosition.y % 3 == 0)
 	{
-		for (int y = buildTilePosition.y - 1; y < buildTilePosition.y + building.tileHeight() + 1; y++)
+		return false;
+	}
+
+
+	for (int x = buildTilePosition.x; x <= buildTilePosition.x + building.tileWidth(); x++)
+	{
+		for (int y = buildTilePosition.y; y <= buildTilePosition.y + building.tileHeight(); y++)
 		{
 			// If the location is outside the boundaries, return false
 			if (x <= 0 || x >= Broodwar->mapWidth() || y <= 0 || y >= Broodwar->mapHeight())
 			{
 				return false;
 			}
+
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
 			else if (!Broodwar->canBuildHere(buildTilePosition, building) || Broodwar->isBuildable(TilePosition(x, y), true) == false || Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::IsMineralField).empty() == false)
 			{
 				return false;
-			}			
+			}
 			/*// If it's the first pylon, build further away
 			else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Pylon) == 0 && !Broodwar->getUnitsInRadius(x * 32, y * 32, 256, Filter::IsResourceDepot).empty())
 			{
-				return false;
+			return false;
 			}*/
 			// If the pylon is within 3 tiles of another pylon, return false
-			else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 64, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 1)
+			else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
 			{
 				return false;
 			}
@@ -319,7 +323,7 @@ void productionManager(Unit building)
 			break;
 		case UnitTypes::Enum::Protoss_Robotics_Facility:
 			// If we need an Observer
-			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver)/3) + 1)
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1))
 			{
 				// If we can afford an Observer, train, otherwise, add to priority
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)

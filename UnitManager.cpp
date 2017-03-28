@@ -8,18 +8,20 @@ using namespace BWTA;
 
 bool harassing = false;
 bool stimResearched = false;
-int radius = 500 + 8 * allyStrength;
+
+
 
 int unitGetLocalStrategy(Unit unit)
 {
 	/* Check for local strength, based on that make an adjustment
-	  Return 0 = retreat to holding position
-	  Return 1 = fight enemy
-	  Return 2 = defend only
-	  Return 3 = disregard local */
-
+		Return 0 = retreat to holding position
+		Return 1 = fight enemy
+		Return 2 = disregard local calculations
+		Return 3 = disregard local */
+	//int radius = 32 * unit->getUnitsInRadius(320, Filter::IsAlly).size() + 500;
+	int radius = (32 * (int)unit->getUnitsInRadius(320).size()) + 400;
+	double mod = 0.0, thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
-	double thisUnit = 0.0;
 	for (auto enemy : enemyUnits)
 	{
 		thisUnit = 0.0;
@@ -36,6 +38,10 @@ int unitGetLocalStrategy(Unit unit)
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
+					if (unit->getType() == UnitTypes::Zerg_Sunken_Colony)
+					{
+						Broodwar << "Test" << endl;
+					}
 					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / (aLarge + aMedium + aSmall));
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Concussive)
@@ -63,8 +69,8 @@ int unitGetLocalStrategy(Unit unit)
 			// TESTING -- If it's a building, make it an exponential decay based on distance 
 			/*if (enemy.second.getUnitType().isBuilding() && unit->getDistance(enemy.second.getPosition()) < 320)
 			{
-			thisUnit = thisUnit / exp(-1.0*((double)u->getDistance(unit)/320.0));
-			Broodwar << thisUnit << endl;
+				thisUnit = thisUnit / exp(-1.0*((double)u->getDistance(unit)/320.0));
+				Broodwar << thisUnit << endl;
 			}*/
 		}
 		enemyLocalStrength += thisUnit;
@@ -108,7 +114,7 @@ int unitGetLocalStrategy(Unit unit)
 	}
 	// Include the unit itself into its calculations based on damage type
 	if (unit->getType().groundWeapon().damageType() == DamageTypes::Explosive)
-	{
+	{		
 		allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / (eLarge + eMedium + eSmall));
 	}
 	else if (unit->getType().groundWeapon().damageType() == DamageTypes::Concussive)
@@ -137,10 +143,13 @@ int unitGetLocalStrategy(Unit unit)
 	}
 
 	// Check if we are in ally territory, if so, fight	
-	if (enemyLocalStrength > 0 && find(allyTerritory.begin(), allyTerritory.end(), BWTA::getRegion(unit->getClosestUnit(Filter::IsEnemy)->getPosition())) != allyTerritory.end())
+	if (unit->getUnitsInRadius(radius, Filter::IsEnemy).size() > 0)
 	{
-		unitsCurrentLocalCommand[unit] = 1;
-		return 1;
+		if (find(allyTerritory.begin(), allyTerritory.end(), BWTA::getRegion(unit->getClosestUnit(Filter::IsEnemy)->getPosition())) != allyTerritory.end())
+		{
+			unitsCurrentLocalCommand[unit] = 1;
+			return 1;
+		}
 	}
 
 	// If we don't have a Cyber core yet, we don't want to push out of the base
@@ -178,7 +187,7 @@ int unitGetGlobalStrategy()
 	if (allyStrength > enemyStrength && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 	{
 		return 1;
-	}
+	}	
 	else
 	{
 		return 0;
@@ -187,11 +196,13 @@ int unitGetGlobalStrategy()
 
 void unitGetCommand(Unit unit)
 {
+	double radius = 500 + 16 * allyStrength;
+	
 	/* Check local strategy manager to see what our next task is.
 	If 0, regroup unless forced to engage.
 	If 1, send unit to micro-management. */
 	unitsCurrentTarget.erase(unit->getID());
-	int radius = 32 * unit->getUnitsInRadius(320, Filter::IsAlly).size() + 500;
+	
 	double closestD = 0;
 	Position closestP;
 
@@ -288,12 +299,8 @@ void unitGetCommand(Unit unit)
 
 	// Check if we should attack
 	else if (unitGetGlobalStrategy() == 1)
-	{
-		if (unit->getClosestUnit(Filter::IsEnemy))
-		{
-			unitMicro(unit);
-		}
-		else if (enemyBasePositions.size() > 0)
+	{		
+		if (unit->isIdle() && enemyBasePositions.size() > 0)
 		{
 			unit->attack(enemyBasePositions.front());
 			return;
@@ -417,6 +424,7 @@ double unitGetStrength(UnitType unitType)
 			range = 192.0;
 		}
 
+
 		// Enemy ranged upgrade check
 		else if ((unitType == UnitTypes::Terran_Marine && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
 		{
@@ -430,7 +438,7 @@ double unitGetStrength(UnitType unitType)
 		// Damage
 		damage = double(unitType.groundWeapon().damageAmount()) / double(unitType.groundWeapon().damageCooldown());
 
-		// Speed not included for now
+		// Speed
 
 		speed = double(unitType.topSpeed());
 		// Zealot and Firebat has to be doubled for two attacks
@@ -446,8 +454,8 @@ double unitGetStrength(UnitType unitType)
 		}
 
 		// Check for movement speed upgrades
-
-
+		
+		
 		// Hp		
 		hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
 
@@ -458,7 +466,7 @@ double unitGetStrength(UnitType unitType)
 		}
 
 		return (1 + (range / 320.0)) * damage * (hp / 100);
-	}
+	}	
 	return 0.0;
 }
 
@@ -512,7 +520,7 @@ double unitGetVisibleStrength(Unit unit)
 			return 0.0;
 		}
 	}
-	
+
 	// If it's an SCV that is repairing, make him priority
 	if (unit->getType() == UnitTypes::Terran_SCV && unit->isRepairing())
 	{
@@ -586,7 +594,7 @@ Unit getTarget(Unit unit)
 		// Iterate through all enemies in a visible radius
 		for (auto enemy : unit->getUnitsInRadius(radius, Filter::IsEnemy))
 		{
-			if (enemy->getType().isWorker())
+			if (enemy->getType().isWorker() || (enemy->getType().isBuilding() && enemy->canAttack()))
 			{
 				thisUnit = 0.1 / (1 + double(unit->getDistance(enemy) / 32));
 			}
@@ -1007,6 +1015,7 @@ void templarManager(Unit unit)
 	}
 	else
 	{
+
 		if (unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar) && (unit->getEnergy() < 70 || unit->isUnderAttack()))
 		{
 			unit->useTech(TechTypes::Archon_Warp, unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));

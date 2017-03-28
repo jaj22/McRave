@@ -57,15 +57,16 @@ map <Unit, int> nexusCannonMap;
 
 // Probe Manager Variables
 map <Unit, Unit> gasProbeMap;
-map <Unit, Unit> mineralProbeMap;
-vector<Unit> combatProbe;
+map <Unit, pair<Unit, Position>> mineralProbeMap;
 Unit scout;
+vector<Unit> combatProbe;
 bool saturated = false, gasNeeded = false;
 
 // Resource Manager Variables
 vector <Unit> geysers;
 map <Unit, int> gasMap;
 map <Unit, int> mineralMap;
+vector <Unit> boulders;
 
 // Unit Manager Variables
 map <int, double> localEnemy;
@@ -90,7 +91,7 @@ string currentStrategy;
 double allyStrength = 0.0, enemyStrength = 0.0;
 double allyHeatmap[256][256] = { { 0 } };
 double enemyHeatmap[256][256] = { { 0 } };
-double airEnemyHeatmap[256][256] = { { 0 } };
+double airEnemyHeatmap[256][256] = { { 0 } }; 
 int shuttleHeatmap[256][256] = { { 0 } };
 int clusterHeatmap[256][256] = { { 0 } };
 int tankClusterHeatmap[256][256] = { { 0 } };

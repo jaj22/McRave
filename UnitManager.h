@@ -84,11 +84,11 @@ public:
 	// getPosition
 	// @return Position - BWAPI position of unit
 	void setUnitType(UnitType);
-		// setUnitType
-		// @param UnitType - BWAPI type of unit
+	// setUnitType
+	// @param UnitType - BWAPI type of unit
 	void setPosition(Position);
-		// setPosition
-		// @param Position - BWAPI position of unit
+	// setPosition
+	// @param Position - BWAPI position of unit
 };
 
 extern map <int, UnitInfo> enemyUnits;
