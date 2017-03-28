@@ -99,22 +99,17 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 		}
 	}
 	// If building is on an expansion tile, don't build there
-	// TESTING -- Currently still builds on the tiles (building extends INTO the area) add offset to check?
+	// TESTING -- New implementation that tests each tile of a building being within the boundary of an expansion position
 	for (auto base : nextExpansion)
 	{
-		for (int j = 0; j <= 3; j++)
+		for (int i = 0; i <= building.tileWidth(); i++)
 		{
-			for (int k = 0; k <= 3; k++)
+			for (int j = 0; j <= building.tileHeight(); j++)
 			{
-				for (int offsetX = 0; offsetX <= building.tileWidth(); offsetX++)
+				// If the x value of this tile of the building is within an expansion, return false
+				if (buildTilePosition.x - i >= base.x && buildTilePosition.x - i <= base.x && buildTilePosition.y - j >= base.y && buildTilePosition.y - j <= base.y)
 				{
-					for (int offsetY = 0; offsetY <= building.tileHeight(); offsetY++)
-					{
-						if (buildTilePosition.x == (base.x + j + offsetX) && buildTilePosition.y == (base.y + k + offsetY))
-						{
-							return false;
-						}
-					}
+					return false;
 				}
 			}
 		}

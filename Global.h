@@ -75,6 +75,7 @@ map <int, int> unitRadiusCheck;
 map <int, Position> unitsCurrentTarget;
 map <int, UnitInfo> enemyUnits;
 map <Unit, int> unitsCurrentLocalCommand;
+map <UnitType, int> enemyComposition;
 vector<int> shuttleID;
 vector<int> harassShuttleID;
 vector<int> reaverID;
@@ -84,6 +85,7 @@ Position supportPosition;
 
 // Strategy Variables
 bool enemyAggresion = false;
+bool terranBio = false;
 int forceExpand = 0;
 string currentStrategy;
 
@@ -95,6 +97,7 @@ double airEnemyHeatmap[256][256] = { { 0 } };
 int shuttleHeatmap[256][256] = { { 0 } };
 int clusterHeatmap[256][256] = { { 0 } };
 int tankClusterHeatmap[256][256] = { { 0 } };
+int mineralHeatmap[256][256] = { { 0 } };
 
 // Terrain Variables
 int currentSize = 0;

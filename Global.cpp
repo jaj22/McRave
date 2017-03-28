@@ -62,7 +62,6 @@ void McRave::onFrame()
 		{
 			for (int y = 0; y <= Broodwar->mapHeight(); y++)
 			{
-
 				if (enemyHeatmap[x][y] > 0)
 				{
 					//Broodwar->drawTextMap(x * 32, y * 32, "%.2f", enemyHeatmap[x][y]);
@@ -185,6 +184,20 @@ void McRave::onFrame()
 						{
 							allyHeatmap[x][y] += unitGetStrength(u->getType());
 						}
+					}
+				}
+			}
+		}
+		// Mineral grid for not building near minerals
+		for (auto r : Broodwar->neutral()->getUnits())
+		{
+			if (r->getType().isMineralField || r->getType() == UnitTypes::Resource_Vespene_Geyser)
+			{
+				for (int x = r->getTilePosition().x - 1; x <= r->getTilePosition().x + 1; x++)
+				{
+					for (int y = r->getTilePosition().y - 1; y <= r->getTilePosition().y + 1; y++)
+					{
+						mineralHeatmap[x][y] += 1;
 					}
 				}
 			}
@@ -603,10 +616,18 @@ void McRave::onFrame()
 #pragma endregion
 #pragma region Unit Iterator
 	{
+		// Reset enemy composition map
+		for (auto t : enemyComposition)
+		{
+			t.second = 0;
+		}
+
 		// For each enemy unit which is visible
 		for (auto u : Broodwar->enemy()->getUnits())
 		{
 			double thisUnit = 0.0;
+
+			// Update unit in class
 			storeEnemyUnit(u, enemyUnits);
 			// Get visible strength of unit
 			if (u->exists())
@@ -628,6 +649,7 @@ void McRave::onFrame()
 		}
 		eSmall = 0, eMedium = 0, eLarge = 0;
 		// For each enemy unit object which is not visible
+		int marineCnt = 0;
 		for (auto u : enemyUnits)
 		{
 			double thisUnit = 0.0;
@@ -657,6 +679,20 @@ void McRave::onFrame()
 					eLarge++;
 				}
 			}
+
+			enemyComposition[u.second.getUnitType()] += 1;
+			/*if (u.second.getUnitType() == UnitTypes::Terran_Marine)
+			{
+				marineCnt++;
+				if (marineCnt >= 4)
+				{
+					terranBio = true;
+				}
+				else
+				{
+					terranBio = false;
+				}
+			}*/
 		}
 
 		// If not a latency frame, return to prevent spamming
@@ -685,7 +721,7 @@ void McRave::onFrame()
 					{
 						u.first->gather(b);
 					}
-				}				
+				}
 			}
 
 			// If idle and not targeting the mineral field the Probe is mapped to
@@ -1048,10 +1084,10 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 		if (storeEnemyUnit(unit, enemyUnits) == 1)
 		{
 			int enemyGateCnt = 0, enemyPoolCnt = 0, enemyRaxCnt = 0, enemySunkenCnt = 0;
-			// Check enemy buildings for build order adaptions
-			for (auto unitStored : enemyUnits)
+			// Check enemy buildings for build order adaptions when scouting
+			if ((!enemyAggresion) && scouting)
 			{
-				if ((!enemyAggresion) && scouting)
+				for (auto unitStored : enemyUnits)
 				{
 					if (unitStored.second.getUnitType() == UnitTypes::Protoss_Gateway)
 					{
@@ -1085,25 +1121,26 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 					//		enemyAggresion = true;
 					//	}
 					//}
-				}
-				if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
-				{
-					if (unitStored.second.getUnitType() == UnitTypes::Terran_Bunker)
+
+					if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
 					{
-						forceExpand = 1;
-					}
-					if (unitStored.second.getUnitType() == UnitTypes::Zerg_Sunken_Colony)
-					{
-						enemySunkenCnt++;
-						if (enemySunkenCnt > 1)
+						if (unitStored.second.getUnitType() == UnitTypes::Terran_Bunker)
 						{
 							forceExpand = 1;
 						}
+						if (unitStored.second.getUnitType() == UnitTypes::Zerg_Sunken_Colony)
+						{
+							enemySunkenCnt++;
+							if (enemySunkenCnt > 1)
+							{
+								forceExpand = 1;
+							}
+						}
 					}
-				}
-				else
-				{
-					forceExpand = 0;
+					else
+					{
+						forceExpand = 0;
+					}
 				}
 			}
 		}
