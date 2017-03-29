@@ -10,10 +10,6 @@ extern vector <TilePosition> nextExpansion;
 extern TilePosition playerStartingTilePosition;
 extern map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
 
-
-// External unit variables
-extern vector<int> buildingWorkerID;
-
 // External resource variables
 extern int queuedMineral, queuedGas, reservedMineral, reservedGas;
 extern vector<Unit> geysers;
@@ -21,6 +17,7 @@ extern map <int, UnitType> idleBuildings;
 extern map <int, UnitType> idleGates;
 extern map <int, TechType> idleTech;
 extern map <int, UpgradeType> idleUpgrade;
+extern int mineralHeatmap[256][256];
 
 // Function declarations
 TilePosition buildingManager(UnitType building);

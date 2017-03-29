@@ -50,10 +50,14 @@ void desiredBuildings()
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) > 2 && getEarlyBuild)
-	{
-		enemyAggresion = false;
+	{		
 		getEarlyBuild = false;
 		getMidBuild = true;
+	}
+
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+	{
+		enemyAggresion = false;
 	}
 
 	// If we are in mid game builds and we hit at least 4 gates, chances are we need to tech again

@@ -47,8 +47,7 @@ TilePosition buildingManager(UnitType building)
 		else
 		{
 			buildTilePosition = getBuildLocationNear(building, tile);
-		}
-		Position buildPosition = Position(32 * buildTilePosition.x, 32 * buildTilePosition.y);
+		}		
 		// If build position available and not invalid (returns x > 1000)
 		if (buildTilePosition != TilePositions::None && buildTilePosition != TilePositions::Invalid)
 		{
@@ -82,17 +81,12 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 			}
 
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			else if (!Broodwar->canBuildHere(buildTilePosition, building) || Broodwar->isBuildable(TilePosition(x, y), true) == false || Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::IsMineralField).empty() == false)
+			else if (!Broodwar->canBuildHere(buildTilePosition, building) || Broodwar->isBuildable(TilePosition(x, y), true) == false || mineralHeatmap[x][y] > 0)
 			{
 				return false;
-			}
-			/*// If it's the first pylon, build further away
-			else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Pylon) == 0 && !Broodwar->getUnitsInRadius(x * 32, y * 32, 256, Filter::IsResourceDepot).empty())
-			{
-			return false;
-			}*/
-			// If the pylon is within 3 tiles of another pylon, return false
-			else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
+			}			
+			// TESTING -- Pylon spreading
+			else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 1)
 			{
 				return false;
 			}
@@ -140,7 +134,7 @@ TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosit
 		{
 			if (canBuildHere(building, TilePosition(x, y)) == true)
 			{
-				return BWAPI::TilePosition(x, y);
+				return TilePosition(x, y);
 			}
 		}
 		//Otherwise, move to another position
@@ -173,7 +167,7 @@ TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosit
 			}
 		}
 	}
-	return BWAPI::TilePositions::None;
+	return TilePositions::None;
 }
 
 void productionManager(Unit building)

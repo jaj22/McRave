@@ -209,7 +209,7 @@ void unitGetCommand(Unit unit)
 	if (unitGetLocalStrategy(unit) == 2)
 	{
 		// If we are on top of our ramp, let's hold with zealots
-		if (unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && getRegion(unit->getPosition()) == getRegion(playerStartingPosition))
+		if (unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot)
 		{
 			if (unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
 			{
@@ -218,7 +218,7 @@ void unitGetCommand(Unit unit)
 			}
 			else if (forceExpand == 0)
 			{
-				unit->holdPosition();
+				unit->move(defendHere.at(0));
 				return;
 			}
 		}
@@ -547,7 +547,7 @@ Unit getTarget(Unit unit)
 	// If we are being rushed, only focus the closest units to our starting position to fend them off
 	if (enemyAggresion)
 	{
-		return Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy);
+		return Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy && !Filter::IsFlyer);
 	}
 
 	// If Zealot or Reaver

@@ -78,6 +78,10 @@ void McRave::onFrame()
 				{
 					//Broodwar->drawTextMap(x * 32, y * 32, "%d", clusterHeatmap[x][y]);
 				}
+				if (mineralHeatmap[x][y] > 0)
+				{
+					//Broodwar->drawTextMap(x * 32, y * 32, "%d", mineralHeatmap[x][y]);
+				}
 
 				if ((allyHeatmap[x][y] - enemyHeatmap[x][y]) > strongest && allyHeatmap[x][y] > 0)
 				{
@@ -191,17 +195,21 @@ void McRave::onFrame()
 		// Mineral grid for not building near minerals
 		for (auto r : Broodwar->neutral()->getUnits())
 		{
-			if (r->getType().isMineralField || r->getType() == UnitTypes::Resource_Vespene_Geyser)
+			if (r->getType().isMineralField() || r->getType() == UnitTypes::Resource_Vespene_Geyser)
 			{
-				for (int x = r->getTilePosition().x - 1; x <= r->getTilePosition().x + 1; x++)
+				for (int x = r->getTilePosition().x - 1; x <= r->getTilePosition().x + r->getType().tileWidth(); x++)
 				{
-					for (int y = r->getTilePosition().y - 1; y <= r->getTilePosition().y + 1; y++)
+					for (int y = r->getTilePosition().y - 1; y <= r->getTilePosition().y + r->getType().tileHeight(); y++)
 					{
-						mineralHeatmap[x][y] += 1;
+						if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
+						{
+							mineralHeatmap[x][y] = 1;
+						}
 					}
 				}
 			}
 		}
+
 	}
 #pragma endregion
 #pragma region Territory Manager
@@ -340,43 +348,53 @@ void McRave::onFrame()
 	{
 		if (masterDraw)
 		{
-			// Display some information about our buildings
-			Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
-			Broodwar->drawTextScreen(0, 10, "Nexus:");
-			Broodwar->drawTextScreen(0, 20, "Pylon:");
-			Broodwar->drawTextScreen(0, 30, "Gas:");
-			Broodwar->drawTextScreen(0, 40, "Gate:");
-			Broodwar->drawTextScreen(0, 50, "Forge:");
-			Broodwar->drawTextScreen(0, 60, "Core:");
-			Broodwar->drawTextScreen(0, 70, "RoboF:");
-			Broodwar->drawTextScreen(0, 80, "Stargate:");
-			Broodwar->drawTextScreen(0, 90, "Citadel:");
-			Broodwar->drawTextScreen(0, 100, "Support:");
-			Broodwar->drawTextScreen(0, 110, "Fleet:");
-			Broodwar->drawTextScreen(0, 120, "Archives:");
-			Broodwar->drawTextScreen(0, 130, "Observe:");
-			Broodwar->drawTextScreen(0, 140, "Tribunal:");
+			int a = 0;
+			for (auto b : buildingDesired)
+			{
+				if (b.second > 0)
+				{
+					Broodwar->drawTextScreen(0, a, "%s : %d", b.first.toString().c_str(), b.second);
+					a = a + 10;
+				}
+			}
+			//// Display some information about our buildings
+			//Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
+			//Broodwar->drawTextScreen(0, 10, "Nexus:");
+			//Broodwar->drawTextScreen(0, 20, "Pylon:");
+			//Broodwar->drawTextScreen(0, 30, "Gas:");
+			//Broodwar->drawTextScreen(0, 40, "Gate:");
+			//Broodwar->drawTextScreen(0, 50, "Forge:");
+			//Broodwar->drawTextScreen(0, 60, "Core:");
+			//Broodwar->drawTextScreen(0, 70, "RoboF:");
+			//Broodwar->drawTextScreen(0, 80, "Stargate:");
+			//Broodwar->drawTextScreen(0, 90, "Citadel:");
+			//Broodwar->drawTextScreen(0, 100, "Support:");
+			//Broodwar->drawTextScreen(0, 110, "Fleet:");
+			//Broodwar->drawTextScreen(0, 120, "Archives:");
+			//Broodwar->drawTextScreen(0, 130, "Observe:");
+			//Broodwar->drawTextScreen(0, 140, "Tribunal:");
 
-			// Counters
-			Broodwar->drawTextScreen(50, 10, "%d  %d Inactive: %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus), nexusDesired, inactiveNexusCnt);
-			Broodwar->drawTextScreen(50, 20, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired);
-			Broodwar->drawTextScreen(50, 30, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Assimilator), gasDesired);
-			Broodwar->drawTextScreen(50, 40, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Gateway), gateDesired);
-			Broodwar->drawTextScreen(50, 50, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Forge), forgeDesired);
-			Broodwar->drawTextScreen(50, 60, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Cybernetics_Core), coreDesired);
-			Broodwar->drawTextScreen(50, 70, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Facility), roboDesired);
-			Broodwar->drawTextScreen(50, 80, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Stargate), stargateDesired);
-			Broodwar->drawTextScreen(50, 90, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Citadel_of_Adun), citadelDesired);
-			Broodwar->drawTextScreen(50, 100, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Support_Bay), supportBayDesired);
-			Broodwar->drawTextScreen(50, 110, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Fleet_Beacon), fleetBeaconDesired);
-			Broodwar->drawTextScreen(50, 120, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Templar_Archives), archivesDesired);
-			Broodwar->drawTextScreen(50, 130, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Observatory), observatoryDesired);
-			Broodwar->drawTextScreen(50, 140, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Arbiter_Tribunal), tribunalDesired);
+			//// Counters
+			//Broodwar->drawTextScreen(50, 10, "%d  %d Inactive: %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus), nexusDesired, inactiveNexusCnt);
+			//Broodwar->drawTextScreen(50, 20, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired);
+			//Broodwar->drawTextScreen(50, 30, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Assimilator), gasDesired);
+			//Broodwar->drawTextScreen(50, 40, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Gateway), gateDesired);
+			//Broodwar->drawTextScreen(50, 50, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Forge), forgeDesired);
+			//Broodwar->drawTextScreen(50, 60, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Cybernetics_Core), coreDesired);
+			//Broodwar->drawTextScreen(50, 70, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Facility), roboDesired);
+			//Broodwar->drawTextScreen(50, 80, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Stargate), stargateDesired);
+			//Broodwar->drawTextScreen(50, 90, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Citadel_of_Adun), citadelDesired);
+			//Broodwar->drawTextScreen(50, 100, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Support_Bay), supportBayDesired);
+			//Broodwar->drawTextScreen(50, 110, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Fleet_Beacon), fleetBeaconDesired);
+			//Broodwar->drawTextScreen(50, 120, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Templar_Archives), archivesDesired);
+			//Broodwar->drawTextScreen(50, 130, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Observatory), observatoryDesired);
+			//Broodwar->drawTextScreen(50, 140, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Arbiter_Tribunal), tribunalDesired);
 
 			// Display some information about our queued resources required for structure building			
 			Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
 			Broodwar->drawTextScreen(200, 10, "QM: %d", queuedMineral);
 			Broodwar->drawTextScreen(200, 20, "QG: %d", queuedGas);
+			Broodwar->drawTextScreen(200, 30, "EA: %d", enemyAggresion);
 
 			// Display global strength calculations	
 			Broodwar->drawTextScreen(500, 20, "Ally Strength: %.2f", allyStrength);
@@ -417,10 +435,15 @@ void McRave::onFrame()
 			}*/
 
 			// Show unit composition information -- IMPLEMENTING
-			/*for (auto u : enemyUnits)
+			a = 0;
+			for (auto t : enemyComposition)
 			{
-
-			}*/
+				if (t.first != UnitTypes::None && t.second > 0)
+				{
+					Broodwar->drawTextScreen(500, 50 + a, "%s : %d", t.first.toString().c_str(), t.second);
+					a = a + 10;
+				}
+			}
 
 			// Show probe information
 			for (auto p : mineralProbeMap)
@@ -617,8 +640,8 @@ void McRave::onFrame()
 #pragma region Unit Iterator
 	{
 		// Reset enemy composition map
-		for (auto t : enemyComposition)
-		{
+		for (auto &t : enemyComposition)
+		{			
 			t.second = 0;
 		}
 
@@ -643,6 +666,7 @@ void McRave::onFrame()
 				enemyStrength += thisUnit;
 				if (thisUnit > 0.0 && masterDraw)
 				{
+					enemyComposition[u->getType()] += 1;
 					Broodwar->drawTextMap(u->getPosition(), "%.2f", thisUnit);
 				}
 			}
@@ -659,7 +683,8 @@ void McRave::onFrame()
 				thisUnit = unitGetStrength(u.second.getUnitType());
 				enemyStrength += thisUnit;
 				if (thisUnit > 0.0 && masterDraw)
-				{
+				{			
+					enemyComposition[u.second.getUnitType()] += 1;
 					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
 				}
 			}
@@ -679,19 +704,18 @@ void McRave::onFrame()
 					eLarge++;
 				}
 			}
-
-			enemyComposition[u.second.getUnitType()] += 1;
+			
 			/*if (u.second.getUnitType() == UnitTypes::Terran_Marine)
 			{
-				marineCnt++;
-				if (marineCnt >= 4)
-				{
-					terranBio = true;
-				}
-				else
-				{
-					terranBio = false;
-				}
+			marineCnt++;
+			if (marineCnt >= 4)
+			{
+			terranBio = true;
+			}
+			else
+			{
+			terranBio = false;
+			}
 			}*/
 		}
 
