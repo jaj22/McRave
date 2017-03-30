@@ -34,8 +34,8 @@ extern vector<int> harassReaverID;
 // Other
 extern vector<BWTA::Region*> allyTerritory;
 extern vector<Position> defendHere;
-extern map <int, double> localEnemy;
-extern map <int, double> localAlly;
+extern map <Unit, double> localEnemy;
+extern map <Unit, double> localAlly;
 extern map <int, int> unitRadiusCheck;
 extern map <int, Position> unitsCurrentTarget;
 extern map <Unit, int> unitsCurrentLocalCommand;

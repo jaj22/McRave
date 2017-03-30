@@ -37,7 +37,7 @@ void desiredBuildings()
 	}		
 	
 	// If forcing an early natural expansion
-	if (forceExpand && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
+	if (forceExpand == 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{
 		nexusDesired++;
 	}

@@ -64,7 +64,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 	// mod 2 x mod 3 y
 	// Start at one tile vertically above the build site and check the tile width and height + 1 to make sure units can move past and dont get stuck
 
-	if (buildTilePosition.x % 2 == 0 || buildTilePosition.y % 3 == 0)
+	if (buildTilePosition.x % 3 == 0 || buildTilePosition.y % 3 == 0)
 	{
 		return false;
 	}

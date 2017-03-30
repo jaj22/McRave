@@ -69,8 +69,8 @@ map <Unit, int> mineralMap;
 vector <Unit> boulders;
 
 // Unit Manager Variables
-map <int, double> localEnemy;
-map <int, double> localAlly;
+map <Unit, double> localEnemy;
+map <Unit, double> localAlly;
 map <int, int> unitRadiusCheck;
 map <int, Position> unitsCurrentTarget;
 map <int, UnitInfo> enemyUnits;

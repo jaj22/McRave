@@ -83,10 +83,10 @@ void McRave::onFrame()
 					//Broodwar->drawTextMap(x * 32, y * 32, "%d", mineralHeatmap[x][y]);
 				}
 
-				if ((allyHeatmap[x][y] - enemyHeatmap[x][y]) > strongest && allyHeatmap[x][y] > 0)
+				if (((allyHeatmap[x][y] - enemyHeatmap[x][y]) - (Position(x * 32, y * 32).getDistance(enemyStartingPosition) / 320)) > strongest && allyHeatmap[x][y] > 0)
 				{
 					supportPosition = Position(x * 32, y * 32);
-					strongest = (allyHeatmap[x][y] - enemyHeatmap[x][y]) + Position(x * 32, y * 32).getDistance(enemyStartingPosition) / 32;
+					strongest = (allyHeatmap[x][y] - enemyHeatmap[x][y]) - (Position(x * 32, y * 32).getDistance(enemyStartingPosition) / 320);
 				}
 
 				if (Broodwar->isVisible(x, y))
@@ -357,38 +357,6 @@ void McRave::onFrame()
 					a = a + 10;
 				}
 			}
-			//// Display some information about our buildings
-			//Broodwar->drawTextScreen(0, 0, "Building Count/Desired");
-			//Broodwar->drawTextScreen(0, 10, "Nexus:");
-			//Broodwar->drawTextScreen(0, 20, "Pylon:");
-			//Broodwar->drawTextScreen(0, 30, "Gas:");
-			//Broodwar->drawTextScreen(0, 40, "Gate:");
-			//Broodwar->drawTextScreen(0, 50, "Forge:");
-			//Broodwar->drawTextScreen(0, 60, "Core:");
-			//Broodwar->drawTextScreen(0, 70, "RoboF:");
-			//Broodwar->drawTextScreen(0, 80, "Stargate:");
-			//Broodwar->drawTextScreen(0, 90, "Citadel:");
-			//Broodwar->drawTextScreen(0, 100, "Support:");
-			//Broodwar->drawTextScreen(0, 110, "Fleet:");
-			//Broodwar->drawTextScreen(0, 120, "Archives:");
-			//Broodwar->drawTextScreen(0, 130, "Observe:");
-			//Broodwar->drawTextScreen(0, 140, "Tribunal:");
-
-			//// Counters
-			//Broodwar->drawTextScreen(50, 10, "%d  %d Inactive: %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus), nexusDesired, inactiveNexusCnt);
-			//Broodwar->drawTextScreen(50, 20, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired);
-			//Broodwar->drawTextScreen(50, 30, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Assimilator), gasDesired);
-			//Broodwar->drawTextScreen(50, 40, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Gateway), gateDesired);
-			//Broodwar->drawTextScreen(50, 50, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Forge), forgeDesired);
-			//Broodwar->drawTextScreen(50, 60, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Cybernetics_Core), coreDesired);
-			//Broodwar->drawTextScreen(50, 70, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Facility), roboDesired);
-			//Broodwar->drawTextScreen(50, 80, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Stargate), stargateDesired);
-			//Broodwar->drawTextScreen(50, 90, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Citadel_of_Adun), citadelDesired);
-			//Broodwar->drawTextScreen(50, 100, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Robotics_Support_Bay), supportBayDesired);
-			//Broodwar->drawTextScreen(50, 110, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Fleet_Beacon), fleetBeaconDesired);
-			//Broodwar->drawTextScreen(50, 120, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Templar_Archives), archivesDesired);
-			//Broodwar->drawTextScreen(50, 130, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Observatory), observatoryDesired);
-			//Broodwar->drawTextScreen(50, 140, "%d  %d", Broodwar->self()->allUnitCount(UnitTypes::Protoss_Arbiter_Tribunal), tribunalDesired);
 
 			// Display some information about our queued resources required for structure building			
 			Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
@@ -413,11 +381,11 @@ void McRave::onFrame()
 			// Show local calculations, targets and radius check
 			for (auto u : localEnemy)
 			{
-				Broodwar->drawTextMap(Broodwar->getUnit(u.first)->getPosition(), "E: %.2f", u.second);
+				Broodwar->drawTextMap(u.first->getPosition(), "E: %.2f", u.second);
 			}
 			for (auto u : localAlly)
 			{
-				Broodwar->drawTextMap(Broodwar->getUnit(u.first)->getPosition() + Position(0, 10), "A: %.2f", u.second);
+				Broodwar->drawTextMap(u.first->getPosition() + Position(0, 10), "A: %.2f", u.second);
 			}
 			for (auto u : unitRadiusCheck)
 			{
@@ -639,9 +607,20 @@ void McRave::onFrame()
 #pragma endregion
 #pragma region Unit Iterator
 	{
-		// Reset enemy composition map
+		// Reset enemy composition map	
 		for (auto &t : enemyComposition)
 		{			
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
+			{
+				if (t.first == UnitTypes::Terran_Bunker)
+				{
+					forceExpand = 1;
+				}
+				if (t.first == UnitTypes::Zerg_Sunken_Colony)
+				{					
+					forceExpand = 1;					
+				}
+			}
 			t.second = 0;
 		}
 
@@ -683,7 +662,7 @@ void McRave::onFrame()
 				thisUnit = unitGetStrength(u.second.getUnitType());
 				enemyStrength += thisUnit;
 				if (thisUnit > 0.0 && masterDraw)
-				{			
+				{
 					enemyComposition[u.second.getUnitType()] += 1;
 					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
 				}
@@ -704,7 +683,7 @@ void McRave::onFrame()
 					eLarge++;
 				}
 			}
-			
+
 			/*if (u.second.getUnitType() == UnitTypes::Terran_Marine)
 			{
 			marineCnt++;
@@ -797,10 +776,10 @@ void McRave::onFrame()
 			// Remove loaded unit information
 			if (u->isLoaded())
 			{
-				if (localEnemy.find(u->getID()) != localEnemy.end() && localAlly.find(u->getID()) != localAlly.end() && unitRadiusCheck.find(u->getID()) != unitRadiusCheck.end())
+				if (localEnemy.find(u) != localEnemy.end() && localAlly.find(u) != localAlly.end() && unitRadiusCheck.find(u->getID()) != unitRadiusCheck.end())
 				{
-					localEnemy.erase(u->getID());
-					localAlly.erase(u->getID());
+					localEnemy.erase(u);
+					localAlly.erase(u);
 					unitRadiusCheck.erase(u->getID());
 				}
 			}
@@ -1103,72 +1082,72 @@ void McRave::onNukeDetect(BWAPI::Position target)
 
 void McRave::onUnitDiscover(BWAPI::Unit unit)
 {
-	if (unit->getPlayer() == Broodwar->enemy())
-	{
-		if (storeEnemyUnit(unit, enemyUnits) == 1)
-		{
-			int enemyGateCnt = 0, enemyPoolCnt = 0, enemyRaxCnt = 0, enemySunkenCnt = 0;
-			// Check enemy buildings for build order adaptions when scouting
-			if ((!enemyAggresion) && scouting)
-			{
-				for (auto unitStored : enemyUnits)
-				{
-					if (unitStored.second.getUnitType() == UnitTypes::Protoss_Gateway)
-					{
-						enemyGateCnt++;
-						// If two gateways and we haven't reported the pressure
-						if (enemyGateCnt >= 2 && !enemyAggresion)
-						{
-							enemyAggresion = true;
-						}
-					}
-					else if (unitStored.second.getUnitType() == UnitTypes::Zerg_Spawning_Pool)
-					{
-						enemyPoolCnt++;
-						// If early pool and we haven't reported the pressure
-						if (enemyPoolCnt >= 1 && !enemyAggresion)
-						{
-							enemyAggresion = true;
-						}
-					}
-					// DISABLED DUE TO 1 GATE CORE BEING EFFICIENT ENOUGH
-					//else if (unitStored.second.getUnitType() == UnitTypes::Terran_Barracks)
-					//{
-					//	enemyRaxCnt++;
-					//	// If two barracks and we haven't reported the pressure
-					//	if (enemyRaxCnt >= 2 && !enemyAggresion)
-					//	{
-					//		enemyAggresion = true;
-					//	}
-					//	if (enemyRaxCnt == 0 && !enemyAggresion)
-					//	{
-					//		enemyAggresion = true;
-					//	}
-					//}
+	//if (unit->getPlayer() == Broodwar->enemy())
+	//{
+	//	if (storeEnemyUnit(unit, enemyUnits) == 1)
+	//	{
+	//		int enemyGateCnt = 0, enemyPoolCnt = 0;
+	//		// Check enemy buildings for build order adaptions when scouting
+	//		if ((!enemyAggresion) && scouting)
+	//		{
+	//			for (auto unitStored : enemyUnits)
+	//			{
+	//				if (unitStored.second.getUnitType() == UnitTypes::Protoss_Gateway)
+	//				{
+	//					enemyGateCnt++;
+	//					// If two gateways and we haven't reported the pressure
+	//					if (enemyGateCnt >= 2 && !enemyAggresion)
+	//					{
+	//						enemyAggresion = true;
+	//					}
+	//				}
+	//				else if (unitStored.second.getUnitType() == UnitTypes::Zerg_Spawning_Pool)
+	//				{
+	//					enemyPoolCnt++;
+	//					// If early pool and we haven't reported the pressure
+	//					if (enemyPoolCnt >= 1 && !enemyAggresion)
+	//					{
+	//						enemyAggresion = true;
+	//					}
+	//				}
+	//				// DISABLED DUE TO 1 GATE CORE BEING EFFICIENT ENOUGH
+	//				//else if (unitStored.second.getUnitType() == UnitTypes::Terran_Barracks)
+	//				//{
+	//				//	enemyRaxCnt++;
+	//				//	// If two barracks and we haven't reported the pressure
+	//				//	if (enemyRaxCnt >= 2 && !enemyAggresion)
+	//				//	{
+	//				//		enemyAggresion = true;
+	//				//	}
+	//				//	if (enemyRaxCnt == 0 && !enemyAggresion)
+	//				//	{
+	//				//		enemyAggresion = true;
+	//				//	}
+	//				//}
 
-					if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
-					{
-						if (unitStored.second.getUnitType() == UnitTypes::Terran_Bunker)
-						{
-							forceExpand = 1;
-						}
-						if (unitStored.second.getUnitType() == UnitTypes::Zerg_Sunken_Colony)
-						{
-							enemySunkenCnt++;
-							if (enemySunkenCnt > 1)
-							{
-								forceExpand = 1;
-							}
-						}
-					}
-					else
-					{
-						forceExpand = 0;
-					}
-				}
-			}
-		}
-	}
+	//				if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
+	//				{
+	//					if (unitStored.second.getUnitType() == UnitTypes::Terran_Bunker)
+	//					{
+	//						forceExpand = 1;
+	//					}
+	//					if (unitStored.second.getUnitType() == UnitTypes::Zerg_Sunken_Colony)
+	//					{
+	//						enemySunkenCnt++;
+	//						if (enemySunkenCnt > 1)
+	//						{
+	//							forceExpand = 1;
+	//						}
+	//					}
+	//				}
+	//				else
+	//				{
+	//					forceExpand = 0;
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 	if (unit->getType().isMineralField() && unit->getResources() == 0 && find(boulders.begin(), boulders.end(), unit) == boulders.end() && unit->getDistance(playerStartingPosition) < 1280)
 	{
 		boulders.push_back(unit);
@@ -1203,8 +1182,8 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 {
 	if (unit->getPlayer() == Broodwar->self())
 	{
-		localEnemy.erase(unit->getID());
-		localAlly.erase(unit->getID());
+		localEnemy.erase(unit);
+		localAlly.erase(unit);
 		unitRadiusCheck.erase(unit->getID());
 		unitsCurrentTarget.erase(unit->getID());
 		// For probes, adjust the resource maps to align properly
