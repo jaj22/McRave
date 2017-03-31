@@ -21,6 +21,38 @@ TilePosition nexusManager()
 	return TilePositions::None;
 }
 
+TilePosition cannonManager()
+{
+	// IMPLEMENTING
+	for (auto base : activeExpansion)
+	{
+		// Get angle of mineral line
+		if (Broodwar->getUnitsInRadius(Position(base), 320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size() < 2)
+		{
+			int avgX = 0, avgY = 0, size = 0;
+			for (auto m : Broodwar->getUnitsInRadius(Position(base), 320, Filter::IsMineralField))
+			{
+				avgX = avgX + m->getTilePosition().x;
+				avgY = avgY + m->getTilePosition().y;
+				size++;
+			}
+			avgX = avgX / size;
+			avgY = avgY / size;
+			// If mineral fields are further away on x than y, place cannons on left/right
+			if (abs(base.x - avgX) >= abs(base.y - avgY))
+			{
+				getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(base.x + (2 * (base.x - avgX)), avgY));
+			}
+			// Else place up/down
+			else
+			{
+				getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(avgX, base.y + (2 * (base.y - avgY))));
+			}
+		}
+
+	}
+}
+
 TilePosition buildingManager(UnitType building)
 {
 	if (building == UnitTypes::Protoss_Nexus)
@@ -47,7 +79,7 @@ TilePosition buildingManager(UnitType building)
 		else
 		{
 			buildTilePosition = getBuildLocationNear(building, tile);
-		}		
+		}
 		// If build position available and not invalid (returns x > 1000)
 		if (buildTilePosition != TilePositions::None && buildTilePosition != TilePositions::Invalid)
 		{
@@ -63,6 +95,18 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 	// +1 and -1 on end/start
 	// mod 2 x mod 3 y
 	// Start at one tile vertically above the build site and check the tile width and height + 1 to make sure units can move past and dont get stuck
+
+	if (building == UnitTypes::Protoss_Photon_Cannon)
+	{
+		if (Broodwar->canBuildHere(buildTilePosition, building))
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
 
 	if (buildTilePosition.x % 3 == 0 || buildTilePosition.y % 3 == 0)
 	{
@@ -84,7 +128,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 			else if (!Broodwar->canBuildHere(buildTilePosition, building) || Broodwar->isBuildable(TilePosition(x, y), true) == false || mineralHeatmap[x][y] > 0)
 			{
 				return false;
-			}			
+			}
 			// TESTING -- Pylon spreading
 			else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 1)
 			{

@@ -97,7 +97,7 @@ void getBuildOrder()
 			break;
 
 			/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
-			// IMPLEMENTING -- If mech, mid build 1 (more gates and speedlots)
+			// TESTING -- If mech, mid build 1 (more gates and speedlots)
 		case Races::Enum::Terran:
 			if (enemyAggresion && getEarlyBuild)
 			{
@@ -109,7 +109,14 @@ void getBuildOrder()
 			}
 			else if (getMidBuild)
 			{
-				midBuilds(0);				
+				if (terranBio)
+				{
+					midBuilds(1);
+				}
+				else
+				{
+					midBuilds(0);
+				}
 			}
 			else if (getLateBuild)
 			{

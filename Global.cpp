@@ -1,5 +1,5 @@
-// CMProtoBot is made by Christian McCrave
-// Twitch nickname McRave \o/
+// McRave is made by Christian McCrave
+// Twitch nicknamed it McRave \o/
 // For any questions, email christianmccrave@gmail.com
 // Bot started 01/03/2017
 
@@ -12,7 +12,7 @@ Color playerColor;
 bool analyzed = false;
 bool analysis_just_finished = false;
 bool masterDraw = true;
-bool doOnce = true;
+bool analyzeHome = true;
 bool BWTAhandling = false;
 int enemyScoutedLast = 0;
 namespace { auto & theMap = BWEM::Map::Instance(); }
@@ -214,7 +214,7 @@ void McRave::onFrame()
 #pragma endregion
 #pragma region Territory Manager
 	{
-		if (BWTAhandling)
+		if (!analyzeHome)
 		{
 			if (territory.size() < 1)
 			{
@@ -302,18 +302,17 @@ void McRave::onFrame()
 		if (analyzed)
 		{
 			//drawTerrainData();
-			if (doOnce)
+			if (analyzeHome)
 			{
 				buildChokeNodes();
-				doOnce = false;
+				analyzeHome = false;
 
 				// Find player starting position and tile position		
 				BaseLocation* playerStartingLocation = getStartLocation(Broodwar->self());
 				playerStartingPosition = playerStartingLocation->getPosition();
 				playerStartingTilePosition = playerStartingLocation->getTilePosition();
 				nextExpansion.push_back(playerStartingTilePosition);
-				activeExpansion.push_back(playerStartingTilePosition);
-				BWTAhandling = true;
+				activeExpansion.push_back(playerStartingTilePosition);				
 			}
 			if (analysis_just_finished)
 			{
@@ -348,28 +347,24 @@ void McRave::onFrame()
 	{
 		if (masterDraw)
 		{
-			int a = 0;
+			int offset = 0;
 			for (auto b : buildingDesired)
 			{
 				if (b.second > 0)
 				{
-					Broodwar->drawTextScreen(0, a, "%s : %d", b.first.toString().c_str(), b.second);
-					a = a + 10;
+					Broodwar->drawTextScreen(0, offset, "%s : %d", b.first.toString().c_str(), b.second);
+					offset = offset + 10;
 				}
 			}
 
 			// Display some information about our queued resources required for structure building			
 			Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
-			Broodwar->drawTextScreen(200, 10, "QM: %d", queuedMineral);
-			Broodwar->drawTextScreen(200, 20, "QG: %d", queuedGas);
-			Broodwar->drawTextScreen(200, 30, "EA: %d", enemyAggresion);
-
-			// Display global strength calculations	
-			Broodwar->drawTextScreen(500, 20, "Ally Strength: %.2f", allyStrength);
-			Broodwar->drawTextScreen(500, 30, "Enemy Strength: %.2f", enemyStrength);
 
 			// Display frame count
-			Broodwar->drawTextScreen(500, 40, "%d", Broodwar->getFrameCount());
+			Broodwar->drawTextScreen(200, 10, "%d", Broodwar->getFrameCount());
+
+			// Display global strength calculations	
+			Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", allyStrength, enemyStrength);
 
 			// Display remaining minerals on each mineral patch that is near our Nexus
 			for (auto r : mineralMap)
@@ -389,11 +384,11 @@ void McRave::onFrame()
 			}
 			for (auto u : unitRadiusCheck)
 			{
-				Broodwar->drawCircleMap(Broodwar->getUnit(u.first)->getPosition(), u.second, playerColor);
+				Broodwar->drawCircleMap(u.first->getPosition(), u.second, playerColor);
 			}
 			for (auto u : unitsCurrentTarget)
 			{
-				Broodwar->drawLineMap(Broodwar->getUnit(u.first)->getPosition(), u.second, playerColor);
+				Broodwar->drawLineMap(u.first->getPosition(), u.second, playerColor);
 			}
 
 			// Show path numbers
@@ -402,18 +397,18 @@ void McRave::onFrame()
 			Broodwar->drawTextMap(Position(p->Center()), "%d", find(path.begin(), path.end(), p) - path.begin());
 			}*/
 
-			// Show unit composition information -- IMPLEMENTING
-			a = 0;
+			// Show unit composition information
+			offset = 0;
 			for (auto t : enemyComposition)
 			{
 				if (t.first != UnitTypes::None && t.second > 0)
 				{
-					Broodwar->drawTextScreen(500, 50 + a, "%s : %d", t.first.toString().c_str(), t.second);
-					a = a + 10;
+					Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
+					offset = offset + 10;
 				}
 			}
 
-			// Show probe information
+			// Show Probe information
 			for (auto p : mineralProbeMap)
 			{
 				Broodwar->drawLineMap(p.first->getPosition(), p.second.second, playerColor);
@@ -426,16 +421,16 @@ void McRave::onFrame()
 				}
 			}
 
-			//Show building placements
+			// Show building placements
 			for (auto b : queuedBuildings)
 			{
 				Broodwar->drawBoxMap(Position(b.second.first), Position((b.second.first.x + b.first.tileWidth()) * 32, (b.second.first.y + b.first.tileHeight()) * 32), playerColor);
 			}
 
-			// Arbiter Position showing
+			// Show support position
 			Broodwar->drawCircleMap(supportPosition, 8, playerColor, true);
 
-			// Show building placement
+			// Show expansions
 			if (BWTAhandling)
 			{
 				for (int i = 0; i <= (int)activeExpansion.size() - 1; i++)
@@ -609,7 +604,7 @@ void McRave::onFrame()
 	{
 		// Reset enemy composition map	
 		for (auto &t : enemyComposition)
-		{			
+		{
 			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
 			{
 				if (t.first == UnitTypes::Terran_Bunker)
@@ -617,9 +612,17 @@ void McRave::onFrame()
 					forceExpand = 1;
 				}
 				if (t.first == UnitTypes::Zerg_Sunken_Colony)
-				{					
-					forceExpand = 1;					
+				{
+					forceExpand = 1;
 				}
+			}
+			if (t.first == UnitTypes::Terran_Marine && t.second >= 4)
+			{
+				terranBio = true;
+			}
+			if (t.first == UnitTypes::Zerg_Mutalisk && t.second > 2)
+			{
+				// Put stuff for cannon defenses
 			}
 			t.second = 0;
 		}
@@ -637,22 +640,25 @@ void McRave::onFrame()
 				if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
 				{
 					thisUnit = unitGetStrength(u->getType());
+					invisibleUnits.push_back(u);
 				}
 				else
 				{
 					thisUnit = unitGetVisibleStrength(u);
 				}
 				enemyStrength += thisUnit;
-				if (thisUnit > 0.0 && masterDraw)
+				if (thisUnit > 0.0)
 				{
 					enemyComposition[u->getType()] += 1;
-					Broodwar->drawTextMap(u->getPosition(), "%.2f", thisUnit);
+					if (masterDraw)
+					{
+						Broodwar->drawTextMap(u->getPosition(), "%.2f", thisUnit);
+					}
 				}
 			}
 		}
 		eSmall = 0, eMedium = 0, eLarge = 0;
-		// For each enemy unit object which is not visible
-		int marineCnt = 0;
+		// For each enemy unit object which is not visible	
 		for (auto u : enemyUnits)
 		{
 			double thisUnit = 0.0;
@@ -661,10 +667,13 @@ void McRave::onFrame()
 				// Get strength of unit type
 				thisUnit = unitGetStrength(u.second.getUnitType());
 				enemyStrength += thisUnit;
-				if (thisUnit > 0.0 && masterDraw)
+				if (thisUnit > 0.0)
 				{
 					enemyComposition[u.second.getUnitType()] += 1;
-					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
+					if (masterDraw)
+					{
+						Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
+					}
 				}
 			}
 			// If it's not a worker or building, store the unit size type
@@ -683,19 +692,15 @@ void McRave::onFrame()
 					eLarge++;
 				}
 			}
+		}
 
-			/*if (u.second.getUnitType() == UnitTypes::Terran_Marine)
+		// For each invisible unit, if it's detected, remove it
+		for (auto u : invisibleUnits)
+		{
+			if ((u->isCloaked() || u->isBurrowed()) && u->isDetected())
 			{
-			marineCnt++;
-			if (marineCnt >= 4)
-			{
-			terranBio = true;
+				invisibleUnits.erase(find(invisibleUnits.begin(), invisibleUnits.end(), u));
 			}
-			else
-			{
-			terranBio = false;
-			}
-			}*/
 		}
 
 		// If not a latency frame, return to prevent spamming
@@ -773,14 +778,16 @@ void McRave::onFrame()
 		// All unit iterator
 		for (auto u : Broodwar->self()->getUnits())
 		{
+			storeAllyUnit(u, allyUnits);
+
 			// Remove loaded unit information
 			if (u->isLoaded())
 			{
-				if (localEnemy.find(u) != localEnemy.end() && localAlly.find(u) != localAlly.end() && unitRadiusCheck.find(u->getID()) != unitRadiusCheck.end())
+				if (localEnemy.find(u) != localEnemy.end() && localAlly.find(u) != localAlly.end() && unitRadiusCheck.find(u) != unitRadiusCheck.end())
 				{
 					localEnemy.erase(u);
 					localAlly.erase(u);
-					unitRadiusCheck.erase(u->getID());
+					unitRadiusCheck.erase(u);
 				}
 			}
 
@@ -1184,8 +1191,8 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	{
 		localEnemy.erase(unit);
 		localAlly.erase(unit);
-		unitRadiusCheck.erase(unit->getID());
-		unitsCurrentTarget.erase(unit->getID());
+		unitRadiusCheck.erase(unit);
+		unitsCurrentTarget.erase(unit);
 		// For probes, adjust the resource maps to align properly
 		if (unit->getType() == UnitTypes::Protoss_Probe)
 		{

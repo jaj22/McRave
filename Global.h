@@ -25,9 +25,6 @@ using namespace BWAPI;
 using namespace std;
 using namespace BWTA;
 
-bool scouting = true;
-bool outsideBase = false;
-
 // Building Tracker Variables
 int queuedMineral = 0, queuedGas = 0, reservedMineral = 0, reservedGas = 0;
 int nexusDesired = 0, inactiveNexusCnt = 0;
@@ -71,11 +68,13 @@ vector <Unit> boulders;
 // Unit Manager Variables
 map <Unit, double> localEnemy;
 map <Unit, double> localAlly;
-map <int, int> unitRadiusCheck;
-map <int, Position> unitsCurrentTarget;
+map <Unit, int> unitRadiusCheck;
+map <Unit, Position> unitsCurrentTarget;
 map <int, UnitInfo> enemyUnits;
+map <int, UnitInfo> allyUnits;
 map <Unit, int> unitsCurrentLocalCommand;
 map <UnitType, int> enemyComposition;
+vector<Unit> invisibleUnits;
 vector<int> shuttleID;
 vector<int> harassShuttleID;
 vector<int> reaverID;
@@ -86,6 +85,8 @@ Position supportPosition;
 // Strategy Variables
 bool enemyAggresion = false;
 bool terranBio = false;
+bool scouting = true;
+bool outsideBase = false;
 int forceExpand = 0;
 string currentStrategy;
 
