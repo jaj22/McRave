@@ -57,7 +57,7 @@ extern map <Unit, double> localAlly;
 extern map <Unit, int> unitRadiusCheck;
 extern map <Unit, Position> unitsCurrentTarget;
 extern map <Unit, int> unitsCurrentLocalCommand;
-extern vector<Unit> invisibleUnits;
+extern map <Unit, Position> invisibleUnits;
 extern Position supportPosition;
 extern int aSmall, aMedium, aLarge, eSmall, eMedium, eLarge;
 

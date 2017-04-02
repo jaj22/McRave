@@ -31,13 +31,13 @@ void desiredBuildings()
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
-	if (saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && idleGates.size() == 0)
+	if (saturated && Broodwar->self()->supplyUsed() >= 120 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && idleGates.size() == 0)
 	{
 		nexusDesired++;
 	}		
 	
 	// If forcing an early natural expansion
-	if (forceExpand == 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
+	if (forceExpand == 1 /*&& Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1*/)
 	{
 		nexusDesired++;
 	}
@@ -111,11 +111,11 @@ void getBuildOrder()
 			{
 				if (terranBio)
 				{
-					midBuilds(1);
+					midBuilds(0);
 				}
 				else
 				{
-					midBuilds(0);
+					midBuilds(1);
 				}
 			}
 			else if (getLateBuild)

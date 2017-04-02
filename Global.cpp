@@ -11,11 +11,15 @@
 Color playerColor;
 bool analyzed = false;
 bool analysis_just_finished = false;
-bool masterDraw = true;
+
 bool analyzeHome = true;
 bool BWTAhandling = false;
 int enemyScoutedLast = 0;
 namespace { auto & theMap = BWEM::Map::Instance(); }
+
+// Drawing booleans
+bool masterDraw = true;
+bool calculationDraw = false;
 
 void McRave::onStart()
 {
@@ -374,17 +378,26 @@ void McRave::onFrame()
 			}
 
 			// Show local calculations, targets and radius check
-			for (auto u : localEnemy)
+			if (calculationDraw)
 			{
-				Broodwar->drawTextMap(u.first->getPosition(), "E: %.2f", u.second);
-			}
-			for (auto u : localAlly)
-			{
-				Broodwar->drawTextMap(u.first->getPosition() + Position(0, 10), "A: %.2f", u.second);
-			}
-			for (auto u : unitRadiusCheck)
-			{
-				Broodwar->drawCircleMap(u.first->getPosition(), u.second, playerColor);
+				for (auto u : localEnemy)
+				{
+					if (u.second > 0.0)
+					{
+						Broodwar->drawTextMap(u.first->getPosition(), "E: %.2f", u.second);
+					}
+				}
+				for (auto u : localAlly)
+				{
+					if (u.second > 0.0)
+					{
+						Broodwar->drawTextMap(u.first->getPosition() + Position(0, 10), "A: %.2f", u.second);
+					}
+				}
+				for (auto u : unitRadiusCheck)
+				{
+					Broodwar->drawCircleMap(u.first->getPosition(), u.second, playerColor);
+				}				
 			}
 			for (auto u : unitsCurrentTarget)
 			{
@@ -428,10 +441,10 @@ void McRave::onFrame()
 			}
 
 			// Show support position
-			Broodwar->drawCircleMap(supportPosition, 8, playerColor, true);
+			//Broodwar->drawCircleMap(supportPosition, 8, playerColor, true);
 
 			// Show expansions
-			if (BWTAhandling)
+			if (analyzed)
 			{
 				for (int i = 0; i <= (int)activeExpansion.size() - 1; i++)
 				{
@@ -615,7 +628,7 @@ void McRave::onFrame()
 				{
 					forceExpand = 1;
 				}
-			}
+			}			
 			if (t.first == UnitTypes::Terran_Marine && t.second >= 4)
 			{
 				terranBio = true;
@@ -640,7 +653,7 @@ void McRave::onFrame()
 				if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
 				{
 					thisUnit = unitGetStrength(u->getType());
-					invisibleUnits.push_back(u);
+					invisibleUnits[u] = u->getPosition();
 				}
 				else
 				{
@@ -650,7 +663,7 @@ void McRave::onFrame()
 				if (thisUnit > 0.0)
 				{
 					enemyComposition[u->getType()] += 1;
-					if (masterDraw)
+					if (masterDraw && calculationDraw)
 					{
 						Broodwar->drawTextMap(u->getPosition(), "%.2f", thisUnit);
 					}
@@ -665,12 +678,12 @@ void McRave::onFrame()
 			if (!Broodwar->getUnit(u.first)->exists())
 			{
 				// Get strength of unit type
-				thisUnit = unitGetStrength(u.second.getUnitType());
+				thisUnit = unitGetStrength(u.second.getUnitType());				
 				enemyStrength += thisUnit;
 				if (thisUnit > 0.0)
 				{
 					enemyComposition[u.second.getUnitType()] += 1;
-					if (masterDraw)
+					if (masterDraw && calculationDraw)
 					{
 						Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
 					}
@@ -697,9 +710,9 @@ void McRave::onFrame()
 		// For each invisible unit, if it's detected, remove it
 		for (auto u : invisibleUnits)
 		{
-			if ((u->isCloaked() || u->isBurrowed()) && u->isDetected())
+			if ((u.first->isCloaked() || u.first->isBurrowed()) && u.first->isDetected())
 			{
-				invisibleUnits.erase(find(invisibleUnits.begin(), invisibleUnits.end(), u));
+				invisibleUnits.erase(u.first);
 			}
 		}
 
@@ -750,11 +763,11 @@ void McRave::onFrame()
 					u.first->gather(u.second.first);
 					continue;
 				}
-				else
+				/*else
 				{
 					u.first->move(u.second.second);
 					continue;
-				}
+				}*/
 
 			}
 		}
@@ -808,7 +821,7 @@ void McRave::onFrame()
 						unAssignCombat(u);
 						u->stop();
 					}
-					if (combatProbe.size() > 2)
+					if (combatProbe.size() > 2 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1)
 					{
 						// SCV rush probable
 						enemyAggresion = true;
@@ -829,7 +842,7 @@ void McRave::onFrame()
 					{
 						scout = u;
 					}
-					if (u == scout && BWTAhandling)
+					if (u == scout)
 					{
 						if (Broodwar->self()->supplyUsed() >= 18 && scouting)
 						{
@@ -1054,6 +1067,18 @@ void McRave::onSendText(std::string text)
 			masterDraw = true;
 		}
 	}
+
+	if (text == "/calc")
+	{
+		if (calculationDraw)
+		{
+			calculationDraw = false;
+		}
+		else
+		{
+			calculationDraw = true;
+		}
+	}
 	// Else send the text to the game if it is not being processed
 	Broodwar->sendText("%s", text.c_str());
 }
@@ -1088,76 +1113,50 @@ void McRave::onNukeDetect(BWAPI::Position target)
 }
 
 void McRave::onUnitDiscover(BWAPI::Unit unit)
-{
-	//if (unit->getPlayer() == Broodwar->enemy())
-	//{
-	//	if (storeEnemyUnit(unit, enemyUnits) == 1)
-	//	{
-	//		int enemyGateCnt = 0, enemyPoolCnt = 0;
-	//		// Check enemy buildings for build order adaptions when scouting
-	//		if ((!enemyAggresion) && scouting)
-	//		{
-	//			for (auto unitStored : enemyUnits)
-	//			{
-	//				if (unitStored.second.getUnitType() == UnitTypes::Protoss_Gateway)
-	//				{
-	//					enemyGateCnt++;
-	//					// If two gateways and we haven't reported the pressure
-	//					if (enemyGateCnt >= 2 && !enemyAggresion)
-	//					{
-	//						enemyAggresion = true;
-	//					}
-	//				}
-	//				else if (unitStored.second.getUnitType() == UnitTypes::Zerg_Spawning_Pool)
-	//				{
-	//					enemyPoolCnt++;
-	//					// If early pool and we haven't reported the pressure
-	//					if (enemyPoolCnt >= 1 && !enemyAggresion)
-	//					{
-	//						enemyAggresion = true;
-	//					}
-	//				}
-	//				// DISABLED DUE TO 1 GATE CORE BEING EFFICIENT ENOUGH
-	//				//else if (unitStored.second.getUnitType() == UnitTypes::Terran_Barracks)
-	//				//{
-	//				//	enemyRaxCnt++;
-	//				//	// If two barracks and we haven't reported the pressure
-	//				//	if (enemyRaxCnt >= 2 && !enemyAggresion)
-	//				//	{
-	//				//		enemyAggresion = true;
-	//				//	}
-	//				//	if (enemyRaxCnt == 0 && !enemyAggresion)
-	//				//	{
-	//				//		enemyAggresion = true;
-	//				//	}
-	//				//}
-
-	//				if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
-	//				{
-	//					if (unitStored.second.getUnitType() == UnitTypes::Terran_Bunker)
-	//					{
-	//						forceExpand = 1;
-	//					}
-	//					if (unitStored.second.getUnitType() == UnitTypes::Zerg_Sunken_Colony)
-	//					{
-	//						enemySunkenCnt++;
-	//						if (enemySunkenCnt > 1)
-	//						{
-	//							forceExpand = 1;
-	//						}
-	//					}
-	//				}
-	//				else
-	//				{
-	//					forceExpand = 0;
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+{	
 	if (unit->getType().isMineralField() && unit->getResources() == 0 && find(boulders.begin(), boulders.end(), unit) == boulders.end() && unit->getDistance(playerStartingPosition) < 1280)
 	{
 		boulders.push_back(unit);
+	}
+	// If unit not owned by player
+	if (unit->getPlayer() == Broodwar->enemy())
+	{
+		if (unit->getType().isBuilding())
+		{
+			if (enemyBasePositions.size() == 0)
+			{
+				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
+				enemyStartingPosition = Position(enemyStartingTilePosition.x * 32, enemyStartingTilePosition.y * 32);
+				enemyBasePositions.push_back(enemyStartingPosition);
+				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
+
+				// For each chokepoint, set a 10 tile radius of "no fly zone"
+				for (auto position : path)
+				{
+					// Convert walk position (8x8) to tile position (32x32) = divide by 4
+					int x = (position->Center().x / 4);
+					int y = (position->Center().y / 4);
+
+					int x1 = (position->Center().x / 4) - 15;
+					int y1 = (position->Center().y / 4) - 15;
+
+					for (int i = x1; i <= x1 + 30; i++)
+					{
+						for (int j = y1; j <= y1 + 30; j++)
+						{
+							if ((x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()) && TilePosition(i, j).getDistance(TilePosition(x, y)) < 320)
+							{
+								shuttleHeatmap[i][j] = 256;
+							}
+						}
+					}
+				}
+			}
+		}
+		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) == enemyBasePositions.end())
+		{
+			enemyBasePositions.push_back(unit->getPosition());
+		}
 	}
 }
 
@@ -1181,8 +1180,9 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus)
 		{
 			allyTerritory.push_back(getRegion(unit->getPosition()));
+			forceExpand = 0;
 		}
-	}
+	}	
 }
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
@@ -1261,45 +1261,7 @@ void McRave::onSaveGame(std::string gameName)
 
 void McRave::onUnitComplete(BWAPI::Unit unit)
 {
-	// If unit not owned by player
-	if (unit->getPlayer()->getID() == Broodwar->enemy()->getID())
-	{
-		if (unit->getType().isBuilding())
-		{
-			if (enemyBasePositions.size() == 0)
-			{
-				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
-				enemyStartingPosition = Position(enemyStartingTilePosition.x * 32, enemyStartingTilePosition.y * 32);
-				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
-
-				// For each chokepoint, set a 10 tile radius of "no fly zone"
-				for (auto position : path)
-				{
-					// Convert walk position (8x8) to tile position (32x32) = divide by 4
-					int x = (position->Center().x / 4);
-					int y = (position->Center().y / 4);
-
-					int x1 = (position->Center().x / 4) - 15;
-					int y1 = (position->Center().y / 4) - 15;
-
-					for (int i = x1; i <= x1 + 30; i++)
-					{
-						for (int j = y1; j <= y1 + 30; j++)
-						{
-							if ((x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()) && TilePosition(i, j).getDistance(TilePosition(x, y)) < 320)
-							{
-								shuttleHeatmap[i][j] = 256;
-							}
-						}
-					}
-				}
-			}
-		}
-		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) == enemyBasePositions.end())
-		{
-			enemyBasePositions.push_back(unit->getPosition());
-		}
-	}
+	
 }
 
 DWORD WINAPI AnalyzeThread()
