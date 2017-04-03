@@ -37,7 +37,7 @@ void desiredBuildings()
 	}		
 	
 	// If forcing an early natural expansion
-	if (forceExpand == 1 /*&& Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1*/)
+	if (forceExpand == 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{
 		nexusDesired++;
 	}
@@ -190,6 +190,7 @@ void lateBuilds(int whichBuild)
 		// -- Arbiters and High Templars -- 
 		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
 		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
+		stargateDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
 		tribunalDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
 		currentStrategy.assign("Arbiter and Templar Tech");
 		break;
