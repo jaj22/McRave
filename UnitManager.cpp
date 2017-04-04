@@ -113,6 +113,11 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	double mod = 0.0, thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
 
+	if (unit->getType() == UnitTypes::Protoss_Zealot && (target->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || target->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(target) < 64)
+	{
+		return 1;
+	}
+
 	for (auto enemy : enemyUnits)
 	{
 		thisUnit = 0.0;
@@ -122,7 +127,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		if (enemy.second.getPosition().getDistance(target->getPosition()) < enemy.second.getUnitType().groundWeapon().maxRange() || (enemy.second.getUnitType().groundWeapon().maxRange() < 64 && enemy.second.getPosition().getDistance(target->getPosition()) < 256))
 		{
 			// If unit is visible, get visible strength, else estimate strength
-			if (u->isVisible())
+			if (u && u->exists())
 			{
 				// If unit is cloaked or burrowed and not detected, drastically increase strength
 				if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
@@ -131,11 +136,11 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
-					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / double(aLarge + aMedium + aSmall));
+					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / double(1 + aLarge + aMedium + aSmall));
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 				{
-					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / double(aLarge + aMedium + aSmall));
+					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / double(1 + aLarge + aMedium + aSmall));
 				}
 				else
 				{
@@ -145,11 +150,11 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 			// Else used stored information
 			else if (enemy.second.getUnitType().groundWeapon().damageType() == DamageTypes::Explosive)
 			{
-				thisUnit = unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / double(aLarge + aMedium + aSmall));
+				thisUnit = unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / double(1 + aLarge + aMedium + aSmall));
 			}
 			else if (enemy.second.getUnitType().groundWeapon().damageType() == DamageTypes::Concussive)
 			{
-				thisUnit = unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / double(aLarge + aMedium + aSmall));
+				thisUnit = unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / double(1 + aLarge + aMedium + aSmall));
 			}
 			else
 			{
@@ -177,11 +182,11 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 				// Damage type calculations
 				if (ally->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
-					allyLocalStrength += unitGetVisibleStrength(ally) * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / double(eLarge + eMedium + eSmall));
+					allyLocalStrength += unitGetVisibleStrength(ally) * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / double(1 + eLarge + eMedium + eSmall));
 				}
 				else if (ally->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 				{
-					allyLocalStrength += unitGetVisibleStrength(ally) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1.0)) / double(eLarge + eMedium + eSmall));
+					allyLocalStrength += unitGetVisibleStrength(ally) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1.0)) / double(1 + eLarge + eMedium + eSmall));
 				}
 				else
 				{
@@ -199,11 +204,11 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	{
 		if (unit->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 		{
-			allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / double(eLarge + eMedium + eSmall));
+			allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / double(1 + eLarge + eMedium + eSmall));
 		}
 		else if (unit->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 		{
-			allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1.0)) / double(eLarge + eMedium + eSmall));
+			allyLocalStrength += unitGetVisibleStrength(unit) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1.0)) / double(1 + eLarge + eMedium + eSmall));
 		}
 		else
 		{
@@ -219,10 +224,10 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	if (enemyLocalStrength >= 0.0)
 	{
 		unitRadiusCheck[unit] = radius;
-		//localEnemy[unit] = enemyLocalStrength;
-		//localAlly[unit] = allyLocalStrength;
-		localEnemy[unit] = (localEnemy[unit] * 9 / 10) + (enemyLocalStrength / 10);
-		localAlly[unit] = (localAlly[unit] * 9 / 10) + (allyLocalStrength / 10);
+		localEnemy[unit] = enemyLocalStrength;
+		localAlly[unit] = allyLocalStrength;
+		//localEnemy[unit] = (localEnemy[unit] * 9 / 10) + (enemyLocalStrength / 10);
+		//localAlly[unit] = (localAlly[unit] * 9 / 10) + (allyLocalStrength / 10);
 	}
 	// Else remove information if it exists		
 	else
@@ -287,8 +292,7 @@ void unitGetCommand(Unit unit)
 		/* Check local strategy manager to see what our next task is.
 		If 0, regroup unless forced to engage.
 		If 1, send unit to micro-management. */
-		int stratL = unitGetLocalStrategy(unit, target);
-
+		int stratL = unitGetLocalStrategy(unit, target);		
 		// If target and unit are both valid and we're not ignoring local calculations
 		if (stratL != 3)
 		{
@@ -422,7 +426,7 @@ double unitGetStrength(UnitType unitType)
 	{
 		return 2.0;
 	}
-	if (unitType == UnitTypes::Protoss_Arbiter)
+	if (unitType == UnitTypes::Protoss_Arbiter || unitType == UnitTypes::Terran_Science_Vessel)
 	{
 		return 10.0;
 	}
@@ -524,6 +528,11 @@ double unitGetAirStrength(UnitType unitType)
 
 double unitGetVisibleStrength(Unit unit)
 {
+	if (unit->isMaelstrommed() || unit->isStasised())
+	{
+		return 0;
+	}
+
 	// If a unit is visible, we want to get its current strength based on current health, shield and any buffs
 	if (unit->getType().isWorker() && getRegion(unit->getTilePosition()) == getRegion(playerStartingTilePosition))
 	{
@@ -539,13 +548,7 @@ double unitGetVisibleStrength(Unit unit)
 		{
 			return 0.0;
 		}
-	}
-
-	// If it's an SCV that is repairing, make him priority
-	if (unit->getType() == UnitTypes::Terran_SCV && unit->isRepairing())
-	{
-		return 5.5;
-	}
+	}	
 
 	double hp = double(unit->getHitPoints() + (unit->getShields() / 2)) / double(unit->getType().maxHitPoints() + (unit->getType().maxShields() / 2));
 	if (unit->isStimmed())
@@ -584,18 +587,30 @@ Unit getTarget(Unit unit)
 			{
 				// Check if within radius
 				if (enemy.second.getPosition().getDistance(unit->getPosition()) < radius && !enemy.second.getUnitType().isFlyer())
-				{
+				{					
 					if (enemy.second.getPosition().getDistance(unit->getPosition()) < 16)
 					{
-						thisUnit = 1.0 + unitGetStrength(enemy.second.getUnitType());
+						thisUnit = 2.0 + unitGetStrength(enemy.second.getUnitType());
 					}
-					else if (enemy.second.getUnitType().isBuilding() && !enemy.second.getUnitType().canAttack() || enemy.second.getUnitType().isWorker())
+					else if (enemy.second.getUnitType().isBuilding() && !enemy.second.getUnitType().canAttack())
 					{
-						thisUnit = 1.0;
+						thisUnit = 1.0 / (1.0 + double(unit->getDistance(enemy.second.getPosition())));
+					}
+					else if (enemy.second.getUnitType().isWorker())
+					{
+						// If it's an SCV that is repairing, make him priority
+						if (unit->getType() == UnitTypes::Terran_SCV && unit->isRepairing())
+						{
+							thisUnit = 5.5;
+						}
+						else
+						{
+							thisUnit = 2.0 / (1.0 + double(unit->getDistance(enemy.second.getPosition())));
+						}
 					}
 					else
 					{
-						thisUnit = 1.0 + (unitGetStrength(enemy.second.getUnitType()) / (1.0 + double(unit->getDistance(enemy.second.getPosition()))));
+						thisUnit = 2.0 + (unitGetStrength(enemy.second.getUnitType()) / (1.0 + double(unit->getDistance(enemy.second.getPosition()))));
 					}
 					if (thisUnit > highest)
 					{
@@ -640,13 +655,25 @@ Unit getTarget(Unit unit)
 				// Check if within radius
 				if (enemy.second.getPosition().getDistance(unit->getPosition()) < radius)
 				{
-					if (enemy.second.getUnitType().isBuilding() && !enemy.second.getUnitType().canAttack() || enemy.second.getUnitType().isWorker())
+					if (enemy.second.getUnitType().isBuilding() && !enemy.second.getUnitType().canAttack())
 					{
-						thisUnit = 1.0;
+						thisUnit = 1.0 / (1.0 + double(unit->getDistance(enemy.second.getPosition())));
+					}
+					else if (enemy.second.getUnitType().isWorker())
+					{
+						// If it's an SCV that is repairing, make him priority
+						if (unit->getType() == UnitTypes::Terran_SCV && unit->isRepairing())
+						{
+							thisUnit = 5.5;
+						}
+						else
+						{
+							thisUnit = 2.0 / (1.0 + double(unit->getDistance(enemy.second.getPosition())));
+						}
 					}
 					else
 					{
-						thisUnit = 1.0 + (unitGetStrength(enemy.second.getUnitType()) / (1.0 + double(unit->getDistance(enemy.second.getPosition()))));
+						thisUnit = 2.0 + (unitGetStrength(enemy.second.getUnitType()) / (1.0 + double(unit->getDistance(enemy.second.getPosition()))));
 					}
 					if (thisUnit > highest)
 					{
@@ -1067,17 +1094,21 @@ void observerManager(Unit unit)
 void templarManager(Unit unit)
 {
 	Unit target = getClusterTarget(unit);
-	if (target)
+	int stratL = unitGetLocalStrategy(unit, target);
+	if (stratL == 1 || stratL == 0)
 	{
-		if (unit->getEnergy() > 75)
+		if (target != unit)
 		{
-			unit->useTech(TechTypes::Psionic_Storm, target);
-			return;
-		}
-		else if (unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar) && (unit->getEnergy() < 70 || unit->isUnderAttack()))
-		{
-			unit->useTech(TechTypes::Archon_Warp, unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
-			return;
+			if (unit->getEnergy() > 75)
+			{
+				unit->useTech(TechTypes::Psionic_Storm, target);
+				return;
+			}
+			else if (unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar) && (unit->getEnergy() < 70 || unit->isUnderAttack()))
+			{
+				unit->useTech(TechTypes::Archon_Warp, unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
+				return;
+			}
 		}
 	}
 	unit->move(supportPosition);

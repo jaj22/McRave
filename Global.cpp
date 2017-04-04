@@ -7,6 +7,13 @@
 #include "Header.h"
 #include "Global.h"
 
+// Current issues
+// Storm own units
+// Bouncing - possibly lack of fog detection
+// Units stuck due to only 1 command from global
+
+
+
 // Variables for Global.cpp
 Color playerColor;
 bool analyzed = false;
@@ -644,12 +651,17 @@ void McRave::onFrame()
 		for (auto u : Broodwar->enemy()->getUnits())
 		{
 			double thisUnit = 0.0;
-
+			
 			// Update unit in class
 			storeEnemyUnit(u, enemyUnits);
 			// If unit is valid and visible, update visible strength
 			if (u && u->exists())
 			{
+				//// If the unit is no longer an enemy unit, remove it
+				//if (u->getPlayer() != Broodwar->enemy())
+				//{
+				//	enemyUnits.erase(u->getID());
+				//}
 				if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
 				{
 					thisUnit = unitGetStrength(u->getType());
@@ -671,44 +683,41 @@ void McRave::onFrame()
 			}
 		}
 		eSmall = 0, eMedium = 0, eLarge = 0;
+		
 		// For each enemy unit object which is not visible	
 		for (auto u : enemyUnits)
-		{
-			// If valid unit
-			if (Broodwar->getUnit(u.first))
+		{				
+			double thisUnit = 0.0;
+			// If unit is not visible, get strength
+			if (!Broodwar->getUnit(u.first)->exists())
 			{
-				double thisUnit = 0.0;
-				// If unit is not visible, get strength
-				if (!Broodwar->getUnit(u.first)->exists())
+				// Get strength of unit type
+				thisUnit = unitGetStrength(u.second.getUnitType());
+				enemyStrength += thisUnit;
+				if (thisUnit > 0.0)
 				{
-					// Get strength of unit type
-					thisUnit = unitGetStrength(u.second.getUnitType());
-					enemyStrength += thisUnit;
-					if (thisUnit > 0.0)
+					enemyComposition[u.second.getUnitType()] += 1;
+					if (masterDraw && calculationDraw)
 					{
-						enemyComposition[u.second.getUnitType()] += 1;
-						if (masterDraw && calculationDraw)
-						{
-							Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
-						}
+						Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
 					}
 				}
+			}
 
-				// Regardless of visibility, if it's not a worker or building, store the unit size type
-				if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
+			// Regardless of visibility, if it's not a worker or building, store the unit size type
+			if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
+			{
+				if (u.second.getUnitType().size() == UnitSizeTypes::Small)
 				{
-					if (u.second.getUnitType().size() == UnitSizeTypes::Small)
-					{
-						eSmall++;
-					}
-					else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
-					{
-						eMedium++;
-					}
-					else
-					{
-						eLarge++;
-					}
+					eSmall++;
+				}
+				else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
+				{
+					eMedium++;
+				}
+				else
+				{
+					eLarge++;
 				}
 			}
 		}
@@ -1206,71 +1215,68 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
 {
-	if (unit && unit->exists())
+	if (unit->getPlayer() == Broodwar->self())
 	{
-		if (unit->getPlayer() == Broodwar->self())
+		localEnemy.erase(unit);
+		localAlly.erase(unit);
+		unitRadiusCheck.erase(unit);
+		unitsCurrentTarget.erase(unit);
+		// For probes, adjust the resource maps to align properly
+		if (unit->getType() == UnitTypes::Protoss_Probe)
 		{
-			localEnemy.erase(unit);
-			localAlly.erase(unit);
-			unitRadiusCheck.erase(unit);
-			unitsCurrentTarget.erase(unit);
-			// For probes, adjust the resource maps to align properly
-			if (unit->getType() == UnitTypes::Protoss_Probe)
+			if (gasProbeMap.find(unit) != gasProbeMap.end())
 			{
-				if (gasProbeMap.find(unit) != gasProbeMap.end())
-				{
-					gasMap[(gasProbeMap.at(unit))] -= 1;
-					gasProbeMap.erase(unit);
-				}
-				if (mineralProbeMap.find(unit) != mineralProbeMap.end())
-				{
-					mineralMap[(mineralProbeMap.at(unit).first)] -= 1;
-					mineralProbeMap.erase(unit);
-				}
-				if (find(combatProbe.begin(), combatProbe.end(), unit) != combatProbe.end())
-				{
-					combatProbe.erase(find(combatProbe.begin(), combatProbe.end(), unit));
-				}
+				gasMap[(gasProbeMap.at(unit))] -= 1;
+				gasProbeMap.erase(unit);
 			}
-			else if (unit->getType() == UnitTypes::Protoss_Assimilator)
+			if (mineralProbeMap.find(unit) != mineralProbeMap.end())
 			{
-				gasMap.erase(unit);
+				mineralMap[(mineralProbeMap.at(unit).first)] -= 1;
+				mineralProbeMap.erase(unit);
 			}
-			else if (unit->getType() == UnitTypes::Protoss_Nexus)
+			if (find(combatProbe.begin(), combatProbe.end(), unit) != combatProbe.end())
 			{
-				if (find(allyTerritory.begin(), allyTerritory.end(), unit->getRegion()) != allyTerritory.end())
-				{
-					allyTerritory.erase(find(allyTerritory.begin(), allyTerritory.end(), unit->getRegion()));
-				}
+				combatProbe.erase(find(combatProbe.begin(), combatProbe.end(), unit));
+			}
+		}
+		else if (unit->getType() == UnitTypes::Protoss_Assimilator)
+		{
+			gasMap.erase(unit);
+		}
+		else if (unit->getType() == UnitTypes::Protoss_Nexus)
+		{
+			if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
+			{
+				allyTerritory.erase(find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())));
+			}
+		}
+	}
+	else if (unit->getPlayer() == Broodwar->enemy())
+	{
+		enemyUnits.erase(unit->getID());
+		enemyStrength -= unitGetStrength(unit->getType());
+		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) != enemyBasePositions.end())
+		{
+			enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()));
+		}
+	}
+	if (unit->getType().isMineralField() && unit->getInitialResources() > 0)
+	{
+		TilePosition closestNexus = Broodwar->getClosestUnit(unit->getPosition(), Filter::IsResourceDepot)->getTilePosition();
+		if (find(activeExpansion.begin(), activeExpansion.end(), closestNexus) != activeExpansion.end())
+		{
+			activeExpansion.erase(find(activeExpansion.begin(), activeExpansion.end(), closestNexus));
+			inactiveNexusCnt++;
+		}
+		mineralMap.erase(unit);
+		for (auto m : mineralProbeMap)
+		{
+			if (m.second.first == unit)
+			{
+				mineralProbeMap.erase(m.first);
 			}
 		}
 
-		else if (unit->getPlayer() == Broodwar->enemy())
-		{
-			enemyUnits.erase(unit->getID());
-			enemyStrength -= unitGetStrength(unit->getType());
-			if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) != enemyBasePositions.end())
-			{
-				enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()));
-			}
-		}
-		if (unit->getType().isMineralField() && unit->getInitialResources() > 0)
-		{
-			TilePosition closestNexus = Broodwar->getClosestUnit(unit->getPosition(), Filter::IsResourceDepot)->getTilePosition();
-			if (find(activeExpansion.begin(), activeExpansion.end(), closestNexus) != activeExpansion.end())
-			{
-				activeExpansion.erase(find(activeExpansion.begin(), activeExpansion.end(), closestNexus));
-				inactiveNexusCnt++;
-			}
-			mineralMap.erase(unit);
-			for (auto m : mineralProbeMap)
-			{
-				if (m.second.first == unit)
-				{
-					mineralProbeMap.erase(m.first);
-				}
-			}
-		}
 	}
 }
 
