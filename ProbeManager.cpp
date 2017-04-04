@@ -81,7 +81,7 @@ void assignProbe(Unit probe)
 	saturated = true;
 
 	// Any idle Probes can gather closest mineral field until they are assigned again
-	if (probe->isIdle())
+	if (probe->isIdle() && probe->getClosestUnit(Filter::IsMineralField))
 	{
 		probe->gather(probe->getClosestUnit(Filter::IsMineralField));
 	}

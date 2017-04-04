@@ -8,6 +8,7 @@
 #include "BuildOrder.h"
 #include "ProbeManager.h"
 #include "UnitManager.h"
+#include "TargetManager.h"
 
 // Include standard libraries that are needed
 #include <vector>

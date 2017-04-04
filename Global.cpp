@@ -9,8 +9,10 @@
 
 // Current issues
 // Storm own units
-// Bouncing - possibly lack of fog detection
-// Units stuck due to only 1 command from global
+
+//// Unit Scoring
+// Create class that stores unit type and count, enemy unit type and count and then stores the score based on that unit type
+// Call via getUnitScore(ally, enemy);
 
 
 
@@ -152,7 +154,7 @@ void McRave::onFrame()
 					}
 				}
 			}
-			if (!u->getType().isBuilding())
+			if (!u->getType().isBuilding() && !u->isStasised() && !u->isMaelstrommed())
 			{
 				// Cluster heatmap for psi/stasis (96x96)			
 				for (int x = u->getTilePosition().x - 1; x <= u->getTilePosition().x + 1; x++)

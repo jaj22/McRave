@@ -108,7 +108,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 		}
 	}
 
-	if (buildTilePosition.x % 5 == 0 && buildTilePosition.y % 5 == 0)
+	if (buildTilePosition.x % 6 == 0 && buildTilePosition.y % 5 == 0)
 	{
 		return false;
 	}
@@ -136,8 +136,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 			}
 		}
 	}
-	// If building is on an expansion tile, don't build there
-	// TESTING -- New implementation that tests each tile of a building being within the boundary of an expansion position
+	// If building is on an expansion tile, don't build there	
 	for (auto base : nextExpansion)
 	{
 		for (int i = 0; i <= building.tileWidth(); i++)

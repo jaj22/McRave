@@ -3,9 +3,6 @@
 #include <vector>
 
 using namespace BWAPI;
+using namespace UnitTypes;
+using namespace std;
 
-extern Position playerStartingPosition;
-
-Unit targetPriority(Unit unit);
-Unit groundTargetPriority(Unit unit);
-Unit clusterTargetPriority(Unit unit);

@@ -19,6 +19,9 @@ extern map <int, TechType> idleTech;
 extern map <int, UpgradeType> idleUpgrade;
 extern int mineralHeatmap[256][256];
 
+// Build Order variables
+extern bool terranBio;
+
 // Function declarations
 TilePosition buildingManager(UnitType building);
 bool canBuildHere(UnitType building, TilePosition buildTilePosition);
