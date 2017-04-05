@@ -83,11 +83,7 @@ void unitMicro(Unit unit, Unit target)
 }
 
 int unitGetGlobalStrategy()
-{
-	/*if (Broodwar->self()->supplyUsed() > 300)
-	{
-	return 1;
-	}*/
+{	
 	if (Broodwar->enemy()->getRace() == Races::Terran || Broodwar->enemy()->getRace() == Races::Protoss)
 	{
 		return 1;
@@ -325,7 +321,7 @@ void unitGetCommand(Unit unit)
 					unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
 					return;
 				}
-				if (unit->getClosestUnit(Filter::IsEnemy))
+				/*if (unit->getClosestUnit(Filter::IsEnemy))
 				{
 					if (unit->getClosestUnit(Filter::IsEnemy)->getDistance(position) < unit->getDistance(position) && unit->getDistance(playerStartingPosition) < unit->getDistance(enemyStartingPosition))
 					{
@@ -333,7 +329,7 @@ void unitGetCommand(Unit unit)
 						unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
 						return;
 					}
-				}
+				}*/
 				if (unit->getDistance(position) <= closestD || closestD == 0.0)
 				{
 					closestD = unit->getDistance(position);
