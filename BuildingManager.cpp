@@ -108,7 +108,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 		}
 	}
 
-	if (buildTilePosition.x % 6 == 0 && buildTilePosition.y % 5 == 0)
+	if (buildTilePosition.x % 2 == 0  || buildTilePosition.x % 3 == 0|| buildTilePosition.y % 2 == 0)
 	{
 		return false;
 	}

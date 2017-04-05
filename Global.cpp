@@ -651,44 +651,16 @@ void McRave::onFrame()
 
 		// For each enemy unit which is visible
 		for (auto u : Broodwar->enemy()->getUnits())
-		{
-			double thisUnit = 0.0;
-			
+		{		
 			// Update unit in class
-			storeEnemyUnit(u, enemyUnits);
-			// If unit is valid and visible, update visible strength
-			if (u && u->exists())
-			{
-				//// If the unit is no longer an enemy unit, remove it
-				//if (u->getPlayer() != Broodwar->enemy())
-				//{
-				//	enemyUnits.erase(u->getID());
-				//}
-				if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
-				{
-					thisUnit = unitGetStrength(u->getType());
-					invisibleUnits[u] = u->getPosition();
-				}
-				else
-				{
-					thisUnit = unitGetVisibleStrength(u);
-				}
-				enemyStrength += thisUnit;
-				if (thisUnit > 0.0)
-				{
-					enemyComposition[u->getType()] += 1;
-					if (masterDraw && calculationDraw)
-					{
-						Broodwar->drawTextMap(u->getPosition(), "%.2f", thisUnit);
-					}
-				}
-			}
+			storeEnemyUnit(u, enemyUnits);			
 		}
 		eSmall = 0, eMedium = 0, eLarge = 0;
 		
 		// For each enemy unit object which is not visible	
 		for (auto u : enemyUnits)
-		{				
+		{			
+			Unit e = Broodwar->getUnit(u.first);
 			double thisUnit = 0.0;
 			// If unit is not visible, get strength
 			if (!Broodwar->getUnit(u.first)->exists())
@@ -702,6 +674,34 @@ void McRave::onFrame()
 					if (masterDraw && calculationDraw)
 					{
 						Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
+					}
+				}
+			}			
+			if (e && e->exists())
+			{
+				thisUnit = 0.0;			
+				
+				// If the unit is no longer an enemy unit, remove it
+				if (e->getPlayer() != Broodwar->enemy())
+				{
+					enemyUnits.erase(e->getID());
+				}
+				if ((e->isCloaked() || e->isBurrowed()) && !e->isDetected())
+				{
+					thisUnit = unitGetStrength(e->getType());
+					invisibleUnits[e] = e->getPosition();
+				}
+				else
+				{
+					thisUnit = unitGetVisibleStrength(e);
+				}
+				enemyStrength += thisUnit;
+				if (thisUnit > 0.0)
+				{
+					enemyComposition[e->getType()] += 1;
+					if (masterDraw && calculationDraw)
+					{
+						Broodwar->drawTextMap(e->getPosition(), "%.2f", thisUnit);
 					}
 				}
 			}
@@ -1219,6 +1219,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 {
 	if (unit->getPlayer() == Broodwar->self())
 	{
+		allyUnits.erase(unit->getID());
 		localEnemy.erase(unit);
 		localAlly.erase(unit);
 		unitRadiusCheck.erase(unit);
