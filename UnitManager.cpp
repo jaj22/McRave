@@ -267,7 +267,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 void unitGetCommand(Unit unit)
 {
 	unitsCurrentTarget.erase(unit);
-	double closestD = 0;
+	double closestD = 0.0;
 	Position closestP;
 	Unit target;
 
@@ -291,7 +291,7 @@ void unitGetCommand(Unit unit)
 	if (stratL != 3)
 	{		
 		// Attack
-		if (stratL == 1 && target != unit)
+		if (stratL == 1 && target && target->exists() && target != unit)
 		{
 			unitMicro(unit, target);
 			return;
@@ -542,6 +542,10 @@ double unitGetVisibleStrength(Unit unit)
 	if (unit->isStimmed())
 	{
 		stimResearched = true;
+	}
+	if (unit->getPlayer() == Broodwar->self() && unit->isCloaked() && !unit->isDetected())
+	{
+		return 4 * hp * unitGetStrength(unit->getType());
 	}
 	return hp * unitGetStrength(unit->getType());
 }

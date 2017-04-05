@@ -8,7 +8,7 @@
 #include "BuildOrder.h"
 #include "ProbeManager.h"
 #include "UnitManager.h"
-#include "TargetManager.h"
+#include "UnitScore.h"
 
 // Include standard libraries that are needed
 #include <vector>
@@ -25,6 +25,13 @@
 using namespace BWAPI;
 using namespace std;
 using namespace BWTA;
+
+// Classes
+// Want a class that can store the score of a certain UnitType against the enemy composition?
+class UnitScore {
+private:
+	double score;	
+};
 
 // Building Tracker Variables
 int queuedMineral = 0, queuedGas = 0, reservedMineral = 0, reservedGas = 0;
@@ -70,6 +77,7 @@ vector <Unit> boulders;
 map <Unit, double> localEnemy;
 map <Unit, double> localAlly;
 map <Unit, int> unitRadiusCheck;
+map <UnitType, double> unitScore;
 map <Unit, Position> unitsCurrentTarget;
 map <int, UnitInfo> enemyUnits;
 map <int, UnitInfo> allyUnits;

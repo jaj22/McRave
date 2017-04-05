@@ -627,20 +627,29 @@ void McRave::onFrame()
 		// Reset enemy composition map	
 		for (auto &t : enemyComposition)
 		{
+			// For each type, add a score to production based on the unit count divided by our current unit count
+			unitScoreUpdate(t.first, t.second);
 			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
 			{
 				if (t.first == UnitTypes::Terran_Bunker)
 				{
 					forceExpand = 1;
 				}
-				if (t.first == UnitTypes::Zerg_Sunken_Colony)
+				if (t.first == UnitTypes::Zerg_Sunken_Colony && t.second >= 2)
 				{
 					forceExpand = 1;
 				}
 			}
-			if (t.first == UnitTypes::Terran_Marine && t.second >= 4)
+			if (t.first == UnitTypes::Terran_Marine)
 			{
-				terranBio = true;
+				if (t.second >= 4)
+				{
+					terranBio = true;
+				}
+				else
+				{
+					terranBio = false;
+				}
 			}
 			if (t.first == UnitTypes::Zerg_Mutalisk && t.second > 2)
 			{
@@ -961,19 +970,11 @@ void McRave::onFrame()
 						{
 							TilePosition here = getBuildLocationNear(UnitTypes::Protoss_Pylon, u->getTilePosition());
 							Unit builder = Broodwar->getClosestUnit(u->getPosition(), Filter::IsAlly && Filter::IsWorker);
-							if (builder)
+							if (builder && builder->exists())
 							{
 								builder->build(UnitTypes::Protoss_Pylon, here);
 							}
-						}
-						// DISABLED DUE TO CAUSING HUGE LAG AND DQ FROM SSCAIT
-						//// If not at least two cannons, build two cannons, good for anti harass and detection
-						//if (u->getUnitsInRadius(640, Filter::GetType == UnitTypes::Enum::Protoss_Photon_Cannon).size() < 2 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 2)
-						//{
-						//	TilePosition here = getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, u->getTilePosition());
-						//	Unit builder = Broodwar->getClosestUnit(u->getPosition(), Filter::IsAlly && Filter::IsWorker);
-						//	builder->build(UnitTypes::Protoss_Photon_Cannon, here);
-						//}
+						}						
 					}
 				}
 				else if (u->getType() == UnitTypes::Protoss_Assimilator && gasMap.find(u) == gasMap.end())
@@ -1257,7 +1258,6 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	else if (unit->getPlayer() == Broodwar->enemy())
 	{
 		enemyUnits.erase(unit->getID());
-		enemyStrength -= unitGetStrength(unit->getType());
 		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) != enemyBasePositions.end())
 		{
 			enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()));
