@@ -31,7 +31,7 @@ void desiredBuildings()
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
-	if (saturated && Broodwar->self()->supplyUsed() >= 100 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && idleGates.size() == 0)
+	if (saturated && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility) > 0 || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun) > 0) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && idleGates.size() == 0)
 	{
 		nexusDesired++;
 	}		
@@ -251,3 +251,6 @@ void earlyBuilds(int whichBuild)
 		break;
 	}
 }
+
+// PvT range expand:
+//8 pylon, 10 gateway, 12 gas, 13 cyber, 15 pylon, 17 dragoon range, 18 gateway, 20 nexus, 20 2 dragoons, 24 pylon, 25 2 dragoons, 31 robo
