@@ -1,51 +1,146 @@
 #include "UnitScore.h"
 
-
-
-/*int targetPriority(UnitType unit, UnitType target)
-{
-Race enemy = Broodwar->enemy()->getRace();
-switch (enemy)
-{
-case Races::Enum::Terran:
-zealotTargets.emplace(Terran_SCV, 1);
-zealotTargets.emplace(Terran_Marine, 3);
-zealotTargets.emplace(Terran_Firebat, 2);
-zealotTargets.emplace(Terran_Medic, 4);
-zealotTargets.emplace(Terran_Ghost, 5);
-zealotTargets.emplace(Terran_Vulture, 0);
-zealotTargets.emplace(Terran_Goliath, 8);
-zealotTargets.emplace(Terran_Siege_Tank_Tank_Mode, 10);
-zealotTargets.emplace(Terran_Siege_Tank_Siege_Mode, 10);
-zealotTargets.emplace(Terran_Wraith, 0);
-zealotTargets.emplace(Terran_Dropship, 0);
-zealotTargets.emplace(Terran_Science_Vessel, 0);
-zealotTargets.emplace(Terran_Battlecruiser, 0);
-zealotTargets.emplace(Terran_Valkyrie, 0);
-zealotTargets.emplace(Terran_Bunker, 5);
-
-dragoonTargets.emplace(Terran_SCV, 1);
-dragoonTargets.emplace(Terran_Marine, 2);
-dragoonTargets.emplace(Terran_Firebat, 3);
-dragoonTargets.emplace(Terran_Medic, 4);
-dragoonTargets.emplace(Terran_Ghost, 5);
-dragoonTargets.emplace(Terran_Vulture, 8);
-dragoonTargets.emplace(Terran_Goliath, 8);
-dragoonTargets.emplace(Terran_Siege_Tank_Tank_Mode, 10);
-dragoonTargets.emplace(Terran_Siege_Tank_Siege_Mode, 10);
-dragoonTargets.emplace(Terran_Wraith, 7);
-dragoonTargets.emplace(Terran_Dropship, 9);
-dragoonTargets.emplace(Terran_Science_Vessel, 10);
-dragoonTargets.emplace(Terran_Battlecruiser, 10);
-dragoonTargets.emplace(Terran_Valkyrie, 7);
-dragoonTargets.emplace(Terran_Bunker, 5);
-
-
-break;
-case Races::Enum::Protoss:
-break;
-}
-}*/
+//int targetPriority(UnitType unit, UnitType target)
+//{
+//	Race enemy = Broodwar->enemy()->getRace();
+//	switch (enemy)
+//	{
+//	case Races::Enum::Terran:
+//		zealotTargets.emplace(Terran_SCV, 1);
+//		zealotTargets.emplace(Terran_Marine, 3);
+//		zealotTargets.emplace(Terran_Firebat, 2);
+//		zealotTargets.emplace(Terran_Medic, 4);
+//		zealotTargets.emplace(Terran_Ghost, 5);
+//		zealotTargets.emplace(Terran_Vulture, 0);
+//		zealotTargets.emplace(Terran_Goliath, 8);
+//		zealotTargets.emplace(Terran_Siege_Tank_Tank_Mode, 10);
+//		zealotTargets.emplace(Terran_Siege_Tank_Siege_Mode, 10);
+//		zealotTargets.emplace(Terran_Wraith, 0);
+//		zealotTargets.emplace(Terran_Dropship, 0);
+//		zealotTargets.emplace(Terran_Science_Vessel, 0);
+//		zealotTargets.emplace(Terran_Battlecruiser, 0);
+//		zealotTargets.emplace(Terran_Valkyrie, 0);
+//		zealotTargets.emplace(Terran_Bunker, 5);
+//
+//		dragoonTargets.emplace(Terran_SCV, 1);
+//		dragoonTargets.emplace(Terran_Marine, 2);
+//		dragoonTargets.emplace(Terran_Firebat, 3);
+//		dragoonTargets.emplace(Terran_Medic, 4);
+//		dragoonTargets.emplace(Terran_Ghost, 5);
+//		dragoonTargets.emplace(Terran_Vulture, 8);
+//		dragoonTargets.emplace(Terran_Goliath, 8);
+//		dragoonTargets.emplace(Terran_Siege_Tank_Tank_Mode, 10);
+//		dragoonTargets.emplace(Terran_Siege_Tank_Siege_Mode, 10);
+//		dragoonTargets.emplace(Terran_Wraith, 7);
+//		dragoonTargets.emplace(Terran_Dropship, 9);
+//		dragoonTargets.emplace(Terran_Science_Vessel, 10);
+//		dragoonTargets.emplace(Terran_Battlecruiser, 10);
+//		dragoonTargets.emplace(Terran_Valkyrie, 7);
+//		dragoonTargets.emplace(Terran_Bunker, 5);
+//
+//		reaverTargets.emplace(Terran_SCV, 5);		
+//		reaverTargets.emplace(Terran_Marine, 7);
+//		reaverTargets.emplace(Terran_Firebat, 6);
+//		reaverTargets.emplace(Terran_Medic, 8);
+//		reaverTargets.emplace(Terran_Ghost, 8);
+//		reaverTargets.emplace(Terran_Vulture, 10);
+//		reaverTargets.emplace(Terran_Goliath, 8);
+//		reaverTargets.emplace(Terran_Siege_Tank_Tank_Mode, 9);
+//		reaverTargets.emplace(Terran_Siege_Tank_Siege_Mode, 9);
+//		reaverTargets.emplace(Terran_Wraith, 0);
+//		reaverTargets.emplace(Terran_Dropship, 0);
+//		reaverTargets.emplace(Terran_Science_Vessel, 0);
+//		reaverTargets.emplace(Terran_Battlecruiser, 0);
+//		reaverTargets.emplace(Terran_Valkyrie, 0);
+//		reaverTargets.emplace(Terran_Bunker, 7);
+//
+//		archonTargets.emplace(Terran_SCV, 3);
+//		archonTargets.emplace(Terran_Marine, 7);
+//		archonTargets.emplace(Terran_Firebat, 6);
+//		archonTargets.emplace(Terran_Medic, 8);
+//		archonTargets.emplace(Terran_Ghost, 8);
+//		archonTargets.emplace(Terran_Vulture, 10);
+//		archonTargets.emplace(Terran_Goliath, 8);
+//		archonTargets.emplace(Terran_Siege_Tank_Tank_Mode, 9);
+//		archonTargets.emplace(Terran_Siege_Tank_Siege_Mode, 9);
+//		archonTargets.emplace(Terran_Wraith, 6);
+//		archonTargets.emplace(Terran_Dropship, 6);
+//		archonTargets.emplace(Terran_Science_Vessel, 10);
+//		archonTargets.emplace(Terran_Battlecruiser, 10);
+//		archonTargets.emplace(Terran_Valkyrie, 0);
+//		archonTargets.emplace(Terran_Bunker, 8);
+//		break;
+//	case Races::Enum::Protoss:
+//		zealotTargets.emplace(Protoss_Probe, 3);
+//		zealotTargets.emplace(Protoss_Zealot, 7);
+//		zealotTargets.emplace(Protoss_Dragoon, 2);
+//		zealotTargets.emplace(Protoss_High_Templar, 10);
+//		zealotTargets.emplace(Protoss_Dark_Templar, 6);
+//		zealotTargets.emplace(Protoss_Reaver, 8);
+//		zealotTargets.emplace(Protoss_Archon, 4);
+//		zealotTargets.emplace(Protoss_Dark_Archon, 9);
+//		zealotTargets.emplace(Protoss_Observer, 0);
+//		zealotTargets.emplace(Protoss_Shuttle, 0);
+//		zealotTargets.emplace(Protoss_Scout, 0);
+//		zealotTargets.emplace(Protoss_Carrier, 0);
+//		zealotTargets.emplace(Protoss_Interceptor, 0);
+//		zealotTargets.emplace(Protoss_Arbiter, 0);
+//		zealotTargets.emplace(Protoss_Corsair, 0);
+//		zealotTargets.emplace(Protoss_Photon_Cannon, 5);
+//
+//		dragoonTargets.emplace(Protoss_Probe, 3);
+//		dragoonTargets.emplace(Protoss_Zealot, 5);
+//		dragoonTargets.emplace(Protoss_Dragoon, 8);
+//		dragoonTargets.emplace(Protoss_High_Templar, 7);
+//		dragoonTargets.emplace(Protoss_Dark_Templar, 9);
+//		dragoonTargets.emplace(Protoss_Reaver, 10);
+//		dragoonTargets.emplace(Protoss_Archon, 6);
+//		dragoonTargets.emplace(Protoss_Dark_Archon, 9);
+//		dragoonTargets.emplace(Protoss_Observer, 7);
+//		dragoonTargets.emplace(Protoss_Shuttle, 7);
+//		dragoonTargets.emplace(Protoss_Scout, 2);
+//		dragoonTargets.emplace(Protoss_Carrier, 10);
+//		dragoonTargets.emplace(Protoss_Interceptor, 1);
+//		dragoonTargets.emplace(Protoss_Arbiter, 10);
+//		dragoonTargets.emplace(Protoss_Corsair, 1);
+//		dragoonTargets.emplace(Protoss_Photon_Cannon, 8);
+//
+//		reaverTargets.emplace(Protoss_Probe, 5);
+//		reaverTargets.emplace(Protoss_Zealot, 7);
+//		reaverTargets.emplace(Protoss_Dragoon, 9);
+//		reaverTargets.emplace(Protoss_High_Templar, 6);
+//		reaverTargets.emplace(Protoss_Dark_Templar, 6);
+//		reaverTargets.emplace(Protoss_Reaver, 10);
+//		reaverTargets.emplace(Protoss_Archon, 7);
+//		reaverTargets.emplace(Protoss_Dark_Archon, 9);
+//		reaverTargets.emplace(Protoss_Observer, 0);
+//		reaverTargets.emplace(Protoss_Shuttle, 0);
+//		reaverTargets.emplace(Protoss_Scout, 0);
+//		reaverTargets.emplace(Protoss_Carrier, 0);
+//		reaverTargets.emplace(Protoss_Interceptor, 0);
+//		reaverTargets.emplace(Protoss_Arbiter, 0);
+//		reaverTargets.emplace(Protoss_Corsair, 0);
+//		reaverTargets.emplace(Protoss_Photon_Cannon, 8);
+//
+//		archonTargets.emplace(Protoss_Probe, 5);
+//		archonTargets.emplace(Protoss_Zealot, 7);
+//		archonTargets.emplace(Protoss_Dragoon, 9);
+//		archonTargets.emplace(Protoss_High_Templar, 6);
+//		archonTargets.emplace(Protoss_Dark_Templar, 6);
+//		archonTargets.emplace(Protoss_Reaver, 10);
+//		archonTargets.emplace(Protoss_Archon, 7);
+//		archonTargets.emplace(Protoss_Dark_Archon, 9);
+//		archonTargets.emplace(Protoss_Observer, 0);
+//		archonTargets.emplace(Protoss_Shuttle, 0);
+//		archonTargets.emplace(Protoss_Scout, 0);
+//		archonTargets.emplace(Protoss_Carrier, 0);
+//		archonTargets.emplace(Protoss_Interceptor, 0);
+//		archonTargets.emplace(Protoss_Arbiter, 0);
+//		archonTargets.emplace(Protoss_Corsair, 0);
+//		archonTargets.emplace(Protoss_Photon_Cannon, 8);
+//		break;
+//	}
+//}
 
 void unitScoreUpdate(UnitType unit, int count)
 {
@@ -69,7 +164,7 @@ void unitScoreUpdate(UnitType unit, int count)
 			break;
 		case Enum::Terran_Vulture:
 			unitScore[Protoss_Zealot] += 0.5 * count * Broodwar->self()->completedUnitCount(Protoss_Dragoon) / Broodwar->self()->completedUnitCount(Protoss_Zealot);
-			unitScore[Protoss_Dragoon] += 2 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
+			unitScore[Protoss_Dragoon] += 1 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 		case Enum::Terran_Goliath:
 			unitScore[Protoss_Zealot] += 0.5 * count * Broodwar->self()->completedUnitCount(Protoss_Dragoon) / Broodwar->self()->completedUnitCount(Protoss_Zealot);
@@ -77,11 +172,11 @@ void unitScoreUpdate(UnitType unit, int count)
 			break;
 		case Enum::Terran_Wraith:
 			unitScore[Protoss_Zealot] += 0 * count * Broodwar->self()->completedUnitCount(Protoss_Dragoon) / Broodwar->self()->completedUnitCount(Protoss_Zealot);
-			unitScore[Protoss_Dragoon] += 1 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
+			unitScore[Protoss_Dragoon] += 0.25 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 		case Enum::Terran_Science_Vessel:
 			unitScore[Protoss_Zealot] += 0 * count * Broodwar->self()->completedUnitCount(Protoss_Dragoon) / Broodwar->self()->completedUnitCount(Protoss_Zealot);
-			unitScore[Protoss_Dragoon] += 1 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
+			unitScore[Protoss_Dragoon] += 0.5 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 		case Enum::Terran_Battlecruiser:
 			unitScore[Protoss_Zealot] += 0 * count * Broodwar->self()->completedUnitCount(Protoss_Dragoon) / Broodwar->self()->completedUnitCount(Protoss_Zealot);
@@ -89,11 +184,11 @@ void unitScoreUpdate(UnitType unit, int count)
 			break;
 		case Enum::Terran_Siege_Tank_Siege_Mode:
 			unitScore[Protoss_Zealot] += 4 * count * Broodwar->self()->completedUnitCount(Protoss_Dragoon) / Broodwar->self()->completedUnitCount(Protoss_Zealot);
-			unitScore[Protoss_Dragoon] += 1 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
+			unitScore[Protoss_Dragoon] += 0 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 		case Enum::Terran_Siege_Tank_Tank_Mode:
 			unitScore[Protoss_Zealot] += 4 * count * Broodwar->self()->completedUnitCount(Protoss_Dragoon) / Broodwar->self()->completedUnitCount(Protoss_Zealot);
-			unitScore[Protoss_Dragoon] += 1 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
+			unitScore[Protoss_Dragoon] += 0 * count * Broodwar->self()->completedUnitCount(Protoss_Zealot) / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 			}
 			if (Broodwar->enemy()->getRace() == Races::Zerg)
