@@ -8,7 +8,7 @@ using namespace std;
 using namespace BWEM;
 
 // Class for enemy tracking
-class UnitInfo{
+class UnitInfo {
 	UnitType unitType;
 	Position position;
 public:

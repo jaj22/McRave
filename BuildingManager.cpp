@@ -41,16 +41,16 @@ TilePosition cannonManager()
 			// If mineral fields are further away on x than y, place cannons on left/right
 			if (abs(base.x - avgX) >= abs(base.y - avgY))
 			{
-				getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(base.x + (2 * (base.x - avgX)), avgY));
+				return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(base.x + (2 * (base.x - avgX)), avgY));
 			}
 			// Else place up/down
 			else
 			{
-				getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(avgX, base.y + (2 * (base.y - avgY))));
+				return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(avgX, base.y + (2 * (base.y - avgY))));
 			}
 		}
-
 	}
+	return TilePositions::None;
 }
 
 TilePosition buildingManager(UnitType building)
@@ -119,13 +119,13 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 		for (int y = buildTilePosition.y; y <= buildTilePosition.y + building.tileHeight(); y++)
 		{
 			// If the location is outside the boundaries, return false
-			if (x <= 0 || x >= Broodwar->mapWidth() || y <= 0 || y >= Broodwar->mapHeight())
+			if (x < 0 || x > Broodwar->mapWidth() || y < 0 || y > Broodwar->mapHeight())
 			{
 				return false;
 			}
 
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			else if (!Broodwar->canBuildHere(buildTilePosition, building) || Broodwar->isBuildable(TilePosition(x, y), true) == false || mineralHeatmap[x][y] > 0)
+			else if (Broodwar->isBuildable(TilePosition(x, y), true) == false || mineralHeatmap[x][y] > 0)
 			{
 				return false;
 			}
@@ -173,7 +173,7 @@ TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosit
 	while (length < 50)
 	{
 		//If we can build here, return this tile position
-		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
+		if (x > 0 && x < Broodwar->mapWidth() && y > 0 && y < Broodwar->mapHeight())
 		{
 			if (canBuildHere(building, TilePosition(x, y)) == true)
 			{

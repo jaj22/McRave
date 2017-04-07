@@ -424,8 +424,8 @@ void McRave::onFrame()
 			/*offset = 0;
 			for (auto t : unitScore)
 			{
-				Broodwar->drawTextScreen(500, 200 + offset, "%s : %.2f", t.first.toString().c_str(), t.second);
-				offset = offset + 10;
+			Broodwar->drawTextScreen(500, 200 + offset, "%s : %.2f", t.first.toString().c_str(), t.second);
+			offset = offset + 10;
 			}*/
 
 			// Show Probe information
@@ -664,7 +664,10 @@ void McRave::onFrame()
 		for (auto u : Broodwar->enemy()->getUnits())
 		{
 			// Update unit in class
-			storeEnemyUnit(u, enemyUnits);
+			if (u && u->exists())
+			{
+				storeEnemyUnit(u, enemyUnits);
+			}
 		}
 		eSmall = 0, eMedium = 0, eLarge = 0;
 
@@ -825,8 +828,15 @@ void McRave::onFrame()
 		// All unit iterator
 		for (auto u : Broodwar->self()->getUnits())
 		{
-
-
+			// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, loaded, not powered, stuck or not completed
+			if (!u || !u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised() || u->isLoaded() || !u->isPowered() || !u->isCompleted() || u->isStuck())
+			{
+				continue;
+			}
+			else
+			{
+				storeAllyUnit(u, allyUnits);
+			}
 
 			// Remove loaded unit information
 			if (u->isLoaded())
@@ -839,105 +849,100 @@ void McRave::onFrame()
 				}
 			}
 
-			// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, loaded, not powered, stuck or not completed
-			if (!u || !u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised()
-				|| u->isLoaded() || !u->isPowered() || !u->isCompleted() || u->isStuck())
-				continue;
 
-			storeAllyUnit(u, allyUnits);
 #pragma region Probe Manager
-			{
-				if (u->getType() == UnitTypes::Protoss_Probe)
-				{
-					if (u->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && allyStrength < enemyStrength && (u->getHitPoints() + u->getShields()) > 20)
-					{
-						assignCombat(u);
-					}
-					else if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end() && (u->getUnitsInRadius(64, Filter::IsEnemy).size() == 0 || allyStrength > enemyStrength || (u->getHitPoints() + u->getShields()) <= 20))
-					{
-						unAssignCombat(u);
-						u->stop();
-					}
-					if (combatProbe.size() > 2 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1)
-					{
-						// SCV rush probable
-						enemyAggresion = true;
-					}
-					if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end())
-					{
-						u->attack(Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy));
-					}
-					if (mineralProbeMap.find(u) == mineralProbeMap.end() && gasProbeMap.find(u) == gasProbeMap.end())
-					{
-						// Assign the probe a task (mineral, gas)
-						assignProbe(u);
-						continue;
-					}
 
-					// Crappy scouting method
-					if (!scout)
+			if (u->getType() == UnitTypes::Protoss_Probe)
+			{
+				if (u->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && allyStrength < enemyStrength && (u->getHitPoints() + u->getShields()) > 20)
+				{
+					assignCombat(u);
+				}
+				else if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end() && (u->getUnitsInRadius(64, Filter::IsEnemy).size() == 0 || allyStrength > enemyStrength || (u->getHitPoints() + u->getShields()) <= 20))
+				{
+					unAssignCombat(u);
+					u->stop();
+				}
+				if (combatProbe.size() > 2 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1)
+				{
+					// SCV rush probable
+					enemyAggresion = true;
+				}
+				if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end())
+				{
+					u->attack(u->getClosestUnit(Filter::IsEnemy));
+				}
+				if (mineralProbeMap.find(u) == mineralProbeMap.end() && gasProbeMap.find(u) == gasProbeMap.end())
+				{
+					// Assign the probe a task (mineral, gas)
+					assignProbe(u);
+					continue;
+				}
+
+				// Crappy scouting method
+				if (!scout)
+				{
+					scout = u;
+				}
+				if (u == scout)
+				{
+					if (Broodwar->self()->supplyUsed() >= 18 && scouting)
 					{
-						scout = u;
-					}
-					if (u == scout)
-					{
-						if (Broodwar->self()->supplyUsed() >= 18 && scouting)
+						if (enemyBasePositions.size() > 0 && u->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() < 1)
 						{
-							if (enemyBasePositions.size() > 0 && u->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() < 1)
+							Position one = Position(enemyBasePositions.at(0).x - 192, enemyBasePositions.at(0).y - 192);
+							Position two = Position(enemyBasePositions.at(0).x + 192, enemyBasePositions.at(0).y - 192);
+							Position three = Position(enemyBasePositions.at(0).x + 192, enemyBasePositions.at(0).y + 192);
+							Position four = Position(enemyBasePositions.at(0).x - 192, enemyBasePositions.at(0).y + 192);
+							if (u->getDistance(one) < 64)
 							{
-								Position one = Position(enemyBasePositions.at(0).x - 192, enemyBasePositions.at(0).y - 192);
-								Position two = Position(enemyBasePositions.at(0).x + 192, enemyBasePositions.at(0).y - 192);
-								Position three = Position(enemyBasePositions.at(0).x + 192, enemyBasePositions.at(0).y + 192);
-								Position four = Position(enemyBasePositions.at(0).x - 192, enemyBasePositions.at(0).y + 192);
-								if (u->getDistance(one) < 64)
-								{
-									u->move(two);
-								}
-								else if (u->getDistance(two) < 64)
-								{
-									u->move(three);
-								}
-								else if (u->getDistance(three) < 64)
-								{
-									u->move(four);
-								}
-								else if (u->getDistance(four) < 64)
-								{
-									u->move(one);
-								}
-								else if (u->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
-								{
-									u->move(one);
-								}
+								u->move(two);
 							}
-							else if (enemyBasePositions.size() < 1)
+							else if (u->getDistance(two) < 64)
 							{
-								if (u->isCarryingMinerals())
+								u->move(three);
+							}
+							else if (u->getDistance(three) < 64)
+							{
+								u->move(four);
+							}
+							else if (u->getDistance(four) < 64)
+							{
+								u->move(one);
+							}
+							else if (u->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
+							{
+								u->move(one);
+							}
+						}
+						else if (enemyBasePositions.size() < 1)
+						{
+							if (u->isCarryingMinerals())
+							{
+								if (u->getLastCommand().getType() != UnitCommandTypes::Return_Cargo)
 								{
-									if (u->getLastCommand().getType() != UnitCommandTypes::Return_Cargo)
-									{
-										u->returnCargo();
-									}
+									u->returnCargo();
+								}
+								break;
+							}
+							for (auto start : getStartLocations())
+							{
+								if (Broodwar->isExplored(start->getTilePosition()) == false)
+								{
+									u->move(start->getPosition());
 									break;
 								}
-								for (auto start : getStartLocations())
-								{
-									if (Broodwar->isExplored(start->getTilePosition()) == false)
-									{
-										u->move(start->getPosition());
-										break;
-									}
-								}
 							}
-							else if (u->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
-							{
-								u->stop();
-								scouting = false;
-							}
+						}
+						else if (u->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
+						{
+							u->stop();
+							scouting = false;
 						}
 					}
 				}
 			}
+
 #pragma endregion
 #pragma region Building Manager
 			{
