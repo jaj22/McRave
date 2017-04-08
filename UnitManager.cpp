@@ -7,7 +7,7 @@ using namespace BWTA;
 
 bool harassing = false;
 bool stimResearched = false;
-int radius = 500;
+int radius = min(500, Broodwar->self()->supplyUsed()*5);
 
 // Map invisible units to number of detectors moving to position?
 // To check: Crash issues, build order issues
@@ -37,7 +37,7 @@ void unitMicro(Unit unit, Unit target)
 	}
 
 	// If recently issued a command to attack a unit, don't want to micro
-	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit->getTarget() == target)
+	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit->getLastCommand().getTarget() == target)
 	{
 		return;
 	}
@@ -112,13 +112,18 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		return 1;
 	}
 
+	if (unit->getDistance(target) > 512)
+	{
+		return 3;
+	}
+
 	// Check every enemy unit being in range of the target
 	for (auto enemy : enemyUnits)
 	{
 		thisUnit = 0.0;
 		Unit u = Broodwar->getUnit(enemy.first);
 		// If a unit is within range of the target, add to local strength
-		if (enemy.second.getPosition().getDistance(targetPosition) < enemy.second.getUnitType().groundWeapon().maxRange() * 2 || (enemy.second.getUnitType().groundWeapon().maxRange() < 64 && enemy.second.getPosition().getDistance(targetPosition) < 512))
+		if (enemy.second.getPosition().getDistance(targetPosition) < 512)
 		{
 			// If unit is visible, get visible strength, else estimate strength
 			if (u && u->exists())
@@ -163,7 +168,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	{
 		if (!ally.second.getUnitType().isWorker() && !ally.second.getUnitType().isBuilding())
 		{
-			if (ally.second.getPosition().getDistance(targetPosition) < ally.second.getUnitType().groundWeapon().maxRange() * 2 || (ally.second.getUnitType().groundWeapon().maxRange() < 64 && ally.second.getPosition().getDistance(targetPosition) < 512))
+			if (ally.second.getPosition().getDistance(targetPosition) < 512)
 			{
 				Unit a = Broodwar->getUnit(ally.first);
 				// If shuttle, add units inside
@@ -230,7 +235,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		return 0;
 	}
 	// Disregard local if no target, no recent local calculation and not within ally region
-	return 1;
+	return 3;
 }
 
 void unitGetCommand(Unit unit)
@@ -272,7 +277,7 @@ void unitGetCommand(Unit unit)
 	/* Check local strategy manager to see what our next task is.
 	If 0, regroup unless forced to engage.
 	If 1, send unit to micro-management. */
-	if (target->getDistance(unit) < 500 && target != unit)
+	if (target->getDistance(unit) < 1500 && target != unit)
 	{
 		int stratL = unitGetLocalStrategy(unit, target);
 
@@ -376,12 +381,9 @@ void unitGetCommand(Unit unit)
 
 	// Check if we should attack
 	if (unitGetGlobalStrategy() == 1)
-	{
-		if ((unit->isIdle() || unit->getLastCommand().getType() != UnitCommandTypes::Attack_Move) && enemyBasePositions.size() > 0)
-		{
-			unit->attack(enemyBasePositions.front());
-			return;
-		}
+	{		
+		unit->move(enemyBasePositions.front());
+		return;		
 	}
 }
 

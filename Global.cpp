@@ -290,7 +290,7 @@ void McRave::onFrame()
 	for (auto p : defendHere)
 	{
 		// Remove blocking mineral patches (maps like Destination)
-		if (Broodwar->getClosestUnit((p), Filter::IsMineralField)->getPosition().getDistance(p) < 64)
+		if (boulders.size() > 0 && Broodwar->getClosestUnit((p), Filter::IsMineralField)->getPosition().getDistance(p) < 64)
 		{
 			defendHere.erase(find(defendHere.begin(), defendHere.end(), p));
 		}
@@ -656,7 +656,16 @@ void McRave::onFrame()
 	{
 		// Set unit and get strength of unit
 		Unit e = Broodwar->getUnit(u.first);
-		double thisUnit = unitGetStrength(u.second.getUnitType());
+		double thisUnit;
+
+		if (e && e->exists())
+		{
+			thisUnit = unitGetVisibleStrength(e);
+		}
+		else
+		{
+			thisUnit = unitGetStrength(u.second.getUnitType());
+		}
 
 		if (!e->exists() && Broodwar->isVisible(TilePosition(u.second.getPosition())))
 		{
@@ -666,12 +675,17 @@ void McRave::onFrame()
 		// If it's not a building or worker, add the strength to the global variable
 		if (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker())
 		{
-			enemyStrength += thisUnit;
+
 			enemyComposition[u.second.getUnitType()] += 1;
 			if (masterDraw && calculationDraw)
 			{
 				Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
 			}
+		}
+
+		if (thisUnit > 1.0)
+		{
+			enemyStrength += thisUnit;
 		}
 
 		// If the unit is invisible and not detected, store the unit
