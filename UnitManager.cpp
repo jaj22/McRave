@@ -17,7 +17,7 @@ int radius = 500;
 void unitMicro(Unit unit, Unit target)
 {
 	// Variables
-	bool kite;
+	bool kite = false;
 	int range = unit->getType().groundWeapon().maxRange();
 
 	// Range check	
@@ -29,9 +29,6 @@ void unitMicro(Unit unit, Unit target)
 	{
 		range = 256;
 	}
-
-	// Store current target position
-	unitsCurrentTarget[unit] = target->getPosition();
 
 	// If unit is attacking or in an attack frame, don't want to micro
 	if (unit->isAttackFrame() || unit->isStartingAttack())
@@ -105,36 +102,17 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	Return 2 = disregard local calculations
 	Return 3 = disregard local */
 
-	double mod = 0.0, thisUnit = 0.0;
+	double thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
 	Position targetPosition = target->getPosition();
 
-	// If no target, get closest fogged unit
-	if (target == unit)
-	{
-		double closestD = 10000.0;
-		int closestU;
-		for (auto enemy : enemyUnits)
-		{
-			if (enemy.second.getPosition().getDistance(unit->getPosition()) < closestD)
-			{
-				closestU = enemy.first;
-				closestD = enemy.second.getPosition().getDistance(unit->getPosition());
-				targetPosition = enemy.second.getPosition();
-			}
-		}
-	}
-	// If unit is further than 500 units, ignore local
-	if (targetPosition.getDistance(unit->getPosition()) > 512)
-	{
-		return 1;
-	}
-
+	// Force Zealots to stay on Tanks
 	if (unit->getType() == UnitTypes::Protoss_Zealot && (target->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || target->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(target) < 64)
 	{
 		return 1;
 	}
 
+	// Check every enemy unit being in range of the target
 	for (auto enemy : enemyUnits)
 	{
 		thisUnit = 0.0;
@@ -180,6 +158,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		enemyLocalStrength += thisUnit;
 	}
 
+	// Check every ally being in range of the target
 	for (auto ally : allyUnits)
 	{
 		if (!ally.second.getUnitType().isWorker() && !ally.second.getUnitType().isBuilding())
@@ -223,20 +202,10 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 			}
 		}
 	}
-	// If enemy local exists, update information for HUD
-	if (enemyLocalStrength > 0.0)
-	{
-		localEnemy[unit] = enemyLocalStrength;
-		localAlly[unit] = allyLocalStrength;
-		//localEnemy[unit] = (localEnemy[unit] * 9 / 10) + (enemyLocalStrength / 10);
-		//localAlly[unit] = (localAlly[unit] * 9 / 10) + (allyLocalStrength / 10);
-	}
-	// Else remove information if it exists		
-	else
-	{
-		localEnemy.erase(unit);
-		localAlly.erase(unit);
-	}
+	localEnemy[unit] = enemyLocalStrength;
+	localAlly[unit] = allyLocalStrength;
+	//localEnemy[unit] = (localEnemy[unit] * 9 / 10) + (enemyLocalStrength / 10);
+	//localAlly[unit] = (localAlly[unit] * 9 / 10) + (allyLocalStrength / 10);
 
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
@@ -261,12 +230,15 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		return 0;
 	}
 	// Disregard local if no target, no recent local calculation and not within ally region
-	return 3;
+	return 1;
 }
 
 void unitGetCommand(Unit unit)
 {
 	unitsCurrentTarget.erase(unit);
+	localEnemy.erase(unit);
+	localAlly.erase(unit);
+
 	double closestD = 0.0;
 	Position closestP;
 	Unit target;
@@ -276,7 +248,7 @@ void unitGetCommand(Unit unit)
 	// Get global decision (squads, harass, front attack)
 
 	// Get target first
-	if (unit->getType() == UnitTypes::Protoss_Reaver)
+	if (unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
 		target = getClusterTarget(unit);
 	}
@@ -290,73 +262,72 @@ void unitGetCommand(Unit unit)
 		return;
 	}
 
+	if (target->exists())
+	{
+		unitsCurrentTarget[unit] = target->getPosition();
+	}
+
 
 
 	/* Check local strategy manager to see what our next task is.
 	If 0, regroup unless forced to engage.
 	If 1, send unit to micro-management. */
-	int stratL = unitGetLocalStrategy(unit, target);
-
-	// If target and unit are both valid and we're not ignoring local calculations
-	if (stratL != 3)
+	if (target->getDistance(unit) < 500 && target != unit)
 	{
-		// Attack
-		if (stratL == 1 && target && target->exists() && target != unit)
+		int stratL = unitGetLocalStrategy(unit, target);
+
+		// If target and unit are both valid and we're not ignoring local calculations
+		if (stratL != 3)
 		{
-			unitMicro(unit, target);
-			return;
-		}
-		// Retreat
-		if (stratL == 0)
-		{
-			// If we are on top of our ramp, let's hold with zealots
-			if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot)
+			// Attack
+			if (stratL == 1 && target->exists())
 			{
-				if (unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
-				{
-					unitMicro(unit, target);
-					return;
-				}
-				else if (forceExpand == 0 && unit->getDistance(defendHere.at(0)) > 64)
-				{
-					if ((unit->getLastCommand().getType() == UnitCommandTypes::Move && unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5)) || unit->getLastCommandFrame() + 20 > Broodwar->getFrameCount())
-					{
-						unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
-					}
-					return;
-				}
-			}
-			for (auto position : defendHere)
-			{
-				if (unit->getDistance(position) < 320 && find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
-				{
-					Position fleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy));
-					if (fleePosition != Positions::None)
-					{
-						unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
-					}
-					return;
-				}
-				/*if (unit->getClosestUnit(Filter::IsEnemy))
-				{
-				if (unit->getClosestUnit(Filter::IsEnemy)->getDistance(position) < unit->getDistance(position) && unit->getDistance(playerStartingPosition) < unit->getDistance(enemyStartingPosition))
-				{
-				Position fleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy));
-				unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
+				unitMicro(unit, target);
 				return;
-				}
-				}*/
-				if (unit->getDistance(position) <= closestD || closestD == 0.0)
-				{
-					closestD = unit->getDistance(position);
-					closestP = position;
-				}
 			}
-			if ((unit->getLastCommand().getType() == UnitCommandTypes::Move && unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5) || unit->getLastCommandFrame() + 20 > Broodwar->getFrameCount())
+			// Retreat
+			if (stratL == 0)
 			{
-				unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
+				// If we are on top of our ramp, let's hold with zealots
+				if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot)
+				{
+					if (unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
+					{
+						unitMicro(unit, target);
+						return;
+					}
+					else if (forceExpand == 0 && unit->getDistance(defendHere.at(0)) > 64)
+					{
+						if ((unit->getLastCommand().getType() == UnitCommandTypes::Move && unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5) || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
+						{
+							unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
+						}
+						return;
+					}
+				}
+				for (auto position : defendHere)
+				{
+					if (unit->getDistance(position) < 320 && find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
+					{
+						Position fleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy));
+						if (fleePosition != Positions::None)
+						{
+							unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
+						}
+						return;
+					}					
+					if (unit->getDistance(position) <= closestD || closestD == 0.0)
+					{
+						closestD = unit->getDistance(position);
+						closestP = position;
+					}
+				}
+				if ((unit->getLastCommand().getType() == UnitCommandTypes::Move && unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5) || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
+				{
+					unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
+				}
+				return;
 			}
-			return;
 		}
 	}
 
@@ -390,9 +361,9 @@ void unitGetCommand(Unit unit)
 			{
 				closestP = Position(path.at(1)->Center());
 			}
-			if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 20 > Broodwar->getFrameCount())
+			if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
 			{
-				unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
+				unit->move(Position(closestP.x + rand() % 3 + (-1), closestP.y + rand() % 3 + (-1)));
 			}
 		}
 		else
@@ -423,27 +394,32 @@ double unitGetStrength(UnitType unitType)
 	// Some hardcoded values
 	if (unitType == UnitTypes::Terran_Bunker)
 	{
-		return 5.0;
+		return 50.0;
 	}
 	if (unitType == UnitTypes::Terran_Medic)
 	{
-		return 0.75;
+		return 7.5;
 	}
 	if (unitType == UnitTypes::Zerg_Lurker)
 	{
-		return 2.0;
+		return 20.0;
 	}
 	if (unitType == UnitTypes::Protoss_Arbiter || unitType == UnitTypes::Terran_Science_Vessel)
 	{
-		return 10.0;
+		return 100.0;
 	}
 	if (unitType == UnitTypes::Protoss_Reaver)
 	{
-		return 5.0;
+		return 50.0;
 	}
 	if (unitType == UnitTypes::Protoss_High_Templar)
 	{
-		return 2.0;
+		return 20.0;
+	}
+
+	if (unitType == UnitTypes::Zerg_Egg || unitType == UnitTypes::Zerg_Larva)
+	{
+		return 0.0;
 	}
 
 	if (!unitType.isWorker() && unitType != UnitTypes::Protoss_Scarab && unitType != UnitTypes::Terran_Vulture_Spider_Mine && unitType.groundWeapon().damageAmount() > 0 || (unitType.isBuilding() && unitType.groundWeapon().damageAmount() > 0))
@@ -493,12 +469,12 @@ double unitGetStrength(UnitType unitType)
 		// Assume strength doubled for units that can use Stim to prevent poking into armies frequently
 		if (stimResearched && (unitType == UnitTypes::Terran_Marine || unitType == UnitTypes::Terran_Firebat))
 		{
-			return 2 * ((1 + (range / 320.0)) * damage * (hp / 100));
+			return 20 * ((1 + (range / 320.0)) * damage * (hp / 100));
 		}
 
-		return (1 + (range / 320.0)) * damage * (hp / 100);
+		return 10 * (1 + (range / 320.0)) * damage * (hp / 100);
 	}
-	return 0.0;
+	return 1.0;
 }
 
 double unitGetAirStrength(UnitType unitType)
@@ -545,15 +521,11 @@ double unitGetVisibleStrength(Unit unit)
 	{
 		if (unit->getPlayer() == Broodwar->self() && find(combatProbe.begin(), combatProbe.end(), unit) != combatProbe.end())
 		{
-			return 0.1;
+			return 1.0;
 		}
 		if (unit->getPlayer() == Broodwar->enemy())
 		{
-			return 0.1;
-		}
-		else
-		{
-			return 0.0;
+			return 1.0;
 		}
 	}
 
@@ -579,111 +551,25 @@ Unit getTarget(Unit unit)
 
 	Unit target = unit;
 
-	// If we are being rushed, only focus the closest units to our starting position to fend them off
-	if (enemyAggresion)
+	for (auto u : enemyUnits)
 	{
-		if (unit->getUnitsInRadius(320, Filter::IsEnemy && !Filter::IsFlyer).size() > 0)
+		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
+		thisUnit = unitGetStrength(u.second.getUnitType()) / distance;
+
+		if (u.second.getUnitType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver))
 		{
-			return Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy && !Filter::IsFlyer);
+			continue;
+		}
+		
+
+		// If this is the strongest hero around, target it
+		if (thisUnit > highest || highest == 0)
+		{
+			target = Broodwar->getUnit(u.first);
+			highest = thisUnit;
 		}
 	}
 
-	// If Zealot or Reaver
-	if (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver)
-	{
-		// Iterate through all enemies in a visible radius that are not air
-		for (auto enemy : enemyUnits)
-		{
-			double distance = 1.0 + double(unit->getDistance(enemy.second.getPosition()));
-			// Check if within radius
-			if (!enemy.second.getUnitType().isFlyer())
-			{
-				if (enemy.second.getPosition().getDistance(unit->getPosition()) < 16)
-				{
-					thisUnit = 2.0 + unitGetStrength(enemy.second.getUnitType());
-				}
-				else if (enemy.second.getUnitType().isBuilding() && !enemy.second.getUnitType().canAttack())
-				{
-					thisUnit = 1.0 / distance;
-				}
-				else if (enemy.second.getUnitType().isWorker())
-				{
-					// If it's an SCV that is repairing, make him priority
-					if (unit->getType() == UnitTypes::Terran_SCV && unit->isRepairing())
-					{
-						thisUnit = 5.0 / distance;
-					}
-					else
-					{
-						thisUnit = 2.0 / distance;
-					}
-				}
-				else
-				{
-					thisUnit = (2.0 + unitGetStrength(enemy.second.getUnitType())) / distance;
-				}
-				if (thisUnit > highest)
-				{
-					target = Broodwar->getUnit(enemy.first);
-					highest = thisUnit;
-				}
-			}
-		}
-	}
-	// If Corsair
-	else if (unit->getType() == UnitTypes::Protoss_Corsair)
-	{
-		// Iterate through all enemies in a visible radius that are air
-		for (auto enemy : enemyUnits)
-		{
-			double distance = 1.0 + double(unit->getDistance(enemy.second.getPosition()));
-			// Check if within radius
-			if (enemy.second.getUnitType().isFlyer())
-			{
-				thisUnit = 1.0 + (unitGetStrength(enemy.second.getUnitType()) / distance);
-				if (thisUnit > highest)
-				{
-					target = Broodwar->getUnit(enemy.first);
-					highest = thisUnit;
-				}
-			}
-
-		}
-	}
-	// Else
-	else
-	{
-		// Iterate through all enemies in a visible radius	
-		for (auto enemy : enemyUnits)
-		{
-			double distance = 1.0 + double(unit->getDistance(enemy.second.getPosition()));
-			if (enemy.second.getUnitType().isBuilding() && !enemy.second.getUnitType().canAttack())
-			{
-				thisUnit = 1.0 / distance;
-			}
-			else if (enemy.second.getUnitType().isWorker())
-			{
-				// If it's an SCV that is repairing, make him priority
-				if (unit->getType() == UnitTypes::Terran_SCV && unit->isRepairing())
-				{
-					thisUnit = 5.0 / distance;
-				}
-				else
-				{
-					thisUnit = 2.0 / distance;
-				}
-			}
-			else
-			{
-				thisUnit = (2.0 + unitGetStrength(enemy.second.getUnitType())) / distance;
-			}
-			if (thisUnit > highest)
-			{
-				target = Broodwar->getUnit(enemy.first);
-				highest = thisUnit;
-			}
-		}
-	}
 	// The highest strength unit is returned
 	return target;
 }
@@ -1251,3 +1137,5 @@ void UnitInfo::setPosition(Position newPosition)
 }
 
 #pragma endregion
+
+

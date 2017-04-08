@@ -84,6 +84,7 @@ map <int, UnitInfo> allyUnits;
 map <Unit, int> unitsCurrentLocalCommand;
 map <UnitType, int> enemyComposition;
 map <Unit, Position> invisibleUnits;
+map <UnitType, map<UnitType, int>> unitTargets;
 vector<int> shuttleID;
 vector<int> harassShuttleID;
 vector<int> reaverID;

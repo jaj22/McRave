@@ -30,6 +30,7 @@ public:
 	// @param Position - BWAPI position of unit
 };
 
+
 // Terrain variables
 extern BWEM::CPPath path;
 extern TilePosition playerStartingTilePosition;
@@ -58,6 +59,7 @@ extern map <Unit, int> unitRadiusCheck;
 extern map <Unit, Position> unitsCurrentTarget;
 extern map <Unit, int> unitsCurrentLocalCommand;
 extern map <Unit, Position> invisibleUnits;
+extern map <UnitType, map<UnitType, int>> unitTargets;
 extern Position supportPosition;
 extern int aSmall, aMedium, aLarge, eSmall, eMedium, eLarge;
 

@@ -2,43 +2,51 @@
 
 //int targetPriority(UnitType unit, UnitType target)
 //{
+//
+//
+//
+//
+//
+//
+//
+//
 //	Race enemy = Broodwar->enemy()->getRace();
 //	switch (enemy)
 //	{
 //	case Races::Enum::Terran:
-//		zealotTargets.emplace(Terran_SCV, 1);
-//		zealotTargets.emplace(Terran_Marine, 3);
-//		zealotTargets.emplace(Terran_Firebat, 2);
-//		zealotTargets.emplace(Terran_Medic, 4);
-//		zealotTargets.emplace(Terran_Ghost, 5);
-//		zealotTargets.emplace(Terran_Vulture, 0);
-//		zealotTargets.emplace(Terran_Goliath, 8);
-//		zealotTargets.emplace(Terran_Siege_Tank_Tank_Mode, 10);
-//		zealotTargets.emplace(Terran_Siege_Tank_Siege_Mode, 10);
-//		zealotTargets.emplace(Terran_Wraith, 0);
-//		zealotTargets.emplace(Terran_Dropship, 0);
-//		zealotTargets.emplace(Terran_Science_Vessel, 0);
-//		zealotTargets.emplace(Terran_Battlecruiser, 0);
-//		zealotTargets.emplace(Terran_Valkyrie, 0);
-//		zealotTargets.emplace(Terran_Bunker, 5);
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_SCV, 2));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Marine, 3));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Firebat, 2));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Medic, 4));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Ghost, 5));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Vulture, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Goliath, 8));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Siege_Tank_Tank_Mode, 10));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Siege_Tank_Siege_Mode, 10));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Wraith, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Dropship, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Science_Vessel, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Battlecruiser, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Valkyrie, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Terran_Bunker, 5));
 //
-//		dragoonTargets.emplace(Terran_SCV, 1);
-//		dragoonTargets.emplace(Terran_Marine, 2);
-//		dragoonTargets.emplace(Terran_Firebat, 3);
-//		dragoonTargets.emplace(Terran_Medic, 4);
-//		dragoonTargets.emplace(Terran_Ghost, 5);
-//		dragoonTargets.emplace(Terran_Vulture, 8);
-//		dragoonTargets.emplace(Terran_Goliath, 8);
-//		dragoonTargets.emplace(Terran_Siege_Tank_Tank_Mode, 10);
-//		dragoonTargets.emplace(Terran_Siege_Tank_Siege_Mode, 10);
-//		dragoonTargets.emplace(Terran_Wraith, 7);
-//		dragoonTargets.emplace(Terran_Dropship, 9);
-//		dragoonTargets.emplace(Terran_Science_Vessel, 10);
-//		dragoonTargets.emplace(Terran_Battlecruiser, 10);
-//		dragoonTargets.emplace(Terran_Valkyrie, 7);
-//		dragoonTargets.emplace(Terran_Bunker, 5);
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_SCV, 2));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Marine, 2));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Firebat, 3));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Medic, 4));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Ghost, 5));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Vulture, 8));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Goliath, 8));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Siege_Tank_Tank_Mode, 10));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Siege_Tank_Siege_Mode, 10));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Wraith, 7));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Dropship, 9));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Science_Vessel, 10));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Battlecruiser, 10));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Valkyrie, 7));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Terran_Bunker, 5));
 //
-//		reaverTargets.emplace(Terran_SCV, 5);		
+//		/*reaverTargets.emplace(Terran_SCV, 5);		
 //		reaverTargets.emplace(Terran_Marine, 7);
 //		reaverTargets.emplace(Terran_Firebat, 6);
 //		reaverTargets.emplace(Terran_Medic, 8);
@@ -68,44 +76,44 @@
 //		archonTargets.emplace(Terran_Science_Vessel, 10);
 //		archonTargets.emplace(Terran_Battlecruiser, 10);
 //		archonTargets.emplace(Terran_Valkyrie, 0);
-//		archonTargets.emplace(Terran_Bunker, 8);
+//		archonTargets.emplace(Terran_Bunker, 8);*/
 //		break;
 //	case Races::Enum::Protoss:
-//		zealotTargets.emplace(Protoss_Probe, 3);
-//		zealotTargets.emplace(Protoss_Zealot, 7);
-//		zealotTargets.emplace(Protoss_Dragoon, 2);
-//		zealotTargets.emplace(Protoss_High_Templar, 10);
-//		zealotTargets.emplace(Protoss_Dark_Templar, 6);
-//		zealotTargets.emplace(Protoss_Reaver, 8);
-//		zealotTargets.emplace(Protoss_Archon, 4);
-//		zealotTargets.emplace(Protoss_Dark_Archon, 9);
-//		zealotTargets.emplace(Protoss_Observer, 0);
-//		zealotTargets.emplace(Protoss_Shuttle, 0);
-//		zealotTargets.emplace(Protoss_Scout, 0);
-//		zealotTargets.emplace(Protoss_Carrier, 0);
-//		zealotTargets.emplace(Protoss_Interceptor, 0);
-//		zealotTargets.emplace(Protoss_Arbiter, 0);
-//		zealotTargets.emplace(Protoss_Corsair, 0);
-//		zealotTargets.emplace(Protoss_Photon_Cannon, 5);
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Probe, 3));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Zealot, 7));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Dragoon, 2));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_High_Templar, 10));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Dark_Templar, 6));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Reaver, 8));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Archon, 4));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Dark_Archon, 9));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Observer, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Shuttle, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Scout, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Carrier, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Interceptor, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Arbiter, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Corsair, 0));
+//		unitTargets.emplace(Protoss_Zealot, make_pair(Protoss_Photon_Cannon, 5));
 //
-//		dragoonTargets.emplace(Protoss_Probe, 3);
-//		dragoonTargets.emplace(Protoss_Zealot, 5);
-//		dragoonTargets.emplace(Protoss_Dragoon, 8);
-//		dragoonTargets.emplace(Protoss_High_Templar, 7);
-//		dragoonTargets.emplace(Protoss_Dark_Templar, 9);
-//		dragoonTargets.emplace(Protoss_Reaver, 10);
-//		dragoonTargets.emplace(Protoss_Archon, 6);
-//		dragoonTargets.emplace(Protoss_Dark_Archon, 9);
-//		dragoonTargets.emplace(Protoss_Observer, 7);
-//		dragoonTargets.emplace(Protoss_Shuttle, 7);
-//		dragoonTargets.emplace(Protoss_Scout, 2);
-//		dragoonTargets.emplace(Protoss_Carrier, 10);
-//		dragoonTargets.emplace(Protoss_Interceptor, 1);
-//		dragoonTargets.emplace(Protoss_Arbiter, 10);
-//		dragoonTargets.emplace(Protoss_Corsair, 1);
-//		dragoonTargets.emplace(Protoss_Photon_Cannon, 8);
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Probe, 3));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Zealot, 5));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Dragoon, 8));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_High_Templar, 7));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Dark_Templar, 9));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Reaver, 10));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Archon, 6));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Dark_Archon, 9));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Observer, 7));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Shuttle, 7));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Scout, 2));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Carrier, 10));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Interceptor, 1));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Arbiter, 10));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Corsair, 1));
+//		unitTargets.emplace(Protoss_Dragoon, make_pair(Protoss_Photon_Cannon, 8));
 //
-//		reaverTargets.emplace(Protoss_Probe, 5);
+//		/*reaverTargets.emplace(Protoss_Probe, 5);
 //		reaverTargets.emplace(Protoss_Zealot, 7);
 //		reaverTargets.emplace(Protoss_Dragoon, 9);
 //		reaverTargets.emplace(Protoss_High_Templar, 6);
@@ -137,7 +145,7 @@
 //		archonTargets.emplace(Protoss_Interceptor, 0);
 //		archonTargets.emplace(Protoss_Arbiter, 0);
 //		archonTargets.emplace(Protoss_Corsair, 0);
-//		archonTargets.emplace(Protoss_Photon_Cannon, 8);
+//		archonTargets.emplace(Protoss_Photon_Cannon, 8);*/
 //		break;
 //	}
 //}
