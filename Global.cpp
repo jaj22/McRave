@@ -58,8 +58,8 @@ void McRave::onEnd(bool isWinner)
 
 void McRave::onFrame()
 {
-	// Test area
-	
+	// Test area	
+
 #pragma region Heatmap Manager
 	double strongest = 0;
 	// For each tile, draw the current threat onto the tile
@@ -418,8 +418,8 @@ void McRave::onFrame()
 		offset = 0;
 		for (auto t : unitScore)
 		{
-		Broodwar->drawTextScreen(500, 200 + offset, "%s : %.2f", t.first.toString().c_str(), t.second);
-		offset = offset + 10;
+			Broodwar->drawTextScreen(500, 200 + offset, "%s : %.2f", t.first.toString().c_str(), t.second);
+			offset = offset + 10;
 		}
 
 		// Show Probe information
@@ -539,7 +539,7 @@ void McRave::onFrame()
 		{
 			// If Nexus, check units in rectangle of build position, if no ally units, send observer -- IMPLEMENTING
 			queuedBuildings.erase(b.first);
-		}		
+		}
 
 		// If we almost have enough resources, move the Probe to the build position
 		if (Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() <= b.first.mineralPrice() && Broodwar->self()->gas() >= 0.8*b.first.gasPrice() && Broodwar->self()->gas() <= b.first.gasPrice() || (b.second.second->getDistance(Position(b.second.first)) > 160 && Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && 0.8*Broodwar->self()->gas() >= b.first.gasPrice()))
@@ -630,7 +630,7 @@ void McRave::onFrame()
 	for (auto u : Broodwar->enemy()->getUnits())
 	{
 		// Update unit in class
-		if (u && u->exists() && u->getPlayer() == Broodwar->enemy())
+		if (u && u->exists())
 		{
 			storeEnemyUnit(u, enemyUnits);
 		}
@@ -649,25 +649,26 @@ void McRave::onFrame()
 		if (e && e->exists())
 		{
 			thisUnit = unitGetVisibleStrength(e);
+			// Geyser morph issue
+			if (e->getPlayer() != Broodwar->enemy())
+			{
+				enemyUnits.erase(u.first);
+			}
 		}
 		else
 		{
 			thisUnit = unitGetStrength(u.second.getUnitType());
 		}
-		
-		// Geyser morph issue
-		if (e->getPlayer() != Broodwar->enemy())
-		{
-			Broodwar << "FUCK" << endl;
-			enemyUnits.erase(u.first);
-		}
 
+
+		// If tile is visible but unit is not, remove position
 		if (!e->exists() && Broodwar->isVisible(TilePosition(u.second.getPosition())))
 		{
 			u.second.setPosition(Positions::None);
-		}		
+		}
 
-		if (thisUnit > 1.0 || (e->exists() && find (allyTerritory.begin(), allyTerritory.end(), getRegion(e->getTilePosition())) != allyTerritory.end()))
+		// Store enemy unit strength if necessary
+		if (thisUnit > 1.0 || (e->exists() && find(allyTerritory.begin(), allyTerritory.end(), getRegion(e->getTilePosition())) != allyTerritory.end()))
 		{
 			enemyStrength += thisUnit;
 			enemyComposition[u.second.getUnitType()] += 1;
@@ -952,9 +953,17 @@ void McRave::onFrame()
 								builder->build(UnitTypes::Protoss_Pylon, here);
 							}
 						}
-						if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge) > 0 && u->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size() < 2)
+						if (Broodwar->self()->completedUnitCount(Protoss_Forge) > 0 && myNexus[u].getStaticD() < 2)
 						{
-							buildingDesired[Protoss_Photon_Cannon] += 1;
+							Broodwar << myNexus[u].getStaticD() << endl;
+							TilePosition here = cannonManager(u->getTilePosition());
+							Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
+							// If the Tile Position and Builder are valid
+							if (here != TilePositions::None && builder)
+							{
+								// Queue at this building type a pair of building placement and builder
+								queuedBuildings.emplace(Protoss_Photon_Cannon, make_pair(here, builder));
+							}
 						}
 					}
 				}
@@ -1191,6 +1200,14 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 			forceExpand = 0;
 		}
 	}
+
+	if (unit->getPlayer() == Broodwar->self())
+	{
+		if (unit->getType() == UnitTypes::Protoss_Photon_Cannon)
+		{
+			updateDefenses(unit, myNexus);
+		}
+	}
 }
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
@@ -1226,6 +1243,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 		}
 		else if (unit->getType() == UnitTypes::Protoss_Nexus)
 		{
+			updateDefenses(unit, myNexus);
 			if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
 			{
 				allyTerritory.erase(find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())));

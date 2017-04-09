@@ -9,6 +9,7 @@
 #include "ProbeManager.h"
 #include "UnitManager.h"
 #include "UnitScore.h"
+#include "NexusManager.h"
 
 // Include standard libraries that are needed
 #include <vector>
@@ -32,6 +33,8 @@ class UnitScore {
 private:
 	double score;	
 };
+
+map <Unit, NexusInfo> myNexus;
 
 // Building Tracker Variables
 int queuedMineral = 0, queuedGas = 0, reservedMineral = 0, reservedGas = 0;

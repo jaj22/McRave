@@ -24,7 +24,7 @@ TilePosition nexusManager()
 TilePosition cannonManager(TilePosition base)
 {
 	// Get angle of mineral line	
-	int avgX = 0, avgY = 0, size = 0;
+	int avgX = 0, avgY = 0, size = 1;
 	for (auto m : Broodwar->getUnitsInRadius(Position(base), 320, Filter::IsMineralField))
 	{
 		avgX = avgX + m->getTilePosition().x;

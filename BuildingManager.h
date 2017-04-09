@@ -28,3 +28,4 @@ TilePosition buildingManager(UnitType building);
 bool canBuildHere(UnitType building, TilePosition buildTilePosition);
 TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosition);
 void productionManager(Unit building);
+TilePosition cannonManager(TilePosition base);

@@ -80,6 +80,8 @@ void unitMicro(Unit unit, Unit target)
 
 int unitGetGlobalStrategy()
 {
+	return 0;
+
 	if (allyStrength > enemyStrength)
 	{
 		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) == 0)
