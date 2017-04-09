@@ -290,7 +290,7 @@ void McRave::onFrame()
 	for (auto p : defendHere)
 	{
 		// Remove blocking mineral patches (maps like Destination)
-		if (boulders.size() > 0 && Broodwar->getClosestUnit((p), Filter::IsMineralField)->getPosition().getDistance(p) < 64)
+		if (boulders.size() > 0 && Broodwar->getUnitsInRadius(p, 64, Filter::IsMineralField && Filter::Resources == 0).size() > 0)
 		{
 			defendHere.erase(find(defendHere.begin(), defendHere.end(), p));
 		}
@@ -414,12 +414,12 @@ void McRave::onFrame()
 			}
 		}
 
-		/*offset = 0;
+		offset = 0;
 		for (auto t : unitScore)
 		{
 		Broodwar->drawTextScreen(500, 200 + offset, "%s : %.2f", t.first.toString().c_str(), t.second);
 		offset = offset + 10;
-		}*/
+		}
 
 		// Show Probe information
 		for (auto p : mineralProbeMap)
@@ -539,23 +539,10 @@ void McRave::onFrame()
 		{
 			// If Nexus, check units in rectangle of build position, if no ally units, send observer -- IMPLEMENTING
 			queuedBuildings.erase(b.first);
-		}
-		// If Probe has a blocking mineral nearby, mine it
-		/*if (b.second.second->isGatheringMinerals() && b.second.second->getTarget()->getResources() == 0)
-		{
-		continue;
-		}*/
-		/*if (b.second.second->getUnitsInRadius(640, Filter::IsMineralField && Filter::Resources == 0).size() > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) >= 2)
-		{
-		if (!b.second.second->isGatheringMinerals())
-		{
-		b.second.second->gather(b.second.second->getClosestUnit(Filter::IsMineralField && Filter::Resources == 0));
-		}
-		continue;
-		}*/
+		}		
 
 		// If we almost have enough resources, move the Probe to the build position
-		if (Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() <= b.first.mineralPrice() && Broodwar->self()->gas() >= 0.8*b.first.gasPrice() && Broodwar->self()->gas() <= b.first.gasPrice() || (b.second.second->getDistance(Position(b.second.first)) > 160 && Broodwar->self()->minerals() >= b.first.mineralPrice() && Broodwar->self()->gas() >= b.first.gasPrice()))
+		if (Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() <= b.first.mineralPrice() && Broodwar->self()->gas() >= 0.8*b.first.gasPrice() && Broodwar->self()->gas() <= b.first.gasPrice() || (b.second.second->getDistance(Position(b.second.first)) > 160 && Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && 0.8*Broodwar->self()->gas() >= b.first.gasPrice()))
 		{
 			b.second.second->move(Position(b.second.first));
 			continue;
@@ -652,7 +639,7 @@ void McRave::onFrame()
 	// Enemy unit iterator
 	eSmall = 0, eMedium = 0, eLarge = 0;
 	enemyStrength = 0.0;
-	for (auto u : enemyUnits)
+	for (auto &u : enemyUnits)
 	{
 		// Set unit and get strength of unit
 		Unit e = Broodwar->getUnit(u.first);
@@ -670,22 +657,16 @@ void McRave::onFrame()
 		if (!e->exists() && Broodwar->isVisible(TilePosition(u.second.getPosition())))
 		{
 			u.second.setPosition(Positions::None);
-		}
+		}		
 
-		// If it's not a building or worker, add the strength to the global variable
-		if (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker())
+		if (thisUnit > 1.0)
 		{
-
+			enemyStrength += thisUnit;
 			enemyComposition[u.second.getUnitType()] += 1;
 			if (masterDraw && calculationDraw)
 			{
 				Broodwar->drawTextMap(u.second.getPosition(), "%.2f", thisUnit);
 			}
-		}
-
-		if (thisUnit > 1.0)
-		{
-			enemyStrength += thisUnit;
 		}
 
 		// If the unit is invisible and not detected, store the unit

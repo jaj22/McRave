@@ -7,7 +7,7 @@ using namespace BWTA;
 
 bool harassing = false;
 bool stimResearched = false;
-int radius = min(500, Broodwar->self()->supplyUsed()*5);
+
 
 // Map invisible units to number of detectors moving to position?
 // To check: Crash issues, build order issues
@@ -37,7 +37,7 @@ void unitMicro(Unit unit, Unit target)
 	}
 
 	// If recently issued a command to attack a unit, don't want to micro
-	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit->getLastCommand().getTarget() == target)
+	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit->getTarget() == target)
 	{
 		return;
 	}
@@ -90,7 +90,7 @@ int unitGetGlobalStrategy()
 	}
 	else
 	{
-		return 0;
+		return 1;
 	}
 }
 
@@ -104,7 +104,8 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 
 	double thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
-	Position targetPosition = target->getPosition();
+	Position targetPosition = enemyUnits[target->getID()].getPosition();
+	int radius = min(512, 320 + Broodwar->self()->supplyUsed() * 2);	
 
 	// Force Zealots to stay on Tanks
 	if (unit->getType() == UnitTypes::Protoss_Zealot && (target->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || target->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(target) < 64)
@@ -112,7 +113,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		return 1;
 	}
 
-	if (unit->getDistance(target) > 512)
+	if (unit->getDistance(targetPosition) > 512)
 	{
 		return 3;
 	}
@@ -123,7 +124,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		thisUnit = 0.0;
 		Unit u = Broodwar->getUnit(enemy.first);
 		// If a unit is within range of the target, add to local strength
-		if (enemy.second.getPosition().getDistance(targetPosition) < 512)
+		if (enemy.second.getPosition().getDistance(targetPosition) < radius)
 		{
 			// If unit is visible, get visible strength, else estimate strength
 			if (u && u->exists())
@@ -168,7 +169,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	{
 		if (!ally.second.getUnitType().isWorker() && !ally.second.getUnitType().isBuilding())
 		{
-			if (ally.second.getPosition().getDistance(targetPosition) < 512)
+			if (ally.second.getPosition().getDistance(unit->getPosition()) < radius)
 			{
 				Unit a = Broodwar->getUnit(ally.first);
 				// If shuttle, add units inside
@@ -181,8 +182,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 					}
 				}
 				else
-				{
-					allyLocalStrength += unitGetVisibleStrength(a);
+				{					
 					if (eLarge > 0 || eMedium > 0 || eSmall > 0)
 					{
 						// Damage type calculations
@@ -225,6 +225,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	// If most recent local ally higher, return attack
 	if (localAlly[unit] >= localEnemy[unit])
 	{
+		unitsCurrentTarget[unit] = targetPosition;
 		unitsCurrentLocalCommand[unit] = 1;
 		return 1;
 	}
@@ -262,79 +263,73 @@ void unitGetCommand(Unit unit)
 		target = getTarget(unit);
 	}
 
+	Position targetPosition = enemyUnits[target->getID()].getPosition();
+
 	if (!target)
 	{
 		return;
-	}
-
-	if (target->exists())
-	{
-		unitsCurrentTarget[unit] = target->getPosition();
-	}
-
-
+	}	
 
 	/* Check local strategy manager to see what our next task is.
 	If 0, regroup unless forced to engage.
 	If 1, send unit to micro-management. */
-	if (target->getDistance(unit) < 1500 && target != unit)
-	{
-		int stratL = unitGetLocalStrategy(unit, target);
 
-		// If target and unit are both valid and we're not ignoring local calculations
-		if (stratL != 3)
+	int stratL = unitGetLocalStrategy(unit, target);
+
+	// If target and unit are both valid and we're not ignoring local calculations
+	if (stratL != 3)
+	{
+		// Attack
+		if (stratL == 1 && target->exists())
 		{
-			// Attack
-			if (stratL == 1 && target->exists())
+			unitMicro(unit, target);
+			return;
+		}
+		// Retreat
+		if (stratL == 0)
+		{
+			// If we are on top of our ramp, let's hold with zealots
+			if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot)
 			{
-				unitMicro(unit, target);
-				return;
+				if (unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
+				{
+					unitMicro(unit, target);
+					return;
+				}
+				else if (forceExpand == 0 && unit->getDistance(defendHere.at(0)) > 64)
+				{
+					if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 10 < Broodwar->getFrameCount())
+					{
+						unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
+					}
+					return;
+				}
 			}
-			// Retreat
-			if (stratL == 0)
+			for (auto position : defendHere)
 			{
-				// If we are on top of our ramp, let's hold with zealots
-				if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot)
+				if (unit->getDistance(position) < 320 && find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
 				{
-					if (unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
+					Position fleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy));
+					if (fleePosition != Positions::None)
 					{
-						unitMicro(unit, target);
-						return;
+						unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
 					}
-					else if (forceExpand == 0 && unit->getDistance(defendHere.at(0)) > 64)
-					{
-						if ((unit->getLastCommand().getType() == UnitCommandTypes::Move && unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5) || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
-						{
-							unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
-						}
-						return;
-					}
+					return;
 				}
-				for (auto position : defendHere)
+				if (unit->getDistance(position) <= closestD || closestD == 0.0)
 				{
-					if (unit->getDistance(position) < 320 && find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
-					{
-						Position fleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy));
-						if (fleePosition != Positions::None)
-						{
-							unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
-						}
-						return;
-					}					
-					if (unit->getDistance(position) <= closestD || closestD == 0.0)
-					{
-						closestD = unit->getDistance(position);
-						closestP = position;
-					}
+					closestD = unit->getDistance(position);
+					closestP = position;
 				}
-				if ((unit->getLastCommand().getType() == UnitCommandTypes::Move && unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5) || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
-				{
-					unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
-				}
-				return;
 			}
+			if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 10 < Broodwar->getFrameCount())
+			{
+				unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
+			}
+			return;
 		}
 	}
+
 
 	/* Check our global strategy manager to see what our next task is.
 	If 0, regroup at a chokepoint connected to allied territory.
@@ -381,9 +376,14 @@ void unitGetCommand(Unit unit)
 
 	// Check if we should attack
 	if (unitGetGlobalStrategy() == 1)
-	{		
+	{
+		if (target && target->exists())
+		{
+			unitMicro(unit, target);
+			return;
+		}
 		unit->move(enemyBasePositions.front());
-		return;		
+		return;
 	}
 }
 
@@ -448,8 +448,8 @@ double unitGetStrength(UnitType unitType)
 		damage = double(unitType.groundWeapon().damageAmount()) / double(unitType.groundWeapon().damageCooldown());
 
 		// Speed
+		speed = 1.0 + double(unitType.topSpeed());
 
-		speed = double(unitType.topSpeed());
 		// Zealot and Firebat has to be doubled for two attacks
 		if (unitType == UnitTypes::Protoss_Zealot || unitType == UnitTypes::Terran_Firebat)
 		{
@@ -471,12 +471,16 @@ double unitGetStrength(UnitType unitType)
 		// Assume strength doubled for units that can use Stim to prevent poking into armies frequently
 		if (stimResearched && (unitType == UnitTypes::Terran_Marine || unitType == UnitTypes::Terran_Firebat))
 		{
-			return 20 * ((1 + (range / 320.0)) * damage * (hp / 100));
+			return 20 * ((1 + (range / 320.0)) * damage * (hp / 100)) * speed;
 		}
 
 		return 10 * (1 + (range / 320.0)) * damage * (hp / 100);
 	}
-	return 1.0;
+	if (unitType.isWorker())
+	{
+		return 1.0;
+	}
+	return 0.5;
 }
 
 double unitGetAirStrength(UnitType unitType)
@@ -556,13 +560,21 @@ Unit getTarget(Unit unit)
 	for (auto u : enemyUnits)
 	{
 		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
-		thisUnit = unitGetStrength(u.second.getUnitType()) / distance;
+
+		if (Broodwar->getUnit(u.first)->exists())
+		{
+			thisUnit = unitGetStrength(u.second.getUnitType()) / distance;
+		}
+		else
+		{
+			thisUnit = 0.1*unitGetStrength(u.second.getUnitType()) / distance;
+		}
 
 		if (u.second.getUnitType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver))
 		{
 			continue;
 		}
-		
+
 
 		// If this is the strongest hero around, target it
 		if (thisUnit > highest || highest == 0)
