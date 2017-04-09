@@ -59,6 +59,7 @@ void McRave::onEnd(bool isWinner)
 void McRave::onFrame()
 {
 	// Test area
+	
 #pragma region Heatmap Manager
 	double strongest = 0;
 	// For each tile, draw the current threat onto the tile
@@ -464,7 +465,7 @@ void McRave::onFrame()
 		{
 			if (!Broodwar->isVisible(base->getTilePosition()))
 			{
-				Broodwar->getClosestUnit(base->getPosition(), Filter::IsAlly && !Filter::IsBuilding && !Filter::IsWorker && !Filter::IsMoving)->attack(base->getPosition());
+				Broodwar->getClosestUnit(base->getPosition(), Filter::IsAlly && !Filter::IsBuilding && !Filter::IsWorker)->attack(base->getPosition());
 			}
 		}
 	}
@@ -507,7 +508,6 @@ void McRave::onFrame()
 			}
 		}
 	}
-
 
 	// Queued minerals for buildings needed
 	queuedMineral = 0, queuedGas = 0;
@@ -563,7 +563,7 @@ void McRave::onFrame()
 	aSmall = 0, aMedium = 0, aLarge = 0;
 	for (auto u : Broodwar->self()->getUnits())
 	{
-		if (u->isCompleted())
+		if (u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding())
 		{
 			allyStrength += unitGetVisibleStrength(u);
 		}
@@ -630,7 +630,7 @@ void McRave::onFrame()
 	for (auto u : Broodwar->enemy()->getUnits())
 	{
 		// Update unit in class
-		if (u && u->exists())
+		if (u && u->exists() && u->getPlayer() == Broodwar->enemy())
 		{
 			storeEnemyUnit(u, enemyUnits);
 		}
@@ -645,6 +645,7 @@ void McRave::onFrame()
 		Unit e = Broodwar->getUnit(u.first);
 		double thisUnit;
 
+		// Update strength
 		if (e && e->exists())
 		{
 			thisUnit = unitGetVisibleStrength(e);
@@ -653,13 +654,20 @@ void McRave::onFrame()
 		{
 			thisUnit = unitGetStrength(u.second.getUnitType());
 		}
+		
+		// Geyser morph issue
+		if (e->getPlayer() != Broodwar->enemy())
+		{
+			Broodwar << "FUCK" << endl;
+			enemyUnits.erase(u.first);
+		}
 
 		if (!e->exists() && Broodwar->isVisible(TilePosition(u.second.getPosition())))
 		{
 			u.second.setPosition(Positions::None);
 		}		
 
-		if (thisUnit > 1.0)
+		if (thisUnit > 1.0 || (e->exists() && find (allyTerritory.begin(), allyTerritory.end(), getRegion(e->getTilePosition())) != allyTerritory.end()))
 		{
 			enemyStrength += thisUnit;
 			enemyComposition[u.second.getUnitType()] += 1;
@@ -754,12 +762,6 @@ void McRave::onFrame()
 					u.first->gather(u.second.first);
 					continue;
 				}
-				/*else
-				{
-				u.first->move(u.second.second);
-				continue;
-				}*/
-
 			}
 		}
 	}
@@ -950,6 +952,10 @@ void McRave::onFrame()
 								builder->build(UnitTypes::Protoss_Pylon, here);
 							}
 						}
+						if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge) > 0 && u->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size() < 2)
+						{
+							buildingDesired[Protoss_Photon_Cannon] += 1;
+						}
 					}
 				}
 				else if (u->getType() == UnitTypes::Protoss_Assimilator && gasMap.find(u) == gasMap.end())
@@ -1128,7 +1134,8 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 			if (enemyBasePositions.size() == 0)
 			{
 				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
-				enemyStartingPosition = Position(enemyStartingTilePosition.x * 32, enemyStartingTilePosition.y * 32);
+				enemyStartingPosition = getNearestBaseLocation(unit->getPosition())->getPosition();
+				enemyBasePositions.push_back(enemyStartingPosition);
 				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
 
 				// For each chokepoint, set a 10 tile radius of "no fly zone"
@@ -1154,9 +1161,9 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 				}
 			}
 		}
-		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) == enemyBasePositions.end())
+		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), getNearestBaseLocation(unit->getPosition())->getPosition()) == enemyBasePositions.end())
 		{
-			enemyBasePositions.push_back(unit->getPosition());
+			enemyBasePositions.push_back(getNearestBaseLocation(unit->getPosition())->getPosition());
 		}
 	}
 }

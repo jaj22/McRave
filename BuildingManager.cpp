@@ -21,34 +21,27 @@ TilePosition nexusManager()
 	return TilePositions::None;
 }
 
-TilePosition cannonManager()
+TilePosition cannonManager(TilePosition base)
 {
-	// IMPLEMENTING
-	for (auto base : activeExpansion)
+	// Get angle of mineral line	
+	int avgX = 0, avgY = 0, size = 0;
+	for (auto m : Broodwar->getUnitsInRadius(Position(base), 320, Filter::IsMineralField))
 	{
-		// Get angle of mineral line
-		if (Broodwar->getUnitsInRadius(Position(base), 320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size() < 2)
-		{
-			int avgX = 0, avgY = 0, size = 0;
-			for (auto m : Broodwar->getUnitsInRadius(Position(base), 320, Filter::IsMineralField))
-			{
-				avgX = avgX + m->getTilePosition().x;
-				avgY = avgY + m->getTilePosition().y;
-				size++;
-			}
-			avgX = avgX / size;
-			avgY = avgY / size;
-			// If mineral fields are further away on x than y, place cannons on left/right
-			if (abs(base.x - avgX) >= abs(base.y - avgY))
-			{
-				return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(base.x + (2 * (base.x - avgX)), avgY));
-			}
-			// Else place up/down
-			else
-			{
-				return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(avgX, base.y + (2 * (base.y - avgY))));
-			}
-		}
+		avgX = avgX + m->getTilePosition().x;
+		avgY = avgY + m->getTilePosition().y;
+		size++;
+	}
+	avgX = avgX / size;
+	avgY = avgY / size;
+	// If mineral fields are further away on x than y, place cannons on left/right
+	if (abs(base.x - avgX) >= abs(base.y - avgY))
+	{
+		return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(base.x + (2 * (base.x - avgX)), avgY));
+	}
+	// Else place up/down
+	else
+	{
+		return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(avgX, base.y + (2 * (base.y - avgY))));
 	}
 	return TilePositions::None;
 }
@@ -59,6 +52,7 @@ TilePosition buildingManager(UnitType building)
 	{
 		return nexusManager();
 	}
+	
 	// For each expansion, check if you can build near it, starting at the main
 	for (TilePosition tile : activeExpansion)
 	{
@@ -108,7 +102,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 		}
 	}
 
-	if (buildTilePosition.x % 2 == 0  || buildTilePosition.x % 3 == 0|| buildTilePosition.y % 2 == 0)
+	if (buildTilePosition.x % 2 == 0 || buildTilePosition.x % 3 == 0 || buildTilePosition.y % 2 == 0)
 	{
 		return false;
 	}

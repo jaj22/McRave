@@ -34,7 +34,6 @@ public:
 // Terrain variables
 extern BWEM::CPPath path;
 extern TilePosition playerStartingTilePosition;
-extern TilePosition enemyStartingTilePosition;
 extern Position playerStartingPosition;
 extern Position enemyStartingPosition;
 extern vector<BWTA::Region*> allyTerritory;

@@ -105,7 +105,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	double thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
 	Position targetPosition = enemyUnits[target->getID()].getPosition();
-	int radius = min(512, 320 + Broodwar->self()->supplyUsed() * 2);	
+	int radius = min(512, 320 + Broodwar->self()->supplyUsed() * 2);
 
 	// Force Zealots to stay on Tanks
 	if (unit->getType() == UnitTypes::Protoss_Zealot && (target->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || target->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(target) < 64)
@@ -182,7 +182,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 					}
 				}
 				else
-				{					
+				{
 					if (eLarge > 0 || eMedium > 0 || eSmall > 0)
 					{
 						// Damage type calculations
@@ -247,7 +247,7 @@ void unitGetCommand(Unit unit)
 
 	double closestD = 0.0;
 	Position closestP;
-	Unit target;
+	Unit target = unit;
 
 	// Get target (based on priority and distance)
 	// Get local decision (poking, front attack)
@@ -263,12 +263,12 @@ void unitGetCommand(Unit unit)
 		target = getTarget(unit);
 	}
 
-	Position targetPosition = enemyUnits[target->getID()].getPosition();
-
 	if (!target)
 	{
 		return;
-	}	
+	}
+
+	Position targetPosition = enemyUnits[target->getID()].getPosition();
 
 	/* Check local strategy manager to see what our next task is.
 	If 0, regroup unless forced to engage.
@@ -280,7 +280,7 @@ void unitGetCommand(Unit unit)
 	if (stratL != 3)
 	{
 		// Attack
-		if (stratL == 1 && target->exists())
+		if (stratL == 1 && target->exists() && target != unit)
 		{
 			unitMicro(unit, target);
 			return;
@@ -291,7 +291,7 @@ void unitGetCommand(Unit unit)
 			// If we are on top of our ramp, let's hold with zealots
 			if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot)
 			{
-				if (unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
+				if (unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && target != unit)
 				{
 					unitMicro(unit, target);
 					return;
@@ -557,6 +557,11 @@ Unit getTarget(Unit unit)
 
 	Unit target = unit;
 
+	if (enemyAggresion)
+	{
+		return Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy);
+	}
+
 	for (auto u : enemyUnits)
 	{
 		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
@@ -574,7 +579,6 @@ Unit getTarget(Unit unit)
 		{
 			continue;
 		}
-
 
 		// If this is the strongest hero around, target it
 		if (thisUnit > highest || highest == 0)
@@ -811,7 +815,7 @@ Position unitGetPath(Unit unit, TilePosition target)
 	int y = unit->getTilePosition().y;
 	int cnt = 0;
 	//TilePosition target = Broodwar->getClosestUnit(enemyStartingPosition, Filter::IsMineralField)->getTilePosition();
-	target = enemyStartingTilePosition;
+	target = TilePosition(playerStartingPosition);
 
 	// Reset path
 	for (int i = 0; i <= Broodwar->mapWidth(); i++)
@@ -932,7 +936,7 @@ void shuttleHarass(Unit unit)
 {
 	if (unit->getLoadedUnits().size() > 0 && (shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] > 2 || shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0))
 	{
-		unit->move(unitGetPath(unit, enemyStartingTilePosition));
+		unit->move(unitGetPath(unit, TilePosition(playerStartingPosition)));
 	}
 	else
 	{
@@ -1065,7 +1069,7 @@ void corsairManager(Unit unit)
 	// Need to move after every attack
 	else
 	{
-		unit->move(unitGetPath(unit, enemyStartingTilePosition));
+		unit->move(unitGetPath(unit, TilePosition(playerStartingPosition)));
 	}
 }
 
