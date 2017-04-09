@@ -28,8 +28,8 @@ void NexusInfo::setStaticD(int newStaticD)
 
 void updateDefenses(Unit nexus, map <Unit, NexusInfo>& myNexus)
 {
-	// Create new object, let's say there's 5 cannons nearby initially
-	NexusInfo newUnit(5);
+	// Create new object
+	NexusInfo newUnit(nexus->getUnitsInRadius(300, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size());
 	// Store it in the map
-	myNexus[nexus].setStaticD(5);
+	myNexus[nexus] = newUnit;
 }

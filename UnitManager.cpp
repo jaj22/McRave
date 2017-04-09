@@ -80,8 +80,6 @@ void unitMicro(Unit unit, Unit target)
 
 int unitGetGlobalStrategy()
 {
-	return 0;
-
 	if (allyStrength > enemyStrength)
 	{
 		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) == 0)
@@ -476,7 +474,7 @@ double unitGetStrength(UnitType unitType)
 			return 20 * ((1 + (range / 320.0)) * damage * (hp / 100)) * speed;
 		}
 
-		return 10 * (1 + (range / 320.0)) * damage * (hp / 100);
+		return 10 * (1 + (range / 320.0)) * damage * (hp / 100) * speed;
 	}
 	if (unitType.isWorker())
 	{

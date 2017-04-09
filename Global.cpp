@@ -953,9 +953,12 @@ void McRave::onFrame()
 								builder->build(UnitTypes::Protoss_Pylon, here);
 							}
 						}
+
+						updateDefenses(u, myNexus);
+
 						if (Broodwar->self()->completedUnitCount(Protoss_Forge) > 0 && myNexus[u].getStaticD() < 2)
 						{
-							Broodwar << myNexus[u].getStaticD() << endl;
+							
 							TilePosition here = cannonManager(u->getTilePosition());
 							Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
 							// If the Tile Position and Builder are valid
@@ -1144,7 +1147,10 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 			{
 				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
 				enemyStartingPosition = getNearestBaseLocation(unit->getPosition())->getPosition();
-				enemyBasePositions.push_back(enemyStartingPosition);
+				if (!Broodwar->isVisible(enemyStartingTilePosition))
+				{
+					enemyBasePositions.push_back(enemyStartingPosition);
+				}
 				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
 
 				// For each chokepoint, set a 10 tile radius of "no fly zone"
@@ -1199,15 +1205,7 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 			allyTerritory.push_back(getRegion(unit->getPosition()));
 			forceExpand = 0;
 		}
-	}
-
-	if (unit->getPlayer() == Broodwar->self())
-	{
-		if (unit->getType() == UnitTypes::Protoss_Photon_Cannon)
-		{
-			updateDefenses(unit, myNexus);
-		}
-	}
+	}	
 }
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
@@ -1242,8 +1240,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 			gasMap.erase(unit);
 		}
 		else if (unit->getType() == UnitTypes::Protoss_Nexus)
-		{
-			updateDefenses(unit, myNexus);
+		{			
 			if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
 			{
 				allyTerritory.erase(find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())));

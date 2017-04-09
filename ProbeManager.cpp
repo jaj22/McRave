@@ -65,7 +65,7 @@ void assignProbe(Unit probe)
 			{
 				saturated = false;
 				// If we have at least 1 Probe on every mineral, we can get another gas
-				if (cnt == 1)
+				if (cnt == 1 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))
 				{
 					gasNeeded = false;
 				}

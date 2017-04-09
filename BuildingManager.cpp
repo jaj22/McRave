@@ -24,26 +24,23 @@ TilePosition nexusManager()
 TilePosition cannonManager(TilePosition base)
 {
 	// Get angle of mineral line	
-	int avgX = 0, avgY = 0, size = 1;
+	int avgX = 0, avgY = 0, size = 0;
 	for (auto m : Broodwar->getUnitsInRadius(Position(base), 320, Filter::IsMineralField))
 	{
 		avgX = avgX + m->getTilePosition().x;
 		avgY = avgY + m->getTilePosition().y;
 		size++;
 	}
+	if (size == 0)
+	{
+		return TilePositions::None;
+	}
+
 	avgX = avgX / size;
 	avgY = avgY / size;
-	// If mineral fields are further away on x than y, place cannons on left/right
-	if (abs(base.x - avgX) >= abs(base.y - avgY))
-	{
-		return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(base.x + (2 * (base.x - avgX)), avgY));
-	}
-	// Else place up/down
-	else
-	{
-		return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(avgX, base.y + (2 * (base.y - avgY))));
-	}
-	return TilePositions::None;
+
+	Broodwar->drawCircleMap(Position(avgX * 32, avgY * 32), 10, Colors::Red, true);
+	return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, TilePosition(avgX, base.y + (2 * (base.y - avgY))));
 }
 
 TilePosition buildingManager(UnitType building)
@@ -52,7 +49,7 @@ TilePosition buildingManager(UnitType building)
 	{
 		return nexusManager();
 	}
-	
+
 	// For each expansion, check if you can build near it, starting at the main
 	for (TilePosition tile : activeExpansion)
 	{
@@ -119,10 +116,16 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 			}
 
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			else if (Broodwar->isBuildable(TilePosition(x, y), true) == false || mineralHeatmap[x][y] > 0)
+			else if (Broodwar->isBuildable(TilePosition(x, y), true) == false || (mineralHeatmap[x][y] > 0 && building != UnitTypes::Protoss_Photon_Cannon))
 			{
 				return false;
 			}
+
+			else if (building == UnitTypes::Protoss_Photon_Cannon && Broodwar->getUnitsInRadius(x * 32, y * 32, 32, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Probe).size() > 0)
+			{
+				return false;
+			}
+
 			// TESTING -- Pylon spreading
 			else if (building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 1)
 			{
@@ -133,9 +136,9 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 	// If building is on an expansion tile, don't build there	
 	for (auto base : nextExpansion)
 	{
-		for (int i = 0; i <= building.tileWidth(); i++)
+		for (int i = 0; i <= building.tileWidth() + 1; i++)
 		{
-			for (int j = 0; j <= building.tileHeight(); j++)
+			for (int j = 0; j <= building.tileHeight() + 1; j++)
 			{
 				// If the x value of this tile of the building is within an expansion, return false
 				if (buildTilePosition.x - i >= base.x && buildTilePosition.x - i <= base.x && buildTilePosition.y - j >= base.y && buildTilePosition.y - j <= base.y)

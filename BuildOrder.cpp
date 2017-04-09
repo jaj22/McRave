@@ -30,8 +30,10 @@ void desiredBuildings()
 
 	static int lastpd = -1;
 	if (pylonDesired > lastpd && pylonDesired <= 2) {
-		Broodwar << "Pylons: Have " << Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon)
-			<< ", Want " << pylonDesired << ", Supply " << Broodwar->self()->supplyUsed() << endl;
+		Broodwar->printf("Pylons: Have %i, want %i, supply %i\n",
+			Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired, Broodwar->self()->supplyUsed());
+		Broodwar->sendText("Pylons: Have %i, want %i, supply %i\n",
+			Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired, Broodwar->self()->supplyUsed());
 		lastpd = pylonDesired;
 	}
 
@@ -39,7 +41,7 @@ void desiredBuildings()
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
-	if (saturated && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility) > 0 || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun) > 0) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + activeExpansion.size()) && idleGates.size() == 0)
+	if (saturated && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility) > 0 || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun) > 0) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && idleGates.size() == 0)
 	{
 		nexusDesired++;
 	}		
