@@ -561,8 +561,10 @@ void McRave::onFrame()
 	allyStrength = 0.0;
 	outsideBase = false;
 	aSmall = 0, aMedium = 0, aLarge = 0;
+	supply = 0;
 	for (auto u : Broodwar->self()->getUnits())
-	{
+	{		
+		supply += u->getType().supplyRequired();
 		if (u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding())
 		{
 			allyStrength += unitGetVisibleStrength(u);
@@ -642,7 +644,7 @@ void McRave::onFrame()
 	for (auto &u : enemyUnits)
 	{
 		// Set unit and get strength of unit
-		Unit e = Broodwar->getUnit(u.first);
+		Unit e = u.first;
 		double thisUnit;
 
 		// Update strength
@@ -856,7 +858,7 @@ void McRave::onFrame()
 			}
 			if (u == scout)
 			{
-				if (Broodwar->self()->supplyUsed() >= 18 && scouting)
+				if (supply >= 18 && scouting)
 				{
 					if (enemyBasePositions.size() > 0 && u->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() < 1)
 					{
@@ -956,7 +958,8 @@ void McRave::onFrame()
 
 						updateDefenses(u, myNexus);
 
-						if (Broodwar->self()->completedUnitCount(Protoss_Forge) > 0 && myNexus[u].getStaticD() < 2)
+						// Testing Cannon quantity based on distance from starting position
+						if (Broodwar->self()->completedUnitCount(Protoss_Forge) > 0 && myNexus[u].getStaticD() < u->getDistance(playerStartingPosition)/6400)
 						{
 							
 							TilePosition here = cannonManager(u->getTilePosition());
@@ -1145,6 +1148,10 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 		{
 			if (enemyBasePositions.size() == 0)
 			{
+				if (Broodwar->enemy()->getRace() == Races::Terran && unit->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 128)
+				{
+					forceExpand = true;
+				}
 				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
 				enemyStartingPosition = getNearestBaseLocation(unit->getPosition())->getPosition();
 				if (!Broodwar->isVisible(enemyStartingTilePosition))
@@ -1212,7 +1219,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 {
 	if (unit->getPlayer() == Broodwar->self())
 	{
-		allyUnits.erase(unit->getID());
+		allyUnits.erase(unit);
 		localEnemy.erase(unit);
 		localAlly.erase(unit);
 		unitRadiusCheck.erase(unit);
@@ -1249,7 +1256,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	}
 	else if (unit->getPlayer() == Broodwar->enemy())
 	{
-		enemyUnits.erase(unit->getID());
+		enemyUnits.erase(unit);
 		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) != enemyBasePositions.end())
 		{
 			enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()));

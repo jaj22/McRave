@@ -8,6 +8,9 @@ using namespace BWTA;
 bool harassing = false;
 bool stimResearched = false;
 
+// Store units current command and what that command is doing (moving, where? enemy expansion/enemy main/enemy harass)
+// This storage can be used to count the strength of those units doing that command and see if it's sufficient to defend/attack that area
+
 
 // Map invisible units to number of detectors moving to position?
 // To check: Crash issues, build order issues
@@ -80,6 +83,11 @@ void unitMicro(Unit unit, Unit target)
 
 int unitGetGlobalStrategy()
 {
+	if (forceExpand)
+	{
+		return 0;
+	}
+
 	if (allyStrength > enemyStrength)
 	{
 		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) == 0)
@@ -104,8 +112,8 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 
 	double thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
-	Position targetPosition = enemyUnits[target->getID()].getPosition();
-	int radius = min(512, 320 + Broodwar->self()->supplyUsed() * 2);
+	Position targetPosition = enemyUnits[target].getPosition();
+	int radius = min(512, 320 + supply * 2);
 
 	// Force Zealots to stay on Tanks
 	if (unit->getType() == UnitTypes::Protoss_Zealot && (target->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || target->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(target) < 64)
@@ -121,8 +129,8 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	// Check every enemy unit being in range of the target
 	for (auto enemy : enemyUnits)
 	{
-		thisUnit = 0.0;
-		Unit u = Broodwar->getUnit(enemy.first);
+		Unit u = enemy.first;
+		thisUnit = 0.0;		
 		// If a unit is within range of the target, add to local strength
 		if (enemy.second.getPosition().getDistance(targetPosition) < radius)
 		{
@@ -132,7 +140,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 				// If unit is cloaked or burrowed and not detected, drastically increase strength
 				if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
 				{
-					thisUnit = 20 * unitGetStrength(u->getType());
+					thisUnit = 20 * unitGetStrength(enemy.second.getUnitType());
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
@@ -171,7 +179,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		{
 			if (ally.second.getPosition().getDistance(unit->getPosition()) < radius)
 			{
-				Unit a = Broodwar->getUnit(ally.first);
+				Unit a = ally.first;
 				// If shuttle, add units inside
 				if (ally.second.getUnitType() == UnitTypes::Protoss_Shuttle && a->getLoadedUnits().size() > 0)
 				{
@@ -233,8 +241,14 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	else if (localAlly[unit] < localEnemy[unit])
 	{
 		unitsCurrentLocalCommand[unit] = 0;
+		allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 		return 0;
 	}
+
+	// Store ally unit, update its command, strength, position, type, local calculation
+
+
+
 	// Disregard local if no target, no recent local calculation and not within ally region
 	return 3;
 }
@@ -268,7 +282,7 @@ void unitGetCommand(Unit unit)
 		return;
 	}
 
-	Position targetPosition = enemyUnits[target->getID()].getPosition();
+	Position targetPosition = enemyUnits[target].getPosition();
 
 	/* Check local strategy manager to see what our next task is.
 	If 0, regroup unless forced to engage.
@@ -566,7 +580,7 @@ Unit getTarget(Unit unit)
 	{
 		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
 
-		if (Broodwar->getUnit(u.first)->exists())
+		if (u.first->exists())
 		{
 			thisUnit = unitGetStrength(u.second.getUnitType()) / distance;
 		}
@@ -583,7 +597,7 @@ Unit getTarget(Unit unit)
 		// If this is the strongest hero around, target it
 		if (thisUnit > highest || highest == 0)
 		{
-			target = Broodwar->getUnit(u.first);
+			target = u.first;
 			highest = thisUnit;
 		}
 	}
@@ -1077,57 +1091,70 @@ void corsairManager(Unit unit)
 
 #pragma region UnitTracking
 
-int storeEnemyUnit(Unit unit, map<int, UnitInfo>& enemyUnits)
+int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
 {
-	int before = enemyUnits.size();
-	UnitInfo newUnit(unit->getType(), unit->getPosition());
-	enemyUnits.emplace(unit->getID(), newUnit);
-	int after = enemyUnits.size();
+	//int before = enemyUnits.size();
+	//UnitInfo newUnit(unit->getType(), unit->getPosition());
+	//enemyUnits.emplace(unit->getID(), newUnit);
+	//int after = enemyUnits.size();
 
-	if (!unit->isVisible() && Broodwar->isVisible(TilePosition(enemyUnits.at(unit->getID()).getPosition())))
+	//if (!unit->isVisible() && Broodwar->isVisible(TilePosition(enemyUnits.at(unit->getID()).getPosition())))
+	//{
+	//	enemyUnits.at(unit->getID()).setPosition(Positions::None);
+	//}
+
+	//// If size is equal, check type
+	//if (before == after)
+	//{
+	//	// If type changed, new unit discovered, add strength and return 1
+	//	if (enemyUnits.at(unit->getID()).getUnitType() != unit->getType() && unit->isVisible())
+	//	{
+	//		enemyUnits.at(unit->getID()).setUnitType(unit->getType());
+	//		return 1;
+	//	}
+	//	// If position changed, update for our local calculation usage
+	//	if (enemyUnits.at(unit->getID()).getPosition() != unit->getPosition() && unit->isVisible())
+	//	{
+	//		enemyUnits.at(unit->getID()).setPosition(unit->getPosition());
+	//	}
+	//	return 0;
+	//}
+	//return 1;
+
+	if (unit->exists())
 	{
-		enemyUnits.at(unit->getID()).setPosition(Positions::None);
+		UnitInfo newUnit(unit->getType(), unit-> getPosition(), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
+		enemyUnits[unit] = newUnit;
 	}
-
-	// If size is equal, check type
-	if (before == after)
+	else
 	{
-		// If type changed, new unit discovered, add strength and return 1
-		if (enemyUnits.at(unit->getID()).getUnitType() != unit->getType() && unit->isVisible())
-		{
-			enemyUnits.at(unit->getID()).setUnitType(unit->getType());
-			return 1;
-		}
-		// If position changed, update for our local calculation usage
-		if (enemyUnits.at(unit->getID()).getPosition() != unit->getPosition() && unit->isVisible())
-		{
-			enemyUnits.at(unit->getID()).setPosition(unit->getPosition());
-		}
-		return 0;
-	}
-	return 1;
-	/*UnitInfo newUnit(unit->getType(), unit->getPosition());
-	enemyUnits[unit->getID()] = newUnit;
-	return 0;*/
-}
-
-int storeAllyUnit(Unit unit, map<int, UnitInfo>& allyUnits)
-{
-	UnitInfo newUnit(unit->getType(), unit->getPosition());
-	allyUnits[unit->getID()] = newUnit;
+		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetStrength(unit->getType()), unit->getLastCommand().getType());
+		enemyUnits[unit] = newUnit;
+	}	
 	return 0;
 }
 
-UnitInfo::UnitInfo(UnitType newType, Position newPosition)
+int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
+{
+	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
+	allyUnits[unit] = newUnit;
+	return 0;
+}
+
+UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, UnitCommandType newCommand)
 {
 	unitType = newType;
-	position = newPosition;
+	unitPosition = newPosition;
+	unitStrength = newStrength;
+	unitCommand = newCommand;
 }
 
 UnitInfo::UnitInfo()
 {
 	unitType = UnitTypes::Enum::None;
-	position = Positions::None;
+	unitPosition = Positions::None;
+	unitStrength = 0.0;
+	unitCommand = UnitCommandTypes::None;
 }
 
 UnitInfo::~UnitInfo()
@@ -1136,12 +1163,22 @@ UnitInfo::~UnitInfo()
 
 Position UnitInfo::getPosition() const
 {
-	return position;
+	return unitPosition;
 }
 
 UnitType UnitInfo::getUnitType() const
 {
 	return unitType;
+}
+
+double UnitInfo::getStrength() const
+{
+	return unitStrength;
+}
+
+UnitCommandType UnitInfo::getCommand() const
+{
+	return unitCommand;
 }
 
 void UnitInfo::setUnitType(UnitType newUnitType)
@@ -1151,7 +1188,22 @@ void UnitInfo::setUnitType(UnitType newUnitType)
 
 void UnitInfo::setPosition(Position newPosition)
 {
-	position = newPosition;
+	unitPosition = newPosition;
+}
+
+void UnitInfo::setTargetPosition(Position newTargetPosition)
+{
+	targetPosition = newTargetPosition;
+}
+
+void UnitInfo::setStrength(double newStrength)
+{
+	unitStrength = newStrength;
+}
+
+void UnitInfo::setCommand(UnitCommandType newCommand)
+{
+	unitCommand = newCommand;
 }
 
 #pragma endregion

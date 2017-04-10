@@ -14,5 +14,5 @@ public:
 	void setStaticD(int newStaticD);
 };
 
-extern map <Unit, NexusInfo> myNexus;
+//extern map <Unit, NexusInfo> myNexus;
 void updateDefenses(Unit nexus, map <Unit, NexusInfo>& myNexus);

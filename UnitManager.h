@@ -9,25 +9,27 @@ using namespace BWEM;
 
 // Class for enemy tracking
 class UnitInfo {
-	UnitType unitType;
-	Position position;
+	UnitType unitType, targetType;
+	Position unitPosition, targetPosition;
+	double unitStrength, unitLocal;
+	UnitCommandType unitCommand;
 public:
 	UnitInfo();
-	UnitInfo(UnitType, Position);
+	UnitInfo(UnitType, Position, double, UnitCommandType);
 	~UnitInfo();
 
 	UnitType getUnitType() const;
-	// getUnitType
-	// @return UnitType - BWAPI type of unit
 	Position getPosition() const;
-	// getPosition
-	// @return Position - BWAPI position of unit
+	Position getTargetPosition() const;
+	double getStrength() const;
+	double getLocal() const;
+	UnitCommandType getCommand() const;
 	void setUnitType(UnitType);
-	// setUnitType
-	// @param UnitType - BWAPI type of unit
 	void setPosition(Position);
-	// setPosition
-	// @param Position - BWAPI position of unit
+	void setTargetPosition(Position);
+	void setStrength(double);
+	void setLocal(double);
+	void setCommand(UnitCommandType);
 };
 
 
@@ -50,8 +52,8 @@ extern int tankClusterHeatmap[256][256];
 extern double enemyStrength, allyStrength;
 
 // Unit Variables
-extern map <int, UnitInfo> enemyUnits;
-extern map <int, UnitInfo> allyUnits;
+extern map <Unit, UnitInfo> enemyUnits;
+extern map <Unit, UnitInfo> allyUnits;
 extern map <Unit, double> localEnemy;
 extern map <Unit, double> localAlly;
 extern map <Unit, int> unitRadiusCheck;
@@ -75,6 +77,7 @@ extern bool enemyAggresion;
 
 // Miscellaneous
 extern vector<Unit> combatProbe;
+extern int supply;
 
 // Strategy Functions
 void unitGetCommand(Unit unit);
@@ -100,8 +103,8 @@ void templarManager(Unit unit);
 void arbiterManager(Unit unit);
 
 // Unit Tracking Functions
-int storeEnemyUnit(Unit building, map<int, UnitInfo>& enemyUnits);
-int storeAllyUnit(Unit unit, map<int, UnitInfo>& allyUnits);
+int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits);
+int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits);
 
 
 

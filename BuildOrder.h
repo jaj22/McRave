@@ -13,6 +13,7 @@ extern map <int, UnitType> idleGates;
 extern vector<Unit> geysers;
 extern vector<TilePosition> nextExpansion;
 extern vector<Position>enemyBasePositions;
+extern int supply; 
 
 // External expansion paramaters
 extern int forceExpand, inactiveNexusCnt;

@@ -22,6 +22,7 @@ extern int mineralHeatmap[256][256];
 // Build Order variables
 extern bool terranBio;
 extern map <UnitType, double> unitScore;
+extern int supply;
 
 // Function declarations
 TilePosition buildingManager(UnitType building);

@@ -26,18 +26,18 @@ void myBuildings()
 void desiredBuildings()
 {
 	// Pylon, Forge, Nexus
-	pylonDesired = min(22, (int)floor((Broodwar->self()->supplyUsed() / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
+	pylonDesired = min(22, (int)floor((supply / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 
 	static int lastpd = -1;
 	if (pylonDesired > lastpd && pylonDesired <= 2) {
 		Broodwar->printf("Pylons: Have %i, want %i, supply %i\n",
-			Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired, Broodwar->self()->supplyUsed());
+			Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired, supply);
 		Broodwar->sendText("Pylons: Have %i, want %i, supply %i\n",
-			Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired, Broodwar->self()->supplyUsed());
+			Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired, supply);
 		lastpd = pylonDesired;
 	}
 
-	forgeDesired = min(1, ((int)floor(Broodwar->self()->supplyUsed() / 160)));
+	forgeDesired = min(1, ((int)floor(supply / 160)));
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
@@ -123,6 +123,10 @@ void getBuildOrder()
 				{
 					midBuilds(0);
 				}
+				else if (forceExpand)
+				{
+					midBuilds(3);
+				}
 				else
 				{
 					midBuilds(1);
@@ -189,6 +193,12 @@ void midBuilds(int whichBuild)
 		stargateDesired = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 4);
 		currentStrategy.assign("Corsair Tech");
 		break;
+	case 3:
+		// -- 2 Nexus Reaver --
+		nexusDesired = max(2, nexusDesired);
+		roboDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)/2);
+		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		currentStrategy.assign("BISU BUILD. YOU HAPPY NOW MUUKZOR?")
 	}
 }
 
@@ -228,11 +238,11 @@ void earlyBuilds(int whichBuild)
 		// -- 2 Gate Core --
 		coreDesired = min(1, (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4));
 		gasDesired = min(1, (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2));
-		if (Broodwar->self()->supplyUsed() >= 20 && Broodwar->self()->supplyUsed() < 24)
+		if (supply >= 20 && supply < 24)
 		{
 			gateDesired = 1;
 		}
-		else if (Broodwar->self()->supplyUsed() >= 24)
+		else if (supply >= 24)
 		{
 			gateDesired = 2;
 		}
@@ -241,11 +251,11 @@ void earlyBuilds(int whichBuild)
 	case 1:
 		// -- 1 Gate Core --	
 		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
-		if (Broodwar->self()->supplyUsed() >= 20)
+		if (supply >= 20)
 		{
 			gateDesired = 1 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core);
 		}
-		if (Broodwar->self()->supplyUsed() >= 22)
+		if (supply >= 22)
 		{
 			gasDesired = 1;
 		}
@@ -253,7 +263,7 @@ void earlyBuilds(int whichBuild)
 		break;
 	case 2:
 		// -- 12 Nexus --
-		if (Broodwar->self()->supplyUsed() >= 24)
+		if (supply >= 24)
 		{
 			nexusDesired = 2;
 		}
@@ -264,3 +274,5 @@ void earlyBuilds(int whichBuild)
 
 // PvT range expand:
 //8 pylon, 10 gateway, 12 gas, 13 cyber, 15 pylon, 17 dragoon range, 18 gateway, 20 nexus, 20 2 dragoons, 24 pylon, 25 2 dragoons, 31 robo
+
+//  https://pastebin.com/Kq0GDyfi
