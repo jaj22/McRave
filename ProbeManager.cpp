@@ -56,6 +56,7 @@ void assignProbe(Unit probe)
 
 	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
 	// IMPLEMENTING -- Split probes when an expansion finishes?
+	gasNeeded = false;
 	while (cnt <= 2)
 	{
 		for (auto mineral : mineralMap)
@@ -67,16 +68,17 @@ void assignProbe(Unit probe)
 				// If we have at least 1 Probe on every mineral, we can get another gas
 				if (cnt == 1 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))
 				{
-					gasNeeded = false;
+					
 				}
 				assignMinerals(probe, mineral.first);
 				mineralMap[mineral.first] = cnt;
 				return;
 			}
 		}
-		cnt++;
+		cnt++;	
 		gasNeeded = true;
 	}
+	
 	// If we reached the enemy of our map and no Probes were assigned, we are saturated and don't need any more Probes
 	saturated = true;
 

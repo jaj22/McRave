@@ -52,7 +52,7 @@ void unitMicro(Unit unit, Unit target)
 	}
 
 	// If kiting is a good idea, enable
-	else if (target->getType() == UnitTypes::Terran_Vulture_Spider_Mine || (range > 32 && unit->isUnderAttack()) || (target->getType().groundWeapon().maxRange() <= range && (unit->getDistance(target) < range - target->getType().groundWeapon().maxRange() && target->getType().groundWeapon().maxRange() > 0 || unit->getHitPoints() < 40)))
+	else if (target->getType() == UnitTypes::Terran_Vulture_Spider_Mine || (range > 32 && unit->isUnderAttack()) || (target->getType().groundWeapon().maxRange() <= range && (unit->getDistance(target) < range - target->getType().groundWeapon().maxRange() && target->getType().groundWeapon().maxRange() > 0 && unit->getType().groundWeapon().maxRange() > 32 || unit->getHitPoints() < 40)))
 	{
 		kite = true;
 	}
@@ -235,6 +235,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	{
 		unitsCurrentTarget[unit] = targetPosition;
 		unitsCurrentLocalCommand[unit] = 1;
+		allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 		return 1;
 	}
 	// Else return retreat
@@ -375,10 +376,11 @@ void unitGetCommand(Unit unit)
 			{
 				closestP = Position(path.at(1)->Center());
 			}
-			if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
+			if (unit->getLastCommand().getTargetPosition().getDistance(closestP) > 5 || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
 			{
 				unit->move(Position(closestP.x + rand() % 3 + (-1), closestP.y + rand() % 3 + (-1)));
-			}
+				return;
+			}			
 		}
 		else
 		{
@@ -492,7 +494,7 @@ double unitGetStrength(UnitType unitType)
 	}
 	if (unitType.isWorker())
 	{
-		return 1.0;
+		return 5.0;
 	}
 	return 0.5;
 }
@@ -1176,6 +1178,11 @@ double UnitInfo::getStrength() const
 	return unitStrength;
 }
 
+double UnitInfo::getLocal() const
+{
+	return unitLocal;
+}
+
 UnitCommandType UnitInfo::getCommand() const
 {
 	return unitCommand;
@@ -1199,6 +1206,11 @@ void UnitInfo::setTargetPosition(Position newTargetPosition)
 void UnitInfo::setStrength(double newStrength)
 {
 	unitStrength = newStrength;
+}
+
+void UnitInfo::setLocal(double newUnitLocal)
+{
+	unitLocal = newUnitLocal;
 }
 
 void UnitInfo::setCommand(UnitCommandType newCommand)

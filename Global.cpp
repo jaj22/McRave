@@ -58,7 +58,6 @@ void McRave::onEnd(bool isWinner)
 
 void McRave::onFrame()
 {
-	// Test area	
 
 #pragma region Heatmap Manager
 	double strongest = 0;
@@ -404,6 +403,11 @@ void McRave::onFrame()
 		Broodwar->drawTextMap(Position(p->Center()), "%d", find(path.begin(), path.end(), p) - path.begin());
 		}*/
 
+		for (auto u : allyUnits)
+		{
+			Broodwar->drawTextMap(u.second.getPosition(), "%.2f\n%s", u.second.getLocal(), u.second.getCommand().c_str());
+		}
+
 		// Show unit composition information
 		offset = 0;
 		for (auto t : enemyComposition)
@@ -563,7 +567,11 @@ void McRave::onFrame()
 	aSmall = 0, aMedium = 0, aLarge = 0;
 	supply = 0;
 	for (auto u : Broodwar->self()->getUnits())
-	{		
+	{	
+		if (u->isCompleted())
+		{
+			allyUnits[u].setPosition(u->getPosition());
+		}
 		supply += u->getType().supplyRequired();
 		if (u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding())
 		{
@@ -670,7 +678,7 @@ void McRave::onFrame()
 		}
 
 		// Store enemy unit strength if necessary
-		if (thisUnit > 1.0 || (e->exists() && find(allyTerritory.begin(), allyTerritory.end(), getRegion(e->getTilePosition())) != allyTerritory.end()))
+		if ((!u.second.getUnitType().isWorker() && thisUnit > 1.0) || (e->exists() && find(allyTerritory.begin(), allyTerritory.end(), getRegion(e->getTilePosition())) != allyTerritory.end()))
 		{
 			enemyStrength += thisUnit;
 			enemyComposition[u.second.getUnitType()] += 1;
@@ -849,6 +857,15 @@ void McRave::onFrame()
 				// Assign the probe a task (mineral, gas)
 				assignProbe(u);
 				continue;
+			}
+			for (auto g : gasMap)
+			{
+				if (g.second < 3)
+				{
+					mineralMap.erase(u);
+					mineralProbeMap.erase(u);
+					assignProbe(u);
+				}
 			}
 
 			// Crappy scouting method
@@ -1075,6 +1092,7 @@ void McRave::onFrame()
 			}
 		}
 	}
+	
 #pragma endregion
 }
 

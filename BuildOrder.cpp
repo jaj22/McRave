@@ -4,6 +4,7 @@ using namespace BWAPI;
 bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
 
 // Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
+// Changes: Terran only runs 20 Nexus!
 
 void myBuildings()
 {
@@ -41,10 +42,24 @@ void desiredBuildings()
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
-	if (saturated && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility) > 0 || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun) > 0) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && idleGates.size() == 0)
+	if (saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && idleGates.size() == 0)
 	{
 		nexusDesired++;
 	}		
+
+
+	// TERRAN FORCE EXPAND
+	if (Broodwar->enemy()->getRace() == Races::Terran)
+	{
+		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
+		{
+			forceExpand = true;
+		}
+		else
+		{
+			forceExpand = false;
+		}
+	}
 	
 	// If forcing an early natural expansion
 	if (forceExpand == 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
@@ -59,7 +74,7 @@ void desiredBuildings()
 	}
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) > 2 && getEarlyBuild)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && getEarlyBuild && idleGates.size() == 0)
 	{		
 		getEarlyBuild = false;
 		getMidBuild = true;
@@ -86,6 +101,7 @@ void desiredBuildings()
 
 void getBuildOrder()
 {
+	desiredBuildings();
 	{
 		switch (Broodwar->enemy()->getRace())
 		{
@@ -166,8 +182,7 @@ void getBuildOrder()
 		break;
 		}
 	}
-	// Annoying mapping process
-	desiredBuildings();
+	// Annoying mapping process	
 	myBuildings();
 }
 
@@ -196,9 +211,9 @@ void midBuilds(int whichBuild)
 	case 3:
 		// -- 2 Nexus Reaver --
 		nexusDesired = max(2, nexusDesired);
-		roboDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)/2);
+		roboDesired = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)/2);
 		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		currentStrategy.assign("BISU BUILD. YOU HAPPY NOW MUUKZOR?")
+		currentStrategy.assign("BISU BUILD. YOU HAPPY NOW MUUKZOR?");
 	}
 }
 
@@ -253,11 +268,19 @@ void earlyBuilds(int whichBuild)
 		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
 		if (supply >= 20)
 		{
-			gateDesired = 1 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core);
+			gateDesired = 1;
 		}
 		if (supply >= 22)
 		{
 			gasDesired = 1;
+		}
+		if (supply >= 26)
+		{
+			coreDesired = 1;
+		}
+		if (supply >= 36)
+		{
+			gateDesired = 2;
 		}
 		currentStrategy.assign("One Gate Core");
 		break;
