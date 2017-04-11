@@ -704,6 +704,7 @@ void McRave::onFrame()
 		if (u.first && u.first->exists())
 		{
 			// If idle and carrying minerals, return cargo
+			// IMPLEMENTING -- If unit is standing on mineral grid, move instead for speeding up cargo return?
 			if (u.first->isIdle() && u.first->isCarryingMinerals())
 			{
 				u.first->returnCargo();

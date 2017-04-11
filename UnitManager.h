@@ -54,11 +54,6 @@ extern double enemyStrength, allyStrength;
 // Unit Variables
 extern map <Unit, UnitInfo> enemyUnits;
 extern map <Unit, UnitInfo> allyUnits;
-extern map <Unit, double> localEnemy;
-extern map <Unit, double> localAlly;
-extern map <Unit, int> unitRadiusCheck;
-extern map <Unit, Position> unitsCurrentTarget;
-extern map <Unit, int> unitsCurrentLocalCommand;
 extern map <Unit, Position> invisibleUnits;
 extern map <UnitType, map<UnitType, int>> unitTargets;
 extern Position supportPosition;

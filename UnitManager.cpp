@@ -238,11 +238,6 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 		return 0;
 	}
-
-	// Store ally unit, update its command, strength, position, type, local calculation
-
-
-
 	// Disregard local if no target, no recent local calculation and not within ally region
 	return 3;
 }
