@@ -65,12 +65,12 @@ void unitMicro(Unit unit, Unit target)
 		if (unit->getType() == UnitTypes::Protoss_Corsair)
 		{
 			unit->move(target->getPosition());
-			unitsCurrentTarget[unit] = target->getPosition();
+			allyUnits[unit].setTargetPosition(target->getPosition());
 		}
 		else if (correctedFleePosition != BWAPI::Positions::None)
 		{
 			unit->move(Position(correctedFleePosition.x + rand() % 2 + (-1), correctedFleePosition.y + rand() % 2 + (-1)));
-			unitsCurrentTarget[unit] = correctedFleePosition;
+			allyUnits[unit].setTargetPosition(correctedFleePosition);
 		}
 	}
 	// Else, regardless of if kite is true or not, attack if weapon is off cooldown
@@ -116,7 +116,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	int radius = min(512, 320 + supply * 2);
 
 	// Force Zealots to stay on Tanks
-	if (unit->getType() == UnitTypes::Protoss_Zealot && (target->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || target->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(target) < 64)
+	if (unit->getType() == UnitTypes::Protoss_Zealot && (target->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || target->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(target) < 128)
 	{
 		return 1;
 	}
@@ -215,33 +215,26 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 			}
 		}
 	}
-	localEnemy[unit] = enemyLocalStrength;
-	localAlly[unit] = allyLocalStrength;
-	//localEnemy[unit] = (localEnemy[unit] * 9 / 10) + (enemyLocalStrength / 10);
-	//localAlly[unit] = (localAlly[unit] * 9 / 10) + (allyLocalStrength / 10);
 
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
 	{
 		if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(target->getPosition())) != allyTerritory.end())
 		{
-			unitsCurrentLocalCommand[unit] = 1;
 			return 1;
 		}
 	}
 
 	// If most recent local ally higher, return attack
-	if (localAlly[unit] >= localEnemy[unit])
+	if (allyLocalStrength >= enemyLocalStrength)
 	{
-		unitsCurrentTarget[unit] = targetPosition;
-		unitsCurrentLocalCommand[unit] = 1;
+		allyUnits[unit].setTargetPosition(targetPosition);
 		allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 		return 1;
 	}
 	// Else return retreat
-	else if (localAlly[unit] < localEnemy[unit])
+	else if (allyLocalStrength < enemyLocalStrength)
 	{
-		unitsCurrentLocalCommand[unit] = 0;
 		allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 		return 0;
 	}
@@ -256,9 +249,8 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 
 void unitGetCommand(Unit unit)
 {
-	unitsCurrentTarget.erase(unit);
-	localEnemy.erase(unit);
-	localAlly.erase(unit);
+	allyUnits[unit].setTargetPosition(Positions::None);
+	allyUnits[unit].setLocal(0);	
 
 	double closestD = 0.0;
 	Position closestP;

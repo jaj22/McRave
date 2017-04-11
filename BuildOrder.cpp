@@ -38,7 +38,7 @@ void desiredBuildings()
 		lastpd = pylonDesired;
 	}
 
-	forgeDesired = min(1, ((int)floor(supply / 160)));
+	forgeDesired = min(1,Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)/2);
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
@@ -46,20 +46,6 @@ void desiredBuildings()
 	{
 		nexusDesired++;
 	}		
-
-
-	// TERRAN FORCE EXPAND
-	if (Broodwar->enemy()->getRace() == Races::Terran)
-	{
-		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
-		{
-			forceExpand = true;
-		}
-		else
-		{
-			forceExpand = false;
-		}
-	}
 	
 	// If forcing an early natural expansion
 	if (forceExpand == 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
@@ -123,7 +109,6 @@ void getBuildOrder()
 			break;
 
 			/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
-			// TESTING -- If mech, mid build 1 (more gates and speedlots)
 		case Races::Enum::Terran:
 			if (enemyAggresion && getEarlyBuild)
 			{
@@ -137,7 +122,7 @@ void getBuildOrder()
 			{
 				if (terranBio)
 				{
-					midBuilds(0);
+					midBuilds(3);
 				}
 				else if (forceExpand)
 				{
@@ -145,7 +130,7 @@ void getBuildOrder()
 				}
 				else
 				{
-					midBuilds(1);
+					midBuilds(3);
 				}
 			}
 			else if (getLateBuild)

@@ -368,35 +368,8 @@ void McRave::onFrame()
 		{
 			//Broodwar->drawTextMap(r.first->getPosition(), "%d", r.first->getResources());
 			Broodwar->drawTextMap(r.first->getPosition(), "%d", r.second);
-		}
-
-		// Show local calculations, targets and radius check
-		if (calculationDraw)
-		{
-			for (auto u : localEnemy)
-			{
-				if (u.second > 0.0)
-				{
-					Broodwar->drawTextMap(u.first->getPosition(), "E: %.2f", u.second);
-				}
-			}
-			for (auto u : localAlly)
-			{
-				if (u.second > 0.0)
-				{
-					Broodwar->drawTextMap(u.first->getPosition() + Position(0, 10), "A: %.2f", u.second);
-				}
-			}
-			for (auto u : unitRadiusCheck)
-			{
-				Broodwar->drawCircleMap(u.first->getPosition(), u.second, playerColor);
-			}
-		}
-		for (auto u : unitsCurrentTarget)
-		{
-			Broodwar->drawLineMap(u.first->getPosition(), u.second, playerColor);
-		}
-
+		}	
+		
 		// Show path numbers
 		/*for (auto p : path)
 		{
@@ -406,6 +379,10 @@ void McRave::onFrame()
 		for (auto u : allyUnits)
 		{
 			Broodwar->drawTextMap(u.second.getPosition(), "%.2f\n%s", u.second.getLocal(), u.second.getCommand().c_str());
+			if (u.second.getTargetPosition() != Positions::None)
+			{
+				Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), playerColor);
+			}
 		}
 
 		// Show unit composition information
@@ -571,15 +548,13 @@ void McRave::onFrame()
 		if (u->isCompleted())
 		{
 			allyUnits[u].setPosition(u->getPosition());
+			allyUnits[u].setStrength(unitGetVisibleStrength(u));
 		}
 		supply += u->getType().supplyRequired();
 		if (u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding())
 		{
-			allyStrength += unitGetVisibleStrength(u);
-		}
-		// If it's not a worker or building, store the unit size type
-		if (!u->getType().isWorker() && !u->getType().isBuilding())
-		{
+			allyStrength += allyUnits[u].getStrength();
+			// Store size types
 			if (u->getType().size() == UnitSizeTypes::Small)
 			{
 				aSmall++;
@@ -592,7 +567,7 @@ void McRave::onFrame()
 			{
 				aLarge++;
 			}
-		}
+		}		
 	}
 #pragma endregion
 #pragma region Enemy Unit Information
@@ -658,18 +633,13 @@ void McRave::onFrame()
 		// Update strength
 		if (e && e->exists())
 		{
-			thisUnit = unitGetVisibleStrength(e);
+			enemyUnits[e].setStrength(unitGetVisibleStrength(e));
 			// Geyser morph issue
 			if (e->getPlayer() != Broodwar->enemy())
 			{
 				enemyUnits.erase(u.first);
 			}
 		}
-		else
-		{
-			thisUnit = unitGetStrength(u.second.getUnitType());
-		}
-
 
 		// If tile is visible but unit is not, remove position
 		if (!e->exists() && Broodwar->isVisible(TilePosition(u.second.getPosition())))
@@ -751,6 +721,7 @@ void McRave::onFrame()
 					if (!u.first->isGatheringMinerals() && u.first->getDistance(b) < 256)
 					{
 						u.first->gather(b);
+						break;
 					}
 				}
 			}
@@ -808,27 +779,21 @@ void McRave::onFrame()
 			}
 		}
 
-		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, loaded, not powered, stuck or not completed
-		if (!u || !u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised() || u->isLoaded() || !u->isPowered() || !u->isCompleted() || u->isStuck())
+		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, not powered or not completed
+		if (!u || !u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised() || !u->isPowered() || !u->isCompleted())
 		{
 			continue;
 		}
+		// Store even if unit is loaded or stuck
 		else
 		{
 			storeAllyUnit(u, allyUnits);
 		}
-
-		// Remove loaded unit information
-		if (u->isLoaded())
+		// Skip loaded/stuck units otherwise
+		if (u->isLoaded() || u->isStuck())
 		{
-			if (localEnemy.find(u) != localEnemy.end() && localAlly.find(u) != localAlly.end() && unitRadiusCheck.find(u) != unitRadiusCheck.end())
-			{
-				localEnemy.erase(u);
-				localAlly.erase(u);
-				unitRadiusCheck.erase(u);
-			}
+			continue;
 		}
-
 
 #pragma region Probe Manager
 
@@ -1238,10 +1203,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	if (unit->getPlayer() == Broodwar->self())
 	{
 		allyUnits.erase(unit);
-		localEnemy.erase(unit);
-		localAlly.erase(unit);
 		unitRadiusCheck.erase(unit);
-		unitsCurrentTarget.erase(unit);
 		// For probes, adjust the resource maps to align properly
 		if (unit->getType() == UnitTypes::Protoss_Probe)
 		{
