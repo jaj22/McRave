@@ -29,6 +29,7 @@ void desiredBuildings()
 	// Pylon, Forge, Nexus
 	pylonDesired = min(22, (int)floor((supply / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 
+	// jaj22 testing code
 	static int lastpd = -1;
 	if (pylonDesired > lastpd && pylonDesired <= 2) {
 		Broodwar->printf("Pylons: Have %i, want %i, supply %i\n",

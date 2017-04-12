@@ -172,7 +172,7 @@ void unitScoreUpdate(UnitType unit, int count)
 			break;
 		case Enum::Terran_Vulture:
 			unitScore[Protoss_Zealot] += 0.5 * count / Broodwar->self()->completedUnitCount(Protoss_Zealot);
-			unitScore[Protoss_Dragoon] += 1 * count / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
+			unitScore[Protoss_Dragoon] += 2 * count / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 		case Enum::Terran_Goliath:
 			unitScore[Protoss_Zealot] += 0.5 * count / Broodwar->self()->completedUnitCount(Protoss_Zealot);
@@ -191,12 +191,12 @@ void unitScoreUpdate(UnitType unit, int count)
 			unitScore[Protoss_Dragoon] += 4 * count / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 		case Enum::Terran_Siege_Tank_Siege_Mode:
-			unitScore[Protoss_Zealot] += 8 * count / Broodwar->self()->completedUnitCount(Protoss_Zealot);
-			unitScore[Protoss_Dragoon] += 0 * count / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
+			unitScore[Protoss_Zealot] += 4 * count / Broodwar->self()->completedUnitCount(Protoss_Zealot);
+			unitScore[Protoss_Dragoon] += 1 * count / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 		case Enum::Terran_Siege_Tank_Tank_Mode:
-			unitScore[Protoss_Zealot] += 8 * count / Broodwar->self()->completedUnitCount(Protoss_Zealot);
-			unitScore[Protoss_Dragoon] += 0 * count / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
+			unitScore[Protoss_Zealot] += 4 * count / Broodwar->self()->completedUnitCount(Protoss_Zealot);
+			unitScore[Protoss_Dragoon] += 1 * count / Broodwar->self()->completedUnitCount(Protoss_Dragoon);
 			break;
 			}
 			if (Broodwar->enemy()->getRace() == Races::Zerg)

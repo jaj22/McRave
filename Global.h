@@ -10,6 +10,7 @@
 #include "UnitManager.h"
 #include "UnitScore.h"
 #include "NexusManager.h"
+#include "ResourceManager.h"
 
 // Include standard libraries that are needed
 #include <vector>
@@ -26,15 +27,6 @@
 using namespace BWAPI;
 using namespace std;
 using namespace BWTA;
-
-// Classes
-// Want a class that can store the score of a certain UnitType against the enemy composition?
-class UnitScore {
-private:
-	double score;	
-};
-
-map <Unit, NexusInfo> myNexus;
 
 // Building Tracker Variables
 int queuedMineral = 0, queuedGas = 0, reservedMineral = 0, reservedGas = 0;
@@ -55,6 +47,7 @@ int observatoryDesired = 0;
 int tribunalDesired = 0;
 
 // Building Manager Variables
+map <Unit, NexusInfo> myNexus;
 map <int, UnitType> idleBuildings;
 map <int, TechType> idleTech;
 map <int, UpgradeType> idleUpgrade;
@@ -71,6 +64,7 @@ vector<Unit> combatProbe;
 bool saturated = false, gasNeeded = false;
 
 // Resource Manager Variables
+map <Unit, ResourceInfo> myResources;
 vector <Unit> geysers;
 map <Unit, int> gasMap;
 map <Unit, int> mineralMap;
@@ -96,6 +90,7 @@ bool enemyAggresion = false;
 bool terranBio = false;
 bool scouting = true;
 bool outsideBase = false;
+bool wallIn = false;
 int forceExpand = 0;
 string currentStrategy;
 

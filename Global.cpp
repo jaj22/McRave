@@ -7,6 +7,13 @@
 #include "Header.h"
 #include "Global.h"
 
+// Author notes:
+// Classes
+// UnitScore class
+// Idle Buildings class
+// Building Tracker class (desired buildings)
+// Probe class (combat, mineral, gas)
+
 // Variables for Global.cpp
 Color playerColor;
 bool analyzed = false;
@@ -340,6 +347,13 @@ void McRave::onFrame()
 			}
 		}
 	}
+	for (auto pos : enemyBasePositions)
+	{
+		if (Broodwar->isVisible(TilePosition(pos)))
+		{
+			enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), pos));
+		}
+	}
 #pragma endregion
 #pragma region HUD
 	if (masterDraw)
@@ -368,8 +382,8 @@ void McRave::onFrame()
 		{
 			//Broodwar->drawTextMap(r.first->getPosition(), "%d", r.first->getResources());
 			Broodwar->drawTextMap(r.first->getPosition(), "%d", r.second);
-		}	
-		
+		}
+
 		// Show path numbers
 		/*for (auto p : path)
 		{
@@ -544,7 +558,7 @@ void McRave::onFrame()
 	aSmall = 0, aMedium = 0, aLarge = 0;
 	supply = 0;
 	for (auto u : Broodwar->self()->getUnits())
-	{	
+	{
 		if (u->isCompleted())
 		{
 			allyUnits[u].setPosition(u->getPosition());
@@ -567,7 +581,7 @@ void McRave::onFrame()
 			{
 				aLarge++;
 			}
-		}		
+		}
 	}
 #pragma endregion
 #pragma region Enemy Unit Information
@@ -589,6 +603,10 @@ void McRave::onFrame()
 				forceExpand = 1;
 			}
 			if (t.first == UnitTypes::Zerg_Sunken_Colony && t.second >= 2)
+			{
+				forceExpand = 1;
+			}
+			if (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2)
 			{
 				forceExpand = 1;
 			}
@@ -900,74 +918,61 @@ void McRave::onFrame()
 
 #pragma endregion
 #pragma region Building Manager
+		{
+			// If it's a Nexus and we need probes, check if we need probes, then train if needed
+			if (u->getType().isResourceDepot())
 			{
-				// If it's a Nexus and we need probes, check if we need probes, then train if needed
-				if (u->getType().isResourceDepot())
+				for (auto m : mineralMap)
 				{
-					for (auto m : mineralMap)
+					if (m.second < 2)
 					{
-						if (m.second < 2)
+						if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral + reservedMineral))
 						{
-							if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral + reservedMineral))
-							{
-								u->train(UnitTypes::Protoss_Probe);
-								break;
-							}
-						}
-					}
-					for (auto g : gasMap)
-					{
-						if (g.second < 3)
-						{
-							if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral + reservedMineral))
-							{
-								u->train(UnitTypes::Protoss_Probe);
-								break;
-							}
-						}
-					}
-					if (u->isCompleted())
-					{
-						// If there are no pylons around it, build one so we can make cannons
-						if (u->getUnitsInRadius(128, Filter::GetType == UnitTypes::Enum::Protoss_Pylon).size() == 0 && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Nexus) > 1)
-						{
-							TilePosition here = getBuildLocationNear(UnitTypes::Protoss_Pylon, u->getTilePosition());
-							Unit builder = Broodwar->getClosestUnit(u->getPosition(), Filter::IsAlly && Filter::IsWorker);
-							if (builder && builder->exists())
-							{
-								builder->build(UnitTypes::Protoss_Pylon, here);
-							}
-						}
-
-						updateDefenses(u, myNexus);
-
-						// Testing Cannon quantity based on distance from starting position
-						if (Broodwar->self()->completedUnitCount(Protoss_Forge) > 0 && myNexus[u].getStaticD() < u->getDistance(playerStartingPosition)/6400)
-						{
-							
-							TilePosition here = cannonManager(u->getTilePosition());
-							Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
-							// If the Tile Position and Builder are valid
-							if (here != TilePositions::None && builder)
-							{
-								// Queue at this building type a pair of building placement and builder
-								queuedBuildings.emplace(Protoss_Photon_Cannon, make_pair(here, builder));
-							}
+							u->train(UnitTypes::Protoss_Probe);
+							break;
 						}
 					}
 				}
-				else if (u->getType() == UnitTypes::Protoss_Assimilator && gasMap.find(u) == gasMap.end())
+				for (auto g : gasMap)
 				{
-					gasMap.emplace(u, 0);
+					if (g.second < 3)
+					{
+						if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral + reservedMineral))
+						{
+							u->train(UnitTypes::Protoss_Probe);
+							break;
+						}
+					}
 				}
 
-				// If it's a building capable of production, send to production manager
-				else if (u->getType().isBuilding() && u->getType() != UnitTypes::Protoss_Pylon && u->getType() != UnitTypes::Protoss_Nexus)
+				// Get tile position of pylon placement for each expansion if needed, then cannon placement (using cannon managers function)
+				TilePosition here = cannonManager(u->getTilePosition());
+				Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
+				updateDefenses(u, myNexus);
+				if (here != TilePositions::None && builder && builder->exists())
 				{
-					productionManager(u);
-					continue;
-				}
+					if (Broodwar->getUnitsInRadius(Position(here), 256, Filter::GetType == UnitTypes::Enum::Protoss_Pylon).size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 1)
+					{						
+						builder->build(UnitTypes::Protoss_Pylon, here);						
+					}
+					else if (Broodwar->self()->completedUnitCount(Protoss_Forge) > 0 && myNexus[u].getStaticD() < 1)
+					{
+						queuedBuildings.emplace(Protoss_Photon_Cannon, make_pair(here, builder));
+					}
+				}				
 			}
+			else if (u->getType() == UnitTypes::Protoss_Assimilator && gasMap.find(u) == gasMap.end())
+			{
+				gasMap.emplace(u, 0);
+			}
+
+			// If it's a building capable of production, send to production manager
+			else if (u->getType().isBuilding() && u->getType() != UnitTypes::Protoss_Pylon && u->getType() != UnitTypes::Protoss_Nexus)
+			{
+				productionManager(u);
+				continue;
+			}
+		}
 #pragma endregion
 
 #pragma region Army Unit Manager	
@@ -1046,6 +1051,8 @@ void McRave::onFrame()
 					{
 						mineralMap.emplace(r, 0);
 					}
+
+
 				}
 				if (r->getType() == UnitTypes::Resource_Vespene_Geyser && r->getDistance(r->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition()) < 320)
 				{
@@ -1058,7 +1065,7 @@ void McRave::onFrame()
 			}
 		}
 	}
-	
+
 #pragma endregion
 }
 
@@ -1134,7 +1141,7 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 			{
 				if (Broodwar->enemy()->getRace() == Races::Terran && unit->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 128)
 				{
-					forceExpand = true;
+					wallIn = true;
 				}
 				enemyStartingTilePosition = getNearestBaseLocation(unit->getPosition())->getTilePosition();
 				enemyStartingPosition = getNearestBaseLocation(unit->getPosition())->getPosition();
@@ -1196,7 +1203,7 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 			allyTerritory.push_back(getRegion(unit->getPosition()));
 			forceExpand = 0;
 		}
-	}	
+	}
 }
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
@@ -1204,7 +1211,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	if (unit->getPlayer() == Broodwar->self())
 	{
 		allyUnits.erase(unit);
-		unitRadiusCheck.erase(unit);
+		allyUnits[unit].~UnitInfo();
 		// For probes, adjust the resource maps to align properly
 		if (unit->getType() == UnitTypes::Protoss_Probe)
 		{
@@ -1228,7 +1235,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 			gasMap.erase(unit);
 		}
 		else if (unit->getType() == UnitTypes::Protoss_Nexus)
-		{			
+		{
 			if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
 			{
 				allyTerritory.erase(find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())));
@@ -1238,6 +1245,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	else if (unit->getPlayer() == Broodwar->enemy())
 	{
 		enemyUnits.erase(unit);
+		enemyUnits[unit].~UnitInfo();
 		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) != enemyBasePositions.end())
 		{
 			enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()));

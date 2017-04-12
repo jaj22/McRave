@@ -14,6 +14,7 @@ bool stimResearched = false;
 
 // Map invisible units to number of detectors moving to position?
 // To check: Crash issues, build order issues
+// Add scout intercepting (based on velocity and direction?)
 
 #pragma region Strategy
 
@@ -121,6 +122,11 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		return 1;
 	}
 
+	if (unit->getDistance(target) < unit->getType().groundWeapon().maxRange() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0)
+	{
+		return 1;
+	}
+
 	if (unit->getDistance(targetPosition) > 512)
 	{
 		return 3;
@@ -140,33 +146,33 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 				// If unit is cloaked or burrowed and not detected, drastically increase strength
 				if ((u->isCloaked() || u->isBurrowed()) && !u->isDetected())
 				{
-					thisUnit = 20 * unitGetStrength(enemy.second.getUnitType());
+					thisUnit = 20 * enemyUnits[enemy.first].getStrength();
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
-					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / double(1.0 + aLarge + aMedium + aSmall));
+					thisUnit = enemyUnits[enemy.first].getStrength() * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / double(1.0 + aLarge + aMedium + aSmall));
 				}
 				else if (u->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 				{
-					thisUnit = unitGetVisibleStrength(u) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / double(1.0 + aLarge + aMedium + aSmall));
+					thisUnit = enemyUnits[enemy.first].getStrength() * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / double(1.0 + aLarge + aMedium + aSmall));
 				}
 				else
 				{
-					thisUnit = unitGetVisibleStrength(u);
+					thisUnit = enemyUnits[enemy.first].getStrength();
 				}
 			}
 			// Else used stored information
 			else if (enemy.second.getUnitType().groundWeapon().damageType() == DamageTypes::Explosive)
 			{
-				thisUnit = unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / double(1.0 + aLarge + aMedium + aSmall));
+				thisUnit = enemyUnits[enemy.first].getStrength() * ((((double)aLarge * 1) + ((double)aMedium * 0.75) + ((double)aSmall * 0.5)) / double(1.0 + aLarge + aMedium + aSmall));
 			}
 			else if (enemy.second.getUnitType().groundWeapon().damageType() == DamageTypes::Concussive)
 			{
-				thisUnit = unitGetStrength(enemy.second.getUnitType()) * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / double(1.0 + aLarge + aMedium + aSmall));
+				thisUnit = enemyUnits[enemy.first].getStrength() * ((((double)aLarge * 0.25) + ((double)aMedium * 0.5) + ((double)aSmall * 1)) / double(1.0 + aLarge + aMedium + aSmall));
 			}
 			else
 			{
-				thisUnit = unitGetStrength(enemy.second.getUnitType());
+				thisUnit = enemyUnits[enemy.first].getStrength();
 			}
 		}
 		enemyLocalStrength += thisUnit;
@@ -186,7 +192,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 					// Assume reaver for damage type calculations
 					for (Unit uL : a->getLoadedUnits())
 					{
-						allyLocalStrength += unitGetVisibleStrength(uL);
+						allyLocalStrength += allyUnits[ally.first].getStrength();
 					}
 				}
 				else
@@ -196,15 +202,15 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 						// Damage type calculations
 						if (a->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 						{
-							allyLocalStrength += unitGetVisibleStrength(a) * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / double(1.0 + eLarge + eMedium + eSmall));
+							allyLocalStrength += allyUnits[ally.first].getStrength() * ((((double)eLarge * 1.0) + ((double)eMedium * 0.75) + ((double)eSmall * 0.5)) / double(1.0 + eLarge + eMedium + eSmall));
 						}
 						else if (a->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 						{
-							allyLocalStrength += unitGetVisibleStrength(a) * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1.0)) / double(1.0 + eLarge + eMedium + eSmall));
+							allyLocalStrength += allyUnits[ally.first].getStrength() * ((((double)eLarge * 0.25) + ((double)eMedium * 0.5) + ((double)eSmall * 1.0)) / double(1.0 + eLarge + eMedium + eSmall));
 						}
 						else
 						{
-							allyLocalStrength += unitGetVisibleStrength(a);
+							allyLocalStrength += allyUnits[ally.first].getStrength();
 						}
 					}
 					else
@@ -265,12 +271,18 @@ void unitGetCommand(Unit unit)
 		target = getTarget(unit);
 	}
 
+
+
+	// TESTING -- Getting target through class
+	target = allyUnits[unit].getTarget();	
+
 	if (!target)
 	{
 		return;
-	}
+	}	 
 
-	Position targetPosition = enemyUnits[target].getPosition();
+
+	
 
 	/* Check local strategy manager to see what our next task is.
 	If 0, regroup unless forced to engage.
@@ -342,6 +354,11 @@ void unitGetCommand(Unit unit)
 	{
 		if (enemyBasePositions.size() > 0 && allyTerritory.size() > 0)
 		{
+			// Pick random enemy bases to attack (cap at ~3-4 units?)
+
+
+
+
 			closestD = 1000.0;
 			closestP = defendHere.at(0);
 			// Check if we are close enough to any defensive position
@@ -560,9 +577,9 @@ Unit getTarget(Unit unit)
 
 	Unit target = unit;
 
-	if (enemyAggresion)
+	if (enemyAggresion && Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy, 640))
 	{
-		return Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy);
+		return Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy, 640);
 	}
 
 	for (auto u : enemyUnits)
@@ -590,6 +607,9 @@ Unit getTarget(Unit unit)
 			highest = thisUnit;
 		}
 	}
+
+	allyUnits[unit].setTarget(target);
+	allyUnits[unit].setTargetPosition(target->getPosition());
 
 	// The highest strength unit is returned
 	return target;
@@ -1122,7 +1142,6 @@ int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
 	}	
 	return 0;
 }
-
 int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 {
 	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
@@ -1137,7 +1156,6 @@ UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, U
 	unitStrength = newStrength;
 	unitCommand = newCommand;
 }
-
 UnitInfo::UnitInfo()
 {
 	unitType = UnitTypes::Enum::None;
@@ -1145,7 +1163,6 @@ UnitInfo::UnitInfo()
 	unitStrength = 0.0;
 	unitCommand = UnitCommandTypes::None;
 }
-
 UnitInfo::~UnitInfo()
 {
 }
@@ -1154,57 +1171,59 @@ Position UnitInfo::getPosition() const
 {
 	return unitPosition;
 }
-
+Position UnitInfo::getTargetPosition() const
+{
+	return targetPosition;
+}
 UnitType UnitInfo::getUnitType() const
 {
 	return unitType;
 }
-
 double UnitInfo::getStrength() const
 {
 	return unitStrength;
 }
-
 double UnitInfo::getLocal() const
 {
 	return unitLocal;
 }
-
 UnitCommandType UnitInfo::getCommand() const
 {
 	return unitCommand;
+}
+Unit UnitInfo::getTarget() const
+{
+	return target;
 }
 
 void UnitInfo::setUnitType(UnitType newUnitType)
 {
 	unitType = newUnitType;
 }
-
 void UnitInfo::setPosition(Position newPosition)
 {
 	unitPosition = newPosition;
 }
-
 void UnitInfo::setTargetPosition(Position newTargetPosition)
 {
 	targetPosition = newTargetPosition;
 }
-
 void UnitInfo::setStrength(double newStrength)
 {
 	unitStrength = newStrength;
 }
-
 void UnitInfo::setLocal(double newUnitLocal)
 {
 	unitLocal = newUnitLocal;
 }
-
 void UnitInfo::setCommand(UnitCommandType newCommand)
 {
 	unitCommand = newCommand;
 }
-
+void UnitInfo::setTarget(Unit newTarget)
+{
+	target = newTarget;
+}
 #pragma endregion
 
 

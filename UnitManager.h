@@ -13,23 +13,29 @@ class UnitInfo {
 	Position unitPosition, targetPosition;
 	double unitStrength, unitLocal;
 	UnitCommandType unitCommand;
+	Unit target;
 public:
 	UnitInfo();
 	UnitInfo(UnitType, Position, double, UnitCommandType);
 	~UnitInfo();
 
+	// Accessors
 	UnitType getUnitType() const;
 	Position getPosition() const;
 	Position getTargetPosition() const;
 	double getStrength() const;
 	double getLocal() const;
 	UnitCommandType getCommand() const;
+	Unit getTarget() const;
+
+	// Mutators
 	void setUnitType(UnitType);
 	void setPosition(Position);
 	void setTargetPosition(Position);
 	void setStrength(double);
 	void setLocal(double);
 	void setCommand(UnitCommandType);
+	void setTarget(Unit);
 };
 
 

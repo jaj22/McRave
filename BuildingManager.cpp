@@ -141,7 +141,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 			for (int j = 0; j <= building.tileHeight() + 1; j++)
 			{
 				// If the x value of this tile of the building is within an expansion, return false
-				if (buildTilePosition.x - i >= base.x && buildTilePosition.x - i <= base.x && buildTilePosition.y - j >= base.y && buildTilePosition.y - j <= base.y)
+				if (buildTilePosition.x + i >= base.x && buildTilePosition.x + i <= base.x + 4 && buildTilePosition.y + j >= base.y && buildTilePosition.y + j <= base.y + 3)
 				{
 					return false;
 				}
