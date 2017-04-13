@@ -11,6 +11,7 @@ void assignCombat(Unit probe)
 		combatProbe.push_back(probe);
 	}
 	return;
+	
 }
 
 void unAssignCombat(Unit probe)
@@ -50,6 +51,15 @@ void assignProbe(Unit probe)
 				return;
 			}
 		}
+
+		/*for (auto gas : myGas)
+		{
+			if (gas.second.getGathererCount() < 3)
+			{
+				assignGas(probe, gas.first);
+				gas.second.setGathererCount(gas.second.getGathererCount() + 1);
+			}
+		}*/
 	
 
 	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
@@ -85,4 +95,61 @@ void assignProbe(Unit probe)
 		probe->gather(probe->getClosestUnit(Filter::IsMineralField));
 	}
 	return;
+}
+
+// Constructors
+ResourceInfo::ResourceInfo()
+{
+	gathererCount = 0;
+	remainingResources = 0;
+	resourcePosition = Positions::None;
+}
+ResourceInfo::~ResourceInfo()
+{
+
+}
+ResourceInfo::ResourceInfo(int newGathererCount, int newRemainingResources, Position newPosition)
+{
+	gathererCount = newGathererCount;
+	remainingResources = newRemainingResources;
+	resourcePosition = newPosition;
+}
+
+// Accessors
+int ResourceInfo::getGathererCount() const
+{
+	return gathererCount;
+}
+int ResourceInfo::getRemainingResources() const
+{
+	return remainingResources;
+}
+Position ResourceInfo::getPosition() const
+{
+	return resourcePosition;
+}
+
+// Mutators
+void ResourceInfo::setGathererCount(int newGathererCount)
+{
+	gathererCount = newGathererCount;
+}
+void ResourceInfo::setRemainingResources(int newRemainingResources)
+{
+	remainingResources = newRemainingResources;
+}
+void ResourceInfo::setPosition(Position newResourcePosition)
+{
+	resourcePosition = newResourcePosition;
+}
+
+// Resource updating
+void storeResource(Unit resource, map <Unit, ResourceInfo>& myResources)
+{
+	// Each resource has a probe count, can update when probe assigned/unassigned (death or otherwise)
+	// Position should always be constant
+	// Remaining resources can be updated every frame along with resource iterator (can monitor if expansions are needed easier)
+
+	// If this is a new unit, initialize at 0 workers, initial resources and find position
+	ResourceInfo newResource(0, resource->getInitialResources(), resource->getPosition());
 }

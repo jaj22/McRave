@@ -11,12 +11,12 @@ using namespace BWEM;
 class UnitInfo {
 	UnitType unitType, targetType;
 	Position unitPosition, targetPosition;
-	double unitStrength, unitLocal;
+	double unitStrength, unitLocal, unitRange;
 	UnitCommandType unitCommand;
 	Unit target;
 public:
 	UnitInfo();
-	UnitInfo(UnitType, Position, double, UnitCommandType);
+	UnitInfo(UnitType, Position, double, double, UnitCommandType);
 	~UnitInfo();
 
 	// Accessors
@@ -25,6 +25,7 @@ public:
 	Position getTargetPosition() const;
 	double getStrength() const;
 	double getLocal() const;
+	double getRange() const;
 	UnitCommandType getCommand() const;
 	Unit getTarget() const;
 
@@ -34,6 +35,7 @@ public:
 	void setTargetPosition(Position);
 	void setStrength(double);
 	void setLocal(double);
+	void setRange(double);
 	void setCommand(UnitCommandType);
 	void setTarget(Unit);
 };

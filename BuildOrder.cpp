@@ -199,7 +199,7 @@ void midBuilds(int whichBuild)
 		nexusDesired = max(2, nexusDesired);
 		roboDesired = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)/2);
 		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		currentStrategy.assign("BISU BUILD. YOU HAPPY NOW MUUKZOR?");
+		currentStrategy.assign("Range Robo Expand");
 	}
 }
 

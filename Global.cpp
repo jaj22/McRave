@@ -111,58 +111,60 @@ void McRave::onFrame()
 		}
 	}
 	// For each enemy unit, add its attack value to each tile it is in range of
-	for (auto u : Broodwar->enemy()->getUnits())
+	for (auto u : enemyUnits)
 	{
-		if (u->getType().groundWeapon().damageAmount() > 0)
+		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
+		if (u.second.getUnitType().groundWeapon().damageAmount() > 0)
 		{
-			int range;
+			// Store range in class
+			int range = (int)u.second.getRange();
 			// Making sure we properly analyze the threat of melee units without adding range to ranged units
-			if (u->getType().groundWeapon().maxRange() < 32)
+			if (range < 32)
 			{
-				range = (u->getType().groundWeapon().maxRange() + 64) / 32;
+				range = (range + 64) / 32;
 			}
 			else
 			{
-				range = (u->getType().groundWeapon().maxRange()) / 32;
+				range = range / 32;
 			}
 			// The + 1 is because we need to still check an additional tile
-			for (int x = u->getTilePosition().x - range; x <= u->getTilePosition().x + range + 1; x++)
+			for (int x = unitTilePosition.x - range; x <= unitTilePosition.x + range + 1; x++)
 			{
-				for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
+				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
 				{
-					if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
+					if (u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
 					{
-						enemyHeatmap[x][y] += unitGetStrength(u->getType());
+						enemyHeatmap[x][y] += u.second.getStrength();
 					}
 				}
 			}
 		}
-		if (u->getType().airWeapon().damageAmount() > 0)
+		if (u.second.getUnitType().airWeapon().damageAmount() > 0)
 		{
-			int range = (u->getType().airWeapon().maxRange()) / 32;
+			int range = (u.second.getUnitType().airWeapon().maxRange()) / 32;
 			// The + 1 is because we need to still check an additional tile
-			for (int x = u->getTilePosition().x - range; x <= u->getTilePosition().x + range + 1; x++)
+			for (int x = unitTilePosition.x - range; x <= unitTilePosition.x + range + 1; x++)
 			{
-				for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
+				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
 				{
-					if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
+					if (u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
 					{
-						airEnemyHeatmap[x][y] += unitGetAirStrength(u->getType());
+						airEnemyHeatmap[x][y] += u.second.getStrength();
 					}
 				}
 			}
 		}
-		if (!u->getType().isBuilding() && !u->isStasised() && !u->isMaelstrommed())
+		if (u.first->exists() && !u.second.getUnitType().isBuilding() && !u.first->isStasised() && !u.first->isMaelstrommed())
 		{
 			// Cluster heatmap for psi/stasis (96x96)			
-			for (int x = u->getTilePosition().x - 1; x <= u->getTilePosition().x + 1; x++)
+			for (int x = unitTilePosition.x - 1; x <= unitTilePosition.x + 1; x++)
 			{
-				for (int y = u->getTilePosition().y - 1; y <= u->getTilePosition().y + 1; y++)
+				for (int y = unitTilePosition.y - 1; y <= unitTilePosition.y + 1; y++)
 				{
 					if ((x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()))
 					{
 						clusterHeatmap[x][y] += 1;
-						if (u->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode || u->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
+						if (u.second.getUnitType() == UnitTypes::Terran_Siege_Tank_Tank_Mode || u.second.getUnitType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
 						{
 							tankClusterHeatmap[x][y] += 1;
 						}
@@ -171,37 +173,32 @@ void McRave::onFrame()
 			}
 		}
 	}
-	for (auto u : Broodwar->self()->getUnits())
+	for (auto u : allyUnits)
 	{
-		if (u->getType() == UnitTypes::Protoss_Reaver || (u->getType().groundWeapon().damageAmount() > 0 && u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding()))
-		{
-			int range;
+		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
+		int range = (int)u.second.getRange();
 
-			if (u->getType() == UnitTypes::Protoss_Reaver)
+		// Making sure we properly analyze the threat of melee units without adding range to ranged units
+		if (range < 32)
+		{
+			range = (range + 64) / 32;
+		}
+		else
+		{
+			range = range / 32;
+		}
+		// The + 1 is because we need to still check an additional tile
+		for (int x = unitTilePosition.x - range; x <= unitTilePosition.x + range + 1; x++)
+		{
+			for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
 			{
-				range = 8;
-			}
-			// Making sure we properly analyze the threat of melee units without adding range to ranged units
-			else if (u->getType().groundWeapon().maxRange() < 32)
-			{
-				range = (u->getType().groundWeapon().maxRange() + 64) / 32;
-			}
-			else
-			{
-				range = (u->getType().groundWeapon().maxRange()) / 32;
-			}
-			// The + 1 is because we need to still check an additional tile
-			for (int x = u->getTilePosition().x - range; x <= u->getTilePosition().x + range + 1; x++)
-			{
-				for (int y = u->getTilePosition().y - range; y <= u->getTilePosition().y + range + 1; y++)
+				if (u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32) && (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()))
 				{
-					if (Broodwar->isVisible(x, y) && (u->getDistance(Position((x * 32), (y * 32))) <= (range * 32)) && (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()))
-					{
-						allyHeatmap[x][y] += unitGetStrength(u->getType());
-					}
+					allyHeatmap[x][y] += u.second.getStrength();
 				}
 			}
 		}
+
 	}
 	// Mineral grid for not building near minerals
 	for (auto r : Broodwar->neutral()->getUnits())
@@ -837,7 +834,7 @@ void McRave::onFrame()
 				u->attack(u->getClosestUnit(Filter::IsEnemy));
 			}
 			if (mineralProbeMap.find(u) == mineralProbeMap.end() && gasProbeMap.find(u) == gasProbeMap.end())
-			{
+			{				
 				// Assign the probe a task (mineral, gas)
 				assignProbe(u);
 				continue;
@@ -850,7 +847,7 @@ void McRave::onFrame()
 					mineralProbeMap.erase(u);
 					assignProbe(u);
 				}
-			}		
+			}
 
 			// Crappy scouting method
 			if (!scout)
@@ -966,7 +963,7 @@ void McRave::onFrame()
 			}
 			else if (u->getType() == UnitTypes::Protoss_Assimilator && gasMap.find(u) == gasMap.end())
 			{
-				gasMap.emplace(u, 0);			
+				gasMap.emplace(u, 0);
 			}
 
 			// If it's a building capable of production, send to production manager
@@ -1054,8 +1051,10 @@ void McRave::onFrame()
 					{
 						mineralMap.emplace(r, 0);
 					}
-
-
+					/*if (myMinerals.find(r) == myMinerals.end())
+					{
+						storeMineral(r, myMinerals);
+					}*/
 				}
 				if (r->getType() == UnitTypes::Resource_Vespene_Geyser && r->getDistance(r->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition()) < 320)
 				{
@@ -1064,6 +1063,10 @@ void McRave::onFrame()
 					{
 						geysers.push_back(r);
 					}
+					/*if (myGas.find(r) == myGas.end())
+					{
+						storeGas(r, myGas);
+					}*/
 				}
 			}
 		}

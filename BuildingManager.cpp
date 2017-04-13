@@ -23,7 +23,7 @@ TilePosition nexusManager()
 
 TilePosition cannonManager(TilePosition base)
 {
-	// Get angle of mineral line	
+	// Get average of minerals	
 	int avgX = 0, avgY = 0, size = 0;
 	for (auto m : Broodwar->getUnitsInRadius(Position(base), 320, Filter::IsMineralField))
 	{
@@ -82,7 +82,7 @@ TilePosition buildingManager(UnitType building)
 
 bool canBuildHere(UnitType building, TilePosition buildTilePosition)
 {
-	// TEMPEORARY CHANGES:
+	// TEMPORARY CHANGES:
 	// +1 and -1 on end/start
 	// mod 2 x mod 3 y
 	// Start at one tile vertically above the build site and check the tile width and height + 1 to make sure units can move past and dont get stuck
@@ -294,7 +294,7 @@ void productionManager(Unit building)
 				}
 			}
 			// If we need a Dragoon
-			if (unitScore[UnitTypes::Protoss_Dragoon] >= unitScore[UnitTypes::Protoss_Zealot] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1)
+			if (unitScore[UnitTypes::Protoss_Dragoon] >= unitScore[UnitTypes::Protoss_Zealot] && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1)
 			{
 				// If we can afford a Dragoon, train
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && supply + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
@@ -365,8 +365,7 @@ void productionManager(Unit building)
 					idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Observer);
 				}
 			}
-			// If we need a Reaver
-			//else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) <= Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) >= 3)
+			// If we need a Reaver			
 			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) < 10 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0)
 			{
 				// If we can afford a Reaver, train, otherwise, add to priority

@@ -563,6 +563,27 @@ double unitGetVisibleStrength(Unit unit)
 	return hp * unitGetStrength(unit->getType());
 }
 
+double unitGetTrueRange(UnitType unitType, Player who)
+{
+	// Ranged upgrade check
+	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
+	{
+		return 192.0;
+	}	
+	else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
+	{
+		return 160.0;
+	}
+	else if (unitType == UnitTypes::Protoss_Reaver)
+	{
+		return 256.0;
+	}
+	else
+	{
+		return double(unitType.groundWeapon().maxRange());
+	}
+}
+
 #pragma endregion
 
 #pragma region Targeting
@@ -1097,58 +1118,23 @@ void corsairManager(Unit unit)
 
 int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
 {
-	//int before = enemyUnits.size();
-	//UnitInfo newUnit(unit->getType(), unit->getPosition());
-	//enemyUnits.emplace(unit->getID(), newUnit);
-	//int after = enemyUnits.size();
-
-	//if (!unit->isVisible() && Broodwar->isVisible(TilePosition(enemyUnits.at(unit->getID()).getPosition())))
-	//{
-	//	enemyUnits.at(unit->getID()).setPosition(Positions::None);
-	//}
-
-	//// If size is equal, check type
-	//if (before == after)
-	//{
-	//	// If type changed, new unit discovered, add strength and return 1
-	//	if (enemyUnits.at(unit->getID()).getUnitType() != unit->getType() && unit->isVisible())
-	//	{
-	//		enemyUnits.at(unit->getID()).setUnitType(unit->getType());
-	//		return 1;
-	//	}
-	//	// If position changed, update for our local calculation usage
-	//	if (enemyUnits.at(unit->getID()).getPosition() != unit->getPosition() && unit->isVisible())
-	//	{
-	//		enemyUnits.at(unit->getID()).setPosition(unit->getPosition());
-	//	}
-	//	return 0;
-	//}
-	//return 1;
-
-	if (unit->exists())
-	{
-		UnitInfo newUnit(unit->getType(), unit-> getPosition(), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
-		enemyUnits[unit] = newUnit;
-	}
-	else
-	{
-		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetStrength(unit->getType()), unit->getLastCommand().getType());
-		enemyUnits[unit] = newUnit;
-	}	
+	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
+	enemyUnits[unit] = newUnit;	
 	return 0;
 }
 int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 {
-	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
+	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetTrueRange(unit->getType(), Broodwar->self()), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
 	allyUnits[unit] = newUnit;
 	return 0;
 }
 
-UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, UnitCommandType newCommand)
+UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand)
 {
 	unitType = newType;
 	unitPosition = newPosition;
 	unitStrength = newStrength;
+	unitRange = newRange;
 	unitCommand = newCommand;
 }
 UnitInfo::UnitInfo()
@@ -1177,6 +1163,10 @@ UnitType UnitInfo::getUnitType() const
 double UnitInfo::getStrength() const
 {
 	return unitStrength;
+}
+double UnitInfo::getRange() const
+{
+	return unitRange;
 }
 double UnitInfo::getLocal() const
 {
@@ -1210,6 +1200,10 @@ void UnitInfo::setStrength(double newStrength)
 void UnitInfo::setLocal(double newUnitLocal)
 {
 	unitLocal = newUnitLocal;
+}
+void UnitInfo::setRange(double newRange)
+{
+	unitRange = newRange;
 }
 void UnitInfo::setCommand(UnitCommandType newCommand)
 {

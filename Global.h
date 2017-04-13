@@ -10,7 +10,7 @@
 #include "UnitManager.h"
 #include "UnitScore.h"
 #include "NexusManager.h"
-#include "ResourceManager.h"
+
 
 // Include standard libraries that are needed
 #include <vector>
@@ -64,7 +64,8 @@ vector<Unit> combatProbe;
 bool saturated = false, gasNeeded = false;
 
 // Resource Manager Variables
-map <Unit, ResourceInfo> myResources;
+map <Unit, ResourceInfo> myMinerals;
+map <Unit, ResourceInfo> myGas;
 vector <Unit> geysers;
 map <Unit, int> gasMap;
 map <Unit, int> mineralMap;
