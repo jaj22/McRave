@@ -122,7 +122,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		return 1;
 	}
 
-	if (unit->getDistance(target) < unit->getType().groundWeapon().maxRange() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0)
+	if (unit->getDistance(targetPosition) < unit->getType().groundWeapon().maxRange() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0)
 	{
 		return 1;
 	}
@@ -274,7 +274,7 @@ void unitGetCommand(Unit unit)
 
 
 	// TESTING -- Getting target through class
-	target = allyUnits[unit].getTarget();	
+	//target = allyUnits[unit].getTarget();	
 
 	if (!target)
 	{
@@ -355,10 +355,6 @@ void unitGetCommand(Unit unit)
 		if (enemyBasePositions.size() > 0 && allyTerritory.size() > 0)
 		{
 			// Pick random enemy bases to attack (cap at ~3-4 units?)
-
-
-
-
 			closestD = 1000.0;
 			closestP = defendHere.at(0);
 			// Check if we are close enough to any defensive position
@@ -938,8 +934,7 @@ void shuttleManager(Unit unit)
 			{
 				Position correctedFleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer && !Filter::IsWorker && Filter::CanAttack));
 				if (correctedFleePosition != BWAPI::Positions::None)
-				{
-					//Broodwar->drawLineMap(unit->getPosition(), correctedFleePosition, playerColor);
+				{					
 					unit->move(correctedFleePosition);
 				}
 			}

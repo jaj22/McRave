@@ -39,7 +39,7 @@ void desiredBuildings()
 		lastpd = pylonDesired;
 	}
 
-	forgeDesired = min(1,Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)/2);
+	forgeDesired = min(1,Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)/3);
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
@@ -61,7 +61,7 @@ void desiredBuildings()
 	}
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && getEarlyBuild && idleGates.size() == 0)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && idleGates.size() == 0)
 	{		
 		getEarlyBuild = false;
 		getMidBuild = true;
