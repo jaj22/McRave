@@ -14,9 +14,10 @@ class UnitInfo {
 	double unitStrength, unitLocal, unitRange;
 	UnitCommandType unitCommand;
 	Unit target;
+	int deadFrame;
 public:
 	UnitInfo();
-	UnitInfo(UnitType, Position, double, double, UnitCommandType);
+	UnitInfo(UnitType, Position, double, double, UnitCommandType, int);
 	~UnitInfo();
 
 	// Accessors
@@ -28,6 +29,7 @@ public:
 	double getRange() const;
 	UnitCommandType getCommand() const;
 	Unit getTarget() const;
+	int getDeadFrame() const;
 
 	// Mutators
 	void setUnitType(UnitType);
@@ -38,6 +40,7 @@ public:
 	void setRange(double);
 	void setCommand(UnitCommandType);
 	void setTarget(Unit);
+	void setDeadFrame(int);
 };
 
 

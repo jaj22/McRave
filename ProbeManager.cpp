@@ -11,7 +11,7 @@ void assignCombat(Unit probe)
 		combatProbe.push_back(probe);
 	}
 	return;
-	
+
 }
 
 void unAssignCombat(Unit probe)
@@ -21,71 +21,70 @@ void unAssignCombat(Unit probe)
 	return;
 }
 
-void assignGas(Unit probe, Unit gas)
+Unit assignGas(Unit probe, Unit gas)
 {
-	// If Probe is assigned to gas, match with Assimilator that needs the Probe
-	gasProbeMap[probe] = gas;
-	probe->gather(gas);
-	return;
+	// If Probe is assigned to gas, match with Assimilator that needs the Probe	
+	return gas;
 }
 
-void assignMinerals(Unit probe, Unit mineral)
+Unit assignMinerals(Unit probe, Unit mineral)
 {
-	// If Probe is assigned to minerals, match with mineral field that needs the Probe
-	mineralProbeMap[probe].first = mineral;
-	mineralProbeMap[probe].second = mineral->getPosition();
-	probe->gather(mineral);
-	return;
+	// If Probe is assigned to minerals, match with mineral field that needs the Probe	
+	return mineral;
 }
 
-void assignProbe(Unit probe)
+Unit assignProbe(Unit probe)
 {
-	int cnt = 1;	
-	// See if we need gas probes
-		for (auto gas : gasMap)
-		{
-			if (gas.second < 3)
-			{
-				assignGas(probe, gas.first);
-				gasMap[gas.first] = gas.second + 1;
-				return;
-			}
-		}
+	int cnt = 1;
+	//// See if we need gas probes
+	//for (auto gas : gasMap)
+	//{
+	//	if (gas.second < 3)
+	//	{
+	//		assignGas(probe, gas.first);
+	//		gasMap[gas.first] = gas.second + 1;
+	//		return;
+	//	}
+	//}
 
-		/*for (auto gas : myGas)
-		{
-			if (gas.second.getGathererCount() < 3)
-			{
-				assignGas(probe, gas.first);
-				gas.second.setGathererCount(gas.second.getGathererCount() + 1);
-			}
-		}*/
-	
-
-	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
-	// IMPLEMENTING -- Split probes when an expansion finishes?
-	gasNeeded = false;
-	while (cnt <= 2)
+	for (auto &gas : myGas)
 	{
-		for (auto mineral : mineralMap)
+		if (gas.second.getUnitType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
 		{
-			// First round on minerals
-			if (mineral.second < cnt)
-			{
-				saturated = false;				
-				assignMinerals(probe, mineral.first);
-				mineralMap[mineral.first] = cnt;
-				return;
-			}
-		}
-		cnt++;	
-		// If we have at least 1 Probe on every mineral, we can get another gas
-		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && Broodwar->self()->gas() < 50)
-		{
-			gasNeeded = true;
+			gas.second.setGathererCount(gas.second.getGathererCount() + 1);
+			return assignGas(probe, gas.first);
 		}
 	}
-	
+
+
+	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
+	// IMPLEMENTING -- Split probes when an expansion finishes?	
+	while (cnt <= 2)
+	{
+		//for (auto mineral : mineralMap)
+		//{
+		//	// First round on minerals
+		//	if (mineral.second < cnt)
+		//	{
+		//		saturated = false;
+		//		assignMinerals(probe, mineral.first);
+		//		mineralMap[mineral.first] = cnt;
+		//		return;
+		//	}
+		//}
+
+		for (auto &mineral : myMinerals)
+		{
+			if (mineral.second.getGathererCount() < cnt)
+			{
+				saturated = false;
+				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
+				return assignMinerals(probe, mineral.first);
+			}
+		}
+		cnt++;
+	}
+
 	// If we reached the enemy of our map and no Probes were assigned, we are saturated and don't need any more Probes
 	saturated = true;
 
@@ -94,7 +93,7 @@ void assignProbe(Unit probe)
 	{
 		probe->gather(probe->getClosestUnit(Filter::IsMineralField));
 	}
-	return;
+	return nullptr;
 }
 
 // Constructors
@@ -108,7 +107,7 @@ ResourceInfo::~ResourceInfo()
 {
 
 }
-ResourceInfo::ResourceInfo(int newGathererCount, int newRemainingResources, Position newPosition)
+ResourceInfo::ResourceInfo(int newGathererCount, int newRemainingResources, Position newPosition, UnitType newUnitType)
 {
 	gathererCount = newGathererCount;
 	remainingResources = newRemainingResources;
@@ -128,6 +127,10 @@ Position ResourceInfo::getPosition() const
 {
 	return resourcePosition;
 }
+UnitType ResourceInfo::getUnitType() const
+{
+	return unitType;
+}
 
 // Mutators
 void ResourceInfo::setGathererCount(int newGathererCount)
@@ -142,14 +145,67 @@ void ResourceInfo::setPosition(Position newResourcePosition)
 {
 	resourcePosition = newResourcePosition;
 }
+void ResourceInfo::setUnitType(UnitType newUnitType)
+{
+	unitType = newUnitType;
+}
 
 // Resource updating
-void storeResource(Unit resource, map <Unit, ResourceInfo>& myResources)
+void storeMineral(Unit resource, map <Unit, ResourceInfo>& myMinerals)
 {
 	// Each resource has a probe count, can update when probe assigned/unassigned (death or otherwise)
 	// Position should always be constant
 	// Remaining resources can be updated every frame along with resource iterator (can monitor if expansions are needed easier)
 
 	// If this is a new unit, initialize at 0 workers, initial resources and find position
-	ResourceInfo newResource(0, resource->getInitialResources(), resource->getPosition());
+	ResourceInfo newResource(0, resource->getInitialResources(), resource->getPosition(), resource->getType());
+	myMinerals[resource] = newResource;
+	return;
+}
+
+void storeGas(Unit resource, map <Unit, ResourceInfo>& myGas)
+{
+	// Each resource has a probe count, can update when probe assigned/unassigned (death or otherwise)
+	// Position should always be constant
+	// Remaining resources can be updated every frame along with resource iterator (can monitor if expansions are needed easier)
+
+	// If this is a new unit, initialize at 0 workers, initial resources and find position
+	ResourceInfo newResource(0, resource->getInitialResources(), resource->getPosition(), resource->getType());
+	myGas[resource] = newResource;
+	return;
+}
+
+// Constructors
+ProbeInfo::ProbeInfo()
+{
+	target = nullptr;
+}
+ProbeInfo::~ProbeInfo()
+{
+
+}
+ProbeInfo::ProbeInfo(Unit newTarget)
+{
+	target = newTarget;
+}
+
+// Accessors
+Unit ProbeInfo::getTarget() const
+{
+	return target;
+}
+
+// Mutators
+void ProbeInfo::setTarget(Unit newTarget)
+{
+	target = newTarget;
+}
+
+// Probe updating
+
+void storeProbe(Unit probe, map <Unit, ProbeInfo>& myProbes)
+{
+	ProbeInfo newProbe(assignProbe(probe));
+	myProbes[probe] = newProbe;
+	return;
 }

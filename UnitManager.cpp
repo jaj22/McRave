@@ -114,18 +114,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	double thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
 	Position targetPosition = enemyUnits[target].getPosition();
-	int radius = min(512, 320 + supply * 2);
-
-	// Force Zealots to stay on Tanks
-	if (unit->getType() == UnitTypes::Protoss_Zealot && (target->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || target->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(target) < 128)
-	{
-		return 1;
-	}
-
-	if (unit->getDistance(targetPosition) < unit->getType().groundWeapon().maxRange() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0)
-	{
-		return 1;
-	}
+	int radius = min(512, 320 + supply * 2);	
 
 	if (unit->getDistance(targetPosition) > 512)
 	{
@@ -135,6 +124,10 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	// Check every enemy unit being in range of the target
 	for (auto enemy : enemyUnits)
 	{
+		if (enemy.second.getUnitType().isWorker())
+		{
+			continue;
+		}
 		Unit u = enemy.first;
 		thisUnit = 0.0;		
 		// If a unit is within range of the target, add to local strength
@@ -231,6 +224,17 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		}
 	}
 
+	// Force Zealots to stay on Tanks
+	if (unit->getType() == UnitTypes::Protoss_Zealot && target->exists() && (enemyUnits[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemyUnits[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
+	{
+		return 1;
+	}
+
+	if (unit->getDistance(targetPosition) < unit->getType().groundWeapon().maxRange() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0)
+	{
+		return 1;
+	}
+
 	// If most recent local ally higher, return attack
 	if (allyLocalStrength >= enemyLocalStrength)
 	{
@@ -276,7 +280,7 @@ void unitGetCommand(Unit unit)
 	// TESTING -- Getting target through class
 	//target = allyUnits[unit].getTarget();	
 
-	if (!target)
+	if (!target || target == nullptr)
 	{
 		return;
 	}	 
@@ -319,11 +323,21 @@ void unitGetCommand(Unit unit)
 					return;
 				}
 			}
+			if (target && target->exists() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] > 0)
+			{
+				Position fleePosition = unitFlee(unit, target);
+				if (fleePosition != Positions::None)
+				{
+					unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
+				}
+				return;
+			}
+
 			for (auto position : defendHere)
 			{
 				if (unit->getDistance(position) < 320 && find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
 				{
-					Position fleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy));
+					Position fleePosition = unitFlee(unit, target);
 					if (fleePosition != Positions::None)
 					{
 						unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
@@ -350,7 +364,7 @@ void unitGetCommand(Unit unit)
 	If 1, send units into a frontal attack.	*/
 	int stratG = unitGetGlobalStrategy();
 
-	if (unitGetGlobalStrategy() == 0)
+	if (stratG == 0)
 	{
 		if (enemyBasePositions.size() > 0 && allyTerritory.size() > 0)
 		{
@@ -391,14 +405,14 @@ void unitGetCommand(Unit unit)
 	}
 
 	// Check if we should attack
-	if (unitGetGlobalStrategy() == 1)
+	if (stratG == 1)
 	{
-		if (target && target->exists())
+		if (target && target->exists() && unit->getDistance(target) < 512)
 		{
 			unitMicro(unit, target);
 			return;
-		}
-		unit->move(enemyBasePositions.front());
+		}		
+		unit->attack(enemyBasePositions.front());
 		return;
 	}
 }
@@ -487,10 +501,10 @@ double unitGetStrength(UnitType unitType)
 		// Assume strength doubled for units that can use Stim to prevent poking into armies frequently
 		if (stimResearched && (unitType == UnitTypes::Terran_Marine || unitType == UnitTypes::Terran_Firebat))
 		{
-			return 20 * ((1 + (range / 320.0)) * damage * (hp / 100)) * speed;
+			return 20.0 * (1.0 + (range / 320.0)) * damage * (hp / 100.0) /** speed*/;
 		}
 
-		return 10 * (1 + (range / 320.0)) * damage * (hp / 100) * speed;
+		return 10.0 * (1.0 + (range / 320.0)) * damage * (hp / 100.0) /** speed*/;
 	}
 	if (unitType.isWorker())
 	{
@@ -564,7 +578,7 @@ double unitGetVisibleStrength(Unit unit)
 }
 
 double unitGetTrueRange(UnitType unitType, Player who)
-{
+{	
 	// Ranged upgrade check
 	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 	{
@@ -577,11 +591,19 @@ double unitGetTrueRange(UnitType unitType, Player who)
 	else if (unitType == UnitTypes::Protoss_Reaver)
 	{
 		return 256.0;
-	}
-	else
+	}		
+	else if (unitType == UnitTypes::Terran_Bunker)
 	{
-		return double(unitType.groundWeapon().maxRange());
+		if (who->getUpgradeLevel(UpgradeTypes::U_238_Shells))
+		{
+			return 192.0;
+		}
+		else
+		{
+			return 160.0;
+		}
 	}
+	return double(unitType.groundWeapon().maxRange());	
 }
 
 #pragma endregion
@@ -592,7 +614,7 @@ Unit getTarget(Unit unit)
 {
 	double highest = 0.0, thisUnit = 0.0;
 
-	Unit target = unit;
+	Unit target = nullptr;
 
 	if (enemyAggresion && Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy, 640))
 	{
@@ -601,7 +623,7 @@ Unit getTarget(Unit unit)
 
 	for (auto u : enemyUnits)
 	{
-		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
+		double distance = 0.1 + double(unit->getDistance(u.second.getPosition()));
 
 		if (u.first->exists())
 		{
@@ -610,6 +632,11 @@ Unit getTarget(Unit unit)
 		else
 		{
 			thisUnit = 0.1*unitGetStrength(u.second.getUnitType()) / distance;
+		}
+
+		if (u.second.getUnitType().isBuilding())
+		{
+			thisUnit = 0.1*thisUnit;
 		}
 
 		if (u.second.getUnitType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver))
@@ -625,8 +652,11 @@ Unit getTarget(Unit unit)
 		}
 	}
 
-	allyUnits[unit].setTarget(target);
-	allyUnits[unit].setTargetPosition(target->getPosition());
+	if (target)
+	{
+		allyUnits[unit].setTarget(target);
+		allyUnits[unit].setTargetPosition(enemyUnits[target].getPosition());
+	}
 
 	// The highest strength unit is returned
 	return target;
@@ -1118,18 +1148,18 @@ void corsairManager(Unit unit)
 
 int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
 {
-	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
+	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->self()), unit->getLastCommand().getType(), Broodwar->getFrameCount());
 	enemyUnits[unit] = newUnit;	
 	return 0;
 }
 int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 {
-	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetTrueRange(unit->getType(), Broodwar->self()), unitGetVisibleStrength(unit), unit->getLastCommand().getType());
+	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), Broodwar->getFrameCount());
 	allyUnits[unit] = newUnit;
 	return 0;
 }
 
-UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand)
+UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand, int newDeadFrame)
 {
 	unitType = newType;
 	unitPosition = newPosition;
@@ -1180,6 +1210,10 @@ Unit UnitInfo::getTarget() const
 {
 	return target;
 }
+int UnitInfo::getDeadFrame() const
+{
+	return deadFrame;
+}
 
 void UnitInfo::setUnitType(UnitType newUnitType)
 {
@@ -1212,6 +1246,10 @@ void UnitInfo::setCommand(UnitCommandType newCommand)
 void UnitInfo::setTarget(Unit newTarget)
 {
 	target = newTarget;
+}
+void UnitInfo::setDeadFrame(int newDeadFrame)
+{
+	deadFrame = newDeadFrame;
 }
 #pragma endregion
 

@@ -13,20 +13,17 @@ extern map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
 // External resource variables
 extern int queuedMineral, queuedGas, reservedMineral, reservedGas;
 extern vector<Unit> geysers;
-extern map <int, UnitType> idleBuildings;
-extern map <int, UnitType> idleGates;
-extern map <int, TechType> idleTech;
-extern map <int, UpgradeType> idleUpgrade;
 extern int mineralHeatmap[256][256];
 
 // Build Order variables
 extern bool terranBio;
 extern map <UnitType, double> unitScore;
 extern int supply;
+extern bool noZealots;
 
 // Function declarations
 TilePosition buildingManager(UnitType building);
 bool canBuildHere(UnitType building, TilePosition buildTilePosition);
-TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosition);
+TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosition, bool ignoreCond);
 void productionManager(Unit building);
-TilePosition cannonManager(TilePosition base);
+TilePosition cannonManager(TilePosition base, UnitType building);

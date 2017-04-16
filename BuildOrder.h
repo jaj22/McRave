@@ -15,10 +15,10 @@ extern vector<TilePosition> nextExpansion;
 extern vector<Position>enemyBasePositions;
 extern int supply; 
 
-// External expansion paramaters
+// External strategy paramaters
 extern int forceExpand, inactiveNexusCnt;
 extern vector<TilePosition> activeExpansion;
-extern bool saturated, gasNeeded;
+extern bool saturated, gasNeeded, noZealots;
 
 // External enemy build tracking
 extern bool enemyAggresion, scouting, terranBio;

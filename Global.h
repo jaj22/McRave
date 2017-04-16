@@ -5,6 +5,7 @@
 
 // Include other source files
 #include "BuildingManager.h"
+#include "ProductionManager.h"
 #include "BuildOrder.h"
 #include "ProbeManager.h"
 #include "UnitManager.h"
@@ -59,6 +60,9 @@ map <Unit, int> nexusCannonMap;
 // Probe Manager Variables
 map <Unit, Unit> gasProbeMap;
 map <Unit, pair<Unit, Position>> mineralProbeMap;
+
+map <Unit, ProbeInfo> myProbes;
+
 Unit scout;
 vector<Unit> combatProbe;
 bool saturated = false, gasNeeded = false;
@@ -92,6 +96,7 @@ bool terranBio = false;
 bool scouting = true;
 bool outsideBase = false;
 bool wallIn = false;
+bool noZealots = false;
 int forceExpand = 0;
 string currentStrategy;
 

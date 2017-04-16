@@ -5,6 +5,7 @@ bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
 
 // Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
 // Changes: Terran only runs 20 Nexus!
+// Make building desired into a class for easier storage
 
 void myBuildings()
 {
@@ -25,20 +26,9 @@ void myBuildings()
 }
 
 void desiredBuildings()
-{
+{	
 	// Pylon, Forge, Nexus
 	pylonDesired = min(22, (int)floor((supply / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
-
-	// jaj22 testing code
-	static int lastpd = -1;
-	if (pylonDesired > lastpd && pylonDesired <= 2) {
-		Broodwar->printf("Pylons: Have %i, want %i, supply %i\n",
-			Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired, supply);
-		Broodwar->sendText("Pylons: Have %i, want %i, supply %i\n",
-			Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon), pylonDesired, supply);
-		lastpd = pylonDesired;
-	}
-
 	forgeDesired = min(1,Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus)/3);
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
@@ -65,6 +55,7 @@ void desiredBuildings()
 	{		
 		getEarlyBuild = false;
 		getMidBuild = true;
+		noZealots = false;
 	}
 
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
@@ -79,11 +70,12 @@ void desiredBuildings()
 		getLateBuild = true;
 	}
 
-	// If not early build, gas is now based on whether we need more or not rather than a supply amount
-	if (!getEarlyBuild && gasNeeded)
-	{		
-		gasDesired = geysers.size();		
+	// If not early build, gas is now based on whether we need more or not rather than a supply amount	
+	if (!getEarlyBuild && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && Broodwar->self()->gas() < 50)
+	{
+		gasDesired = geysers.size();
 	}
+	
 }
 
 void getBuildOrder()
@@ -197,7 +189,10 @@ void midBuilds(int whichBuild)
 	case 3:
 		// -- 2 Nexus Reaver --
 		nexusDesired = max(2, nexusDesired);
-		roboDesired = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)/2);
+		if (Broodwar->self()->supplyUsed() >= 60)
+		{
+			roboDesired = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) / 2);
+		}
 		supportBayDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		currentStrategy.assign("Range Robo Expand");
 	}
@@ -251,6 +246,7 @@ void earlyBuilds(int whichBuild)
 		break;
 	case 1:
 		// -- 1 Gate Core --	
+		noZealots = true;
 		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
 		if (supply >= 20)
 		{
