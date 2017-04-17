@@ -102,11 +102,12 @@ string currentStrategy;
 
 // Heatmaps
 double allyStrength = 0.0, enemyStrength = 0.0;
-double allyHeatmap[256][256] = { { 0 } };
+double arbiterHeatmap[256][256] = { { 0 } };
 double enemyHeatmap[256][256] = { { 0 } };
 double airEnemyHeatmap[256][256] = { { 0 } }; 
 int shuttleHeatmap[256][256] = { { 0 } };
-int clusterHeatmap[256][256] = { { 0 } };
+int groundClusterHeatmap[256][256] = { { 0 } };
+int airClusterHeatmap[256][256] = { { 0 } };
 int tankClusterHeatmap[256][256] = { { 0 } };
 int mineralHeatmap[256][256] = { { 0 } };
 

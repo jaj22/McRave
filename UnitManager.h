@@ -58,7 +58,8 @@ extern vector <TilePosition> nextExpansion;
 extern double enemyHeatmap[256][256];
 extern double airEnemyHeatmap[256][256];
 extern int shuttleHeatmap[256][256];
-extern int clusterHeatmap[256][256];
+extern int groundClusterHeatmap[256][256];
+extern int airClusterHeatmap[256][256];
 extern int tankClusterHeatmap[256][256];
 extern double enemyStrength, allyStrength;
 
