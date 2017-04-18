@@ -122,55 +122,71 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	// Check every enemy unit being in range of the target
 	for (auto u : enemyUnits)
 	{
+		// Reset unit strength
+		thisUnit = 0.0;
+
+		// Ignore workers, keep buildings (reinforcements and static defenses)
 		if (u.second.getUnitType().isWorker())
 		{
 			continue;
 		}
-		thisUnit = 0.0;
+
 		// If a unit is within range of the target, add to local strength
-		if (u.second.getPosition().getDistance(targetPosition) < radius && (eLarge > 0 || eMedium > 0 || eSmall > 0))
+		if (u.second.getPosition().getDistance(targetPosition) < radius)
 		{
-			// If unit is cloaked or burrowed and not detected, drastically increase strength
-			if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
+			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
 			{
-				thisUnit = 20 * u.second.getStrength();
-			}
-			else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
-			{
-				thisUnit = u.second.getStrength() * (((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
-			}
-			else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
-			{
-				thisUnit = u.second.getStrength() * (((double(aLarge) * 0.25) + (double(aMedium) * 0.5) + (double(aSmall) * 1.0)) / double(aLarge + aMedium + aSmall));
+				// If unit is cloaked or burrowed and not detected, drastically increase strength
+				if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
+				{
+					thisUnit = 20 * u.second.getStrength();
+				}
+				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+				{
+					thisUnit = u.second.getStrength() * (((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
+				}
+				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
+				{
+					thisUnit = u.second.getStrength() * (((double(aLarge) * 0.25) + (double(aMedium) * 0.5) + (double(aSmall) * 1.0)) / double(aLarge + aMedium + aSmall));
+				}
+				else
+				{
+					thisUnit = u.second.getStrength();
+				}
 			}
 			else
 			{
 				thisUnit = u.second.getStrength();
 			}
-		}
-		else
-		{
-			thisUnit = u.second.getStrength();
-		}
-		// If enemy hasn't died, add to enemy. Otherwise, partially add to ally
-		if (u.second.getDeadFrame() == 0)
-		{
-			enemyLocalStrength += thisUnit;
-		}
-		else
-		{		
-			allyLocalStrength += unitGetStrength(u.second.getUnitType()) * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
+			if (u.second.getDeadFrame() == 0)
+			{
+				enemyLocalStrength += thisUnit;
+			}
+			else
+			{
+				allyLocalStrength += unitGetStrength(u.second.getUnitType()) * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			}
 		}
 	}
-	
+
 	// Check every ally being in range of the target
 	for (auto u : allyUnits)
 	{
-		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding() && u.second.getPosition().getDistance(unit->getPosition()) < radius)
+		// Reset unit strength
+		thisUnit = 0.0;
+
+		// Ignore workers and buildings
+		if (u.second.getUnitType().isWorker() || u.second.getUnitType().isBuilding())
+		{
+			continue;
+		}
+
+		// If a unit is within the range of the ally unit, add to local strength
+		if (u.second.getPosition().getDistance(unit->getPosition()) < radius)
 		{
 			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
 			{
-				thisUnit = 0.0;
 				// If shuttle, add units inside
 				if (u.second.getUnitType() == UnitTypes::Protoss_Shuttle && u.first->getLoadedUnits().size() > 0)
 				{
@@ -201,18 +217,20 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 			{
 				thisUnit = u.second.getStrength();
 			}
-		}
-		// If ally hasn't died, add to ally. Otherwise, partially add to enemy
-		if (u.second.getDeadFrame() == 0)
-		{
-			allyLocalStrength += thisUnit;
-		}
-		else
-		{
-			enemyLocalStrength += unitGetStrength(u.second.getUnitType()) * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+
+			// If ally hasn't died, add to ally. Otherwise, partially add to enemy local
+			if (u.second.getDeadFrame() == 0)
+			{
+				allyLocalStrength += thisUnit;
+			}
+			else
+			{
+				enemyLocalStrength += unitGetStrength(u.second.getUnitType()) * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			}
 		}
 	}
 
+	// Store the difference of strengths 
 	allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 
 	// If we are in ally territory and have a target, force to fight	
@@ -229,7 +247,6 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	{
 		return 1;
 	}
-
 
 	// If unit is in range of a target and not currently threatened, attack instead of running
 	if (unit->getDistance(targetPosition) <= allyUnits[unit].getRange() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0)

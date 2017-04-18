@@ -12,14 +12,14 @@ void productionManager(Unit building)
 			{
 				building->upgrade(UpgradeTypes::Protoss_Ground_Weapons);
 			}
-			if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Plasma_Shields.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Plasma_Shields.gasPrice() + queuedGas)
-			{
-				building->upgrade(UpgradeTypes::Protoss_Plasma_Shields);
-			}
 			if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Ground_Armor.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Ground_Armor.gasPrice() + queuedGas)
 			{
 				building->upgrade(UpgradeTypes::Protoss_Ground_Armor);
 			}
+			if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Plasma_Shields.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Plasma_Shields.gasPrice() + queuedGas)
+			{
+				building->upgrade(UpgradeTypes::Protoss_Plasma_Shields);
+			}			
 			break;
 		case UnitTypes::Enum::Protoss_Cybernetics_Core:
 
@@ -38,6 +38,8 @@ void productionManager(Unit building)
 			}
 			break;
 		case UnitTypes::Enum::Protoss_Robotics_Support_Bay:
+
+			// If we need Reaver damage or capacity upgrades
 			if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) > 0)
 			{
 				if (Broodwar->self()->minerals() >= UpgradeTypes::Scarab_Damage.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Scarab_Damage.gasPrice() + queuedGas)
@@ -86,7 +88,7 @@ void productionManager(Unit building)
 				}
 			}
 			// If we need a Dragoon
-			if (unitScore[UnitTypes::Protoss_Dragoon] >= unitScore[UnitTypes::Protoss_Zealot] && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1)
+			if (unitScore[UnitTypes::Protoss_Dragoon] >= unitScore[UnitTypes::Protoss_Zealot] && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 			{
 				// If we can afford a Dragoon, train
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && supply + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
@@ -121,7 +123,9 @@ void productionManager(Unit building)
 			{
 			building->train(UnitTypes::Protoss_Carrier);
 			}*/
-			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter) < 3)
+
+			// Set as visible so it saves resources for Arbiters if we're teching to them
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter) < 3)
 			{
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Arbiter.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Arbiter.gasPrice() + queuedGas)
 				{
@@ -158,7 +162,7 @@ void productionManager(Unit building)
 				}
 			}
 			// If we need a Reaver			
-			else if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) < 10 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0)
+			else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) < 10)
 			{
 				// If we can afford a Reaver, train, otherwise, add to priority
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + queuedGas)
@@ -186,6 +190,9 @@ void productionManager(Unit building)
 			//	}
 			//}
 			break;
+
+
+
 			// Tech Research
 		case UnitTypes::Enum::Protoss_Templar_Archives:
 			if (!Broodwar->self()->hasResearched(TechTypes::Psionic_Storm))
@@ -198,6 +205,18 @@ void productionManager(Unit building)
 				else
 				{
 					idleTech.emplace(building->getID(), TechTypes::Psionic_Storm);
+				}
+			}
+			else if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Khaydarin_Amulet) == 0)
+			{
+				if (Broodwar->self()->minerals() >= UpgradeTypes::Khaydarin_Amulet.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Khaydarin_Amulet.gasPrice())
+				{
+					building->upgrade(UpgradeTypes::Khaydarin_Amulet);
+					idleUpgrade.erase(building->getID());
+				}
+				else
+				{
+					idleUpgrade.emplace(building->getID(), UpgradeTypes::Khaydarin_Amulet);
 				}
 			}
 			break;

@@ -211,7 +211,7 @@ void lateBuilds(int whichBuild)
 		currentStrategy.assign("Arbiter and Templar Tech");
 		break;
 	case 1:
-		// -- High Templars --
+		// -- High Templars and Dark Templars --
 		citadelDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
 		archivesDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
 		currentStrategy.assign("Templar Tech");

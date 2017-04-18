@@ -321,15 +321,15 @@ void McRave::onFrame()
 
 #pragma region EnemyUnits
 
+	// Reset variables for storing sizes and strength
 	eSmall = 0, eMedium = 0, eLarge = 0;
 	aSmall = 0, aMedium = 0, aLarge = 0;
 	enemyStrength = 0.0, allyStrength = 0.0;
 	outsideBase = false;
 
-	// Store enemy units
 	for (auto u : Broodwar->enemy()->getUnits())
 	{
-		// Update unit in class
+		// Update unit
 		if (u && u->exists() && u->isCompleted())
 		{
 			storeEnemyUnit(u, enemyUnits);
@@ -350,7 +350,6 @@ void McRave::onFrame()
 			invisibleUnits.erase(u.first);
 		}
 	}
-
 
 	// Stored enemy units iterator
 	for (auto &u : enemyUnits)
@@ -427,63 +426,39 @@ void McRave::onFrame()
 		}
 #pragma endregion
 #pragma region EnemyInfo
-		// Update strength if not null ptr and exists
-		if (u.first && u.first->exists())
+
+		// Ensure that the unit is an enemy unit
+		if (u.first && u.first->exists() && u.first->getPlayer() != Broodwar->enemy())
 		{
-			u.second.setStrength(unitGetVisibleStrength(u.first));
-			// Ensure that the unit is an enemy unit
-			if (u.first->getPlayer() != Broodwar->enemy())
+			enemyUnits.erase(u.first);
+			break;
+		}
+
+		// If deadframe is 0, unit is alive still
+		if (u.second.getDeadFrame() == 0)
+		{
+			// If tile is visible but unit is not, remove position
+			if (!u.first->exists() && Broodwar->isVisible(TilePosition(u.second.getPosition())))
 			{
-				enemyUnits.erase(u.first);
-				break;
+				u.second.setPosition(Positions::None);
 			}
-		}
 
-		// If tile is visible but unit is not, remove position
-		if (u.second.getDeadFrame() == 0 && !u.first->exists() && Broodwar->isVisible(TilePosition(u.second.getPosition())))
-		{
-			u.second.setPosition(Positions::None);
-		}
-
-		// Store enemy unit strength if necessary
-		if (u.second.getDeadFrame() == 0 && (u.second.getUnitType().isBuilding() && u.second.getStrength() > 1.0 || !u.second.getUnitType().isWorker() || (u.first->exists() && find(allyTerritory.begin(), allyTerritory.end(), getRegion(u.first->getTilePosition())) != allyTerritory.end())))
-		{
-			// Add composition and strength
-			enemyComposition[u.second.getUnitType()] += 1;
-			enemyStrength += u.second.getStrength();
-
-			// Drawing
-			if (masterDraw && calculationDraw)
+			// Strength based calculations ignore workers and buildings
+			if (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker() || u.first->exists() && find(allyTerritory.begin(), allyTerritory.end(), getRegion(u.first->getTilePosition())) != allyTerritory.end())
 			{
-				Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getStrength());
-			}
-			Broodwar->drawCircleMap(u.second.getPosition(), u.second.getUnitType().width() / 2, Broodwar->enemy()->getColor());
-		}
+				// Add composition and strength
+				enemyComposition[u.second.getUnitType()] += 1;
+				enemyStrength += u.second.getStrength();
 
-		// If unit has been dead for over 500 frames, erase it and deconstruct
-		else if (u.second.getDeadFrame() != 0)
-		{
-			if (u.second.getDeadFrame() + 500 < Broodwar->getFrameCount())
-			{
-				//enemyUnits[u.first].~UnitInfo();
-				enemyUnits.erase(u.first);
+				// Drawing
+				if (masterDraw)
+				{
+					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getStrength());
+					Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getUnitType().width() / 2, u.second.getUnitType().height() / 2, Broodwar->enemy()->getColor());
+				}
 			}
-			else
-			{
-				allyStrength += unitGetStrength(u.second.getUnitType()) * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-				Broodwar->drawTextMap(u.second.getPosition(), "%d", u.second.getDeadFrame());
-			}
-		}
 
-		// If the unit is invisible and not detected, store the unit
-		if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
-		{
-			invisibleUnits[u.first] = u.first->getPosition();
-		}
-
-		// Regardless of visibility, if it's not a worker or building, store the unit size type
-		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
-		{
+			// Store size of unit
 			if (u.second.getUnitType().size() == UnitSizeTypes::Small)
 			{
 				eSmall++;
@@ -497,6 +472,30 @@ void McRave::onFrame()
 				eLarge++;
 			}
 		}
+
+		// If unit is dead
+		else if (u.second.getDeadFrame() != 0)
+		{
+			// If dead for over 500 frames, erase
+			if (u.second.getDeadFrame() + 500 < Broodwar->getFrameCount())
+			{
+				enemyUnits[u.first].~UnitInfo();
+				enemyUnits.erase(u.first);
+			}
+			// Else add a portion of the strength to ally strength
+			else
+			{
+				allyStrength += unitGetStrength(u.second.getUnitType()) * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+				Broodwar->drawTextMap(u.second.getPosition(), "%d", Broodwar->getFrameCount() - u.second.getDeadFrame());
+			}
+		}
+
+		// If the unit is invisible and not detected, store the unit
+		if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
+		{
+			invisibleUnits[u.first] = u.first->getPosition();
+		}
+
 #pragma endregion
 	}
 
@@ -513,15 +512,7 @@ void McRave::onFrame()
 		unitScoreUpdate(t.first, t.second);
 		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
 		{
-			if (t.first == UnitTypes::Terran_Bunker)
-			{
-				forceExpand = 1;
-			}
-			if (t.first == UnitTypes::Zerg_Sunken_Colony && t.second >= 2)
-			{
-				forceExpand = 1;
-			}
-			if (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2)
+			if (t.first == UnitTypes::Terran_Bunker || (t.first == UnitTypes::Zerg_Sunken_Colony && t.second >= 2) || (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2))
 			{
 				forceExpand = 1;
 			}
@@ -547,8 +538,6 @@ void McRave::onFrame()
 #pragma endregion
 
 #pragma region AllyUnits
-
-
 	for (auto u : Broodwar->self()->getUnits())
 	{
 		// Check if we are outside our base
@@ -560,12 +549,6 @@ void McRave::onFrame()
 			}
 		}
 
-		// Return if not latency frame
-		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
-		{
-			continue;
-		}
-
 		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, not powered or not completed
 		if (!u || !u->exists() || u->isLockedDown() || u->isMaelstrommed() || u->isStasised() || !u->isPowered() || !u->isCompleted())
 		{
@@ -575,9 +558,16 @@ void McRave::onFrame()
 		{
 			continue;
 		}
+		// Update unit
 		else
 		{
 			storeAllyUnit(u, allyUnits);
+		}
+
+		// Return if not latency frame
+		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
+		{
+			continue;
 		}
 
 		// Skip loaded/stuck units otherwise
@@ -853,47 +843,61 @@ void McRave::onFrame()
 		}
 #pragma endregion
 #pragma region AllyInfo			
-
-		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding() && u.second.getDeadFrame() == 0)
+		// If deadframe is 0, unit is alive still
+		if (u.second.getDeadFrame() == 0)
 		{
-			// Update position and strength
-			u.second.setPosition(u.first->getPosition());
-			u.second.setStrength(unitGetVisibleStrength(u.first));			
-			allyStrength += allyUnits[u.first].getStrength();
-			
-			Broodwar->drawTextMap(u.second.getPosition(), "%.2f\n%s", u.second.getLocal(), u.second.getCommand().c_str());
-			if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None)
+			// Strength based calculations ignore workers and buildings
+			if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
 			{
-				Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), playerColor);
-			}
-			// Store size types
-			if (u.second.getUnitType().size() == UnitSizeTypes::Small)
-			{
-				aSmall++;
-			}
-			else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
-			{
-				aMedium++;
-			}
-			else
-			{
-				aLarge++;
+				// Add strength				
+				allyStrength += u.second.getStrength();
+
+				// Drawing
+				if (u.second.getLocal() < 0)
+				{
+					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), playerColor, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+				}
+				else if (u.second.getLocal() > 0)
+				{
+					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), Broodwar->enemy()->getColor() , "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+				}
+				else
+				{
+					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), Text::Enum::Default, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+				}
+				if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None)
+				{
+					Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), playerColor);
+				}
+				// Store size of unit
+				if (u.second.getUnitType().size() == UnitSizeTypes::Small)
+				{
+					aSmall++;
+				}
+				else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
+				{
+					aMedium++;
+				}
+				else
+				{
+					aLarge++;
+				}
 			}
 		}
 		else if (u.second.getDeadFrame() != 0)
 		{
 			if (u.second.getDeadFrame() + 500 < Broodwar->getFrameCount())
 			{
-				//allyUnits[u.first].~UnitInfo();
+				allyUnits[u.first].~UnitInfo();
 				allyUnits.erase(u.first);
 			}
 			else
 			{
-				enemyStrength += unitGetStrength(u.second.getUnitType()) * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+				enemyStrength += unitGetStrength(u.second.getUnitType()) * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 				Broodwar->drawTextMap(u.second.getPosition(), "%d", u.second.getDeadFrame());
 			}
 		}
-		
+
 #pragma endregion
 	}
 #pragma endregion
@@ -1046,7 +1050,7 @@ void McRave::onFrame()
 	}
 #pragma endregion
 
-#pragma region Unit Iterator
+#pragma region Probe Commands
 	// For each Probe mapped to gather minerals
 	for (auto u : myProbes)
 	{
@@ -1110,16 +1114,6 @@ void McRave::onFrame()
 		}
 	}
 
-	// All unit iterator
-	for (auto u : Broodwar->self()->getUnits())
-	{
-
-
-
-
-
-
-	}
 #pragma endregion
 }
 
@@ -1346,7 +1340,7 @@ void McRave::onSaveGame(std::string gameName)
 
 void McRave::onUnitComplete(BWAPI::Unit unit)
 {
-	
+
 }
 
 DWORD WINAPI AnalyzeThread()
