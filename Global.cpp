@@ -71,7 +71,7 @@ void McRave::onFrame()
 	{
 		if (territory.size() < 1)
 		{
-			allyTerritory.push_back(getRegion(playerStartingPosition));
+			allyTerritory.emplace(getRegion(playerStartingPosition));
 			territory = BWTA::getRegions();
 		}
 		// In each ally territory there are chokepoints to defend, find and store those chokepoints
@@ -87,14 +87,14 @@ void McRave::onFrame()
 					if (region == getRegion(playerStartingTilePosition))
 					{
 						// If chokepoint is really wide, such as Andromeda, this will add the Territory of the natural
-						if (Chokepoint->getWidth() > 200 && find(allyTerritory.begin(), allyTerritory.end(), region) == allyTerritory.end())
-						{
-							allyTerritory.push_back(Chokepoint->getRegions().first);
-							allyTerritory.push_back(Chokepoint->getRegions().second);
+						if (Chokepoint->getWidth() > 200)
+						{							
+							allyTerritory.emplace(Chokepoint->getRegions().first);
+							allyTerritory.emplace(Chokepoint->getRegions().second);
 						}
 					}
 					// Check if every chokepoint is connected to an ally territory, in which case add this to our territory (connecting regions)
-					if (find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().first) != allyTerritory.end() || find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().second) != allyTerritory.end())
+					if (allyTerritory.find(Chokepoint->getRegions().first) != allyTerritory.end() || allyTerritory.find(Chokepoint->getRegions().second) != allyTerritory.end())
 					{
 						merge = true;
 						if (region->getChokepoints().size() == 1)
@@ -108,9 +108,9 @@ void McRave::onFrame()
 						break;
 					}
 				}
-				if (merge == true && find(allyTerritory.begin(), allyTerritory.end(), region) == allyTerritory.end())
+				if (merge == true && allyTerritory.find(region) == allyTerritory.end())
 				{
-					allyTerritory.push_back(region);
+					allyTerritory.emplace(region);
 				}
 			}
 			defendHere.erase(defendHere.begin(), defendHere.end());
@@ -122,7 +122,7 @@ void McRave::onFrame()
 				for (auto Chokepoint : region->getChokepoints())
 				{
 					// Check if both territories are ally
-					if (find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().first) != allyTerritory.end() && find(allyTerritory.begin(), allyTerritory.end(), Chokepoint->getRegions().second) != allyTerritory.end())
+					if (allyTerritory.find(Chokepoint->getRegions().first) != allyTerritory.end() && allyTerritory.find(Chokepoint->getRegions().second) != allyTerritory.end())
 					{
 						// If both are ally, do nothing (we don't need to defend two ally regions)							
 					}
@@ -157,7 +157,7 @@ void McRave::onFrame()
 		{
 			buildChokeNodes();
 			analyzeHome = false;
-
+			
 			// Find player starting position and tile position		
 			BaseLocation* playerStartingLocation = getStartLocation(Broodwar->self());
 			playerStartingPosition = playerStartingLocation->getPosition();
@@ -444,7 +444,7 @@ void McRave::onFrame()
 			}
 
 			// Strength based calculations ignore workers and buildings
-			if (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker() || u.first->exists() && find(allyTerritory.begin(), allyTerritory.end(), getRegion(u.first->getTilePosition())) != allyTerritory.end())
+			if (unitGetStrength(u.second.getUnitType()) > 1.0 || (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker()) || u.first->exists() && allyTerritory.find(getRegion(u.first->getTilePosition())) != allyTerritory.end())
 			{
 				// Add composition and strength
 				enemyComposition[u.second.getUnitType()] += 1;
@@ -454,7 +454,7 @@ void McRave::onFrame()
 				if (masterDraw)
 				{
 					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getStrength());
-					Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getUnitType().width() / 2, u.second.getUnitType().height() / 2, Broodwar->enemy()->getColor());
+					Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getUnitType().height() / 2, u.second.getUnitType().width() / 2, Broodwar->enemy()->getColor());
 				}
 			}
 
@@ -485,7 +485,7 @@ void McRave::onFrame()
 			// Else add a portion of the strength to ally strength
 			else
 			{
-				allyStrength += unitGetStrength(u.second.getUnitType()) * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+				allyStrength += unitGetStrength(u.second.getUnitType()) * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 				Broodwar->drawTextMap(u.second.getPosition(), "%d", Broodwar->getFrameCount() - u.second.getDeadFrame());
 			}
 		}
@@ -558,16 +558,17 @@ void McRave::onFrame()
 		{
 			continue;
 		}
-		// Update unit
-		else
-		{
-			storeAllyUnit(u, allyUnits);
-		}
+		
 
 		// Return if not latency frame
 		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
 		{
 			continue;
+		}
+		// Update unit
+		else
+		{
+			storeAllyUnit(u, allyUnits);
 		}
 
 		// Skip loaded/stuck units otherwise
@@ -820,9 +821,7 @@ void McRave::onFrame()
 #pragma endregion
 	}
 
-
-
-
+	
 	for (auto &u : allyUnits)
 	{
 #pragma region Grids
@@ -855,11 +854,11 @@ void McRave::onFrame()
 				// Drawing
 				if (u.second.getLocal() < 0)
 				{
-					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), playerColor, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), Text::Enum::Red, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
 				}
 				else if (u.second.getLocal() > 0)
 				{
-					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), Broodwar->enemy()->getColor() , "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), Text::Enum::Green, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
 				}
 				else
 				{
@@ -894,7 +893,7 @@ void McRave::onFrame()
 			else
 			{
 				enemyStrength += unitGetStrength(u.second.getUnitType()) * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-				Broodwar->drawTextMap(u.second.getPosition(), "%d", u.second.getDeadFrame());
+				Broodwar->drawTextMap(u.second.getPosition(), "%d", Broodwar->getFrameCount() - u.second.getDeadFrame());
 			}
 		}
 
@@ -1205,7 +1204,7 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 				}
 
 				enemyBasePositions.push_back(enemyStartingPosition);
-				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
+				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);				
 
 				// For each chokepoint, set a 10 tile radius of "no fly zone"
 				for (auto position : path)
@@ -1256,7 +1255,7 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 		queuedBuildings.erase(unit->getType());
 		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus)
 		{
-			allyTerritory.push_back(getRegion(unit->getPosition()));
+			allyTerritory.emplace(getRegion(unit->getPosition()));
 			forceExpand = 0;
 		}
 	}
@@ -1294,9 +1293,9 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 		}
 		else if (unit->getType() == UnitTypes::Protoss_Nexus)
 		{
-			if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
+			if (allyTerritory.find(getRegion(unit->getTilePosition())) != allyTerritory.end())
 			{
-				allyTerritory.erase(find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())));
+				allyTerritory.erase(getRegion(unit->getTilePosition()));
 			}
 		}
 	}

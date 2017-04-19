@@ -88,7 +88,7 @@ void productionManager(Unit building)
 				}
 			}
 			// If we need a Dragoon
-			if (unitScore[UnitTypes::Protoss_Dragoon] >= unitScore[UnitTypes::Protoss_Zealot] && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+			if (unitScore[UnitTypes::Protoss_Dragoon] > unitScore[UnitTypes::Protoss_Zealot] && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 			{
 				// If we can afford a Dragoon, train
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && supply + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
@@ -103,7 +103,7 @@ void productionManager(Unit building)
 				}
 			}
 			// If we need a Zealot
-			if (!noZealots && (unitScore[UnitTypes::Protoss_Dragoon] < unitScore[UnitTypes::Protoss_Zealot] || (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Assimilator) < 1) || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas))
+			if (!noZealots && (unitScore[UnitTypes::Protoss_Dragoon] <= unitScore[UnitTypes::Protoss_Zealot] || (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Assimilator) < 1) || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas))
 			{
 				// If we can afford a Zealot, train
 				if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral + reservedMineral && supply + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())

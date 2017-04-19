@@ -49,7 +49,7 @@ extern BWEM::CPPath path;
 extern TilePosition playerStartingTilePosition;
 extern Position playerStartingPosition;
 extern Position enemyStartingPosition;
-extern vector<BWTA::Region*> allyTerritory;
+extern set <BWTA::Region*> allyTerritory;
 extern vector <Position> enemyBasePositions;
 extern vector <Position> defendHere;
 extern vector <TilePosition> nextExpansion;

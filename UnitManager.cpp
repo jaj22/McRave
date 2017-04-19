@@ -134,30 +134,31 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		// If a unit is within range of the target, add to local strength
 		if (u.second.getPosition().getDistance(targetPosition) < radius)
 		{
-			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
-			{
-				// If unit is cloaked or burrowed and not detected, drastically increase strength
-				if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
-				{
-					thisUnit = 20 * u.second.getStrength();
-				}
-				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
-				{
-					thisUnit = u.second.getStrength() * (((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
-				}
-				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
-				{
-					thisUnit = u.second.getStrength() * (((double(aLarge) * 0.25) + (double(aMedium) * 0.5) + (double(aSmall) * 1.0)) / double(aLarge + aMedium + aSmall));
-				}
-				else
-				{
-					thisUnit = u.second.getStrength();
-				}
-			}
-			else
-			{
-				thisUnit = u.second.getStrength();
-			}
+			thisUnit = u.second.getStrength();
+			//if (eLarge > 0 || eMedium > 0 || eSmall > 0)
+			//{
+			//	// If unit is cloaked or burrowed and not detected, drastically increase strength
+			//	if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
+			//	{
+			//		thisUnit = 20 * u.second.getStrength();
+			//	}
+			//	else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+			//	{
+			//		thisUnit = u.second.getStrength() * (((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
+			//	}
+			//	else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
+			//	{
+			//		thisUnit = u.second.getStrength() * (((double(aLarge) * 0.25) + (double(aMedium) * 0.5) + (double(aSmall) * 1.0)) / double(aLarge + aMedium + aSmall));
+			//	}
+			//	else
+			//	{
+			//		thisUnit = u.second.getStrength();
+			//	}
+			//}
+			//else
+			//{
+			//	thisUnit = u.second.getStrength();
+			//}
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (u.second.getDeadFrame() == 0)
 			{
@@ -185,38 +186,40 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		// If a unit is within the range of the ally unit, add to local strength
 		if (u.second.getPosition().getDistance(unit->getPosition()) < radius)
 		{
-			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
-			{
-				// If shuttle, add units inside
-				if (u.second.getUnitType() == UnitTypes::Protoss_Shuttle && u.first->getLoadedUnits().size() > 0)
-				{
-					// Assume reaver for damage type calculations
-					for (Unit uL : u.first->getLoadedUnits())
-					{
-						thisUnit = allyUnits[uL].getStrength();
-					}
-				}
-				else
-				{
-					// Damage type calculations
-					if (u.second.getUnitType().groundWeapon().damageType() == DamageTypes::Explosive)
-					{
-						thisUnit = u.second.getStrength() * (((double(eLarge) * 1.0) + (double(eMedium) * 0.75) + (double(eSmall) * 0.5)) / double(eLarge + eMedium + eSmall));
-					}
-					else if (u.second.getUnitType().groundWeapon().damageType() == DamageTypes::Concussive)
-					{
-						thisUnit = u.second.getStrength() * (((double(eLarge) * 0.25) + (double(eMedium) * 0.5) + (double(eSmall) * 1.0)) / double(eLarge + eMedium + eSmall));
-					}
-					else
-					{
-						thisUnit = u.second.getStrength();
-					}
-				}
-			}
-			else
-			{
-				thisUnit = u.second.getStrength();
-			}
+			//if (eLarge > 0 || eMedium > 0 || eSmall > 0)
+			//{
+			//	// If shuttle, add units inside
+			//	if (u.second.getUnitType() == UnitTypes::Protoss_Shuttle && u.first->getLoadedUnits().size() > 0)
+			//	{
+			//		// Assume reaver for damage type calculations
+			//		for (Unit uL : u.first->getLoadedUnits())
+			//		{
+			//			thisUnit = allyUnits[uL].getStrength();
+			//		}
+			//	}
+			//	else
+			//	{
+			//		// Damage type calculations
+			//		if (u.second.getUnitType().groundWeapon().damageType() == DamageTypes::Explosive)
+			//		{
+			//			thisUnit = u.second.getStrength() * (((double(eLarge) * 1.0) + (double(eMedium) * 0.75) + (double(eSmall) * 0.5)) / double(eLarge + eMedium + eSmall));
+			//		}
+			//		else if (u.second.getUnitType().groundWeapon().damageType() == DamageTypes::Concussive)
+			//		{
+			//			thisUnit = u.second.getStrength() * (((double(eLarge) * 0.25) + (double(eMedium) * 0.5) + (double(eSmall) * 1.0)) / double(eLarge + eMedium + eSmall));
+			//		}
+			//		else
+			//		{
+			//			thisUnit = u.second.getStrength();
+			//		}
+			//	}
+			//}
+			//else
+			//{
+			//	thisUnit = u.second.getStrength();
+			//}
+
+			thisUnit = u.second.getStrength();
 
 			// If ally hasn't died, add to ally. Otherwise, partially add to enemy local
 			if (u.second.getDeadFrame() == 0)
@@ -236,7 +239,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
 	{
-		if (find(allyTerritory.begin(), allyTerritory.end(), getRegion(target->getPosition())) != allyTerritory.end())
+		if (allyTerritory.find(getRegion(target->getPosition())) != allyTerritory.end())
 		{
 			return 1;
 		}
@@ -249,7 +252,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	}
 
 	// If unit is in range of a target and not currently threatened, attack instead of running
-	if (unit->getDistance(targetPosition) <= allyUnits[unit].getRange() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0)
+	if (unit->getDistance(targetPosition) <= allyUnits[unit].getRange() && (enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0 || unit->getType() == UnitTypes::Protoss_Reaver))
 	{
 		return 1;
 	}
@@ -352,7 +355,7 @@ void unitGetCommand(Unit unit)
 
 			for (auto position : defendHere)
 			{
-				if (unit->getDistance(position) < 320 && find(allyTerritory.begin(), allyTerritory.end(), getRegion(unit->getTilePosition())) != allyTerritory.end())
+				if (unit->getDistance(position) < 320 && allyTerritory.find(getRegion(unit->getTilePosition())) != allyTerritory.end())
 				{
 					Position fleePosition = unitFlee(unit, target);
 					if (fleePosition != Positions::None)
@@ -406,6 +409,10 @@ void unitGetCommand(Unit unit)
 			if (forceExpand == 1)
 			{
 				closestP = Position(path.at(1)->Center());
+				if (allyTerritory.find(getNearestChokepoint(TilePosition(path.at(1)->Center()))->getRegions().second) != allyTerritory.end() || allyTerritory.find(getNearestChokepoint(TilePosition(path.at(1)->Center()))->getRegions().first) != allyTerritory.end())
+				{					
+					closestP = Position(path.at(2)->Center());
+				}
 			}
 			if (unit->getLastCommand().getTargetPosition().getDistance(closestP) > 5 || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
 			{
@@ -422,7 +429,7 @@ void unitGetCommand(Unit unit)
 	}
 
 	// Check if we should attack
-	if (stratG == 1)
+	if (stratG == 1 && enemyBasePositions.size() > 0)
 	{
 		if (target && target->exists() && unit->getDistance(target) < 512)
 		{
@@ -502,7 +509,7 @@ double unitGetStrength(UnitType unitType)
 		speed = 1.0 + double(unitType.topSpeed());
 
 		// Zealot and Firebat has to be doubled for two attacks
-		if (unitType == UnitTypes::Protoss_Zealot || unitType == UnitTypes::Terran_Firebat)
+		if (unitType == UnitTypes::Protoss_Zealot /*|| unitType == UnitTypes::Terran_Firebat*/)
 		{
 			damage = damage * 2.0;
 		}
@@ -593,7 +600,7 @@ double unitGetVisibleStrength(Unit unit)
 	}
 	if (unit->getPlayer() == Broodwar->self() && unit->isCloaked() && !unit->isDetected())
 	{
-		return 4 * hp * unitGetStrength(unit->getType());
+		return 4.0 * hp * unitGetStrength(unit->getType());
 	}
 	return hp * unitGetStrength(unit->getType());
 }

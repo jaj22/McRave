@@ -113,17 +113,17 @@ void getBuildOrder()
 			}
 			else if (getMidBuild)
 			{
-				if (terranBio)
+				if (forceExpand)				
 				{
 					midBuilds(3);
 				}
-				else if (forceExpand)
+				else if (terranBio)
 				{
-					midBuilds(3);
+					midBuilds(0);
 				}
 				else
 				{
-					midBuilds(3);
+					midBuilds(1);
 				}
 			}
 			else if (getLateBuild)

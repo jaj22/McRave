@@ -115,7 +115,7 @@ int mineralHeatmap[256][256] = { { 0 } };
 int currentSize = 0;
 BWEM::CPPath path;
 set <BWTA::Region*> territory;
-vector<BWTA::Region*> allyTerritory;
+set <BWTA::Region*> allyTerritory;
 vector<BWTA::Region> enemyTerritory;
 vector<Position> defendHere;
 vector<Position> enemyBasePositions;
