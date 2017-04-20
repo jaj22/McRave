@@ -234,7 +234,8 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	}
 
 	// Store the difference of strengths 
-	allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
+	allyUnits[unit].setLocal((allyUnits[unit].getStrength()*99/100) + (allyLocalStrength - enemyLocalStrength)/100);
+	
 
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
@@ -258,13 +259,13 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	}
 
 	// If most recent local ally higher, return attack
-	if (allyLocalStrength >= enemyLocalStrength)
+	if (allyUnits[unit].getStrength() >= 0)
 	{
 		allyUnits[unit].setTargetPosition(targetPosition);
 		return 1;
 	}
 	// Else return retreat
-	else if (allyLocalStrength < enemyLocalStrength)
+	else if(allyUnits[unit].getStrength() < 0)
 	{
 		return 0;
 	}

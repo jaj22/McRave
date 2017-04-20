@@ -88,7 +88,7 @@ void McRave::onFrame()
 					{
 						// If chokepoint is really wide, such as Andromeda, this will add the Territory of the natural
 						if (Chokepoint->getWidth() > 200)
-						{							
+						{
 							allyTerritory.emplace(Chokepoint->getRegions().first);
 							allyTerritory.emplace(Chokepoint->getRegions().second);
 						}
@@ -157,7 +157,7 @@ void McRave::onFrame()
 		{
 			buildChokeNodes();
 			analyzeHome = false;
-			
+
 			// Find player starting position and tile position		
 			BaseLocation* playerStartingLocation = getStartLocation(Broodwar->self());
 			playerStartingPosition = playerStartingLocation->getPosition();
@@ -274,13 +274,13 @@ void McRave::onFrame()
 		// Display remaining minerals on each mineral patch that is near our Nexus
 		for (auto r : myMinerals)
 		{
-			Broodwar->drawTextMap(r.second.getPosition(), "%d", r.second.getRemainingResources());
+			Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 8), "%c%d", Text::White, r.second.getRemainingResources());
 		}
 
 		// Display remaining gas on each geyser that is near our Nexus
 		for (auto r : myGas)
 		{
-			Broodwar->drawTextMap(r.second.getPosition(), "%d", r.second.getRemainingResources());
+			Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 32), "%c%d", Text::Green, r.second.getRemainingResources());
 		}
 
 		// Display static defense count
@@ -311,7 +311,7 @@ void McRave::onFrame()
 		{
 			for (int i = 0; i <= (int)activeExpansion.size() - 1; i++)
 			{
-				Broodwar->drawTextMap(48 + activeExpansion.at(i).x * 32, 96 + activeExpansion.at(i).y * 32, "Base %d", i, Colors::White);
+				Broodwar->drawTextMap(48 + activeExpansion.at(i).x * 32, 104 + activeExpansion.at(i).y * 32, "%cBase %d", Broodwar->self()->getTextColor(), i, Colors::White);
 			}
 
 		}
@@ -357,11 +357,11 @@ void McRave::onFrame()
 #pragma region Grids
 		// For each enemy unit, add its attack value to each tile it is in range of
 		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
-		if (u.second.getUnitType().groundWeapon().damageAmount() > 0)
+		if (unitGetStrength(u.second.getUnitType()) > 1.0 && u.second.getDeadFrame() == 0)
 		{
 			// Store range in class
 			int offsetX = u.second.getPosition().x % 32;
-			int offsetY = u.second.getPosition().y % 32;
+			int offsetY = u.second.getPosition().y % 32;			
 			int range = (int)u.second.getRange();
 			// Making sure we properly analyze the threat of melee units without adding range to ranged units
 			if (range < 32)
@@ -373,11 +373,11 @@ void McRave::onFrame()
 				range = range / 32;
 			}
 			// The + 1 is because we need to still check an additional tile
-			for (int x = (unitTilePosition.x + offsetX) - range; x <= (unitTilePosition.x + offsetX) + range + 1; x++)
+			for (int x = unitTilePosition.x - range; x <= unitTilePosition.x + range + 1; x++)
 			{
-				for (int y = (unitTilePosition.y + offsetY) - range; y <= (unitTilePosition.y + offsetY) + range + 1; y++)
+				for (int y = unitTilePosition.y  - range; y <= unitTilePosition.y + range + 1; y++)
 				{
-					if (u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
+					if ((u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= (range * 32) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
 					{
 						enemyHeatmap[x][y] += u.second.getStrength();
 					}
@@ -444,18 +444,29 @@ void McRave::onFrame()
 			}
 
 			// Strength based calculations ignore workers and buildings
-			if (unitGetStrength(u.second.getUnitType()) > 1.0 || (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker()) || u.first->exists() && allyTerritory.find(getRegion(u.first->getTilePosition())) != allyTerritory.end())
+			if ((u.second.getUnitType().isBuilding() && u.second.getStrength() > 1.0) || (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker()) || u.first->exists() && allyTerritory.find(getRegion(u.first->getTilePosition())) != allyTerritory.end())
 			{
 				// Add composition and strength
 				enemyComposition[u.second.getUnitType()] += 1;
 				enemyStrength += u.second.getStrength();
+			}
 
-				// Drawing
-				if (masterDraw)
+			// Drawing
+			if (masterDraw)
+			{
+				if (u.second.getUnitType().isBuilding())
 				{
-					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getStrength());
-					Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getUnitType().height() / 2, u.second.getUnitType().width() / 2, Broodwar->enemy()->getColor());
+					Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getUnitType().height() / 2, u.second.getUnitType().height() / 3, Broodwar->enemy()->getColor());
 				}
+				else
+				{
+					Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getUnitType().height() / 2), u.second.getUnitType().height() / 2, u.second.getUnitType().height() / 3, Broodwar->enemy()->getColor());
+				}
+				if (calculationDraw)
+				{
+					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());
+				}
+				
 			}
 
 			// Store size of unit
@@ -486,7 +497,10 @@ void McRave::onFrame()
 			else
 			{
 				allyStrength += unitGetStrength(u.second.getUnitType()) * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-				Broodwar->drawTextMap(u.second.getPosition(), "%d", Broodwar->getFrameCount() - u.second.getDeadFrame());
+				if (calculationDraw)
+				{
+					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->enemy()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
+				}
 			}
 		}
 
@@ -503,13 +517,14 @@ void McRave::onFrame()
 	int offset = 0;
 	for (auto &t : enemyComposition)
 	{
-		if (t.first != UnitTypes::None && t.second > 0)
+		// For each type, add a score to production based on the unit count divided by our current unit count
+		unitScoreUpdate(t.first, t.second);
+		if (t.first != UnitTypes::None && t.second > 0.0)
 		{
 			Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
 			offset = offset + 10;
 		}
-		// For each type, add a score to production based on the unit count divided by our current unit count
-		unitScoreUpdate(t.first, t.second);
+
 		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
 		{
 			if (t.first == UnitTypes::Terran_Bunker || (t.first == UnitTypes::Zerg_Sunken_Colony && t.second >= 2) || (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2))
@@ -558,11 +573,12 @@ void McRave::onFrame()
 		{
 			continue;
 		}
-		
+
 
 		// Return if not latency frame
 		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
 		{
+			allyUnits[u].setPosition(u->getPosition());
 			continue;
 		}
 		// Update unit
@@ -821,7 +837,7 @@ void McRave::onFrame()
 #pragma endregion
 	}
 
-	
+
 	for (auto &u : allyUnits)
 	{
 #pragma region Grids
@@ -852,22 +868,31 @@ void McRave::onFrame()
 				allyStrength += u.second.getStrength();
 
 				// Drawing
-				if (u.second.getLocal() < 0)
-				{
-					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), Text::Enum::Red, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+				if (masterDraw)
+				{					
+					if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None && u.first->getDistance(u.second.getTargetPosition()) < 500)
+					{
+						Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), playerColor);
+					}
+					if (calculationDraw)
+					{
+						if (u.second.getLocal() < 0)
+						{
+							Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->enemy()->getTextColor(), (u.second.getLocal())); //, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+						}
+						else if (u.second.getLocal() > 0)
+						{
+							Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->self()->getTextColor(), u.second.getLocal()); //, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+						}
+						else
+						{
+							Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Text::Default, u.second.getLocal()); //, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
+						}
+					}
 				}
-				else if (u.second.getLocal() > 0)
-				{
-					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), Text::Enum::Green, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
-				}
-				else
-				{
-					Broodwar->drawTextMap(u.second.getPosition(), "%.2f", u.second.getLocal(), Text::Enum::Default, "\n%s", u.second.getCommand().c_str(), Text::Enum::Default);
-				}
-				if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None)
-				{
-					Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), playerColor);
-				}
+
+				//Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getUnitType().height() / 2, u.second.getUnitType().height() / 3, Broodwar->self()->getColor());
+
 				// Store size of unit
 				if (u.second.getUnitType().size() == UnitSizeTypes::Small)
 				{
@@ -893,7 +918,10 @@ void McRave::onFrame()
 			else
 			{
 				enemyStrength += unitGetStrength(u.second.getUnitType()) * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-				Broodwar->drawTextMap(u.second.getPosition(), "%d", Broodwar->getFrameCount() - u.second.getDeadFrame());
+				if (calculationDraw)
+				{
+					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->self()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
+				}
 			}
 		}
 
@@ -1189,6 +1217,7 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 				if (Broodwar->enemy()->getRace() == Races::Terran && unit->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 128)
 				{
 					wallIn = true;
+					noZealots = true;
 				}
 
 				// Find closest base location to building
@@ -1204,7 +1233,7 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 				}
 
 				enemyBasePositions.push_back(enemyStartingPosition);
-				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);				
+				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
 
 				// For each chokepoint, set a 10 tile radius of "no fly zone"
 				for (auto position : path)

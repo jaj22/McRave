@@ -51,7 +51,7 @@ void desiredBuildings()
 	}
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && idleGates.size() == 0)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && idleGates.size() == 0 && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 || forceExpand))
 	{		
 		getEarlyBuild = false;
 		getMidBuild = true;
@@ -123,7 +123,7 @@ void getBuildOrder()
 				}
 				else
 				{
-					midBuilds(1);
+					midBuilds(0);
 				}
 			}
 			else if (getLateBuild)
@@ -245,8 +245,7 @@ void earlyBuilds(int whichBuild)
 		currentStrategy.assign("Two Gate Core");
 		break;
 	case 1:
-		// -- 1 Gate Core --	
-		noZealots = true;
+		// -- 1 Gate Core --		
 		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
 		if (supply >= 20)
 		{
