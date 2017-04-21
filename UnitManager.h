@@ -14,10 +14,10 @@ class UnitInfo {
 	double unitStrength, unitLocal, unitRange;
 	UnitCommandType unitCommand;
 	Unit target;
-	int deadFrame;
+	int deadFrame, strategy;
 public:
 	UnitInfo();
-	UnitInfo(UnitType, Position, double, double, UnitCommandType, int);
+	UnitInfo(UnitType, Position, double, double, UnitCommandType, int, int);
 	~UnitInfo();
 
 	// Accessors
@@ -30,6 +30,7 @@ public:
 	UnitCommandType getCommand() const;
 	Unit getTarget() const;
 	int getDeadFrame() const;
+	int getStrategy() const;
 
 	// Mutators
 	void setUnitType(UnitType);
@@ -41,6 +42,7 @@ public:
 	void setCommand(UnitCommandType);
 	void setTarget(Unit);
 	void setDeadFrame(int);
+	void setStrategy(int);
 };
 
 

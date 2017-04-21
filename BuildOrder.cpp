@@ -54,12 +54,12 @@ void desiredBuildings()
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && idleGates.size() == 0 && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 || forceExpand))
 	{		
 		getEarlyBuild = false;
-		getMidBuild = true;
-		noZealots = false;
+		getMidBuild = true;		
 	}
 
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 	{
+		noZealots = false;
 		enemyAggresion = false;
 	}
 

@@ -112,9 +112,9 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	double thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
 	Position targetPosition = enemyUnits[target].getPosition();
-	int radius = min(512, 320 + supply * 2);
+	int radius = min(1024, 384 + supply * 4);
 
-	if (unit->getDistance(targetPosition) > 512)
+	if (unit->getDistance(targetPosition) > 1024)
 	{
 		return 3;
 	}
@@ -234,7 +234,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	}
 
 	// Store the difference of strengths 
-	allyUnits[unit].setLocal((allyUnits[unit].getStrength()*99/100) + (allyLocalStrength - enemyLocalStrength)/100);
+	allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 	
 
 	// If we are in ally territory and have a target, force to fight	
@@ -258,18 +258,39 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		return 1;
 	}
 
-	// If most recent local ally higher, return attack
-	if (allyUnits[unit].getStrength() >= 0)
+	// If last command was 1
+	if (allyUnits[unit].getStrategy() == 1)
 	{
-		allyUnits[unit].setTargetPosition(targetPosition);
-		return 1;
+		// Latch based system for at least 80% to disengage
+		if (allyLocalStrength >= enemyLocalStrength*0.8)
+		{
+			allyUnits[unit].setTargetPosition(targetPosition);
+			allyUnits[unit].setStrategy(1);
+			return 1;
+		}		
+		else if (allyLocalStrength < enemyLocalStrength*1.2)
+		{
+			allyUnits[unit].setStrategy(0);
+			return 0;
+		}
 	}
-	// Else return retreat
-	else if(allyUnits[unit].getStrength() < 0)
+	else
 	{
-		return 0;
+		// Latch based system for at least 120% to engage
+		if (allyLocalStrength >= enemyLocalStrength*1.2)
+		{
+			allyUnits[unit].setTargetPosition(targetPosition);
+			allyUnits[unit].setStrategy(1);
+			return 1;
+		}
+		else if (allyLocalStrength < enemyLocalStrength*0.8)
+		{
+			allyUnits[unit].setStrategy(0);
+			return 0;
+		}
 	}
 	// Disregard local if no target, no recent local calculation and not within ally region
+	allyUnits[unit].setStrategy(3);
 	return 3;
 }
 
@@ -1188,18 +1209,45 @@ void corsairManager(Unit unit)
 
 int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
 {
-	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0);
-	enemyUnits[unit] = newUnit;
+	// Create new unit
+	if (enemyUnits.find(unit) == enemyUnits.end())
+	{
+		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0);
+		enemyUnits[unit] = newUnit;
+	}
+	// Update unit
+	else
+	{
+		enemyUnits[unit].setUnitType(unit->getType());
+		enemyUnits[unit].setPosition(unit->getPosition());
+		enemyUnits[unit].setStrength(unitGetVisibleStrength(unit));
+		enemyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->enemy()));
+	}	
 	return 0;
 }
 int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 {
-	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->self()), unit->getLastCommand().getType(), 0);
+	// Create new unit
+	if (allyUnits.find(unit) == allyUnits.end())
+	{
+		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0);
+		allyUnits[unit] = newUnit;
+	}
+	// Update unit
+	else
+	{
+		allyUnits[unit].setUnitType(unit->getType());
+		allyUnits[unit].setPosition(unit->getPosition());
+		allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
+		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
+		allyUnits[unit].setCommand(unit->getLastCommand().getType());
+	}
+	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->self()), unit->getLastCommand().getType(), 0, 0);
 	allyUnits[unit] = newUnit;
 	return 0;
 }
 
-UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand, int newDeadFrame)
+UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand, int newDeadFrame, int newStrategy)
 {
 	unitType = newType;
 	unitPosition = newPosition;
@@ -1255,6 +1303,10 @@ int UnitInfo::getDeadFrame() const
 {
 	return deadFrame;
 }
+int UnitInfo::getStrategy() const
+{
+	return strategy;
+}
 
 void UnitInfo::setUnitType(UnitType newUnitType)
 {
@@ -1291,6 +1343,10 @@ void UnitInfo::setTarget(Unit newTarget)
 void UnitInfo::setDeadFrame(int newDeadFrame)
 {
 	deadFrame = newDeadFrame;
+}
+void UnitInfo::setStrategy(int newStrategy)
+{
+	strategy = newStrategy;
 }
 #pragma endregion
 

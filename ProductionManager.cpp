@@ -73,7 +73,7 @@ void productionManager(Unit building)
 			// Production Buildings
 		case UnitTypes::Enum::Protoss_Gateway:
 
-			if (noZealots && building->isTraining())
+			/*if (noZealots && building->isTraining())
 			{
 				for (auto unit : building->getTrainingQueue())
 				{
@@ -82,7 +82,7 @@ void productionManager(Unit building)
 						building->cancelTrain();
 					}
 				}
-			}
+			}*/
 			// If we need a High Templar
 			if (Broodwar->self()->hasResearched(TechTypes::Psionic_Storm) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Templar_Archives) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar) < 5)
 			{

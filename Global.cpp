@@ -27,7 +27,7 @@ namespace { auto & theMap = BWEM::Map::Instance(); }
 
 // Drawing booleans
 bool masterDraw = true;
-bool calculationDraw = false;
+bool calculationDraw = true;
 
 void McRave::onStart()
 {
@@ -614,7 +614,7 @@ void McRave::onFrame()
 				unAssignCombat(u);
 				u->stop();
 			}
-			if (combatProbe.size() > 2 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1)
+			if (combatProbe.size() > 3 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1)
 			{
 				// SCV rush probable
 				enemyAggresion = true;
@@ -1212,14 +1212,13 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 	{
 		if (unit->getType().isBuilding())
 		{
+			/*if (scouting && Broodwar->enemy()->getRace() == Races::Terran && unit->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 128)
+			{
+				wallIn = true;
+				noZealots = true;
+			}*/
 			if (enemyBasePositions.size() == 0)
 			{
-				if (Broodwar->enemy()->getRace() == Races::Terran && unit->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 128)
-				{
-					wallIn = true;
-					noZealots = true;
-				}
-
 				// Find closest base location to building
 				double distance = 5000;
 				for (auto base : getStartLocations())
@@ -1300,6 +1299,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	if (unit->getPlayer() == Broodwar->self())
 	{
 		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
+		supply -= unit->getType().supplyRequired();
 		//allyUnits.erase(unit);		
 		//allyUnits[unit].~UnitInfo();
 		// For probes, adjust the resource maps to align properly
