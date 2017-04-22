@@ -77,16 +77,12 @@ Unit assignProbe(Unit probe)
 		{
 			if (mineral.second.getGathererCount() < cnt)
 			{
-				saturated = false;
 				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
 				return assignMinerals(probe, mineral.first);
 			}
 		}
 		cnt++;
 	}
-
-	// If we reached the enemy of our map and no Probes were assigned, we are saturated and don't need any more Probes
-	saturated = true;
 
 	// Any idle Probes can gather closest mineral field until they are assigned again
 	if (probe->isIdle() && probe->getClosestUnit(Filter::IsMineralField))

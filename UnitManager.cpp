@@ -82,13 +82,14 @@ void unitMicro(Unit unit, Unit target)
 
 int unitGetGlobalStrategy()
 {
-	if (forceExpand)
+	if (forceExpand == 1)
 	{
 		return 0;
 	}
 
 	if (allyStrength > enemyStrength)
 	{
+		// If Zerg, wait for a larger army before moving out
 		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) == 0)
 		{
 			return 0;
@@ -96,8 +97,13 @@ int unitGetGlobalStrategy()
 		return 1;
 	}
 	else
-	{
-		return 1;
+	{		
+		// If not Zerg, contain
+		if (Broodwar->enemy()->getRace() != Races::Zerg)
+		{
+			return 1;
+		}
+		return 0;
 	}
 }
 
@@ -114,7 +120,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	Position targetPosition = enemyUnits[target].getPosition();
 	int radius = min(512, 384 + supply * 4);
 
-	if (unit->getDistance(targetPosition) > radius)
+	if (unit->getDistance(targetPosition) > 512)
 	{
 		return 3;
 	}
@@ -126,7 +132,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		thisUnit = 0.0;
 
 		// Ignore workers, keep buildings (reinforcements and static defenses)
-		if (u.second.getUnitType().isWorker())
+		if (u.second.getUnitType().isWorker() || (u.first->exists() && u.first->isStasised()))
 		{
 			continue;
 		}
@@ -134,7 +140,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		// If a unit is within range of the target, add to local strength
 		if (u.second.getPosition().getDistance(targetPosition) < radius)
 		{			
-			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
+			if (aLarge > 0 || aMedium > 0 || aSmall > 0)
 			{
 				// If unit is cloaked or burrowed and not detected, drastically increase strength
 				if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
@@ -143,11 +149,12 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 				}
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
-					thisUnit = u.second.getStrength() * (((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
+					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
+						//(((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
 				}
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 				{
-					thisUnit = u.second.getStrength() * (((double(aLarge) * 0.25) + (double(aMedium) * 0.5) + (double(aSmall) * 1.0)) / double(aLarge + aMedium + aSmall));
+					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
 				}
 				else
 				{
@@ -201,11 +208,11 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 					// Damage type calculations
 					if (u.second.getUnitType().groundWeapon().damageType() == DamageTypes::Explosive)
 					{
-						thisUnit = u.second.getStrength() * (((double(eLarge) * 1.0) + (double(eMedium) * 0.75) + (double(eSmall) * 0.5)) / double(eLarge + eMedium + eSmall));
+						thisUnit = u.second.getStrength() * ((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / (eLarge + eMedium + eSmall);
 					}
 					else if (u.second.getUnitType().groundWeapon().damageType() == DamageTypes::Concussive)
 					{
-						thisUnit = u.second.getStrength() * (((double(eLarge) * 0.25) + (double(eMedium) * 0.5) + (double(eSmall) * 1.0)) / double(eLarge + eMedium + eSmall));
+						thisUnit = u.second.getStrength() * ((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / (eLarge + eMedium + eSmall);
 					}
 					else
 					{
@@ -276,6 +283,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 			allyUnits[unit].setStrategy(1);
 			return 1;
 		}
+		// Otherwise return 3 or 0, whichever was previous
 		return 0;
 	}
 	// Disregard local if no target, no recent local calculation and not within ally region
@@ -667,6 +675,11 @@ Unit getTarget(Unit unit)
 		{
 			continue;
 		}
+
+		if (u.first->exists() && u.first->isStasised())
+		{
+			continue;
+		}
 		
 		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
 
@@ -884,7 +897,7 @@ Position unitFlee(Unit unit, Unit currentTarget)
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
 			Position newPosition = Position(TilePosition(x, y));
-			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x,y)).size < 2)
+			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x,y)).size() < 2)
 			{
 				for (int i = 0; i <= 1; i++)
 				{

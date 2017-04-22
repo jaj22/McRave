@@ -33,7 +33,7 @@ void desiredBuildings()
 	nexusDesired = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
-	if (Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && idleGates.size() == 0)
+	if (!getEarlyBuild && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && idleGates.size() == 0)
 	{
 		nexusDesired++;
 	}		
@@ -232,8 +232,8 @@ void earlyBuilds(int whichBuild)
 	{
 	case 0:
 		// -- 2 Gate Core --
-		coreDesired = min(1, (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4));
-		gasDesired = min(1, (int)floor(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2));
+		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot)/4);
+		gasDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot)/2);
 		if (supply >= 20 && supply < 24)
 		{
 			gateDesired = 1;

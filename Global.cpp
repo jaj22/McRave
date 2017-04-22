@@ -262,6 +262,9 @@ void McRave::onFrame()
 			}
 		}
 
+		// Saturated
+		Broodwar->drawTextScreen(200, 40, "%d", saturated);
+
 		// Display some information about our queued resources required for structure building			
 		Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
 
@@ -323,9 +326,7 @@ void McRave::onFrame()
 
 	// Reset variables for storing sizes and strength
 	eSmall = 0, eMedium = 0, eLarge = 0;
-	aSmall = 0, aMedium = 0, aLarge = 0;
-	enemyStrength = 0.0, allyStrength = 0.0;
-	outsideBase = false;
+	enemyStrength = 0.0;
 
 	for (auto u : Broodwar->enemy()->getUnits())
 	{
@@ -348,6 +349,7 @@ void McRave::onFrame()
 		if (u.first && u.first->exists() && (u.first->isCloaked() || u.first->isBurrowed()) && u.first->isDetected())
 		{
 			invisibleUnits.erase(u.first);
+			break;
 		}
 	}
 
@@ -361,7 +363,7 @@ void McRave::onFrame()
 		{
 			// Store range in class
 			int offsetX = u.second.getPosition().x % 32;
-			int offsetY = u.second.getPosition().y % 32;			
+			int offsetY = u.second.getPosition().y % 32;
 			int range = (int)u.second.getRange();
 			// Making sure we properly analyze the threat of melee units without adding range to ranged units
 			if (range < 32)
@@ -375,7 +377,7 @@ void McRave::onFrame()
 			// The + 1 is because we need to still check an additional tile
 			for (int x = unitTilePosition.x - range; x <= unitTilePosition.x + range + 1; x++)
 			{
-				for (int y = unitTilePosition.y  - range; y <= unitTilePosition.y + range + 1; y++)
+				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
 				{
 					if ((u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= (range * 32) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
 					{
@@ -466,7 +468,7 @@ void McRave::onFrame()
 				{
 					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());
 				}
-				
+
 			}
 
 			// Store size of unit
@@ -709,17 +711,19 @@ void McRave::onFrame()
 #pragma region Building Manager
 		{
 			// If it's a Nexus and we need probes, check if we need probes, then train if needed
-			if (u->getType().isResourceDepot())
+			if (u->getType().isResourceDepot() && u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral + reservedMineral))
 			{
 				for (auto &m : myMinerals)
 				{
 					if (m.second.getGathererCount() < 2)
+					{						
+						u->train(UnitTypes::Protoss_Probe);						
+						saturated = false;
+						break;
+					}
+					else if (m.second.getGathererCount() == 2)
 					{
-						if (u->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + queuedMineral + reservedMineral))
-						{
-							u->train(UnitTypes::Protoss_Probe);
-							break;
-						}
+						saturated = true;
 					}
 				}
 				for (auto &g : myGas)
@@ -837,6 +841,9 @@ void McRave::onFrame()
 #pragma endregion
 	}
 
+	aSmall = 0, aMedium = 0, aLarge = 0;
+	allyStrength = 0.0;
+	outsideBase = false;
 
 	for (auto &u : allyUnits)
 	{
@@ -869,7 +876,7 @@ void McRave::onFrame()
 
 				// Drawing
 				if (masterDraw)
-				{					
+				{
 					if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None && u.first->getDistance(u.second.getTargetPosition()) < 500)
 					{
 						Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), playerColor);
@@ -1214,8 +1221,8 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 		{
 			/*if (scouting && Broodwar->enemy()->getRace() == Races::Terran && unit->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 128)
 			{
-				wallIn = true;
-				noZealots = true;
+			wallIn = true;
+			noZealots = true;
 			}*/
 			if (enemyBasePositions.size() == 0)
 			{
