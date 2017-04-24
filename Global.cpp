@@ -145,6 +145,7 @@ void McRave::onFrame()
 		if (boulders.size() > 0 && Broodwar->getUnitsInRadius(p, 64, Filter::IsMineralField && Filter::Resources == 0).size() > 0)
 		{
 			defendHere.erase(find(defendHere.begin(), defendHere.end(), p));
+			continue;
 		}
 	}
 #pragma endregion
@@ -247,116 +248,30 @@ void McRave::onFrame()
 			airClusterHeatmap[x][y] = 0;
 		}
 	}
-#pragma endregion
-#pragma region HUD
-	if (masterDraw)
+#pragma region Ally Grids
+	for (auto &u : allyUnits)
 	{
-		int offset = 0;
-
-		for (auto b : buildingDesired)
+		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
+		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
 		{
-			if (b.second > 0)
+			// Check for Arbiter positioning
+			for (int x = unitTilePosition.x - 5; x <= unitTilePosition.x + 6; x++)
 			{
-				Broodwar->drawTextScreen(0, offset, "%s : %d", b.first.toString().c_str(), b.second);
-				offset = offset + 10;
+				for (int y = unitTilePosition.y - 5; y <= unitTilePosition.y + 6; y++)
+				{
+					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= 5)
+					{
+						arbiterHeatmap[x][y] += 1;
+					}
+				}
 			}
-		}
-
-		// Saturated
-		Broodwar->drawTextScreen(200, 40, "%d", saturated);
-
-		// Display some information about our queued resources required for structure building			
-		Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
-
-		// Display frame count
-		Broodwar->drawTextScreen(200, 10, "%d", Broodwar->getFrameCount());
-
-		// Display global strength calculations	
-		Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", allyStrength, enemyStrength);
-
-		// Display remaining minerals on each mineral patch that is near our Nexus
-		for (auto r : myMinerals)
-		{
-			Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 8), "%c%d", Text::White, r.second.getRemainingResources());
-		}
-
-		// Display remaining gas on each geyser that is near our Nexus
-		for (auto r : myGas)
-		{
-			Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 32), "%c%d", Text::Green, r.second.getRemainingResources());
-		}
-
-		// Display static defense count
-		for (auto n : myNexus)
-		{
-			Broodwar->drawTextMap(n.first->getPosition(), "Static Defenses: %d", n.second.getStaticD());
-		}
-
-		// Display Goon/Zealot scoring
-		offset = 0;
-		for (auto t : unitScore)
-		{
-			Broodwar->drawTextScreen(500, 200 + offset, "%s : %.2f", t.first.toString().c_str(), t.second);
-			offset = offset + 10;
-		}
-
-		// Show building placements
-		for (auto b : queuedBuildings)
-		{
-			Broodwar->drawBoxMap(Position(b.second.first), Position((b.second.first.x + b.first.tileWidth()) * 32, (b.second.first.y + b.first.tileHeight()) * 32), playerColor);
-		}
-
-		// Show support position
-		//Broodwar->drawCircleMap(supportPosition, 8, playerColor, true);
-
-		// Show expansions
-		if (analyzed)
-		{
-			for (int i = 0; i <= (int)activeExpansion.size() - 1; i++)
-			{
-				Broodwar->drawTextMap(48 + activeExpansion.at(i).x * 32, 104 + activeExpansion.at(i).y * 32, "%cBase %d", Broodwar->self()->getTextColor(), i, Colors::White);
-			}
-
 		}
 	}
 #pragma endregion
-
-
-#pragma region EnemyUnits
-
-	// Reset variables for storing sizes and strength
-	eSmall = 0, eMedium = 0, eLarge = 0;
-	enemyStrength = 0.0;
-
-	for (auto u : Broodwar->enemy()->getUnits())
-	{
-		// Update unit
-		if (u && u->exists() && u->isCompleted())
-		{
-			storeEnemyUnit(u, enemyUnits);
-		}
-	}
-
-	// Reset unit score
-	for (auto &unit : unitScore)
-	{
-		unit.second = 0;
-	}
-
-	// For each invisible unit, if it's detected, remove it
-	for (auto u : invisibleUnits)
-	{
-		if (u.first && u.first->exists() && (u.first->isCloaked() || u.first->isBurrowed()) && u.first->isDetected())
-		{
-			invisibleUnits.erase(u.first);
-			break;
-		}
-	}
-
-	// Stored enemy units iterator
+#pragma region Enemy Grids
 	for (auto &u : enemyUnits)
 	{
-#pragma region Grids
+
 		// For each enemy unit, add its attack value to each tile it is in range of
 		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
 		if (unitGetStrength(u.second.getUnitType()) > 1.0 && u.second.getDeadFrame() == 0)
@@ -426,14 +341,139 @@ void McRave::onFrame()
 				}
 			}
 		}
+	}
 #pragma endregion
-#pragma region EnemyInfo
 
+#pragma endregion
+
+#pragma region HUD
+	if (masterDraw)
+	{
+		int offset = 0;
+		
+		// Show what buildings we want
+		for (auto b : buildingDesired)
+		{
+			if (b.second > 0)
+			{
+				Broodwar->drawTextScreen(0, offset, "%s : %d", b.first.toString().c_str(), b.second);
+				offset = offset + 10;
+			}
+		}
+
+		// Saturated
+		Broodwar->drawTextScreen(200, 40, "%d", saturated);
+
+		// Display some information about our queued resources required for structure building			
+		Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
+
+		// Display frame count
+		Broodwar->drawTextScreen(200, 10, "%d", Broodwar->getFrameCount());
+
+		// Display global strength calculations	
+		Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", allyStrength, enemyStrength);
+
+		// Display remaining minerals on each mineral patch that is near our Nexus
+		for (auto r : myMinerals)
+		{
+			Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 8), "%c%d", Text::White, r.second.getRemainingResources());
+		}
+
+		// Display remaining gas on each geyser that is near our Nexus
+		for (auto r : myGas)
+		{
+			Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 32), "%c%d", Text::Green, r.second.getRemainingResources());
+		}
+
+		// Display static defense count
+		for (auto n : myNexus)
+		{
+			Broodwar->drawTextMap(n.first->getPosition(), "Static Defenses: %d", n.second.getStaticD());
+		}
+
+		// Display Goon/Zealot scoring
+		offset = 0;
+		for (auto t : unitScore)
+		{
+			Broodwar->drawTextScreen(500, 200 + offset, "%s : %.2f", t.first.toString().c_str(), t.second);
+			offset = offset + 10;
+		}
+
+		// Show building placements
+		for (auto b : queuedBuildings)
+		{
+			Broodwar->drawBoxMap(Position(b.second.first), Position((b.second.first.x + b.first.tileWidth()) * 32, (b.second.first.y + b.first.tileHeight()) * 32), playerColor);
+		}
+
+		// Show support position
+		//Broodwar->drawCircleMap(supportPosition, 8, playerColor, true);
+
+		// Show expansions
+		if (analyzed)
+		{
+			for (int i = 0; i <= (int)activeExpansion.size() - 1; i++)
+			{
+				Broodwar->drawTextMap(48 + activeExpansion.at(i).x * 32, 104 + activeExpansion.at(i).y * 32, "%cBase %d", Broodwar->self()->getTextColor(), i, Colors::White);
+			}
+
+		}
+	}
+
+#pragma endregion
+
+#pragma region EnemyUnits
+
+	// Reset variables for storing sizes and strength
+	eSmall = 0, eMedium = 0, eLarge = 0;
+	enemyStrength = 0.0;
+
+	for (auto u : Broodwar->enemy()->getUnits())
+	{
+		// Update unit
+		if (u && u->exists() && u->isCompleted())
+		{
+			storeEnemyUnit(u, enemyUnits);
+		}
+	}
+
+	// Reset unit score
+	for (auto &unit : unitScore)
+	{
+		unit.second = 0;
+	}
+
+	// For each invisible unit, if it's detected, remove it
+	for (auto u : invisibleUnits)
+	{
+		if (u.first && u.first->exists() && (u.first->isCloaked() || u.first->isBurrowed()) && u.first->isDetected())
+		{
+			invisibleUnits.erase(u.first);
+			continue;
+		}
+	}
+
+	// If unit has been dead for over 500 frames, erase it (needed manual loop)
+	for (auto itr = enemyUnits.begin(); itr != enemyUnits.end();)
+	{
+		if ((*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount())
+		{
+			enemyUnits.erase((*itr).first);
+		}
+		else
+		{
+			++itr;
+		}
+	}
+
+#pragma region EnemyInfo
+	// Stored enemy units iterator
+	for (auto &u : enemyUnits)
+	{
 		// Ensure that the unit is an enemy unit
 		if (u.first && u.first->exists() && u.first->getPlayer() != Broodwar->enemy())
 		{
 			enemyUnits.erase(u.first);
-			break;
+			continue;
 		}
 
 		// If deadframe is 0, unit is alive still
@@ -489,21 +529,11 @@ void McRave::onFrame()
 		// If unit is dead
 		else if (u.second.getDeadFrame() != 0)
 		{
-			// If dead for over 500 frames, erase
-			if (u.second.getDeadFrame() + 500 < Broodwar->getFrameCount())
+			// Add a portion of the strength to ally strength
+			allyStrength += unitGetStrength(u.second.getUnitType()) * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			if (calculationDraw)
 			{
-				enemyUnits[u.first].~UnitInfo();
-				enemyUnits.erase(u.first);
-				continue;
-			}
-			// Else add a portion of the strength to ally strength
-			else
-			{
-				allyStrength += unitGetStrength(u.second.getUnitType()) * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-				if (calculationDraw)
-				{
-					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->enemy()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
-				}
+				Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->enemy()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
 			}
 		}
 
@@ -513,8 +543,9 @@ void McRave::onFrame()
 			invisibleUnits[u.first] = u.first->getPosition();
 		}
 
-#pragma endregion
+
 	}
+#pragma endregion
 
 #pragma region Composition
 	int offset = 0;
@@ -553,6 +584,7 @@ void McRave::onFrame()
 		t.second = 0;
 	}
 #pragma endregion
+
 #pragma endregion
 
 #pragma region AllyUnits
@@ -608,7 +640,7 @@ void McRave::onFrame()
 				storeProbe(u, myProbes);
 			}
 
-			if (mineralHeatmap[u->getTilePosition().x][u->getTilePosition().y] > 0 &&u->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && (u->getHitPoints() + u->getShields()) > 20)
+			if (mineralHeatmap[u->getTilePosition().x][u->getTilePosition().y] > 0 && u->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && (u->getHitPoints() + u->getShields()) > 20)
 			{
 				u->attack(u->getClosestUnit(Filter::IsEnemy));
 			}
@@ -811,31 +843,31 @@ void McRave::onFrame()
 #pragma endregion
 	}
 
+
+
+#pragma region AllyInfo	
+
+	// Reset ally info variables
 	aSmall = 0, aMedium = 0, aLarge = 0;
 	allyStrength = 0.0;
 	outsideBase = false;
 
+	// If unit has been dead for over 500 frames, erase it (needed manual loop)
+	for (auto itr = allyUnits.begin(); itr != allyUnits.end();)
+	{
+		if ((*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount())
+		{
+			allyUnits.erase((*itr).first);
+		}
+		else
+		{
+			++itr;
+		}
+	}
+
+	// Check through all alive units or units dead within 500 frames
 	for (auto &u : allyUnits)
 	{
-
-#pragma region Grids
-		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
-		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
-		{
-			// Check for Arbiter positioning
-			for (int x = unitTilePosition.x - 5; x <= unitTilePosition.x + 6; x++)
-			{
-				for (int y = unitTilePosition.y - 5; y <= unitTilePosition.y + 6; y++)
-				{
-					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= 5)
-					{
-						arbiterHeatmap[x][y] += 1;
-					}
-				}
-			}
-		}
-#pragma endregion
-#pragma region AllyInfo			
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
 		{
@@ -892,26 +924,18 @@ void McRave::onFrame()
 				}
 			}
 		}
-		else if (u.second.getDeadFrame() != 0)
+		else
 		{
-			if (u.second.getDeadFrame() + 500 < Broodwar->getFrameCount())
+			enemyStrength += unitGetStrength(u.second.getUnitType()) * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			if (calculationDraw)
 			{
-				allyUnits[u.first].~UnitInfo();
-				allyUnits.erase(u.first);
-				continue;
-			}
-			else
-			{
-				enemyStrength += unitGetStrength(u.second.getUnitType()) * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-				if (calculationDraw)
-				{
-					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->self()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
-				}
+				Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->self()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
 			}
 		}
+	}
 
 #pragma endregion
-	}
+
 #pragma endregion
 
 #pragma region Neutrals
@@ -921,7 +945,7 @@ void McRave::onFrame()
 		{
 			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) > 0)
 			{
-				if (r->getType().isMineralField() && r->getDistance(r->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition()) < 320)
+				if (r->getType().isMineralField() && r->getUnitsInRadius(320, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus).size() > 0)
 				{
 					if (myMinerals.find(r) == myMinerals.end())
 					{
@@ -943,7 +967,7 @@ void McRave::onFrame()
 						}
 					}
 				}
-				if (r->getType() == UnitTypes::Resource_Vespene_Geyser && r->getDistance(r->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus)->getPosition()) < 320)
+				if (r->getType() == UnitTypes::Resource_Vespene_Geyser && r->getUnitsInRadius(320,Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus).size() > 0)
 				{
 					if (myGas.find(r) == myGas.end())
 					{
@@ -960,7 +984,6 @@ void McRave::onFrame()
 	}
 #pragma endregion
 
-
 #pragma region Scouting Midgame
 	// Scouting if we can't find enemy bases
 	if (enemyBasePositions.size() < 1 && Broodwar->getFrameCount() > 10000 && Broodwar->getFrameCount() > enemyScoutedLast + 1000 && Broodwar->getUnitsInRadius(playerStartingPosition, 50000, Filter::IsBuilding && Filter::IsEnemy).size() < 1)
@@ -976,6 +999,7 @@ void McRave::onFrame()
 		}
 	}
 #pragma endregion
+
 #pragma region Structure Iterator
 	// Get build order based on enemy race(s) and enemy army composition
 	getBuildOrder();
@@ -1018,15 +1042,16 @@ void McRave::onFrame()
 	queuedMineral = 0, queuedGas = 0;
 
 	for (auto b : queuedBuildings)
-	{
+	{		
+		queuedMineral += b.first.mineralPrice();
+		queuedGas += b.first.gasPrice();		
+
 		// If probe died, remove it and the building from the queue so that a new queue can be made -- IMPLEMENTING REPLACE PROBE INSTEAD
 		if (!b.second.second->exists())
 		{
-			queuedBuildings.erase(b.first);
+			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
 			continue;
 		}
-		queuedMineral += b.first.mineralPrice();
-		queuedGas += b.first.gasPrice();
 
 		// If drawing is on, draw a box around the build position -- MOVE -> drawing section
 		if (masterDraw)
@@ -1040,10 +1065,10 @@ void McRave::onFrame()
 			continue;
 		}
 
+		// If can't build here right now and the tile is visible, don't tell unit to build there
 		if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second) && Broodwar->isVisible(b.second.first))
-		{
-			// If Nexus, check units in rectangle of build position, if no ally units, send observer -- IMPLEMENTING
-			queuedBuildings.erase(b.first);
+		{					
+			continue;
 		}
 
 		// If we almost have enough resources, move the Probe to the build position
@@ -1052,6 +1077,7 @@ void McRave::onFrame()
 			b.second.second->move(Position(b.second.first));
 			continue;
 		}
+
 		// If Probe is not currently returning minerals or constructing, the build position is valid and can afford the building, then proceed with build
 		else if (b.second.first != TilePositions::None && Broodwar->self()->minerals() >= b.first.mineralPrice() && Broodwar->self()->gas() >= b.first.gasPrice())
 		{
@@ -1069,9 +1095,9 @@ void McRave::onFrame()
 		// Check for dead mineral field
 		if (myMinerals.find(u.second.getTarget()) == myMinerals.end() && myGas.find(u.second.getTarget()) == myGas.end())
 		{
-			myProbes.erase(u.first);
-			continue;
+			u.second.setTarget(assignProbe(u.first));			
 		}
+
 		// Draw on every frame
 		if (u.first && u.second.getTarget())
 		{
@@ -1268,19 +1294,19 @@ void McRave::onUnitHide(BWAPI::Unit unit)
 
 void McRave::onUnitCreate(BWAPI::Unit unit)
 {
-	if (unit->getPlayer() == Broodwar->self() && Broodwar->getFrameCount() >= 100)
-	{
-		queuedBuildings.erase(unit->getType());
-		if (unit->getType() == UnitTypes::Enum::Protoss_Nexus)
-		{
-			allyTerritory.emplace(getRegion(unit->getPosition()));
-			forceExpand = 0;
-		}
-	}
 	if (unit->getPlayer() == Broodwar->self())
 	{
-		// Get supply of the unit
-		supply += unit->getType().supplyRequired();
+		if (Broodwar->getFrameCount() >= 100)
+		{
+			queuedBuildings.erase(unit->getType());
+			// Get supply of the unit
+			supply += unit->getType().supplyRequired();
+			if (unit->getType() == UnitTypes::Enum::Protoss_Nexus)
+			{
+				allyTerritory.emplace(getRegion(unit->getPosition()));
+				forceExpand = 0;
+			}
+		}
 	}
 }
 
@@ -1290,8 +1316,6 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	{
 		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
 		supply -= unit->getType().supplyRequired();
-		//allyUnits.erase(unit);		
-		//allyUnits[unit].~UnitInfo();
 		// For probes, adjust the resource maps to align properly
 		if (unit->getType() == UnitTypes::Protoss_Probe)
 		{
@@ -1303,7 +1327,6 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 			{
 				myMinerals[myProbes[unit].getTarget()].setGathererCount(myMinerals[unit].getGathererCount() - 1);
 			}			
-			myProbes[unit].~ProbeInfo();
 			myProbes.erase(unit);
 		}
 		else if (unit->getType() == UnitTypes::Protoss_Nexus)
@@ -1316,24 +1339,20 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	}
 	else if (unit->getPlayer() == Broodwar->enemy())
 	{
-		//enemyUnits.erase(unit);
-		//enemyUnits[unit].~UnitInfo();
 		enemyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
 		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()) != enemyBasePositions.end())
 		{
 			enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()));
 		}
 	}
-	if (unit->getType().isMineralField() && unit->getInitialResources() > 0)
+	else if (unit->getType().isMineralField() && unit->getInitialResources() > 0)
 	{
 		TilePosition closestNexus = Broodwar->getClosestUnit(unit->getPosition(), Filter::IsResourceDepot)->getTilePosition();
 		if (find(activeExpansion.begin(), activeExpansion.end(), closestNexus) != activeExpansion.end())
 		{
 			activeExpansion.erase(find(activeExpansion.begin(), activeExpansion.end(), closestNexus));
 			inactiveNexusCnt++;
-		}
-
-		myMinerals[unit].~ResourceInfo();
+		}		
 		myMinerals.erase(unit);
 	}
 }

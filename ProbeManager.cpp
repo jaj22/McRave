@@ -3,35 +3,7 @@
 using namespace BWAPI;
 using namespace std;
 
-void assignCombat(Unit probe)
-{
-	// If Probe is assigned to combat and not found, push into vector
-	if (find(combatProbe.begin(), combatProbe.end(), probe) == combatProbe.end())
-	{
-		combatProbe.push_back(probe);
-	}
-	return;
 
-}
-
-void unAssignCombat(Unit probe)
-{
-	// If Probe is un assigned from combat and found, erase from vector
-	combatProbe.erase(find(combatProbe.begin(), combatProbe.end(), probe));
-	return;
-}
-
-Unit assignGas(Unit probe, Unit gas)
-{
-	// If Probe is assigned to gas, match with Assimilator that needs the Probe	
-	return gas;
-}
-
-Unit assignMinerals(Unit probe, Unit mineral)
-{
-	// If Probe is assigned to minerals, match with mineral field that needs the Probe	
-	return mineral;
-}
 
 Unit assignProbe(Unit probe)
 {
@@ -41,7 +13,7 @@ Unit assignProbe(Unit probe)
 		if (gas.second.getUnitType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
 		{
 			gas.second.setGathererCount(gas.second.getGathererCount() + 1);
-			return assignGas(probe, gas.first);
+			return gas.first;
 		}
 	}
 
@@ -55,7 +27,7 @@ Unit assignProbe(Unit probe)
 			if (mineral.second.getGathererCount() < cnt)
 			{
 				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
-				return assignMinerals(probe, mineral.first);
+				return mineral.first;
 			}
 		}
 		cnt++;

@@ -65,14 +65,14 @@ void unitMicro(Unit unit, Unit target)
 		}
 		else if (correctedFleePosition != BWAPI::Positions::None)
 		{
-			unit->move(Position(correctedFleePosition.x + rand() % 2 + (-1), correctedFleePosition.y + rand() % 2 + (-1)));
+			unit->move(Position(correctedFleePosition.x + rand() % 3 + (-1), correctedFleePosition.y + rand() % 3 + (-1)));
 			allyUnits[unit].setTargetPosition(correctedFleePosition);
 		}
 	}
 	// Else, regardless of if kite is true or not, attack if weapon is off cooldown
 	else if (unit->getGroundWeaponCooldown() == 0)
 	{
-		unit->attack(target);		
+		unit->attack(target);
 	}
 	return;
 }
@@ -94,7 +94,7 @@ int unitGetGlobalStrategy()
 		return 1;
 	}
 	else
-	{		
+	{
 		// If not Zerg, contain
 		if (Broodwar->enemy()->getRace() != Races::Zerg)
 		{
@@ -102,6 +102,7 @@ int unitGetGlobalStrategy()
 		}
 		return 0;
 	}
+	return 1;
 }
 
 int unitGetLocalStrategy(Unit unit, Unit target)
@@ -136,7 +137,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 
 		// If a unit is within range of the target, add to local strength
 		if (u.second.getPosition().getDistance(targetPosition) < radius)
-		{			
+		{
 			if (aLarge > 0 || aMedium > 0 || aSmall > 0)
 			{
 				// If unit is cloaked or burrowed and not detected, drastically increase strength
@@ -147,7 +148,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
 					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
-						//(((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
+					//(((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
 				}
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 				{
@@ -220,7 +221,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 			else
 			{
 				thisUnit = u.second.getStrength();
-			}			
+			}
 
 			// If ally hasn't died, add to ally. Otherwise, partially add to enemy local
 			if (u.second.getDeadFrame() == 0)
@@ -324,20 +325,14 @@ void unitGetCommand(Unit unit)
 		return;
 	}
 
-
-
-
-	/* Check local strategy manager to see what our next task is.
-	If 0, regroup unless forced to engage.
-	If 1, send unit to micro-management. */
-
 	int stratL = unitGetLocalStrategy(unit, target);
+	int stratG = unitGetGlobalStrategy();
 
 	// If target and unit are both valid and we're not ignoring local calculations
 	if (stratL != 3)
 	{
 		// Attack
-		if (stratL == 1 && target->exists() && target != unit)
+		if (stratL == 1 && target->exists())
 		{
 			unitMicro(unit, target);
 			return;
@@ -345,24 +340,24 @@ void unitGetCommand(Unit unit)
 		// Retreat
 		if (stratL == 0)
 		{
-			// If we are on top of our ramp, let's hold with zealots
-			if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot)
+			// Force engage Zealots on ramp
+			if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
 			{
-				if (unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && target != unit)
+				unitMicro(unit, target);
+				return;
+
+				/*else if (forceExpand == 0 && unit->getDistance(defendHere.at(0)) > 64)
 				{
-					unitMicro(unit, target);
-					return;
-				}
-				else if (forceExpand == 0 && unit->getDistance(defendHere.at(0)) > 64)
+				if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 10 < Broodwar->getFrameCount())
 				{
-					if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 10 < Broodwar->getFrameCount())
-					{
-						unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
-					}
-					return;
+				unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
 				}
+				return;
+				}*/
 			}
-			if (target && target->exists() && enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] > 0)
+
+			// Create concave when containing units
+			if (enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] <= 0 && stratG == 1)
 			{
 				Position fleePosition = unitFlee(unit, target);
 				if (fleePosition != Positions::None)
@@ -372,9 +367,10 @@ void unitGetCommand(Unit unit)
 				return;
 			}
 
+			// For each defensive position, find closest one
 			for (auto position : defendHere)
 			{
-				if (unit->getDistance(position) < 320 && allyTerritory.find(getRegion(unit->getTilePosition())) != allyTerritory.end())
+				if (unit->getDistance(position) < 320 || allyTerritory.find(getRegion(unit->getTilePosition())) != allyTerritory.end())
 				{
 					Position fleePosition = unitFlee(unit, target);
 					if (fleePosition != Positions::None)
@@ -389,19 +385,15 @@ void unitGetCommand(Unit unit)
 					closestP = position;
 				}
 			}
-			if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 10 < Broodwar->getFrameCount())
+
+			// If last command was too far away from this position, move there
+			if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5)
 			{
 				unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
 			}
 			return;
 		}
-	}
-
-
-	/* Check our global strategy manager to see what our next task is.
-	If 0, regroup at a chokepoint connected to allied territory.
-	If 1, send units into a frontal attack.	*/
-	int stratG = unitGetGlobalStrategy();
+	}	
 
 	if (stratG == 0)
 	{
@@ -680,7 +672,7 @@ Unit getTarget(Unit unit)
 		{
 			continue;
 		}
-		
+
 		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
 
 		if (u.first->exists())
@@ -697,7 +689,7 @@ Unit getTarget(Unit unit)
 		if (u.second.getUnitType().isBuilding())
 		{
 			thisUnit = 0.1*thisUnit;
-		}		
+		}
 
 		// If this is the strongest enemy around, target it
 		if (thisUnit > highest || highest == 0)
@@ -736,7 +728,7 @@ Unit getClusterTarget(Unit unit)
 		for (int y = unit->getTilePosition().y - range; y <= unit->getTilePosition().y + range; y++)
 		{
 			if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
-			{				
+			{
 				// Reavers want ground clusters
 				if (unit->getType() == UnitTypes::Protoss_Reaver)
 				{
@@ -777,26 +769,30 @@ Unit getClusterTarget(Unit unit)
 	{
 		if (unit->getType() == UnitTypes::Protoss_Reaver)
 		{
-			return getTarget(unit);			
+			return getTarget(unit);
 		}
 		else
 		{
 			return nullptr;
 		}
 	}
-	// Else if there is a cluster, ensure Reaver doesn't target a flying unit near the cluster tile
+	// Return ground cluster for Reavers
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
 		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 128);
 	}
-	// If there is no tank cluster, return NULL so Arbiter saves energy
+	// Return tank cluster for Arbiters
 	else if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
 		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128);
 	}
-	return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding, 128);
+	// Return unit cluster for High Templars
+	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
+	{
+		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding, 128);
+	}
+	return nullptr;
 }
-
 #pragma endregion
 
 #pragma region Movement
@@ -850,7 +846,7 @@ Position unitFlee(Unit unit, Unit currentTarget)
 	// Unit Flee Variables
 	double slopeDegree;
 	int x, y;
-	Position currentTargetPosition = currentTarget->getPosition();
+	Position currentTargetPosition = enemyUnits[currentTarget].getPosition();
 	Position currentUnitPosition = unit->getPosition();
 	TilePosition currentUnitTilePosition = unit->getTilePosition();
 
@@ -897,7 +893,7 @@ Position unitFlee(Unit unit, Unit currentTarget)
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
 			Position newPosition = Position(TilePosition(x, y));
-			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x,y), Filter::IsAlly).size() < 2)
+			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y), Filter::IsAlly).size() < 2)
 			{
 				for (int i = 0; i <= 1; i++)
 				{
@@ -906,7 +902,7 @@ Position unitFlee(Unit unit, Unit currentTarget)
 						// Not a fully functional walkable check -- IMPLEMENTING
 						if (Broodwar->isWalkable(((x * 4) + i), ((y * 4) + j)))
 						{
-							return newPosition + Position(i*8,j*8);
+							return newPosition + Position(i * 8, j * 8);
 						}
 					}
 				}

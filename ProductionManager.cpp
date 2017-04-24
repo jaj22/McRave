@@ -30,6 +30,7 @@ void productionManager(Unit building)
 				{
 					building->upgrade(UpgradeTypes::Singularity_Charge);
 					idleUpgrade.erase(building->getID());
+					return;
 				}
 				else
 				{
@@ -142,6 +143,7 @@ void productionManager(Unit building)
 				{
 					building->train(UnitTypes::Protoss_Arbiter);
 					idleBuildings.erase(building->getID());
+					return;
 				}
 				else
 				{
@@ -166,6 +168,7 @@ void productionManager(Unit building)
 				{
 					building->train(UnitTypes::Protoss_Observer);
 					idleBuildings.erase(building->getID());
+					return;
 				}
 				else
 				{
@@ -180,6 +183,7 @@ void productionManager(Unit building)
 				{
 					building->train(UnitTypes::Protoss_Reaver);
 					idleBuildings.erase(building->getID());
+					return;
 				}
 				else
 				{
@@ -212,6 +216,7 @@ void productionManager(Unit building)
 				{
 					building->research(TechTypes::Psionic_Storm);
 					idleTech.erase(building->getID());
+					return;
 				}
 				else
 				{
@@ -224,6 +229,7 @@ void productionManager(Unit building)
 				{
 					building->upgrade(UpgradeTypes::Khaydarin_Amulet);
 					idleUpgrade.erase(building->getID());
+					return;
 				}
 				else
 				{
@@ -238,6 +244,7 @@ void productionManager(Unit building)
 				{
 					building->research(TechTypes::Stasis_Field);
 					idleTech.erase(building->getID());
+					return;
 				}
 				else
 				{
