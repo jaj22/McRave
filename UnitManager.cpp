@@ -20,32 +20,29 @@ void unitMicro(Unit unit, Unit target)
 {
 	// Variables
 	bool kite = false;
-	int range = unit->getType().groundWeapon().maxRange();
+	int range = unitGetTrueRange(unit->getType(), Broodwar->self());
+	int offset = 0;
 
-	// Range check	
-	if (unit->getType() == UnitTypes::Protoss_Dragoon && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
+	// Stop offset
+	if (unit->getType() == UnitTypes::Protoss_Dragoon)
 	{
-		range = 192;
+		offset = 9;
 	}
 	if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
-		range = 256;
+		offset = 1;
 	}
 
-	// If unit is attacking or in an attack frame, don't want to micro
-	if (unit->isAttackFrame() || unit->isStartingAttack())
-	{
-		return;
-	}
+	// Store when isAttackFrame was last true
+	// That frame + 9 is locked down, do not allow commands during that time	
 
-	// If recently issued a command to attack a unit, don't want to micro
 	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit->getTarget() == target)
 	{
 		return;
 	}
 
 	// If kiting unnecessary, disable
-	if (target->getType().isFlyer() || target->getType().isBuilding() || unit->getType() == UnitTypes::Protoss_Corsair)
+	if (target->getType().isBuilding() || unit->getType() == UnitTypes::Protoss_Corsair)
 	{
 		kite = false;
 	}
@@ -57,7 +54,7 @@ void unitMicro(Unit unit, Unit target)
 	}
 
 	// If kite is true and weapon on cooldown, move
-	if (kite && Broodwar->getLatencyFrames() / 2 <= unit->getGroundWeaponCooldown())
+	if (kite && unit->getGroundWeaponCooldown() > 0 && Broodwar->getFrameCount() - allyUnits[unit].getLastCommandFrame() > offset - Broodwar->getLatencyFrames())
 	{
 		Position correctedFleePosition = unitFlee(unit, target);
 		// Want Corsairs to move closer always if possible
@@ -73,9 +70,9 @@ void unitMicro(Unit unit, Unit target)
 		}
 	}
 	// Else, regardless of if kite is true or not, attack if weapon is off cooldown
-	else if (Broodwar->getLatencyFrames() / 2 > unit->getGroundWeaponCooldown())
+	else if (unit->getGroundWeaponCooldown() == 0)
 	{
-		unit->attack(target);
+		unit->attack(target);		
 	}
 	return;
 }
@@ -132,7 +129,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		thisUnit = 0.0;
 
 		// Ignore workers, keep buildings (reinforcements and static defenses)
-		if (u.second.getUnitType().isWorker() || (u.first->exists() && u.first->isStasised()))
+		if (u.second.getUnitType().isWorker() || (u.first && u.first->exists() && u.first->isStasised()))
 		{
 			continue;
 		}
@@ -271,6 +268,8 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 			allyUnits[unit].setStrategy(0);
 			return 0;
 		}
+		allyUnits[unit].setStrategy(1);
+		allyUnits[unit].setTargetPosition(targetPosition);
 		return 1;
 	}
 	// If last command was disengage/no command
@@ -284,6 +283,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 			return 1;
 		}
 		// Otherwise return 3 or 0, whichever was previous
+		allyUnits[unit].setStrategy(0);
 		return 0;
 	}
 	// Disregard local if no target, no recent local calculation and not within ally region
@@ -473,7 +473,7 @@ double unitGetStrength(UnitType unitType)
 	}
 	if (unitType == UnitTypes::Terran_Medic)
 	{
-		return 7.5;
+		return 5.0;
 	}
 	if (unitType == UnitTypes::Zerg_Lurker)
 	{
@@ -491,7 +491,7 @@ double unitGetStrength(UnitType unitType)
 	{
 		return 20.0;
 	}
-	if (unitType == UnitTypes::Protoss_Reaver)
+	if (unitType == UnitTypes::Protoss_Scarab)
 	{
 		return 0.0;
 	}
@@ -663,13 +663,13 @@ Unit getTarget(Unit unit)
 
 	Unit target = nullptr;
 
-	if (enemyAggresion && Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy, 640))
-	{
-		return Broodwar->getClosestUnit(playerStartingPosition, Filter::IsEnemy, 640);
-	}
-
 	for (auto u : enemyUnits)
 	{
+		if (!u.first)
+		{
+			continue;
+		}
+
 		// If unit is dead or unattackble based on flying
 		if (u.second.getDeadFrame() > 0 || (u.second.getUnitType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver)))
 		{
@@ -897,7 +897,7 @@ Position unitFlee(Unit unit, Unit currentTarget)
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
 			Position newPosition = Position(TilePosition(x, y));
-			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x,y)).size() < 2)
+			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x,y), Filter::IsAlly).size() < 2)
 			{
 				for (int i = 0; i <= 1; i++)
 				{
@@ -1219,7 +1219,7 @@ int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
 	// Create new unit
 	if (enemyUnits.find(unit) == enemyUnits.end())
 	{
-		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0);
+		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0, 0);
 		enemyUnits[unit] = newUnit;
 	}
 	// Update unit
@@ -1237,7 +1237,7 @@ int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 	// Create new unit
 	if (allyUnits.find(unit) == allyUnits.end())
 	{
-		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0);
+		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0, 0);
 		allyUnits[unit] = newUnit;
 	}
 	// Update unit
@@ -1249,12 +1249,12 @@ int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
 		allyUnits[unit].setCommand(unit->getLastCommand().getType());
 	}
-	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->self()), unit->getLastCommand().getType(), 0, 0);
+	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->self()), unit->getLastCommand().getType(), 0, 0, 0);
 	allyUnits[unit] = newUnit;
 	return 0;
 }
 
-UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand, int newDeadFrame, int newStrategy)
+UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand, int newDeadFrame, int newStrategy, int newCommandFrame)
 {
 	unitType = newType;
 	unitPosition = newPosition;
@@ -1262,6 +1262,7 @@ UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, d
 	unitRange = newRange;
 	unitCommand = newCommand;
 	deadFrame = newDeadFrame;
+	lastCommandFrame = newCommandFrame;
 }
 UnitInfo::UnitInfo()
 {
@@ -1314,6 +1315,10 @@ int UnitInfo::getStrategy() const
 {
 	return strategy;
 }
+int UnitInfo::getLastCommandFrame() const
+{
+	return lastCommandFrame;
+}
 
 void UnitInfo::setUnitType(UnitType newUnitType)
 {
@@ -1354,6 +1359,10 @@ void UnitInfo::setDeadFrame(int newDeadFrame)
 void UnitInfo::setStrategy(int newStrategy)
 {
 	strategy = newStrategy;
+}
+void UnitInfo::setLastCommandFrame(int newCommandFrame)
+{
+	lastCommandFrame = newCommandFrame;
 }
 #pragma endregion
 

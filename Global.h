@@ -58,11 +58,7 @@ map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
 map <Unit, int> nexusCannonMap;
 
 // Probe Manager Variables
-map <Unit, Unit> gasProbeMap;
-map <Unit, pair<Unit, Position>> mineralProbeMap;
-
 map <Unit, ProbeInfo> myProbes;
-
 Unit scout;
 vector<Unit> combatProbe;
 bool saturated = false, gasNeeded = false;
@@ -71,8 +67,6 @@ bool saturated = false, gasNeeded = false;
 map <Unit, ResourceInfo> myMinerals;
 map <Unit, ResourceInfo> myGas;
 vector <Unit> geysers;
-map <Unit, int> gasMap;
-map <Unit, int> mineralMap;
 vector <Unit> boulders;
 
 // Unit Manager Variables
@@ -91,7 +85,6 @@ int aSmall = 0, aMedium = 0, aLarge = 0, eSmall = 0, eMedium = 0, eLarge = 0;
 Position supportPosition;
 
 // Strategy Variables
-bool enemyAggresion = false;
 bool terranBio = false;
 bool scouting = true;
 bool outsideBase = false;

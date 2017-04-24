@@ -401,7 +401,7 @@ void McRave::onFrame()
 				}
 			}
 		}
-		if (u.first->exists() && !u.second.getUnitType().isBuilding() && !u.first->isStasised() && !u.first->isMaelstrommed())
+		if (u.first && u.first->exists() && !u.second.getUnitType().isBuilding() && !u.first->isStasised() && !u.first->isMaelstrommed())
 		{
 			// Cluster heatmap for psi/stasis (96x96)			
 			for (int x = unitTilePosition.x - 1; x <= unitTilePosition.x + 1; x++)
@@ -494,6 +494,7 @@ void McRave::onFrame()
 			{
 				enemyUnits[u.first].~UnitInfo();
 				enemyUnits.erase(u.first);
+				continue;
 			}
 			// Else add a portion of the strength to ally strength
 			else
@@ -607,41 +608,14 @@ void McRave::onFrame()
 				storeProbe(u, myProbes);
 			}
 
-			if (u->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && allyStrength < enemyStrength && (u->getHitPoints() + u->getShields()) > 20)
-			{
-				assignCombat(u);
-			}
-			else if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end() && (u->getUnitsInRadius(64, Filter::IsEnemy).size() == 0 || allyStrength > enemyStrength || (u->getHitPoints() + u->getShields()) <= 20))
-			{
-				unAssignCombat(u);
-				u->stop();
-			}
-			if (combatProbe.size() > 3 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1)
-			{
-				// SCV rush probable
-				enemyAggresion = true;
-			}
-			if (find(combatProbe.begin(), combatProbe.end(), u) != combatProbe.end())
+			if (mineralHeatmap[u->getTilePosition().x][u->getTilePosition().y] > 0 &&u->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && (u->getHitPoints() + u->getShields()) > 20)
 			{
 				u->attack(u->getClosestUnit(Filter::IsEnemy));
 			}
-			//if (mineralProbeMap.find(u) == mineralProbeMap.end() && gasProbeMap.find(u) == gasProbeMap.end())
-			//{
-			//	// Assign the probe a task (mineral, gas)
-			//	assignProbe(u);
-			//	continue;
-			//}
-			//for (auto g : gasMap)
-			//{
-			//	if (g.second < 3 && g.first != scout)
-			//	{					
-			//		/*myProbes[u].~ProbeInfo();
-			//		myProbes.erase(u);*/
-			//		mineralMap[mineralProbeMap[u].first] -= 1;
-			//		mineralProbeMap.erase(u);
-			//		assignProbe(u);
-			//	}
-			//}
+			else if (u->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && (mineralHeatmap[u->getTilePosition().x][u->getTilePosition().y] == 0 || (u->getHitPoints() + u->getShields()) <= 20))
+			{
+				u->stop();
+			}
 
 			// Crappy scouting method
 			if (!scout)
@@ -716,8 +690,8 @@ void McRave::onFrame()
 				for (auto &m : myMinerals)
 				{
 					if (m.second.getGathererCount() < 2)
-					{						
-						u->train(UnitTypes::Protoss_Probe);						
+					{
+						u->train(UnitTypes::Protoss_Probe);
 						saturated = false;
 						break;
 					}
@@ -767,10 +741,6 @@ void McRave::onFrame()
 						}
 					}
 				}
-			}
-			else if (u->getType() == UnitTypes::Protoss_Assimilator && gasMap.find(u) == gasMap.end())
-			{
-				gasMap.emplace(u, 0);
 			}
 
 			// If it's a building capable of production, send to production manager
@@ -847,6 +817,7 @@ void McRave::onFrame()
 
 	for (auto &u : allyUnits)
 	{
+
 #pragma region Grids
 		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
 		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
@@ -856,7 +827,7 @@ void McRave::onFrame()
 			{
 				for (int y = unitTilePosition.y - 5; y <= unitTilePosition.y + 6; y++)
 				{
-					if (u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= 5 && (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()))
+					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= 5)
 					{
 						arbiterHeatmap[x][y] += 1;
 					}
@@ -873,6 +844,12 @@ void McRave::onFrame()
 			{
 				// Add strength				
 				allyStrength += u.second.getStrength();
+
+				// Set last command frame
+				if (u.first->isStartingAttack())
+				{
+					u.second.setLastCommandFrame(Broodwar->getFrameCount());
+				}
 
 				// Drawing
 				if (masterDraw)
@@ -921,6 +898,7 @@ void McRave::onFrame()
 			{
 				allyUnits[u.first].~UnitInfo();
 				allyUnits.erase(u.first);
+				continue;
 			}
 			else
 			{
@@ -1088,6 +1066,12 @@ void McRave::onFrame()
 	// For each Probe mapped to gather minerals
 	for (auto u : myProbes)
 	{
+		// Check for dead mineral field
+		if (myMinerals.find(u.second.getTarget()) == myMinerals.end() && myGas.find(u.second.getTarget()) == myGas.end())
+		{
+			myProbes.erase(u.first);
+			continue;
+		}
 		// Draw on every frame
 		if (u.first && u.second.getTarget())
 		{
@@ -1219,11 +1203,10 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 	{
 		if (unit->getType().isBuilding())
 		{
-			/*if (scouting && Broodwar->enemy()->getRace() == Races::Terran && unit->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 128)
+			if (scouting && Broodwar->enemy()->getRace() == Races::Terran && unit->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 256)
 			{
-			wallIn = true;
-			noZealots = true;
-			}*/
+				wallIn = true;
+			}
 			if (enemyBasePositions.size() == 0)
 			{
 				// Find closest base location to building
@@ -1319,11 +1302,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 			if (myMinerals.find(unit) != myMinerals.end())
 			{
 				myMinerals[myProbes[unit].getTarget()].setGathererCount(myMinerals[unit].getGathererCount() - 1);
-			}
-			if (find(combatProbe.begin(), combatProbe.end(), unit) != combatProbe.end())
-			{
-				combatProbe.erase(find(combatProbe.begin(), combatProbe.end(), unit));
-			}
+			}			
 			myProbes[unit].~ProbeInfo();
 			myProbes.erase(unit);
 		}

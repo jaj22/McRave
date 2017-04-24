@@ -21,7 +21,7 @@ extern vector<TilePosition> activeExpansion;
 extern bool saturated, gasNeeded, noZealots;
 
 // External enemy build tracking
-extern bool enemyAggresion, scouting, terranBio;
+extern bool scouting, terranBio;
 extern string currentStrategy;
 
 // Function declaration

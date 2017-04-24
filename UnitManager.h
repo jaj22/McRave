@@ -7,6 +7,8 @@ using namespace BWAPI;
 using namespace std;
 using namespace BWEM;
 
+
+
 // Class for enemy tracking
 class UnitInfo {
 	UnitType unitType, targetType;
@@ -14,10 +16,10 @@ class UnitInfo {
 	double unitStrength, unitLocal, unitRange;
 	UnitCommandType unitCommand;
 	Unit target;
-	int deadFrame, strategy;
+	int deadFrame, strategy, lastCommandFrame;
 public:
 	UnitInfo();
-	UnitInfo(UnitType, Position, double, double, UnitCommandType, int, int);
+	UnitInfo(UnitType, Position, double, double, UnitCommandType, int, int, int);
 	~UnitInfo();
 
 	// Accessors
@@ -31,6 +33,7 @@ public:
 	Unit getTarget() const;
 	int getDeadFrame() const;
 	int getStrategy() const;
+	int getLastCommandFrame() const;
 
 	// Mutators
 	void setUnitType(UnitType);
@@ -43,6 +46,7 @@ public:
 	void setTarget(Unit);
 	void setDeadFrame(int);
 	void setStrategy(int);
+	void setLastCommandFrame(int);
 };
 
 
@@ -82,7 +86,6 @@ extern vector<int> harassReaverID;
 // Strategy Variables
 extern bool outsideBase;
 extern int forceExpand;
-extern bool enemyAggresion;
 
 // Miscellaneous
 extern vector<Unit> combatProbe;
@@ -100,6 +103,9 @@ Position unitFlee(Unit unit, Unit currentTarget);
 // Targeting Functions
 Unit getTarget(Unit unit);
 Unit getClusterTarget(Unit unit);
+
+// Range check
+double unitGetTrueRange(UnitType unitType, Player who);
 
 // Special Unit Functions
 void shuttleManager(Unit unit);

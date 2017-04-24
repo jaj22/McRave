@@ -57,12 +57,6 @@ void desiredBuildings()
 		getMidBuild = true;		
 	}
 
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
-	{
-		noZealots = false;
-		enemyAggresion = false;
-	}
-
 	// If we are in mid game builds and we hit at least 4 gates, chances are we need to tech again
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 4 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 2 && getMidBuild)
 	{		
@@ -87,7 +81,7 @@ void getBuildOrder()
 			/* Protoss vs Zerg		Early Game: 2 Gate Core		Mid Game Tech: Speedlots		Late Game Tech: High Temps and Dark Archons	*/
 			// IMPLEMENTING -- If Muta, mid build 2 (corsairs)
 		case Races::Enum::Zerg:			
-			if (enemyAggresion || getEarlyBuild)
+			if (getEarlyBuild)
 			{
 				earlyBuilds(0);				
 			}
@@ -103,11 +97,7 @@ void getBuildOrder()
 
 			/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
 		case Races::Enum::Terran:
-			if (enemyAggresion && getEarlyBuild)
-			{
-				earlyBuilds(0);				
-			}
-			else if (getEarlyBuild)
+			if (getEarlyBuild)
 			{
 				earlyBuilds(1);				
 			}
@@ -134,7 +124,7 @@ void getBuildOrder()
 
 			/* Protoss vs Protoss		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps */
 		case Races::Enum::Protoss:
-			if (enemyAggresion || getEarlyBuild)
+			if (getEarlyBuild)
 			{
 				earlyBuilds(0); 	
 			}
@@ -232,7 +222,7 @@ void earlyBuilds(int whichBuild)
 	{
 	case 0:
 		// -- 2 Gate Core --
-		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot)/4);
+		coreDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot)/3);
 		gasDesired = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot)/2);
 		if (supply >= 20 && supply < 24)
 		{

@@ -36,17 +36,6 @@ Unit assignMinerals(Unit probe, Unit mineral)
 Unit assignProbe(Unit probe)
 {
 	int cnt = 1;
-	//// See if we need gas probes
-	//for (auto gas : gasMap)
-	//{
-	//	if (gas.second < 3)
-	//	{
-	//		assignGas(probe, gas.first);
-	//		gasMap[gas.first] = gas.second + 1;
-	//		return;
-	//	}
-	//}
-
 	for (auto &gas : myGas)
 	{
 		if (gas.second.getUnitType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
@@ -61,18 +50,6 @@ Unit assignProbe(Unit probe)
 	// IMPLEMENTING -- Split probes when an expansion finishes?	
 	while (cnt <= 2)
 	{
-		//for (auto mineral : mineralMap)
-		//{
-		//	// First round on minerals
-		//	if (mineral.second < cnt)
-		//	{
-		//		saturated = false;
-		//		assignMinerals(probe, mineral.first);
-		//		mineralMap[mineral.first] = cnt;
-		//		return;
-		//	}
-		//}
-
 		for (auto &mineral : myMinerals)
 		{
 			if (mineral.second.getGathererCount() < cnt)

@@ -49,9 +49,6 @@ void storeProbe(Unit probe, map <Unit, ProbeInfo>& myProbes);
 
 // External Variables
 extern vector<Unit> combatProbe;
-extern map <Unit, pair<Unit, Position>> mineralProbeMap;
-extern map <Unit, Unit> gasProbeMap;
-extern map <Unit, int> mineralMap, gasMap;
 extern bool saturated, gasNeeded;
 extern map <Unit, ResourceInfo> myMinerals;
 extern map <Unit, ResourceInfo> myGas;
