@@ -453,11 +453,11 @@ void McRave::onFrame()
 	}
 
 	// If unit has been dead for over 500 frames, erase it (needed manual loop)
-	for (auto itr = enemyUnits.begin(); itr != enemyUnits.end();)
+	for (map<Unit, UnitInfo>::iterator itr = enemyUnits.begin(); itr != enemyUnits.end();)
 	{
-		if ((*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount())
+		if ((*itr).second.getDeadFrame() != 0 && (*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount())
 		{
-			enemyUnits.erase((*itr).first);
+			itr = enemyUnits.erase(itr);
 		}
 		else
 		{
@@ -611,7 +611,7 @@ void McRave::onFrame()
 
 
 		// Return if not latency frame
-		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
+		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0 && allyUnits.find(u) != allyUnits.end())
 		{
 			allyUnits[u].setPosition(u->getPosition());
 			continue;
@@ -843,8 +843,6 @@ void McRave::onFrame()
 #pragma endregion
 	}
 
-
-
 #pragma region AllyInfo	
 
 	// Reset ally info variables
@@ -853,11 +851,11 @@ void McRave::onFrame()
 	outsideBase = false;
 
 	// If unit has been dead for over 500 frames, erase it (needed manual loop)
-	for (auto itr = allyUnits.begin(); itr != allyUnits.end();)
+	for (map<Unit, UnitInfo>::iterator itr = allyUnits.begin(); itr != allyUnits.end();)
 	{
-		if ((*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount())
+		if (itr->second.getDeadFrame() != 0 && itr->second.getDeadFrame() + 500 < Broodwar->getFrameCount())
 		{
-			allyUnits.erase((*itr).first);
+			itr = allyUnits.erase(itr);
 		}
 		else
 		{
@@ -881,7 +879,7 @@ void McRave::onFrame()
 				if (u.first->isStartingAttack())
 				{
 					u.second.setLastCommandFrame(Broodwar->getFrameCount());
-				}
+				}							
 
 				// Drawing
 				if (masterDraw)
@@ -1023,10 +1021,10 @@ void McRave::onFrame()
 	}
 	// For each building in the protoss race
 	for (auto b : buildingDesired)
-	{
+	{		
 		// If our visible count is lower than our desired count
 		if (b.second > Broodwar->self()->visibleUnitCount(b.first) && queuedBuildings.find(b.first) == queuedBuildings.end())
-		{
+		{		
 			TilePosition here = buildingManager(b.first);
 			Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
 			// If the Tile Position and Builder are valid
@@ -1041,7 +1039,7 @@ void McRave::onFrame()
 	// Queued minerals for buildings needed
 	queuedMineral = 0, queuedGas = 0;
 
-	for (auto b : queuedBuildings)
+	for (auto &b : queuedBuildings)
 	{		
 		queuedMineral += b.first.mineralPrice();
 		queuedGas += b.first.gasPrice();		
@@ -1050,6 +1048,13 @@ void McRave::onFrame()
 		if (!b.second.second->exists())
 		{
 			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
+			continue;
+		}
+
+		// If can't build here right now and the tile is visible, don't tell unit to build there
+		if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second) && Broodwar->isVisible(b.second.first))
+		{
+			b.second.first = buildingManager(b.first);
 			continue;
 		}
 
@@ -1063,13 +1068,7 @@ void McRave::onFrame()
 		if (b.second.second->isConstructing() || b.second.second->getLastCommandFrame() >= Broodwar->getFrameCount() && (b.second.second->getLastCommand().getType() == UnitCommandTypes::Move || b.second.second->getLastCommand().getType() == UnitCommandTypes::Build))
 		{
 			continue;
-		}
-
-		// If can't build here right now and the tile is visible, don't tell unit to build there
-		if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second) && Broodwar->isVisible(b.second.first))
-		{					
-			continue;
-		}
+		}		
 
 		// If we almost have enough resources, move the Probe to the build position
 		if (Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() <= b.first.mineralPrice() && Broodwar->self()->gas() >= 0.8*b.first.gasPrice() && Broodwar->self()->gas() <= b.first.gasPrice() || (b.second.second->getDistance(Position(b.second.first)) > 160 && Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && 0.8*Broodwar->self()->gas() >= b.first.gasPrice()))
@@ -1092,11 +1091,11 @@ void McRave::onFrame()
 	// For each Probe mapped to gather minerals
 	for (auto u : myProbes)
 	{
-		// Check for dead mineral field
-		if (myMinerals.find(u.second.getTarget()) == myMinerals.end() && myGas.find(u.second.getTarget()) == myGas.end())
-		{
-			u.second.setTarget(assignProbe(u.first));			
-		}
+		//// Check for dead mineral field
+		//if (myMinerals.find(u.second.getTarget()) == myMinerals.end() && myGas.find(u.second.getTarget()) == myGas.end())
+		//{
+		//	u.second.setTarget(assignProbe(u.first));
+		//}
 
 		// Draw on every frame
 		if (u.first && u.second.getTarget())
@@ -1296,11 +1295,11 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 {
 	if (unit->getPlayer() == Broodwar->self())
 	{
+		// Get supply of the unit	
+		supply += unit->getType().supplyRequired();
+		queuedBuildings.erase(unit->getType());
 		if (Broodwar->getFrameCount() >= 100)
-		{
-			queuedBuildings.erase(unit->getType());
-			// Get supply of the unit
-			supply += unit->getType().supplyRequired();
+		{					
 			if (unit->getType() == UnitTypes::Enum::Protoss_Nexus)
 			{
 				allyTerritory.emplace(getRegion(unit->getPosition()));
@@ -1359,7 +1358,10 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 
 void McRave::onUnitMorph(BWAPI::Unit unit)
 {
-
+	if (unit->getPlayer() == Broodwar->self())
+	{	
+		queuedBuildings.erase(unit->getType());		
+	}
 }
 
 void McRave::onUnitRenegade(BWAPI::Unit unit)

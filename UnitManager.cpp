@@ -33,9 +33,6 @@ void unitMicro(Unit unit, Unit target)
 		offset = 1;
 	}
 
-	// Store when isAttackFrame was last true
-	// That frame + 9 is locked down, do not allow commands during that time	
-
 	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit->getTarget() == target)
 	{
 		return;
@@ -54,7 +51,7 @@ void unitMicro(Unit unit, Unit target)
 	}
 
 	// If kite is true and weapon on cooldown, move
-	if (kite && unit->getGroundWeaponCooldown() > 0 && Broodwar->getFrameCount() - allyUnits[unit].getLastCommandFrame() > offset - Broodwar->getLatencyFrames())
+	if (kite && Broodwar->getFrameCount() - allyUnits[unit].getLastCommandFrame() > offset - Broodwar->getLatencyFrames() && unit->getGroundWeaponCooldown() > 0)
 	{
 		Position correctedFleePosition = unitFlee(unit, target);
 		// Want Corsairs to move closer always if possible
@@ -63,14 +60,14 @@ void unitMicro(Unit unit, Unit target)
 			unit->move(target->getPosition());
 			allyUnits[unit].setTargetPosition(target->getPosition());
 		}
-		else if (correctedFleePosition != BWAPI::Positions::None)
+		else if (correctedFleePosition != BWAPI::Positions::None && (unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->getLastCommand().getTargetPosition().getDistance(correctedFleePosition) > 5))
 		{
 			unit->move(Position(correctedFleePosition.x + rand() % 3 + (-1), correctedFleePosition.y + rand() % 3 + (-1)));
 			allyUnits[unit].setTargetPosition(correctedFleePosition);
 		}
 	}
 	// Else, regardless of if kite is true or not, attack if weapon is off cooldown
-	else if (unit->getGroundWeaponCooldown() == 0)
+	else if (unit->getGroundWeaponCooldown() <= 0)
 	{
 		unit->attack(target);
 	}
@@ -357,7 +354,7 @@ void unitGetCommand(Unit unit)
 			}
 
 			// Create concave when containing units
-			if (enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] <= 0 && stratG == 1)
+			if (enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0.0 && stratG == 1)
 			{
 				Position fleePosition = unitFlee(unit, target);
 				if (fleePosition != Positions::None)
@@ -893,7 +890,7 @@ Position unitFlee(Unit unit, Unit currentTarget)
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
 			Position newPosition = Position(TilePosition(x, y));
-			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y), Filter::IsAlly).size() < 2)
+			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
 			{
 				for (int i = 0; i <= 1; i++)
 				{
@@ -1244,9 +1241,7 @@ int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 		allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
 		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
 		allyUnits[unit].setCommand(unit->getLastCommand().getType());
-	}
-	UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->self()), unit->getLastCommand().getType(), 0, 0, 0);
-	allyUnits[unit] = newUnit;
+	}	
 	return 0;
 }
 
