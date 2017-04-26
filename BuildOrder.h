@@ -5,7 +5,6 @@ using namespace std;
 using namespace BWAPI;
 
 // External building variables
-extern int nexusDesired, pylonDesired, gasDesired, gateDesired, forgeDesired, batteryDesired, coreDesired, roboDesired, stargateDesired, citadelDesired, supportBayDesired, fleetBeaconDesired, archivesDesired, observatoryDesired, tribunalDesired;
 extern map <UnitType, int> buildingDesired;
 extern map <int, UnitType> idleGates;
 

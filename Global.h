@@ -31,21 +31,7 @@ using namespace BWTA;
 
 // Building Tracker Variables
 int queuedMineral = 0, queuedGas = 0, reservedMineral = 0, reservedGas = 0;
-int nexusDesired = 0, inactiveNexusCnt = 0;
-int pylonDesired = 0;
-int	gasDesired = 0;
-int gateDesired = 0;
-int forgeDesired = 0;
-int batteryDesired = 0;
-int coreDesired = 0;
-int roboDesired = 0;
-int stargateDesired = 0;
-int citadelDesired = 0;
-int supportBayDesired = 0;
-int fleetBeaconDesired = 0;
-int archivesDesired = 0;
-int observatoryDesired = 0;
-int tribunalDesired = 0;
+int inactiveNexusCnt = 0;
 
 // Building Manager Variables
 map <Unit, NexusInfo> myNexus;
@@ -74,7 +60,6 @@ map <UnitType, double> unitScore;
 map <Unit, UnitInfo> enemyUnits;
 map <Unit, UnitInfo> allyUnits;
 map <UnitType, int> enemyComposition;
-map <Unit, Position> invisibleUnits;
 map <UnitType, map<UnitType, int>> unitTargets;
 int supply;
 vector<int> shuttleID;

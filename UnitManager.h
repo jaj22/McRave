@@ -72,7 +72,6 @@ extern double enemyStrength, allyStrength;
 // Unit Variables
 extern map <Unit, UnitInfo> enemyUnits;
 extern map <Unit, UnitInfo> allyUnits;
-extern map <Unit, Position> invisibleUnits;
 extern map <UnitType, map<UnitType, int>> unitTargets;
 extern Position supportPosition;
 extern int aSmall, aMedium, aLarge, eSmall, eMedium, eLarge;

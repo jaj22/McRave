@@ -14,6 +14,7 @@ bool stimResearched = false;
 // Add scout intercepting (based on velocity and direction?)
 // Combat sim so there's no army swarming 1 unit
 
+
 #pragma region Strategy
 
 void unitMicro(Unit unit, Unit target)
@@ -390,7 +391,7 @@ void unitGetCommand(Unit unit)
 			}
 			return;
 		}
-	}	
+	}
 
 	if (stratG == 0)
 	{
@@ -458,7 +459,7 @@ double unitGetStrength(UnitType unitType)
 	// Some hardcoded values
 	if (unitType == UnitTypes::Terran_Bunker)
 	{
-		return 50.0;
+		return 50000.0;
 	}
 	if (unitType == UnitTypes::Terran_Medic)
 	{
@@ -1115,16 +1116,18 @@ void reaverManager(Unit unit)
 }
 
 void observerManager(Unit unit)
-{
-	if (invisibleUnits.size() > 0)
+{	
+	/*for (auto pos : nextExpansion)
 	{
-		for (auto u : invisibleUnits)
+		if (Broodwar->getUnitsInRectangle(Position(pos), (Position(pos) + Position(128, 96)), Filter::IsEnemy && Filter::Exists).size() <= 0)
 		{
-			unit->move(u.second);
+			unit->move(Position(pos));
 			return;
 		}
-	}
-	else
+	}*/	
+
+	// Make sure we don't overwrite commands
+	if (unit->getLastCommandFrame() < Broodwar->getFrameCount())
 	{
 		unit->move(supportPosition);
 	}
@@ -1241,7 +1244,7 @@ int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 		allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
 		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
 		allyUnits[unit].setCommand(unit->getLastCommand().getType());
-	}	
+	}
 	return 0;
 }
 

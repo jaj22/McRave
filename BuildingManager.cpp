@@ -64,8 +64,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 {
 	// TEMPORARY CHANGES:
 	// +1 and -1 on end/start
-	// mod 2 x mod 3 y
-	// Start at one tile vertically above the build site and check the tile width and height + 1 to make sure units can move past and dont get stuck
+	// mod 2/3 x mod 2 y
 	
 	int offset = 0;
 	if (!ignoreCond && (buildTilePosition.x % 3 == 0 || buildTilePosition.x % 2 == 0 || buildTilePosition.y % 2 == 0))
@@ -90,7 +89,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 			if (!ignoreCond)
 			{
 				// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-				if (mineralHeatmap[x][y] > 0 || building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 1)
+				if (mineralHeatmap[x][y] > 0 || building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0 || allyTerritory.find(getRegion(buildTilePosition)) == allyTerritory.end())
 				{
 					return false;
 				}

@@ -9,6 +9,7 @@ extern vector <TilePosition> activeExpansion;
 extern vector <TilePosition> nextExpansion;
 extern TilePosition playerStartingTilePosition;
 extern map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
+extern set <BWTA::Region*> allyTerritory;
 
 // External resource variables
 extern int queuedMineral, queuedGas, reservedMineral, reservedGas;
