@@ -459,7 +459,7 @@ double unitGetStrength(UnitType unitType)
 	// Some hardcoded values
 	if (unitType == UnitTypes::Terran_Bunker)
 	{
-		return 50000.0;
+		return 50.0;
 	}
 	if (unitType == UnitTypes::Terran_Medic)
 	{
@@ -664,7 +664,7 @@ Unit getTarget(Unit unit)
 		if (u.second.getDeadFrame() > 0 || (u.second.getUnitType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver)))
 		{
 			continue;
-		}
+		}		
 
 		if (u.first->exists() && u.first->isStasised())
 		{

@@ -17,7 +17,6 @@ Unit assignProbe(Unit probe)
 		}
 	}
 
-
 	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
 	// IMPLEMENTING -- Split probes when an expansion finishes?	
 	while (cnt <= 2)

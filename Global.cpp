@@ -459,11 +459,16 @@ void McRave::onFrame()
 	// Stored enemy units iterator
 	for (auto &u : enemyUnits)
 	{
+		// If nullptr, continue
+		if (!u.first)
+		{
+			continue;
+		}
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
 		{
 			// If tile is visible but unit is not, remove position
-			if (!u.first->exists() && Broodwar->isVisible(TilePosition(u.second.getPosition())))
+			if (!u.first->exists() && u.second.getPosition() != Positions::None && Broodwar->isVisible(TilePosition(u.second.getPosition())))
 			{
 				u.second.setPosition(Positions::None);
 			}
@@ -1058,11 +1063,11 @@ void McRave::onFrame()
 
 #pragma region Probe Commands
 	// For each Probe mapped to gather minerals
-	for (auto u : myProbes)
+	for (auto &u : myProbes)
 	{
 		// If no valid target, try to get a new one
 		if (!u.second.getTarget())
-		{
+		{			
 			u.second.setTarget(assignProbe(u.first));
 		}			
 
@@ -1283,6 +1288,7 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 			{
 				allyTerritory.emplace(getRegion(unit->getPosition()));
 				forceExpand = 0;
+				saturated = false;
 			}
 		}
 	}
@@ -1326,7 +1332,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	else if (unit->getType().isMineralField() && unit->getInitialResources() > 0)
 	{
 		TilePosition closestNexus = Broodwar->getClosestUnit(unit->getPosition(), Filter::IsResourceDepot, 640)->getTilePosition();
-		if (find(activeExpansion.begin(), activeExpansion.end(), closestNexus) != activeExpansion.end())
+		if (closestNexus && find(activeExpansion.begin(), activeExpansion.end(), closestNexus) != activeExpansion.end())
 		{
 			activeExpansion.erase(find(activeExpansion.begin(), activeExpansion.end(), closestNexus));
 			inactiveNexusCnt++;

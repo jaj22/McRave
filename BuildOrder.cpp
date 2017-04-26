@@ -47,7 +47,7 @@ void desiredBuildings()
 	}
 
 	// If not early build, gas is now based on whether we need more or not rather than a supply amount	
-	if (!getEarlyBuild && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && Broodwar->self()->gas() < 50)
+	if (!getEarlyBuild && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == buildingDesired[UnitTypes::Protoss_Nexus])
 	{
 		buildingDesired[UnitTypes::Protoss_Assimilator] = geysers.size();
 	}
