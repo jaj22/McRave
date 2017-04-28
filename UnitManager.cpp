@@ -77,7 +77,7 @@ void unitMicro(Unit unit, Unit target)
 
 int unitGetGlobalStrategy()
 {
-	if (forceExpand == 1)
+	if (forceExpand == 1 || enemyBasePositions.size() == 0)
 	{
 		return 0;
 	}
@@ -103,7 +103,7 @@ int unitGetGlobalStrategy()
 	return 1;
 }
 
-int unitGetLocalStrategy(Unit unit, Unit target)
+void unitGetLocalStrategy(Unit unit, Unit target)
 {
 	/* Check for local strength, based on that make an adjustment
 	Return 0 = retreat to holding position
@@ -118,7 +118,7 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 
 	if (unit->getDistance(targetPosition) > 512)
 	{
-		return 3;
+		return;
 	}
 
 	// Check every enemy unit being in range of the target
@@ -242,20 +242,20 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 	{
 		if (allyTerritory.find(getRegion(target->getPosition())) != allyTerritory.end())
 		{
-			return 1;
+			return;
 		}
 	}
 
 	// Force Zealots to stay on Tanks
 	if (unit->getType() == UnitTypes::Protoss_Zealot && target->exists() && (enemyUnits[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemyUnits[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
 	{
-		return 1;
+		return;
 	}
 
 	// If unit is in range of a target and not currently threatened, attack instead of running
-	if (unit->getDistance(targetPosition) <= allyUnits[unit].getRange() && (enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0 || unit->getType() == UnitTypes::Protoss_Reaver))
+	if (unit->getDistance(targetPosition) <= allyUnits[unit].getRange() && (enemyGroundStrengthGrid[unit->getTilePosition().x][unit->getTilePosition().y] == 0 || unit->getType() == UnitTypes::Protoss_Reaver))
 	{
-		return 1;
+		return;
 	}
 
 	// If last command was engage
@@ -265,11 +265,11 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		if (allyLocalStrength < enemyLocalStrength*0.8)
 		{
 			allyUnits[unit].setStrategy(0);
-			return 0;
+			return;
 		}
 		allyUnits[unit].setStrategy(1);
 		allyUnits[unit].setTargetPosition(targetPosition);
-		return 1;
+		return;
 	}
 	// If last command was disengage/no command
 	else
@@ -279,15 +279,15 @@ int unitGetLocalStrategy(Unit unit, Unit target)
 		{
 			allyUnits[unit].setTargetPosition(targetPosition);
 			allyUnits[unit].setStrategy(1);
-			return 1;
+			return;
 		}
 		// Otherwise return 3 or 0, whichever was previous
 		allyUnits[unit].setStrategy(0);
-		return 0;
+		return;
 	}
 	// Disregard local if no target, no recent local calculation and not within ally region
 	allyUnits[unit].setStrategy(3);
-	return 3;
+	return;
 }
 
 void unitGetCommand(Unit unit)
@@ -298,10 +298,6 @@ void unitGetCommand(Unit unit)
 	double closestD = 0.0;
 	Position closestP;
 	Unit target = unit;
-
-	// Get target (based on priority and distance)
-	// Get local decision (poking, front attack)
-	// Get global decision (squads, harass, front attack)
 
 	// Get target first
 	if (unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_High_Templar)
@@ -323,7 +319,7 @@ void unitGetCommand(Unit unit)
 		return;
 	}
 
-	int stratL = unitGetLocalStrategy(unit, target);
+	int stratL = allyUnits[unit].getStrategy();
 	int stratG = unitGetGlobalStrategy();
 
 	// If target and unit are both valid and we're not ignoring local calculations
@@ -355,7 +351,7 @@ void unitGetCommand(Unit unit)
 			}
 
 			// Create concave when containing units
-			if (enemyHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0.0 && stratG == 1)
+			if (enemyGroundStrengthGrid[unit->getTilePosition().x][unit->getTilePosition().y] == 0.0 && stratG == 1)
 			{
 				Position fleePosition = unitFlee(unit, target);
 				if (fleePosition != Positions::None)
@@ -400,20 +396,7 @@ void unitGetCommand(Unit unit)
 			// Pick random enemy bases to attack (cap at ~3-4 units?)
 			closestD = 1000.0;
 			closestP = defendHere.at(0);
-			// Check if we are close enough to any defensive position
-			for (auto position : defendHere)
-			{
-				if (unit->getDistance(position) < 128)
-				{
-					closestP = position;
-					break;
-				}
-				else if (unit->getDistance(position) <= closestD)
-				{
-					closestD = unit->getDistance(position);
-					closestP = position;
-				}
-			}
+
 			// If we forced to expand, move to next choke to prevent blocking 
 			if (forceExpand == 1)
 			{
@@ -421,6 +404,23 @@ void unitGetCommand(Unit unit)
 				if (allyTerritory.find(getNearestChokepoint(TilePosition(path.at(1)->Center()))->getRegions().second) != allyTerritory.end() || allyTerritory.find(getNearestChokepoint(TilePosition(path.at(1)->Center()))->getRegions().first) != allyTerritory.end())
 				{
 					closestP = Position(path.at(2)->Center());
+				}
+			}
+			else
+			{
+				// Check if we are close enough to any defensive position
+				for (auto position : defendHere)
+				{
+					if (unit->getDistance(position) < 128)
+					{
+						closestP = position;
+						break;
+					}
+					else if (unit->getDistance(position) <= closestD)
+					{
+						closestD = unit->getDistance(position);
+						closestP = position;
+					}
 				}
 			}
 			if (unit->getLastCommand().getTargetPosition().getDistance(closestP) > 5 || unit->getLastCommandFrame() + 100 < Broodwar->getFrameCount())
@@ -730,9 +730,9 @@ Unit getClusterTarget(Unit unit)
 				// Reavers want ground clusters
 				if (unit->getType() == UnitTypes::Protoss_Reaver)
 				{
-					if (groundClusterHeatmap[x][y] > highest)
+					if (enemyGroundClusterGrid[x][y] > highest)
 					{
-						highest = groundClusterHeatmap[x][y];
+						highest = enemyGroundClusterGrid[x][y];
 						clusterTile = TilePosition(x, y);
 					}
 				}
@@ -748,14 +748,14 @@ Unit getClusterTarget(Unit unit)
 				// High Templars can have air or ground clusters
 				else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 				{
-					if (groundClusterHeatmap[x][y] > highest)
+					if (enemyGroundClusterGrid[x][y] > highest)
 					{
-						highest = groundClusterHeatmap[x][y];
+						highest = enemyGroundClusterGrid[x][y];
 						clusterTile = TilePosition(x, y);
 					}
-					if (airClusterHeatmap[x][y] > highest)
+					if (enemyAirClusterGrid[x][y] > highest)
 					{
-						highest = airClusterHeatmap[x][y];
+						highest = enemyAirClusterGrid[x][y];
 						clusterTile = TilePosition(x, y);
 					}
 				}
@@ -812,25 +812,6 @@ bool isThisACorner(Position position)
 		}
 	}
 	return false;
-}
-
-Position unitRegroup(Unit unit)
-{
-	// Currently not being used
-	Unitset regroupSet = unit->getUnitsInRadius(50000, Filter::IsAlly && !Filter::IsBuilding && !Filter::IsWorker);
-	Position regroupPosition;
-	for (Unit re : regroupSet)
-	{
-		regroupPosition += re->getPosition();
-	}
-	if (regroupSet.size() > 0)
-	{
-		return (regroupPosition / regroupSet.size());
-	}
-	else
-	{
-		return Broodwar->getClosestUnit(unit->getPosition(), Filter::IsAlly && Filter::IsResourceDepot)->getPosition();
-	}
 }
 
 Position unitFlee(Unit unit, Unit currentTarget)
@@ -891,7 +872,7 @@ Position unitFlee(Unit unit, Unit currentTarget)
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
 			Position newPosition = Position(TilePosition(x, y));
-			if (enemyHeatmap[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
+			if (enemyGroundStrengthGrid[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
 			{
 				for (int i = 0; i <= 1; i++)
 				{
@@ -995,7 +976,7 @@ Position unitGetPath(Unit unit, TilePosition target)
 	{
 		for (int j = y - 3; j <= y + 4; j++)
 		{
-			if (airEnemyHeatmap[i][j] == 0 && shuttleHeatmap[i][j] > 0 && shuttleHeatmap[i][j] < lowestInt && i > 0 && i < Broodwar->mapWidth() && j > 0 && j < Broodwar->mapHeight())
+			if (enemyAirStrengthGrid[i][j] == 0 && shuttleHeatmap[i][j] > 0 && shuttleHeatmap[i][j] < lowestInt && i > 0 && i < Broodwar->mapWidth() && j > 0 && j < Broodwar->mapHeight())
 			{
 				lowestPosition = Position((i * 32) + 16, (j * 32) + 16);
 				lowestInt = shuttleHeatmap[i][j];
@@ -1011,54 +992,51 @@ Position unitGetPath(Unit unit, TilePosition target)
 
 void shuttleManager(Unit unit)
 {
-	bool harassing = false;
-	if (find(shuttleID.begin(), shuttleID.end(), unit->getID()) == shuttleID.end())
+	// Reaver target
+	Unit target = allyUnits[unit].getTarget();
+	UnitInfo targetInfo = allyUnits[unit];
+
+	// Check for valid target
+	if (!target)
 	{
-		shuttleID.push_back(unit->getID());
+		return;
 	}
 
-	if (find(harassShuttleID.begin(), harassShuttleID.end(), unit->getID()) != harassShuttleID.end())
+	// To implement:
+	// If no targets and within a certain distance of an enemy base, go harass
+	// If Reaver is attacking, patrol
+	// If no units nearby, move to a strong position (based on heatmap strength? ally clusters?)
+
+	// Get local strategy
+	unitGetLocalStrategy(unit, target);
+	// If Reaver has cooldown on attack or strategy is retreat, pickup
+	if (target->isLoaded())
 	{
-		harassing = true;
+		// If Reaver has no cooldown and strategy is attack, drop
+		if (target->getGroundWeaponCooldown() == 0 && targetInfo.getStrategy() == 1 && target->getUnitsInRadius(256, Filter::IsEnemy).size() > 0)
+		{
+			unit->unload(target);
+		}
+		
+		else
+		{
+			unit->move(supportPosition);
+		}
+		
 	}
 
-	if (unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() >= 1)
-	{
-		Unitset loadedUnits = unit->getLoadedUnits();
-		for (Unitset::iterator itr = loadedUnits.begin(); itr != loadedUnits.end(); itr++)
-		{
-			// If we are loaded and either under attack, cant unload or trying to retreat, move away
-			if (unit->isUnderAttack() || !unit->canUnloadAll())
-			{
-				unit->move(unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy)));
-				return;
-			}
-			else if (Broodwar->getLatencyFrames() > (*itr)->getGroundWeaponCooldown() /*&& /(unitGetLocalStrategy(unit) == 1 || harassing == true)*/)
-			{
-				unit->unload(*itr);
-				return;
-			}
-		}
-		if (find(shuttleID.begin(), shuttleID.end(), unit->getID()) - shuttleID.begin() < (int)reaverID.size())
-		{
-			if (!unit->getTarget() && loadedUnits.size() < 1 && Broodwar->getLatencyFrames() + 30 >= Broodwar->getUnit(reaverID.at(find(shuttleID.begin(), shuttleID.end(), unit->getID()) - shuttleID.begin()))->getGroundWeaponCooldown())
-			{
-				Position correctedFleePosition = unitFlee(unit, unit->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer && !Filter::IsWorker && Filter::CanAttack));
-				if (correctedFleePosition != BWAPI::Positions::None)
-				{
-					unit->move(correctedFleePosition);
-				}
-			}
-		}
-	}
-	else if (find(shuttleID.begin(), shuttleID.end(), unit->getID()) - shuttleID.begin() < (int)reaverID.size() && unit->getLoadedUnits().size() < 1)
-	{
-		unit->follow(Broodwar->getUnit(reaverID.at(find(shuttleID.begin(), shuttleID.end(), unit->getID()) - shuttleID.begin())));
-	}
 	else
 	{
-		unit->follow(Broodwar->getClosestUnit(enemyStartingPosition, Filter::GetType == UnitTypes::Protoss_Dragoon && Filter::IsAlly));
+		if (target->getGroundWeaponCooldown() > 0 || targetInfo.getStrategy() == 0 || target->getUnitsInRadius(256, Filter::IsEnemy).size() == 0)
+		{
+			unit->load(target);
+		}
 	}
+	
+
+	// Check tile for air threat
+	// Check enemies around that Reaver can hit
+	// If no air threat, higher Local and Reaver cooldown ready, drop Reaver
 }
 
 void shuttleHarass(Unit unit)
@@ -1116,16 +1094,7 @@ void reaverManager(Unit unit)
 }
 
 void observerManager(Unit unit)
-{	
-	/*for (auto pos : nextExpansion)
-	{
-		if (Broodwar->getUnitsInRectangle(Position(pos), (Position(pos) + Position(128, 96)), Filter::IsEnemy && Filter::Exists).size() <= 0)
-		{
-			unit->move(Position(pos));
-			return;
-		}
-	}*/	
-
+{		
 	// Make sure we don't overwrite commands
 	if (unit->getLastCommandFrame() < Broodwar->getFrameCount())
 	{
@@ -1136,7 +1105,7 @@ void observerManager(Unit unit)
 void templarManager(Unit unit)
 {
 	Unit target = getClusterTarget(unit);
-	int stratL = unitGetLocalStrategy(unit, target);
+	int stratL = allyUnits[unit].getStrategy();
 	if (stratL == 1 || stratL == 0)
 	{
 		if (target != unit)
@@ -1210,7 +1179,7 @@ void corsairManager(Unit unit)
 
 #pragma region UnitTracking
 
-int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
+void storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
 {
 	// Create new unit
 	if (enemyUnits.find(unit) == enemyUnits.end())
@@ -1226,9 +1195,9 @@ int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
 		enemyUnits[unit].setStrength(unitGetVisibleStrength(unit));
 		enemyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->enemy()));
 	}
-	return 0;
+	return;
 }
-int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
+void storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 {
 	// Create new unit
 	if (allyUnits.find(unit) == allyUnits.end())
@@ -1245,7 +1214,7 @@ int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
 		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
 		allyUnits[unit].setCommand(unit->getLastCommand().getType());
 	}
-	return 0;
+	return;
 }
 
 UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand, int newDeadFrame, int newStrategy, int newCommandFrame)

@@ -15,7 +15,7 @@ extern set <BWTA::Region*> allyTerritory;
 // External resource variables
 extern int queuedMineral, queuedGas, reservedMineral, reservedGas;
 extern vector<Unit> geysers;
-extern int mineralHeatmap[256][256];
+extern int resourceGrid[256][256];
 
 // Build Order variables
 extern bool terranBio;

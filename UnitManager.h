@@ -61,11 +61,11 @@ extern vector <Position> defendHere;
 extern vector <TilePosition> nextExpansion;
 
 // Heatmaps and Strength
-extern double enemyHeatmap[256][256];
-extern double airEnemyHeatmap[256][256];
+extern double enemyGroundStrengthGrid[256][256];
+extern double enemyAirStrengthGrid[256][256];
 extern int shuttleHeatmap[256][256];
-extern int groundClusterHeatmap[256][256];
-extern int airClusterHeatmap[256][256];
+extern int enemyGroundClusterGrid[256][256];
+extern int enemyAirClusterGrid[256][256];
 extern int tankClusterHeatmap[256][256];
 extern double enemyStrength, allyStrength;
 
@@ -117,8 +117,8 @@ void templarManager(Unit unit);
 void arbiterManager(Unit unit);
 
 // Unit Tracking Functions
-int storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits);
-int storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits);
+void storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits);
+void storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits);
 
 
 

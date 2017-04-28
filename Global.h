@@ -18,7 +18,6 @@
 #include <iostream>
 #include <Windows.h>
 #include <set>
-#include <vector>
 #include <iterator>
 #include <fstream>
 #include <BWTA.h>
@@ -80,14 +79,15 @@ string currentStrategy;
 
 // Heatmaps
 double allyStrength = 0.0, enemyStrength = 0.0;
-double arbiterHeatmap[256][256] = { { 0 } };
-double enemyHeatmap[256][256] = { { 0 } };
-double airEnemyHeatmap[256][256] = { { 0 } }; 
+double enemyGroundStrengthGrid[256][256] = { { 0 } };
+double enemyAirStrengthGrid[256][256] = { { 0 } }; 
 int shuttleHeatmap[256][256] = { { 0 } };
-int groundClusterHeatmap[256][256] = { { 0 } };
-int airClusterHeatmap[256][256] = { { 0 } };
+int enemyGroundClusterGrid[256][256] = { { 0 } };
+int enemyAirClusterGrid[256][256] = { { 0 } };
 int tankClusterHeatmap[256][256] = { { 0 } };
-int mineralHeatmap[256][256] = { { 0 } };
+int allyClusterGrid[256][256] = { { 0 } };
+int allyDetectorGrid[256][256] = { { 0 } };
+int resourceGrid[256][256] = { { 0 } };
 
 // Terrain Variables
 int currentSize = 0;

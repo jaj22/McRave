@@ -8,7 +8,7 @@ bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
 // Make building desired into a class for easier storage
 
 void desiredBuildings()
-{	
+{
 	// Pylon, Forge, Nexus
 	buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((supply / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 	buildingDesired[UnitTypes::Protoss_Forge] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) / 3);
@@ -18,8 +18,8 @@ void desiredBuildings()
 	if (!getEarlyBuild && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && idleGates.size() == 0)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus]++;
-	}		
-	
+	}
+
 	// If forcing an early natural expansion
 	if (forceExpand == 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{
@@ -34,14 +34,14 @@ void desiredBuildings()
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && idleGates.size() == 0 && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 || forceExpand))
-	{		
+	{
 		getEarlyBuild = false;
-		getMidBuild = true;		
+		getMidBuild = true;
 	}
 
 	// If we are in mid game builds and we hit at least 4 gates, chances are we need to tech again
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 4 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 2 && getMidBuild)
-	{		
+	{
 		getMidBuild = false;
 		getLateBuild = true;
 	}
@@ -51,7 +51,7 @@ void desiredBuildings()
 	{
 		buildingDesired[UnitTypes::Protoss_Assimilator] = geysers.size();
 	}
-	
+
 }
 
 void getBuildOrder()
@@ -62,14 +62,14 @@ void getBuildOrder()
 		{
 			/* Protoss vs Zerg		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Dark Archons	*/
 			// IMPLEMENTING -- If Muta, mid build 2 (corsairs)
-		case Races::Enum::Zerg:			
+		case Races::Enum::Zerg:
 			if (getEarlyBuild)
 			{
-				earlyBuilds(0);				
+				earlyBuilds(0);
 			}
 			else if (getMidBuild)
 			{
-				midBuilds(0);				
+				midBuilds(0);
 			}
 			else if (getLateBuild)
 			{
@@ -81,11 +81,11 @@ void getBuildOrder()
 		case Races::Enum::Terran:
 			if (getEarlyBuild)
 			{
-				earlyBuilds(1);				
+				earlyBuilds(1);
 			}
 			else if (getMidBuild)
 			{
-				if (forceExpand)				
+				if (forceExpand)
 				{
 					midBuilds(3);
 				}
@@ -108,12 +108,12 @@ void getBuildOrder()
 		case Races::Enum::Protoss:
 			if (getEarlyBuild)
 			{
-				earlyBuilds(0); 	
+				earlyBuilds(0);
 			}
 			else if (getMidBuild)
 			{
 				midBuilds(0);
-				
+
 			}
 			else if (getLateBuild)
 			{
@@ -140,14 +140,14 @@ void midBuilds(int whichBuild)
 	case 0:
 		// -- Reavers --		
 		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
 		currentStrategy.assign("Robo Tech");
 		break;
 
 	case 1:
 		// -- Speedlots	--	
-		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));		
+		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
 		currentStrategy.assign("Speedlot Tech");
 		break;
 
@@ -163,7 +163,7 @@ void midBuilds(int whichBuild)
 		{
 			buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) / 2);
 		}
-		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		currentStrategy.assign("Range Robo Expand");
 	}
 }
@@ -202,8 +202,8 @@ void earlyBuilds(int whichBuild)
 	{
 	case 0:
 		// -- 2 Gate Core --
-		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot)/3);
-		buildingDesired[UnitTypes::Protoss_Assimilator] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot)/2);
+		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 3);
+		buildingDesired[UnitTypes::Protoss_Assimilator] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2);
 		if (supply >= 20 && supply < 24)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
