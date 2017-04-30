@@ -7,6 +7,7 @@
 #include "BuildingManager.h"
 #include "ProductionManager.h"
 #include "BuildOrder.h"
+#include "ResourceManager.h"
 #include "ProbeManager.h"
 #include "UnitManager.h"
 #include "UnitScore.h"

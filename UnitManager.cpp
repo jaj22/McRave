@@ -77,7 +77,7 @@ void unitMicro(Unit unit, Unit target)
 
 int unitGetGlobalStrategy()
 {
-	if (forceExpand == 1 || enemyBasePositions.size() == 0)
+	if (forceExpand == 1)
 	{
 		return 0;
 	}
@@ -105,12 +105,6 @@ int unitGetGlobalStrategy()
 
 void unitGetLocalStrategy(Unit unit, Unit target)
 {
-	/* Check for local strength, based on that make an adjustment
-	Return 0 = retreat to holding position
-	Return 1 = fight enemy
-	Return 2 = disregard local calculations
-	Return 3 = disregard local */
-
 	double thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
 	Position targetPosition = enemyUnits[target].getPosition();
@@ -118,6 +112,7 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 
 	if (unit->getDistance(targetPosition) > 512)
 	{
+		allyUnits[unit].setStrategy(3);
 		return;
 	}
 
@@ -242,6 +237,7 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 	{
 		if (allyTerritory.find(getRegion(target->getPosition())) != allyTerritory.end())
 		{
+			allyUnits[unit].setStrategy(1);
 			return;
 		}
 	}
@@ -249,12 +245,14 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 	// Force Zealots to stay on Tanks
 	if (unit->getType() == UnitTypes::Protoss_Zealot && target->exists() && (enemyUnits[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemyUnits[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
 	{
+		allyUnits[unit].setStrategy(1);
 		return;
 	}
 
 	// If unit is in range of a target and not currently threatened, attack instead of running
 	if (unit->getDistance(targetPosition) <= allyUnits[unit].getRange() && (enemyGroundStrengthGrid[unit->getTilePosition().x][unit->getTilePosition().y] == 0 || unit->getType() == UnitTypes::Protoss_Reaver))
 	{
+		allyUnits[unit].setStrategy(1);
 		return;
 	}
 
@@ -319,8 +317,9 @@ void unitGetCommand(Unit unit)
 		return;
 	}
 
-	int stratL = allyUnits[unit].getStrategy();
+	unitGetLocalStrategy(unit, target);	
 	int stratG = unitGetGlobalStrategy();
+	int stratL = allyUnits[unit].getStrategy();
 
 	// If target and unit are both valid and we're not ignoring local calculations
 	if (stratL != 3)
