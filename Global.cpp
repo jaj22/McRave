@@ -14,10 +14,9 @@
 // Building Tracker class (desired buildings)
 
 // Test static defenses
-// Test grids   - Resource grid gas size
-//				- Test observer grid
-//
-// Crash test, see games lost today
+// Crash testing when losing
+// Zerg don't move out early
+// Boulder removal, heartbreak ridge is an issue
 
 // Variables for Global.cpp
 Color playerColor;
@@ -991,9 +990,7 @@ void McRave::onFrame()
 		}
 	}
 #pragma endregion
-
-
-
+	
 #pragma region Scouting Midgame
 	// Scouting if we can't find enemy bases
 	if (enemyBasePositions.size() < 1 && Broodwar->getFrameCount() > 10000 && Broodwar->getFrameCount() > enemyScoutedLast + 1000 && Broodwar->getUnitsInRadius(playerStartingPosition, 50000, Filter::IsBuilding && Filter::IsEnemy).size() < 1)

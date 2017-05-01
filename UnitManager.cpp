@@ -85,7 +85,7 @@ int unitGetGlobalStrategy()
 	if (allyStrength > enemyStrength)
 	{
 		// If Zerg, wait for a larger army before moving out
-		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) == 0)
+		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) == 0)
 		{
 			return 0;
 		}
@@ -140,8 +140,7 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 				}
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
-					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
-					//(((double(aLarge) * 1.0) + (double(aMedium) * 0.75) + (double(aSmall) * 0.5)) / double(aLarge + aMedium + aSmall));
+					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);					
 				}
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 				{
@@ -337,16 +336,7 @@ void unitGetCommand(Unit unit)
 			if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
 			{
 				unitMicro(unit, target);
-				return;
-
-				/*else if (forceExpand == 0 && unit->getDistance(defendHere.at(0)) > 64)
-				{
-				if (unit->getLastCommand().getTargetPosition().getDistance(defendHere.at(0)) > 5 || unit->getLastCommandFrame() + 10 < Broodwar->getFrameCount())
-				{
-				unit->move(Position(defendHere.at(0).x + rand() % 3 + (-1), defendHere.at(0).y + rand() % 3 + (-1)));
-				}
-				return;
-				}*/
+				return;				
 			}
 
 			// Create concave when containing units
