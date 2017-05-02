@@ -67,7 +67,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	// mod 2/3 x mod 2 y
 
 	int offset = 0;
-	if (!ignoreCond && (buildTilePosition.x % 3 == 0 || buildTilePosition.x % 2 == 0 || buildTilePosition.y % 2 == 0))
+	if (!ignoreCond && (buildTilePosition.x % 3 == 0 || buildTilePosition.x % 2 == 0 || buildTilePosition.y % 2 == 0) || Broodwar->canBuildHere(buildTilePosition, building, nullptr, true) == false)
 	{
 		return false;
 	}
@@ -75,19 +75,19 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) == 0)
 	{
 		offset = 2;
-	}
+	}	
 
 	for (int x = buildTilePosition.x - offset; x <= buildTilePosition.x + building.tileWidth() + offset; x++)
 	{
 		for (int y = buildTilePosition.y - offset; y <= buildTilePosition.y + building.tileHeight() + offset; y++)
 		{
 			// If the location is outside the boundaries, return false
-			if (x < 0 || x > Broodwar->mapWidth() || y < 0 || y > Broodwar->mapHeight() || Broodwar->isBuildable(TilePosition(x, y), true) == false)
+			if (x < 0 || x > Broodwar->mapWidth() || y < 0 || y > Broodwar->mapHeight())
 			{
 				return false;
 			}
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			if (resourceGrid[x][y] > 0 || building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0 || allyTerritory.find(getRegion(buildTilePosition)) == allyTerritory.end())
+			if (resourceGrid[x][y] > 0 || (!ignoreCond && building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0) || allyTerritory.find(getRegion(buildTilePosition)) == allyTerritory.end())
 			{
 				return false;
 			}

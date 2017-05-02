@@ -24,11 +24,7 @@
 #include <BWTA.h>
 #include <utility>
 
-class Units
-{
-	class UnitInfo();
 
-};
 
 // Namespaces
 using namespace BWAPI;

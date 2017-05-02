@@ -17,6 +17,7 @@
 // Crash testing when losing
 // Zerg don't move out early
 // Boulder removal, heartbreak ridge is an issue
+// If scout dies, no base found
 
 // Variables for Global.cpp
 Color playerColor;
@@ -233,7 +234,7 @@ void McRave::onFrame()
 			}
 			if (resourceGrid[x][y] > 0)
 			{
-				Broodwar->drawTextMap(x * 32, y * 32, "%d", resourceGrid[x][y]);
+				//Broodwar->drawTextMap(x * 32, y * 32, "%d", resourceGrid[x][y]);
 			}
 			if (allyDetectorGrid[x][y] > 0)
 			{
@@ -437,7 +438,7 @@ void McRave::onFrame()
 		// Show static defense positions
 		for (auto nexus : myNexus)
 		{
-			Broodwar->drawCircleMap(Position(nexus.second.getStaticP()), 8, Colors::Red, true);
+			//Broodwar->drawCircleMap(Position(nexus.second.getStaticP()), 8, Colors::Red, true);
 		}
 
 		// Show support position
@@ -727,8 +728,8 @@ void McRave::onFrame()
 				}
 
 				// Draw the tile
-				TilePosition here = cannonManager(myNexus[u].getStaticP(), UnitTypes::Protoss_Pylon);
-				Broodwar->drawCircleMap(Position(here), 16, Colors::Red);
+				//TilePosition here = cannonManager(myNexus[u].getStaticP(), UnitTypes::Protoss_Pylon);
+				//Broodwar->drawCircleMap(Position(here), 16, Colors::Red);
 				updateDefenses(u, myNexus);
 
 				// Get tile position of pylon placement for each expansion if needed, then cannon placement (using cannon managers function)
@@ -925,7 +926,7 @@ void McRave::onFrame()
 		{
 			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) > 0 && (allyTerritory.find(getRegion(r->getTilePosition())) != allyTerritory.end() || (Broodwar->getFrameCount() > 5 && Broodwar->getFrameCount() < 50)))
 			{
-				if (r->getType().isMineralField() && myMinerals.find(r) == myMinerals.end())
+				if (r->getType().isMineralField() && myMinerals.find(r) == myMinerals.end() && r->getInitialResources() > 0)
 				{
 					storeMineral(r, myMinerals);
 				}
@@ -947,9 +948,9 @@ void McRave::onFrame()
 		{
 			m.second.setRemainingResources(m.first->getResources());
 			// Update resource grid
-			for (int x = m.second.getTilePosition().x - 1; x <= m.second.getTilePosition().x + m.second.getUnitType().tileWidth() + 1; x++)
+			for (int x = m.second.getTilePosition().x - 2; x <= m.second.getTilePosition().x + m.second.getUnitType().tileWidth() + 2; x++)
 			{
-				for (int y = m.second.getTilePosition().y - 1; y <= m.second.getTilePosition().y + m.second.getUnitType().tileHeight() + 1; y++)
+				for (int y = m.second.getTilePosition().y - 2; y <= m.second.getTilePosition().y + m.second.getUnitType().tileHeight() + 2; y++)
 				{
 					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
 					{
@@ -990,7 +991,7 @@ void McRave::onFrame()
 		}
 	}
 #pragma endregion
-	
+
 #pragma region Scouting Midgame
 	// Scouting if we can't find enemy bases
 	if (enemyBasePositions.size() < 1 && Broodwar->getFrameCount() > 10000 && Broodwar->getFrameCount() > enemyScoutedLast + 1000 && Broodwar->getUnitsInRadius(playerStartingPosition, 50000, Filter::IsBuilding && Filter::IsEnemy).size() < 1)
@@ -1063,15 +1064,18 @@ void McRave::onFrame()
 		// If can't build here right now and the tile is visible, replace the building position
 		if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second) && Broodwar->isVisible(b.second.first))
 		{
-			if (b.first == UnitTypes::Protoss_Nexus && Broodwar->getUnitsInRadius(Position(b.second.first), 320, Filter::IsEnemy && Filter::Exists).size() == 0)
-			{
-				Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Observer)->move(Position(b.second.first));
-			}
-			else
-			{
-				b.second.first = buildingManager(b.first);
-			}
+			b.second.first = buildingManager(b.first);
 			continue;
+		}
+
+		// If the Probe has a target
+		if (b.second.second->getTarget())
+		{
+			// If the target has a resource count of 0 (mineral blocking a ramp), let Probe continue mining it
+			if (b.second.second->getTarget()->getResources() == 0)
+			{
+				continue;
+			}
 		}
 
 		// If drawing is on, draw a box around the build position -- MOVE -> drawing section
@@ -1111,6 +1115,12 @@ void McRave::onFrame()
 		if (!u.second.getTarget())
 		{
 			u.second.setTarget(assignResource(myMinerals, myGas));
+			// Any idle Probes can gather closest mineral field until they are assigned again
+			if (u.first->isIdle() && u.first->getClosestUnit(Filter::IsMineralField))
+			{
+				u.first->gather(u.first->getClosestUnit(Filter::IsMineralField));
+				continue;
+			}
 			continue;
 		}
 
@@ -1145,22 +1155,26 @@ void McRave::onFrame()
 				u.first->returnCargo();
 				continue;
 			}
-			if (u.first->getLastCommandFrame() >= Broodwar->getFrameCount() && (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build))
-			{
-				continue;
-			}
+
 			// If not scouting and there's boulders to remove
 			if (!scouting && boulders.size() > 0)
 			{
 				for (auto b : boulders)
 				{
-					if (!u.first->isGatheringMinerals() && u.first->getDistance(b) < 256)
+					if (!u.first->isGatheringMinerals() && u.first->getDistance(b) < 512)
 					{
 						u.first->gather(b);
 						break;
 					}
 				}
 			}
+
+			// If we have been given a command this frame already, continue
+			if (u.first->getLastCommandFrame() >= Broodwar->getFrameCount() && (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build))
+			{
+				continue;
+			}
+
 
 			// If idle and not targeting the mineral field the Probe is mapped to
 			if (u.first->isIdle() || (u.first->isGatheringMinerals() && !u.first->isCarryingMinerals() && u.first->getTarget() != u.second.getTarget()))
@@ -1180,12 +1194,6 @@ void McRave::onFrame()
 					u.first->gather(u.second.getTarget());
 					continue;
 				}
-			}
-			// Any idle Probes can gather closest mineral field until they are assigned again
-			if (u.first->isIdle() && u.first->getClosestUnit(Filter::IsMineralField))
-			{
-				u.first->gather(u.first->getClosestUnit(Filter::IsMineralField));
-				continue;
 			}
 		}
 	}
@@ -1252,7 +1260,7 @@ void McRave::onNukeDetect(BWAPI::Position target)
 
 void McRave::onUnitDiscover(BWAPI::Unit unit)
 {
-	if (unit->getType().isMineralField() && unit->getResources() == 0 && find(boulders.begin(), boulders.end(), unit) == boulders.end() && unit->getDistance(playerStartingPosition) < 1280)
+	if (unit->getType().isMineralField() && unit->getResources() == 0 && find(boulders.begin(), boulders.end(), unit) == boulders.end() && unit->getDistance(playerStartingPosition) < 2560)
 	{
 		boulders.push_back(unit);
 	}
@@ -1378,7 +1386,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 			enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), unit->getPosition()));
 		}
 	}
-	else if (unit->getType().isMineralField() && unit->getInitialResources() > 0)
+	else if (unit->getType().isMineralField() && unit->getInitialResources() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 0)
 	{
 		TilePosition closestNexus = Broodwar->getClosestUnit(unit->getPosition(), Filter::IsResourceDepot, 640)->getTilePosition();
 		if (closestNexus && find(activeExpansion.begin(), activeExpansion.end(), closestNexus) != activeExpansion.end())
