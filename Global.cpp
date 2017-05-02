@@ -13,11 +13,14 @@
 // Idle Buildings class
 // Building Tracker class (desired buildings)
 
-// Test static defenses
+// Static defenses
 // Crash testing when losing
+// Invis units not being kited 
+
 // Zerg don't move out early - Testing
 // Boulder removal, heartbreak ridge is an issue - Testing
 // If scout dies, no base found - Testing
+
 
 // Variables for Global.cpp
 Color playerColor;
@@ -1348,8 +1351,9 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 			}
 			myProbes.erase(unit);
 
-			if (scouting && unit == scout)
+			if (enemyBasePositions.size() == 0 && unit == scout)
 			{
+				scouting = false;
 				// Find closest base location to building
 				double distance = 5000;
 				for (auto base : getStartLocations())
