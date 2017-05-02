@@ -15,9 +15,9 @@
 
 // Test static defenses
 // Crash testing when losing
-// Zerg don't move out early
-// Boulder removal, heartbreak ridge is an issue
-// If scout dies, no base found
+// Zerg don't move out early - Testing
+// Boulder removal, heartbreak ridge is an issue - Testing
+// If scout dies, no base found - Testing
 
 // Variables for Global.cpp
 Color playerColor;
@@ -727,35 +727,35 @@ void McRave::onFrame()
 					u->train(UnitTypes::Protoss_Probe);
 				}
 
-				// Draw the tile
-				//TilePosition here = cannonManager(myNexus[u].getStaticP(), UnitTypes::Protoss_Pylon);
-				//Broodwar->drawCircleMap(Position(here), 16, Colors::Red);
-				updateDefenses(u, myNexus);
+				//// Draw the tile
+				////TilePosition here = cannonManager(myNexus[u].getStaticP(), UnitTypes::Protoss_Pylon);
+				////Broodwar->drawCircleMap(Position(here), 16, Colors::Red);
+				//updateDefenses(u, myNexus);
 
-				// Get tile position of pylon placement for each expansion if needed, then cannon placement (using cannon managers function)
-				if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 2)
-				{
+				//// Get tile position of pylon placement for each expansion if needed, then cannon placement (using cannon managers function)
+				//if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 2)
+				//{
 
-					TilePosition here;
-					Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
+				//	TilePosition here;
+				//	Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
 
-					if (Broodwar->canBuildHere(myNexus[u].getStaticP(), UnitTypes::Protoss_Photon_Cannon) && Broodwar->hasPower(myNexus[u].getStaticP(), UnitTypes::Protoss_Photon_Cannon))
-					{
-						here = cannonManager(myNexus[u].getStaticP(), UnitTypes::Protoss_Photon_Cannon);
-						if (here != TilePositions::None && builder)
-						{
-							queuedBuildings.emplace(Protoss_Photon_Cannon, make_pair(here, builder));
-						}
-					}
-					else
-					{
-						here = cannonManager(myNexus[u].getStaticP(), UnitTypes::Protoss_Pylon);
-						if (here != TilePositions::None && builder)
-						{
-							queuedBuildings.emplace(Protoss_Pylon, make_pair(here, builder));
-						}
-					}
-				}
+				//	if (Broodwar->canBuildHere(myNexus[u].getStaticP(), UnitTypes::Protoss_Photon_Cannon) && Broodwar->hasPower(myNexus[u].getStaticP(), UnitTypes::Protoss_Photon_Cannon))
+				//	{
+				//		here = cannonManager(myNexus[u].getStaticP(), UnitTypes::Protoss_Photon_Cannon);
+				//		if (here != TilePositions::None && builder)
+				//		{
+				//			queuedBuildings.emplace(Protoss_Photon_Cannon, make_pair(here, builder));
+				//		}
+				//	}
+				//	else
+				//	{
+				//		here = cannonManager(myNexus[u].getStaticP(), UnitTypes::Protoss_Pylon);
+				//		if (here != TilePositions::None && builder)
+				//		{
+				//			queuedBuildings.emplace(Protoss_Pylon, make_pair(here, builder));
+				//		}
+				//	}
+				//}
 			}
 
 			// If it's a building capable of production, send to production manager
@@ -1289,28 +1289,6 @@ void McRave::onUnitDiscover(BWAPI::Unit unit)
 
 				enemyBasePositions.push_back(enemyStartingPosition);
 				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
-
-				// For each chokepoint, set a 10 tile radius of "no fly zone"
-				for (auto position : path)
-				{
-					// Convert walk position (8x8) to tile position (32x32) = divide by 4
-					int x = (position->Center().x / 4);
-					int y = (position->Center().y / 4);
-
-					int x1 = (position->Center().x / 4) - 15;
-					int y1 = (position->Center().y / 4) - 15;
-
-					for (int i = x1; i <= x1 + 30; i++)
-					{
-						for (int j = y1; j <= y1 + 30; j++)
-						{
-							if ((x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()) && TilePosition(i, j).getDistance(TilePosition(x, y)) < 320)
-							{
-								shuttleHeatmap[i][j] = 256;
-							}
-						}
-					}
-				}
 			}
 		}
 		if (unit->getType().isResourceDepot() && find(enemyBasePositions.begin(), enemyBasePositions.end(), getNearestBaseLocation(unit->getPosition())->getPosition()) == enemyBasePositions.end())
@@ -1369,6 +1347,24 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 				myMinerals[myProbes[unit].getTarget()].setGathererCount(myMinerals[unit].getGathererCount() - 1);
 			}
 			myProbes.erase(unit);
+
+			if (scouting && unit == scout)
+			{
+				// Find closest base location to building
+				double distance = 5000;
+				for (auto base : getStartLocations())
+				{
+					if (unit->getDistance(base->getPosition()) < distance)
+					{
+						enemyStartingTilePosition = base->getTilePosition();
+						enemyStartingPosition = base->getPosition();
+						distance = unit->getDistance(base->getPosition());
+					}
+				}
+
+				enemyBasePositions.push_back(enemyStartingPosition);
+				path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
+			}
 		}
 		else if (unit->getType() == UnitTypes::Protoss_Nexus)
 		{
