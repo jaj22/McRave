@@ -59,8 +59,8 @@ vector <Unit> boulders;
 
 // Unit Manager Variables
 map <UnitType, double> unitScore;
-map <Unit, UnitInfo> enemyUnits;
-map <Unit, UnitInfo> allyUnits;
+map <Unit, UnitInfoClass> enemyUnits;
+map <Unit, UnitInfoClass> allyUnits;
 map <UnitType, int> enemyComposition;
 map <UnitType, map<UnitType, int>> unitTargets;
 int supply;

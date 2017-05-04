@@ -1,54 +1,45 @@
 #include <BWAPI.h>
 #include <BWTA.h>
-#include <vector>
 #include "src\bwem.h"
+#include "Singleton.h"
+#include "UnitInfo.h"
 
 using namespace BWAPI;
 using namespace std;
 using namespace BWEM;
 
+class UnitTrackerClass
+{
+	map <Unit, UnitInfoClass> enemyUnits;
+	map <Unit, UnitInfoClass> allyUnits;
 
-
-// Class for enemy tracking
-class UnitInfo {
-	UnitType unitType, targetType;
-	Position unitPosition, targetPosition;
-	double unitStrength, unitLocal, unitRange;
-	UnitCommandType unitCommand;
-	Unit target;
-	int deadFrame, strategy, lastCommandFrame;
 public:
-	UnitInfo();
-	UnitInfo(UnitType, Position, double, double, UnitCommandType, int, int, int);
-	~UnitInfo();
+	const map<Unit, UnitInfoClass> getMyUnits() { return allyUnits;  }
+	const map<Unit, UnitInfoClass> getEnUnits() { return enemyUnits; }
 
-	// Accessors
-	UnitType getUnitType() const;
-	Position getPosition() const;
-	Position getTargetPosition() const;
-	double getStrength() const;
-	double getLocal() const;
-	double getRange() const;
-	UnitCommandType getCommand() const;
-	Unit getTarget() const;
-	int getDeadFrame() const;
-	int getStrategy() const;
-	int getLastCommandFrame() const;
+	void unitMicroTarget(Unit, Unit);
+	void unitExploreArea(Unit);
 
-	// Mutators
-	void setUnitType(UnitType);
-	void setPosition(Position);
-	void setTargetPosition(Position);
-	void setStrength(double);
-	void setLocal(double);
-	void setRange(double);
-	void setCommand(UnitCommandType);
-	void setTarget(Unit);
-	void setDeadFrame(int);
-	void setStrategy(int);
-	void setLastCommandFrame(int);
+	int unitGetGlobalStrategy();
+	void unitGetLocalStrategy(Unit, Unit);
+	void unitGetCommand(Unit);
+	void unitGetTarget(Unit);
+	void unitGetClusterTarget(Unit);
+	void unitUpdate(Unit);
+
+	// Command manager?
+	void unitLocalWinCommand(Unit);
+	void unitLocalLoseCommand(Unit);
+	void unitGlobalWinCommand(Unit);
+	void unitGlobalLoseCommand(Unit);
+
+	// Special units
+	void templarManager(Unit);
+	void reaverManager(Unit);
+	void arbiterManager(Unit);
+
+	Position unitFlee(Unit unit, Unit currentTarget);
 };
-
 
 // Terrain variables
 extern BWEM::CPPath path;
@@ -70,17 +61,8 @@ extern int tankClusterHeatmap[256][256];
 extern double enemyStrength, allyStrength;
 
 // Unit Variables
-extern map <Unit, UnitInfo> enemyUnits;
-extern map <Unit, UnitInfo> allyUnits;
-extern map <UnitType, map<UnitType, int>> unitTargets;
 extern Position supportPosition;
 extern int aSmall, aMedium, aLarge, eSmall, eMedium, eLarge;
-
-// Shuttle ID and Reaver ID pairing
-extern vector<int> shuttleID;
-extern vector<int> harassShuttleID;
-extern vector<int> reaverID;
-extern vector<int> harassReaverID;
 
 // Strategy Variables
 extern bool outsideBase;
@@ -89,22 +71,6 @@ extern int forceExpand;
 // Miscellaneous
 extern vector<Unit> combatProbe;
 extern int supply;
-
-// Strategy Functions
-void unitGetCommand(Unit unit);
-double unitGetStrength(UnitType unitType);
-double unitGetAirStrength(UnitType unitType);
-double unitGetVisibleStrength(Unit unit);
-double unitDamageMod(UnitType ally, UnitType enemy);
-Position unitRegroup(Unit unit);
-Position unitFlee(Unit unit, Unit currentTarget);
-
-// Targeting Functions
-Unit getTarget(Unit unit);
-Unit getClusterTarget(Unit unit);
-
-// Range check
-double unitGetTrueRange(UnitType unitType, Player who);
 
 // Special Unit Functions
 void shuttleManager(Unit unit);
@@ -117,8 +83,7 @@ void templarManager(Unit unit);
 void arbiterManager(Unit unit);
 
 // Unit Tracking Functions
-void storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits);
-void storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits);
+void storeEnemyUnit(Unit unit, map<Unit, UnitInfoClass>& enemyUnits);
+void storeAllyUnit(Unit unit, map<Unit, UnitInfoClass>& allyUnits);
 
-
-
+typedef Singleton<UnitTrackerClass> UnitTracker;

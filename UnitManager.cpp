@@ -6,7 +6,6 @@ using namespace std;
 using namespace BWTA;
 
 bool harassing = false;
-bool stimResearched = false;
 
 // Store units current command and what that command is doing (moving, where? enemy expansion/enemy main/enemy harass)
 //		This storage can be used to count the strength of those units doing that command and see if it's sufficient to defend/attack that area
@@ -14,14 +13,11 @@ bool stimResearched = false;
 // Add scout intercepting (based on velocity and direction?)
 // Combat sim so there's no army swarming 1 unit
 
-
-#pragma region Strategy
-
-void unitMicro(Unit unit, Unit target)
+void UnitTrackerClass::unitMicroTarget(Unit unit, Unit target)
 {
 	// Variables
 	bool kite = false;
-	int range = unitGetTrueRange(unit->getType(), Broodwar->self());
+	int range = allyUnits[unit].getRange();
 	int offset = 0;
 
 	// Stop offset
@@ -75,7 +71,17 @@ void unitMicro(Unit unit, Unit target)
 	return;
 }
 
-int unitGetGlobalStrategy()
+void UnitTrackerClass::unitExploreArea(Unit unit)
+{
+	// Given a region, explore a random portion of it based on random metrics like:
+	// Distance to enemy
+	// Distance to home
+	// Last explored
+	// Unit deaths
+	// Untouched resources
+}
+
+int UnitTrackerClass::unitGetGlobalStrategy()
 {
 	if (forceExpand == 1)
 	{
@@ -103,7 +109,7 @@ int unitGetGlobalStrategy()
 	return 1;
 }
 
-void unitGetLocalStrategy(Unit unit, Unit target)
+void UnitTrackerClass::unitGetLocalStrategy(Unit unit, Unit target)
 {
 	double thisUnit = 0.0;
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0;
@@ -117,7 +123,7 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 	}
 
 	// Check every enemy unit being in range of the target
-	for (auto u : enemyUnits)
+	for (auto u : UnitTracker::Instance().getEnUnits())
 	{
 		// Reset unit strength
 		thisUnit = 0.0;
@@ -140,7 +146,7 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 				}
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
-					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);					
+					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
 				}
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
 				{
@@ -162,13 +168,13 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 			}
 			else
 			{
-				allyLocalStrength += unitGetStrength(u.second.getUnitType()) * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+				allyLocalStrength += u.second.getMaxStrength() * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 			}
 		}
 	}
 
 	// Check every ally being in range of the target
-	for (auto u : allyUnits)
+	for (auto u : UnitTracker::Instance().getMyUnits())
 	{
 		// Reset unit strength
 		thisUnit = 0.0;
@@ -222,7 +228,7 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 			}
 			else
 			{
-				enemyLocalStrength += unitGetStrength(u.second.getUnitType()) * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+				enemyLocalStrength += u.second.getMaxStrength() * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 			}
 		}
 	}
@@ -287,36 +293,26 @@ void unitGetLocalStrategy(Unit unit, Unit target)
 	return;
 }
 
-void unitGetCommand(Unit unit)
+void UnitTrackerClass::unitGetCommand(Unit unit)
 {
 	allyUnits[unit].setTargetPosition(Positions::None);
 	allyUnits[unit].setLocal(0);
 
 	double closestD = 0.0;
 	Position closestP;
-	Unit target = unit;
-
-	// Get target first
-	if (unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_High_Templar)
-	{
-		target = getClusterTarget(unit);
-	}
-	else
-	{
-		target = getTarget(unit);
-	}
-
-
-
-	// TESTING -- Getting target through class
-	//target = allyUnits[unit].getTarget();	
+	Unit target = allyUnits[unit].getTarget();
 
 	if (!target || target == nullptr)
 	{
 		return;
 	}
 
-	unitGetLocalStrategy(unit, target);	
+	if (unit->getType() == UnitTypes::Protoss_Reaver && unit->getScarabCount() < 5)
+	{
+		unit->train(UnitTypes::Protoss_Scarab);
+	}
+
+	unitGetLocalStrategy(unit, target);
 	int stratG = unitGetGlobalStrategy();
 	int stratL = allyUnits[unit].getStrategy();
 
@@ -326,7 +322,7 @@ void unitGetCommand(Unit unit)
 		// Attack
 		if (stratL == 1 && target->exists())
 		{
-			unitMicro(unit, target);
+			unitMicroTarget(unit, target);
 			return;
 		}
 		// Retreat
@@ -335,8 +331,8 @@ void unitGetCommand(Unit unit)
 			// Force engage Zealots on ramp
 			if (allyTerritory.size() <= 1 && unit->getDistance(defendHere.at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
 			{
-				unitMicro(unit, target);
-				return;				
+				unitMicroTarget(unit, target);
+				return;
 			}
 
 			// Create concave when containing units
@@ -431,7 +427,7 @@ void unitGetCommand(Unit unit)
 	{
 		if (target && target->exists() && unit->getDistance(target) < 512)
 		{
-			unitMicro(unit, target);
+			UnitTrackerClass::unitMicroTarget(unit, target);
 			return;
 		}
 		unit->attack(enemyBasePositions.front());
@@ -439,210 +435,13 @@ void unitGetCommand(Unit unit)
 	}
 }
 
-#pragma endregion
-
-#pragma region Strength
-
-double unitGetStrength(UnitType unitType)
-{
-	// Some hardcoded values
-	if (unitType == UnitTypes::Terran_Bunker)
-	{
-		return 50.0;
-	}
-	if (unitType == UnitTypes::Terran_Medic)
-	{
-		return 5.0;
-	}
-	if (unitType == UnitTypes::Zerg_Lurker)
-	{
-		return 20.0;
-	}
-	if (unitType == UnitTypes::Protoss_Arbiter || unitType == UnitTypes::Terran_Science_Vessel)
-	{
-		return 100.0;
-	}
-	if (unitType == UnitTypes::Protoss_Reaver)
-	{
-		return 50.0;
-	}
-	if (unitType == UnitTypes::Protoss_High_Templar)
-	{
-		return 20.0;
-	}
-	if (unitType == UnitTypes::Protoss_Scarab)
-	{
-		return 0.0;
-	}
-
-	if (unitType == UnitTypes::Zerg_Egg || unitType == UnitTypes::Zerg_Larva)
-	{
-		return 0.0;
-	}
-
-	if (!unitType.isWorker() && unitType != UnitTypes::Protoss_Scarab && unitType != UnitTypes::Terran_Vulture_Spider_Mine && unitType.groundWeapon().damageAmount() > 0 || (unitType.isBuilding() && unitType.groundWeapon().damageAmount() > 0))
-	{
-		double range, damage, hp, speed;
-		// Range upgrade check (applies to enemy Dragoons, not a big issue currently)
-		if (unitType == UnitTypes::Protoss_Dragoon && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
-		{
-			range = 192.0;
-		}
-
-
-		// Enemy ranged upgrade check
-		else if ((unitType == UnitTypes::Terran_Marine && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
-		{
-			range = 160.0;
-		}
-		else
-		{
-			range = double(unitType.groundWeapon().maxRange());
-		}
-
-		// Damage
-		damage = double(unitType.groundWeapon().damageAmount()) / double(unitType.groundWeapon().damageCooldown());
-
-		// Speed
-		speed = 1.0 + double(unitType.topSpeed());
-
-		// Zealot and Firebat has to be doubled for two attacks
-		if (unitType == UnitTypes::Protoss_Zealot /*|| unitType == UnitTypes::Terran_Firebat*/)
-		{
-			damage = damage * 2.0;
-		}
-
-		// Check for Zergling attack speed upgrade
-		if (unitType == UnitTypes::Zerg_Zergling && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Adrenal_Glands))
-		{
-			damage = damage * 1.33;
-		}
-
-		// Check for movement speed upgrades
-
-
-		// Hp		
-		hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
-
-		// Assume strength doubled for units that can use Stim to prevent poking into armies frequently
-		if (stimResearched && (unitType == UnitTypes::Terran_Marine || unitType == UnitTypes::Terran_Firebat))
-		{
-			return 20.0 * (1.0 + (range / 320.0)) * damage * (hp / 100.0) /** speed*/;
-		}
-
-		return 10.0 * (1.0 + (range / 320.0)) * damage * (hp / 100.0) /** speed*/;
-	}
-	if (unitType.isWorker())
-	{
-		return 5.0;
-	}
-	return 0.5;
-}
-
-double unitGetAirStrength(UnitType unitType)
-{
-	double range, damage, hp;
-	range = double(unitType.airWeapon().maxRange());
-
-	// Enemy ranged upgrade check
-	if (unitType == UnitTypes::Terran_Goliath && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Charon_Boosters))
-	{
-		range = 256.0;
-	}
-	else if (unitType == UnitTypes::Protoss_Dragoon && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
-	{
-		range = 192.0;
-	}
-	else if ((unitType == UnitTypes::Terran_Marine && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
-	{
-		range = 160.0;
-	}
-	else
-	{
-		range = double(unitType.airWeapon().maxRange());
-	}
-
-	// Damage
-	damage = double(unitType.airWeapon().damageAmount()) / double(unitType.airWeapon().damageCooldown());
-
-	// Hp		
-	hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
-
-	return sqrt(1 + (range / 320.0)) * damage * (hp / 100);
-}
-
-double unitGetVisibleStrength(Unit unit)
-{
-	if (unit->isMaelstrommed() || unit->isStasised())
-	{
-		return 0;
-	}
-
-	// If a unit is visible, we want to get its current strength based on current health, shield and any buffs
-	if (unit->getType().isWorker() && getRegion(unit->getTilePosition()) == getRegion(playerStartingTilePosition))
-	{
-		if (unit->getPlayer() == Broodwar->self() && find(combatProbe.begin(), combatProbe.end(), unit) != combatProbe.end())
-		{
-			return 1.0;
-		}
-		if (unit->getPlayer() == Broodwar->enemy())
-		{
-			return 1.0;
-		}
-	}
-
-	double hp = double(unit->getHitPoints() + (unit->getShields() / 2)) / double(unit->getType().maxHitPoints() + (unit->getType().maxShields() / 2));
-	if (unit->isStimmed())
-	{
-		stimResearched = true;
-	}
-	if (unit->getPlayer() == Broodwar->self() && unit->isCloaked() && !unit->isDetected())
-	{
-		return 4.0 * hp * unitGetStrength(unit->getType());
-	}
-	return hp * unitGetStrength(unit->getType());
-}
-
-double unitGetTrueRange(UnitType unitType, Player who)
-{
-	// Ranged upgrade check
-	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
-	{
-		return 192.0;
-	}
-	else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
-	{
-		return 160.0;
-	}
-	else if (unitType == UnitTypes::Protoss_Reaver)
-	{
-		return 256.0;
-	}
-	else if (unitType == UnitTypes::Terran_Bunker)
-	{
-		if (who->getUpgradeLevel(UpgradeTypes::U_238_Shells))
-		{
-			return 192.0;
-		}
-		else
-		{
-			return 160.0;
-		}
-	}
-	return double(unitType.groundWeapon().maxRange());
-}
-
-#pragma endregion
-
-#pragma region Targeting
-
-Unit getTarget(Unit unit)
+void UnitTrackerClass::unitGetTarget(Unit unit)
 {
 	double highest = 0.0, thisUnit = 0.0;
 
 	Unit target = nullptr;
 
-	for (auto u : enemyUnits)
+	for (auto u : UnitTracker::Instance().getEnUnits())
 	{
 		if (!u.first)
 		{
@@ -653,7 +452,7 @@ Unit getTarget(Unit unit)
 		if (u.second.getDeadFrame() > 0 || (u.second.getUnitType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver)))
 		{
 			continue;
-		}		
+		}
 
 		if (u.first->exists() && u.first->isStasised())
 		{
@@ -664,11 +463,11 @@ Unit getTarget(Unit unit)
 
 		if (u.first->exists())
 		{
-			thisUnit = unitGetStrength(u.second.getUnitType()) / distance;
+			thisUnit = u.second.getMaxStrength() / distance;
 		}
 		else
 		{
-			thisUnit = 0.1*unitGetStrength(u.second.getUnitType()) / distance;
+			thisUnit = 0.1*u.second.getMaxStrength() / distance;
 		}
 
 
@@ -692,12 +491,10 @@ Unit getTarget(Unit unit)
 		allyUnits[unit].setTarget(target);
 		allyUnits[unit].setTargetPosition(enemyUnits[target].getPosition());
 	}
-
-	// The highest strength unit is returned
-	return target;
+	return;
 }
 
-Unit getClusterTarget(Unit unit)
+void UnitTrackerClass::unitGetClusterTarget(Unit unit)
 {
 	// Cluster variables, range of spells is 10
 	int highest = 0, range = 10;
@@ -756,33 +553,30 @@ Unit getClusterTarget(Unit unit)
 	{
 		if (unit->getType() == UnitTypes::Protoss_Reaver)
 		{
-			return getTarget(unit);
+			return UnitTrackerClass::unitGetTarget(unit);
 		}
 		else
 		{
-			return nullptr;
+			return;
 		}
 	}
 	// Return ground cluster for Reavers
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
-		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 128);
+		allyUnits[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 128));
 	}
 	// Return tank cluster for Arbiters
 	else if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
-		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128);
+		allyUnits[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128));
 	}
 	// Return unit cluster for High Templars
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
-		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding, 128);
+		allyUnits[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding, 128));
 	}
-	return nullptr;
+	return;
 }
-#pragma endregion
-
-#pragma region Movement
 
 bool isThisACorner(Position position)
 {
@@ -803,7 +597,19 @@ bool isThisACorner(Position position)
 	return false;
 }
 
-Position unitFlee(Unit unit, Unit currentTarget)
+void UnitTrackerClass::unitUpdate(Unit unit)
+{
+	if (unit->getPlayer() == Broodwar->self())
+	{
+		storeAllyUnit(unit, allyUnits);
+	}
+	else
+	{
+		storeEnemyUnit(unit, enemyUnits);
+	}
+}
+
+Position UnitTrackerClass::unitFlee(Unit unit, Unit currentTarget)
 {
 	// If either the unit or current target are invalid, return
 	if (!unit || !currentTarget)
@@ -861,19 +667,22 @@ Position unitFlee(Unit unit, Unit currentTarget)
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
 			Position newPosition = Position(TilePosition(x, y));
-			if (enemyGroundStrengthGrid[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
+			if (!isThisACorner(newPosition) && enemyGroundStrengthGrid[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
 			{
-				for (int i = 0; i <= 1; i++)
-				{
-					for (int j = 0; j <= 1; j++)
-					{
-						// Not a fully functional walkable check -- IMPLEMENTING
-						if (Broodwar->isWalkable(((x * 4) + i), ((y * 4) + j)))
-						{
-							return newPosition + Position(i * 8, j * 8);
-						}
-					}
-				}
+				return newPosition;
+
+				// Corner checking is the same as walkable check (larger area)
+				//for (int i = 0; i <= 1; i++)
+				//{
+				//	for (int j = 0; j <= 1; j++)
+				//	{
+				//		// Not a fully functional walkable check -- IMPLEMENTING
+				//		if (Broodwar->isWalkable(((x * 4) + i), ((y * 4) + j)))
+				//		{
+				//			return newPosition + Position(i * 8, j * 8);
+				//		}
+				//	}
+				//}
 			}
 		}
 		//Otherwise, move to another position
@@ -909,191 +718,152 @@ Position unitFlee(Unit unit, Unit currentTarget)
 	return initialPosition;
 }
 
-Position unitGetPath(Unit unit, TilePosition target)
+//#pragma region SpecialUnits
+//
+//void shuttleManager(Unit unit)
+//{
+//	// Reaver target
+//	Unit target = allyUnits[unit].getTarget();
+//	UnitInfoClass targetInfo = allyUnits[unit];
+//
+//	// Check for valid target
+//	if (!target)
+//	{
+//		return;
+//	}
+//
+//	// To implement:
+//	// If no targets and within a certain distance of an enemy base, go harass
+//	// If Reaver is attacking, patrol
+//	// If no units nearby, move to a strong position (based on heatmap strength? ally clusters?)
+//
+//	// Get local strategy
+//	unitGetLocalStrategy(unit, target);
+//	// If Reaver has cooldown on attack or strategy is retreat, pickup
+//	if (target->isLoaded())
+//	{
+//		// If Reaver has no cooldown and strategy is attack, drop
+//		if (target->getGroundWeaponCooldown() == 0 && targetInfo.getStrategy() == 1 && target->getUnitsInRadius(256, Filter::IsEnemy).size() > 0)
+//		{
+//			unit->unload(target);
+//		}
+//		
+//		else
+//		{
+//			unit->move(supportPosition);
+//		}
+//		
+//	}
+//
+//	else
+//	{
+//		if (target->getGroundWeaponCooldown() > 0 || targetInfo.getStrategy() == 0 || target->getUnitsInRadius(256, Filter::IsEnemy).size() == 0)
+//		{
+//			unit->load(target);
+//		}
+//	}
+//	
+//
+//	// Check tile for air threat
+//	// Check enemies around that Reaver can hit
+//	// If no air threat, higher Local and Reaver cooldown ready, drop Reaver
+//}
+//
+//void shuttleHarass(Unit unit)
+//{
+//	if (unit->getLoadedUnits().size() > 0 && (shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] > 2 || shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0))
+//	{
+//		unit->move(unitGetPath(unit, TilePosition(playerStartingPosition)));
+//	}
+//	else
+//	{
+//		shuttleManager(unit);
+//	}
+//}
+//
+
+//
+//	/*bool harassing = false;
+//	if (find(reaverID.begin(), reaverID.end(), unit->getID()) == reaverID.end())
+//	{
+//	reaverID.push_back(unit->getID());
+//	}
+//	if (find(harassReaverID.begin(), harassReaverID.end(), unit->getID()) != harassReaverID.end())
+//	{
+//	harassing = true;
+//	}
+//
+//	if ((unitGetLocalStrategy(unit) == 0) || unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() < 1 || Broodwar->getLatencyFrames() + 30 < unit->getGroundWeaponCooldown())
+//	{
+//	unitGetCommand(unit);
+//	// If a shuttle is following a unit, it is empty, see shuttle manager
+//	if (find(reaverID.begin(), reaverID.end(), unit->getID()) - reaverID.begin() < (int)shuttleID.size())
+//	{
+//	unit->rightClick(Broodwar->getUnit(shuttleID.at(find(reaverID.begin(), reaverID.end(), unit->getID()) - reaverID.begin())));
+//	}
+//	else if (unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() > 0)
+//	{
+//	unitGetCommand(unit);
+//	}
+//	else
+//	{
+//	unitGetCommand(unit);
+//	}
+//	}
+//	else if (unitGetLocalStrategy(unit) == 1)
+//	{
+//	unitGetCommand(unit);
+//	}
+//	*/
+//}
+//
+//void observerManager(Unit unit)
+//{		
+//	// Make sure we don't overwrite commands
+//	if (unit->getLastCommandFrame() < Broodwar->getFrameCount())
+//	{
+//		unit->move(supportPosition);
+//	}
+//}
+//
+
+//}
+//
+//
+//void carrierManager(Unit unit)
+//{
+//	if (unit->getInterceptorCount() < 8)
+//	{
+//		unit->train(UnitTypes::Protoss_Interceptor);
+//	}
+//	else
+//	{
+//		unitGetCommand(unit);
+//	}
+//}
+//
+//void corsairManager(Unit unit)
+//{
+//	if (unit->getUnitsInRadius(320, Filter::IsEnemy && Filter::IsFlying).size() > 0)
+//	{
+//		unit->attack(unit->getClosestUnit(Filter::IsEnemy && Filter::IsFlying));
+//	}
+//	// If on tile of air threat > 0, move
+//	// Unit Micro, need air targeting
+//	// Need to move after every attack
+//	else
+//	{
+//		unit->move(unitGetPath(unit, TilePosition(playerStartingPosition)));
+//	}
+//}
+//
+//#pragma endregion
+
+
+void UnitTrackerClass::templarManager(Unit unit)
 {
-	int x = unit->getTilePosition().x;
-	int y = unit->getTilePosition().y;
-	int cnt = 0;
-	//TilePosition target = Broodwar->getClosestUnit(enemyStartingPosition, Filter::IsMineralField)->getTilePosition();
-	target = TilePosition(playerStartingPosition);
-
-	// Reset path
-	for (int i = 0; i <= Broodwar->mapWidth(); i++)
-	{
-		for (int j = 0; j <= Broodwar->mapHeight(); j++)
-		{
-			if (shuttleHeatmap[i][j] < 256)
-			{
-				shuttleHeatmap[i][j] = 0;
-			}
-		}
-	}
-
-	shuttleHeatmap[x][y] = 0;
-	shuttleHeatmap[target.x][target.y] = 1;
-
-	// While current units tile is 0 (no path currently)
-	while (shuttleHeatmap[x][y] < 1)
-	{
-		cnt++;
-		// For each tile equal to cnt, move up and to the left, apply cnt + 1 to a 3x3 grid
-		for (int i = 0; i <= Broodwar->mapWidth(); i++)
-		{
-			for (int j = 0; j <= Broodwar->mapHeight(); j++)
-			{
-				// If it's equal
-				if (shuttleHeatmap[i][j] == cnt)
-				{
-					// Get 3x3 grid, set each tile to cnt + 1
-					for (int a = i - 1; a <= i + 1; a++)
-					{
-						for (int b = j - 1; b <= j + 1; b++)
-						{
-							if (a >= 0 && a <= 256 && b >= 0 && b <= 256 && shuttleHeatmap[a][b] == 0)
-							{
-								shuttleHeatmap[a][b] = cnt + 1;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	int lowestInt = 257;
-	Position lowestPosition = unit->getPosition();
-	for (int i = x - 3; i <= x + 4; i++)
-	{
-		for (int j = y - 3; j <= y + 4; j++)
-		{
-			if (enemyAirStrengthGrid[i][j] == 0 && shuttleHeatmap[i][j] > 0 && shuttleHeatmap[i][j] < lowestInt && i > 0 && i < Broodwar->mapWidth() && j > 0 && j < Broodwar->mapHeight())
-			{
-				lowestPosition = Position((i * 32) + 16, (j * 32) + 16);
-				lowestInt = shuttleHeatmap[i][j];
-			}
-		}
-	}
-	return lowestPosition;
-}
-
-#pragma endregion
-
-#pragma region SpecialUnits
-
-void shuttleManager(Unit unit)
-{
-	// Reaver target
+	unitGetClusterTarget(unit);
 	Unit target = allyUnits[unit].getTarget();
-	UnitInfo targetInfo = allyUnits[unit];
-
-	// Check for valid target
-	if (!target)
-	{
-		return;
-	}
-
-	// To implement:
-	// If no targets and within a certain distance of an enemy base, go harass
-	// If Reaver is attacking, patrol
-	// If no units nearby, move to a strong position (based on heatmap strength? ally clusters?)
-
-	// Get local strategy
-	unitGetLocalStrategy(unit, target);
-	// If Reaver has cooldown on attack or strategy is retreat, pickup
-	if (target->isLoaded())
-	{
-		// If Reaver has no cooldown and strategy is attack, drop
-		if (target->getGroundWeaponCooldown() == 0 && targetInfo.getStrategy() == 1 && target->getUnitsInRadius(256, Filter::IsEnemy).size() > 0)
-		{
-			unit->unload(target);
-		}
-		
-		else
-		{
-			unit->move(supportPosition);
-		}
-		
-	}
-
-	else
-	{
-		if (target->getGroundWeaponCooldown() > 0 || targetInfo.getStrategy() == 0 || target->getUnitsInRadius(256, Filter::IsEnemy).size() == 0)
-		{
-			unit->load(target);
-		}
-	}
-	
-
-	// Check tile for air threat
-	// Check enemies around that Reaver can hit
-	// If no air threat, higher Local and Reaver cooldown ready, drop Reaver
-}
-
-void shuttleHarass(Unit unit)
-{
-	if (unit->getLoadedUnits().size() > 0 && (shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] > 2 || shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0))
-	{
-		unit->move(unitGetPath(unit, TilePosition(playerStartingPosition)));
-	}
-	else
-	{
-		shuttleManager(unit);
-	}
-}
-
-void reaverManager(Unit unit)
-{
-	if (unit->getScarabCount() < 10)
-	{
-		unit->train(UnitTypes::Protoss_Scarab);
-	}
-	unitGetCommand(unit);
-
-	/*bool harassing = false;
-	if (find(reaverID.begin(), reaverID.end(), unit->getID()) == reaverID.end())
-	{
-	reaverID.push_back(unit->getID());
-	}
-	if (find(harassReaverID.begin(), harassReaverID.end(), unit->getID()) != harassReaverID.end())
-	{
-	harassing = true;
-	}
-
-	if ((unitGetLocalStrategy(unit) == 0) || unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() < 1 || Broodwar->getLatencyFrames() + 30 < unit->getGroundWeaponCooldown())
-	{
-	unitGetCommand(unit);
-	// If a shuttle is following a unit, it is empty, see shuttle manager
-	if (find(reaverID.begin(), reaverID.end(), unit->getID()) - reaverID.begin() < (int)shuttleID.size())
-	{
-	unit->rightClick(Broodwar->getUnit(shuttleID.at(find(reaverID.begin(), reaverID.end(), unit->getID()) - reaverID.begin())));
-	}
-	else if (unit->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsFlyer).size() > 0)
-	{
-	unitGetCommand(unit);
-	}
-	else
-	{
-	unitGetCommand(unit);
-	}
-	}
-	else if (unitGetLocalStrategy(unit) == 1)
-	{
-	unitGetCommand(unit);
-	}
-	*/
-}
-
-void observerManager(Unit unit)
-{		
-	// Make sure we don't overwrite commands
-	if (unit->getLastCommandFrame() < Broodwar->getFrameCount())
-	{
-		unit->move(supportPosition);
-	}
-}
-
-void templarManager(Unit unit)
-{
-	Unit target = getClusterTarget(unit);
 	int stratL = allyUnits[unit].getStrategy();
 	if (stratL == 1 || stratL == 0)
 	{
@@ -1115,9 +885,19 @@ void templarManager(Unit unit)
 	return;
 }
 
-void arbiterManager(Unit unit)
+void UnitTrackerClass::reaverManager(Unit unit)
+{
+	if (unit->getScarabCount() < 10)
+	{
+		unit->train(UnitTypes::Protoss_Scarab);
+	}
+	unitGetCommand(unit);
+}
+
+void UnitTrackerClass::arbiterManager(Unit unit)
 {
 	// Find a position that is the highest concentration of units
+	unitGetClusterTarget(unit);
 
 	if (supportPosition != Positions::None && supportPosition != Positions::Unknown && supportPosition != Positions::Invalid)
 	{
@@ -1129,193 +909,10 @@ void arbiterManager(Unit unit)
 	}
 	if (unit->getUnitsInRadius(640, Filter::IsEnemy).size() > 4)
 	{
-		Unit target = getClusterTarget(unit);
+		Unit target = allyUnits[unit].getTarget();
 		if (target)
 		{
 			unit->useTech(TechTypes::Stasis_Field, target);
 		}
 	}
 }
-
-void carrierManager(Unit unit)
-{
-	if (unit->getInterceptorCount() < 8)
-	{
-		unit->train(UnitTypes::Protoss_Interceptor);
-	}
-	else
-	{
-		unitGetCommand(unit);
-	}
-}
-
-void corsairManager(Unit unit)
-{
-	if (unit->getUnitsInRadius(320, Filter::IsEnemy && Filter::IsFlying).size() > 0)
-	{
-		unit->attack(unit->getClosestUnit(Filter::IsEnemy && Filter::IsFlying));
-	}
-	// If on tile of air threat > 0, move
-	// Unit Micro, need air targeting
-	// Need to move after every attack
-	else
-	{
-		unit->move(unitGetPath(unit, TilePosition(playerStartingPosition)));
-	}
-}
-
-#pragma endregion
-
-#pragma region UnitTracking
-
-void storeEnemyUnit(Unit unit, map<Unit, UnitInfo>& enemyUnits)
-{
-	// Create new unit
-	if (enemyUnits.find(unit) == enemyUnits.end())
-	{
-		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0, 0);
-		enemyUnits[unit] = newUnit;
-	}
-	// Update unit
-	else
-	{
-		enemyUnits[unit].setUnitType(unit->getType());
-		enemyUnits[unit].setPosition(unit->getPosition());
-		enemyUnits[unit].setStrength(unitGetVisibleStrength(unit));
-		enemyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->enemy()));
-	}
-	return;
-}
-void storeAllyUnit(Unit unit, map<Unit, UnitInfo>& allyUnits)
-{
-	// Create new unit
-	if (allyUnits.find(unit) == allyUnits.end())
-	{
-		UnitInfo newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0, 0);
-		allyUnits[unit] = newUnit;
-	}
-	// Update unit
-	else
-	{
-		allyUnits[unit].setUnitType(unit->getType());
-		allyUnits[unit].setPosition(unit->getPosition());
-		allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
-		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
-		allyUnits[unit].setCommand(unit->getLastCommand().getType());
-	}
-	return;
-}
-
-UnitInfo::UnitInfo(UnitType newType, Position newPosition, double newStrength, double newRange, UnitCommandType newCommand, int newDeadFrame, int newStrategy, int newCommandFrame)
-{
-	unitType = newType;
-	unitPosition = newPosition;
-	unitStrength = newStrength;
-	unitRange = newRange;
-	unitCommand = newCommand;
-	deadFrame = newDeadFrame;
-	lastCommandFrame = newCommandFrame;
-}
-UnitInfo::UnitInfo()
-{
-	unitType = UnitTypes::Enum::None;
-	unitPosition = Positions::None;
-	unitStrength = 0.0;
-	unitCommand = UnitCommandTypes::None;
-}
-UnitInfo::~UnitInfo()
-{
-}
-
-Position UnitInfo::getPosition() const
-{
-	return unitPosition;
-}
-Position UnitInfo::getTargetPosition() const
-{
-	return targetPosition;
-}
-UnitType UnitInfo::getUnitType() const
-{
-	return unitType;
-}
-double UnitInfo::getStrength() const
-{
-	return unitStrength;
-}
-double UnitInfo::getRange() const
-{
-	return unitRange;
-}
-double UnitInfo::getLocal() const
-{
-	return unitLocal;
-}
-UnitCommandType UnitInfo::getCommand() const
-{
-	return unitCommand;
-}
-Unit UnitInfo::getTarget() const
-{
-	return target;
-}
-int UnitInfo::getDeadFrame() const
-{
-	return deadFrame;
-}
-int UnitInfo::getStrategy() const
-{
-	return strategy;
-}
-int UnitInfo::getLastCommandFrame() const
-{
-	return lastCommandFrame;
-}
-
-void UnitInfo::setUnitType(UnitType newUnitType)
-{
-	unitType = newUnitType;
-}
-void UnitInfo::setPosition(Position newPosition)
-{
-	unitPosition = newPosition;
-}
-void UnitInfo::setTargetPosition(Position newTargetPosition)
-{
-	targetPosition = newTargetPosition;
-}
-void UnitInfo::setStrength(double newStrength)
-{
-	unitStrength = newStrength;
-}
-void UnitInfo::setLocal(double newUnitLocal)
-{
-	unitLocal = newUnitLocal;
-}
-void UnitInfo::setRange(double newRange)
-{
-	unitRange = newRange;
-}
-void UnitInfo::setCommand(UnitCommandType newCommand)
-{
-	unitCommand = newCommand;
-}
-void UnitInfo::setTarget(Unit newTarget)
-{
-	target = newTarget;
-}
-void UnitInfo::setDeadFrame(int newDeadFrame)
-{
-	deadFrame = newDeadFrame;
-}
-void UnitInfo::setStrategy(int newStrategy)
-{
-	strategy = newStrategy;
-}
-void UnitInfo::setLastCommandFrame(int newCommandFrame)
-{
-	lastCommandFrame = newCommandFrame;
-}
-#pragma endregion
-
-

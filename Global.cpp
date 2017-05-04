@@ -9,17 +9,17 @@
 
 // Author notes:
 // Classes
-// UnitScore class
-// Idle Buildings class
-// Building Tracker class (desired buildings)
+// Make geometry class, use corner checking and display on grids?
 
 // Static defenses
 // Crash testing when losing
 // Invis units not being kited 
+// Don't train Zealots against T unless speed upgraded
 
 // Zerg don't move out early - Testing
 // Boulder removal, heartbreak ridge is an issue - Testing
 // If scout dies, no base found - Testing
+// Unit class - Testing
 
 
 // Variables for Global.cpp
@@ -307,7 +307,7 @@ void McRave::onFrame()
 
 		// For each enemy unit, add its attack value to each tile it is in range of
 		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
-		if (unitGetStrength(u.second.getUnitType()) > 1.0 && u.second.getDeadFrame() == 0)
+		if (u.second.getMaxStrength() > 1.0 && u.second.getDeadFrame() == 0)
 		{
 			// Store range in class
 			int offsetX = u.second.getPosition().x % 32;
@@ -471,7 +471,7 @@ void McRave::onFrame()
 		// Update unit
 		if (u && u->exists() && u->isCompleted())
 		{
-			storeEnemyUnit(u, enemyUnits);
+			UnitTracker::Instance().unitUpdate(u);
 		}
 	}
 
@@ -482,7 +482,7 @@ void McRave::onFrame()
 	}
 
 	// If unit has been dead for over 500 frames, erase it (needed manual loop)
-	for (map<Unit, UnitInfo>::iterator itr = enemyUnits.begin(); itr != enemyUnits.end();)
+	for (map<Unit, UnitInfoClass>::iterator itr = enemyUnits.begin(); itr != enemyUnits.end();)
 	{
 		if ((*itr).second.getDeadFrame() != 0 && (*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount() || itr->first && itr->first->exists() && itr->first->getPlayer() != Broodwar->enemy())
 		{
@@ -557,7 +557,7 @@ void McRave::onFrame()
 		else if (u.second.getDeadFrame() != 0)
 		{
 			// Add a portion of the strength to ally strength
-			allyStrength += unitGetStrength(u.second.getUnitType()) * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			allyStrength += u.second.getMaxStrength() * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 			if (calculationDraw)
 			{
 				Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->enemy()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
@@ -638,7 +638,7 @@ void McRave::onFrame()
 		// Update unit
 		else
 		{
-			storeAllyUnit(u, allyUnits);
+			UnitTracker::Instance().unitUpdate(u);
 		}
 
 		// Skip loaded/stuck units otherwise
@@ -773,57 +773,57 @@ void McRave::onFrame()
 			{
 				if (u->getType() == UnitTypes::Protoss_Dragoon || u->getType() == UnitTypes::Protoss_Zealot || u->getType() == UnitTypes::Protoss_Dark_Templar || u->getType() == UnitTypes::Protoss_Archon)
 				{
-					unitGetCommand(u);
+					UnitTracker::Instance().unitGetCommand(u);
 					continue;
 				}
-				else if (u->getType() == UnitTypes::Protoss_Shuttle)
-				{
-					shuttleManager(u);
-					/*if (harassShuttleID.size() < 1 || find(harassShuttleID.begin(), harassShuttleID.end(), u->getID()) != harassShuttleID.end())
-					{
-					shuttleHarass(u);
-					harassShuttleID.push_back(u->getID());
-					}
-					else
-					{
-					shuttleManager(u);
-					}*/
-					continue;
-				}
-				else if (u->getType() == UnitTypes::Protoss_Observer)
-				{
-					observerManager(u);
-					continue;
-				}
-				else if (u->getType() == UnitTypes::Protoss_Reaver)
-				{
-					reaverManager(u);
-					/*if (harassReaverID.size() < 1 || find(harassReaverID.begin(), harassReaverID.end(), u->getID()) != harassReaverID.end())
-					{
-					harassReaverID.push_back(u->getID());
-					}*/
-					continue;
-				}
-				else if (u->getType() == UnitTypes::Protoss_High_Templar)
-				{
-					templarManager(u);
-					continue;
-				}
-				else if (u->getType() == UnitTypes::Protoss_Carrier)
-				{
-					carrierManager(u);
-					continue;
-				}
-				else if (u->getType() == UnitTypes::Protoss_Arbiter)
-				{
-					arbiterManager(u);
-					continue;
-				}
-				else if (u->getType() == UnitTypes::Protoss_Corsair)
-				{
-					corsairManager(u);
-					continue;
-				}
+				//else if (u->getType() == UnitTypes::Protoss_Shuttle)
+				//{
+				//	shuttleManager(u);
+				//	/*if (harassShuttleID.size() < 1 || find(harassShuttleID.begin(), harassShuttleID.end(), u->getID()) != harassShuttleID.end())
+				//	{
+				//	shuttleHarass(u);
+				//	harassShuttleID.push_back(u->getID());
+				//	}
+				//	else
+				//	{
+				//	shuttleManager(u);
+				//	}*/
+				//	continue;
+				//}
+				//else if (u->getType() == UnitTypes::Protoss_Observer)
+				//{
+				//	observerManager(u);
+				//	continue;
+				//}
+				//else if (u->getType() == UnitTypes::Protoss_Reaver)
+				//{
+				//	reaverManager(u);
+				//	/*if (harassReaverID.size() < 1 || find(harassReaverID.begin(), harassReaverID.end(), u->getID()) != harassReaverID.end())
+				//	{
+				//	harassReaverID.push_back(u->getID());
+				//	}*/
+				//	continue;
+				//}
+				//else if (u->getType() == UnitTypes::Protoss_High_Templar)
+				//{
+				//	templarManager(u);
+				//	continue;
+				//}
+				//else if (u->getType() == UnitTypes::Protoss_Carrier)
+				//{
+				//	carrierManager(u);
+				//	continue;
+				//}
+				//else if (u->getType() == UnitTypes::Protoss_Arbiter)
+				//{
+				//	arbiterManager(u);
+				//	continue;
+				//}
+				//else if (u->getType() == UnitTypes::Protoss_Corsair)
+				//{
+				//	corsairManager(u);
+				//	continue;
+				//}
 			}
 
 #pragma endregion
@@ -836,8 +836,10 @@ void McRave::onFrame()
 	allyStrength = 0.0;
 	outsideBase = false;
 
+	
+
 	// If unit has been dead for over 500 frames, erase it (needed manual loop)
-	for (map<Unit, UnitInfo>::iterator itr = allyUnits.begin(); itr != allyUnits.end();)
+	for (map<Unit, UnitInfoClass>::iterator itr = allyUnits.begin(); itr != allyUnits.end();)
 	{
 		if (itr->second.getDeadFrame() != 0 && itr->second.getDeadFrame() + 500 < Broodwar->getFrameCount())
 		{
@@ -910,7 +912,7 @@ void McRave::onFrame()
 		}
 		else
 		{
-			enemyStrength += unitGetStrength(u.second.getUnitType()) * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			enemyStrength += u.second.getMaxStrength() * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 			if (calculationDraw)
 			{
 				Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->self()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
