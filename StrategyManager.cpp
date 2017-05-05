@@ -1,0 +1,248 @@
+#include "StrategyManager.h"
+
+void StrategyTrackerClass::update()
+{
+	updateAlly();
+	updateEnemy();
+	updateComposition();
+}
+
+void StrategyTrackerClass::updateAlly()
+{
+	// Reset
+	aSmall = 0, aMedium = 0, aLarge = 0;
+	globalAllyStrength = 0.0;
+
+	// Check through all alive units or units dead within 500 frames
+	for (auto u : UnitTracker::Instance().getMyUnits())
+	{
+		// If deadframe is 0, unit is alive still
+		if (u.second.getDeadFrame() == 0)
+		{
+			// Strength based calculations ignore workers and buildings
+			if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
+			{
+				// Add strength				
+				globalAllyStrength += u.second.getStrength();
+
+				// Set last command frame
+				if (u.first->isStartingAttack())
+				{
+					u.second.setLastCommandFrame(Broodwar->getFrameCount());
+				}
+
+				// Drawing
+				if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None && u.first->getDistance(u.second.getTargetPosition()) < 500)
+				{
+					Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), Broodwar->self()->getColor());
+				}
+				if (u.second.getLocal() < 0)
+				{
+					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->enemy()->getTextColor(), (u.second.getLocal()));
+				}
+				else if (u.second.getLocal() > 0)
+				{
+					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->self()->getTextColor(), u.second.getLocal());
+				}
+				else
+				{
+					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Text::Default, u.second.getLocal());
+				}
+
+				// Store size of unit
+				if (u.second.getUnitType().size() == UnitSizeTypes::Small)
+				{
+					aSmall++;
+				}
+				else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
+				{
+					aMedium++;
+				}
+				else
+				{
+					aLarge++;
+				}
+			}
+		}
+		else
+		{
+			globalEnemyStrength += u.second.getMaxStrength() * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+
+			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->self()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
+
+		}
+	}
+}
+
+void StrategyTrackerClass::updateEnemy()
+{
+	// Reset
+	eSmall = 0, eMedium = 0, eLarge = 0;
+	globalEnemyStrength = 0.0;
+
+	// Stored enemy units iterator
+	for (auto u : UnitTracker::Instance().getEnUnits())
+	{
+		// If nullptr, continue
+		if (!u.first)
+		{
+			continue;
+		}
+		// If deadframe is 0, unit is alive still
+		if (u.second.getDeadFrame() == 0)
+		{
+			// If tile is visible but unit is not, remove position
+			if (!u.first->exists() && u.second.getPosition() != Positions::None && Broodwar->isVisible(TilePosition(u.second.getPosition())))
+			{
+				u.second.setPosition(Positions::None);
+			}
+
+			// Strength based calculations ignore workers and buildings
+			if ((u.second.getUnitType().isBuilding() && u.second.getStrength() > 1.0) || (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker()) || u.first->exists() && allyTerritory.find(getRegion(u.first->getTilePosition())) != allyTerritory.end())
+			{
+				// Add composition and strength
+				enemyComposition[u.second.getUnitType()] += 1;
+				globalEnemyStrength += u.second.getStrength();
+			}
+
+			// Drawing
+			if (u.second.getUnitType().isBuilding())
+			{
+				Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getUnitType().height() / 2, u.second.getUnitType().height() / 3, Broodwar->enemy()->getColor());
+			}
+			else
+			{
+				Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getUnitType().height() / 2), u.second.getUnitType().height() / 2, u.second.getUnitType().height() / 3, Broodwar->enemy()->getColor());
+			}
+
+			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());
+
+			// Store size of unit
+			if (u.second.getUnitType().size() == UnitSizeTypes::Small)
+			{
+				eSmall++;
+			}
+			else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
+			{
+				eMedium++;
+			}
+			else
+			{
+				eLarge++;
+			}
+		}
+
+		// If unit is dead
+		else if (u.second.getDeadFrame() != 0)
+		{
+			// Add a portion of the strength to ally strength
+			globalAllyStrength += u.second.getMaxStrength() * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+
+
+			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->enemy()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
+
+		}
+	}
+}
+
+void StrategyTrackerClass::updateComposition()
+{
+	int offset = 0;
+	// Reset unit score
+	for (auto &unit : unitScore)
+	{
+		unit.second = 0;
+	}
+
+	for (auto &t : enemyComposition)
+	{
+		// For each type, add a score to production based on the unit count divided by our current unit count
+		updateUnitScore(t.first, t.second);
+		if (t.first != UnitTypes::None && t.second > 0.0)
+		{
+			Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
+			offset = offset + 10;
+		}
+		t.second = 0;
+	}
+}
+
+void StrategyTrackerClass::updateUnitScore(UnitType unit, int count)
+{
+	switch (unit)
+	{
+		if (Broodwar->enemy()->getRace() == Races::Terran)
+		{
+	case Enum::Terran_Marine:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Medic:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Firebat:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Vulture:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Goliath:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Wraith:
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Science_Vessel:
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Battlecruiser:
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (1.00*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Siege_Tank_Siege_Mode:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.85*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.15*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Terran_Siege_Tank_Tank_Mode:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.85*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.15*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+		}
+		if (Broodwar->enemy()->getRace() == Races::Zerg)
+		{
+	case Enum::Zerg_Zergling:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Zerg_Hydralisk:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Zerg_Lurker:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Zerg_Ultralisk:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Zerg_Mutalisk:
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Zerg_Guardian:
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+	case Enum::Zerg_Defiler:
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		break;
+		}
+		if (Broodwar->enemy()->getRace() == Races::Protoss)
+		{
+
+		}
+	}
+}

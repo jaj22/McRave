@@ -1,13 +1,5 @@
 #include "ProbeInfo.h"
 
-
-void storeProbe(Unit probe, map <Unit, ProbeInfo>& myProbes)
-{
-	ProbeInfo newProbe;
-	myProbes[probe] = newProbe;
-	return;
-}
-
 // Constructors
 ProbeInfo::ProbeInfo()
 {

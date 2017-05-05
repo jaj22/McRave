@@ -3,7 +3,7 @@
 #include <vector>
 
 using namespace BWAPI;
-using namespace UnitTypes;
+
 using namespace std;
 
 //class UnitScore{

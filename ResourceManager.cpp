@@ -1,120 +1,108 @@
 #include "ResourceManager.h"
 
-using namespace BWAPI;
-using namespace std;
+void ResourceTrackerClass::update()
+{
+	for (auto &r : Broodwar->neutral()->getUnits())
+	{
+		if (r && r->exists())
+		{
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) > 0 && /*(allyTerritory.find(getRegion(r->getTilePosition())) != allyTerritory.end() ||*/ (Broodwar->getFrameCount() > 5 && Broodwar->getFrameCount() < 50))
+			{
+				if (r->getType().isMineralField() && myMinerals.find(r) == myMinerals.end() && r->getInitialResources() > 0)
+				{
+					storeMineral(r);
+				}
 
-// Constructors
-ResourceInfo::ResourceInfo()
-{
-	gathererCount = 0;
-	remainingResources = 0;
-	resourcePosition = Positions::None;
-}
-ResourceInfo::~ResourceInfo()
-{
+				if (myGas.find(r) == myGas.end() && r->getType() == UnitTypes::Resource_Vespene_Geyser)
+				{
+					storeGas(r);
+				}
+			}
+		}
+	}
 
-}
-ResourceInfo::ResourceInfo(int newGathererCount, int newRemainingResources, Unit newNexus, Position newPosition, TilePosition newTilePosition, UnitType newUnitType)
-{
-	gathererCount = newGathererCount;
-	remainingResources = newRemainingResources;
-	nexus = newNexus;
-	resourcePosition = newPosition;
-	resourceTilePosition = newTilePosition;
-	unitType = newUnitType;
-}
+	// Assume saturated so check happens
+	saturated = true;
+	for (auto &m : myMinerals)
+	{
+		if (m.first->exists())
+		{
+			m.second.setRemainingResources(m.first->getResources());
+			// Update resource grid
+			for (int x = m.second.getTilePosition().x - 2; x <= m.second.getTilePosition().x + m.second.getUnitType().tileWidth() + 2; x++)
+			{
+				for (int y = m.second.getTilePosition().y - 2; y <= m.second.getTilePosition().y + m.second.getUnitType().tileHeight() + 2; y++)
+				{
+					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
+					{
+						//resourceGrid[x][y] = 1;
+					}
+				}
+			}
+		}
+		if (saturated && m.second.getGathererCount() < 2)
+		{
+			saturated = false;
+		}
+	}
 
-// Accessors
-int ResourceInfo::getGathererCount() const
-{
-	return gathererCount;
-}
-int ResourceInfo::getRemainingResources() const
-{
-	return remainingResources;
-}
-Unit ResourceInfo::getClosestNexus() const
-{
-	return nexus;
-}
-Position ResourceInfo::getPosition() const
-{
-	return resourcePosition;
-}
-TilePosition ResourceInfo::getTilePosition() const
-{
-	return resourceTilePosition;
-}
-UnitType ResourceInfo::getUnitType() const
-{
-	return unitType;
-}
+	for (auto &g : myGas)
+	{
+		if (g.first->exists())
+		{
+			g.second.setUnitType(g.first->getType());
+			g.second.setRemainingResources(g.first->getResources());
 
-// Mutators
-void ResourceInfo::setGathererCount(int newGathererCount)
-{
-	gathererCount = newGathererCount;
-}
-void ResourceInfo::setRemainingResources(int newRemainingResources)
-{
-	remainingResources = newRemainingResources;
-}
-void ResourceInfo::setClosestNexus(Unit newNexus)
-{
-	nexus = newNexus;
-}
-void ResourceInfo::setPosition(Position newResourcePosition)
-{
-	resourcePosition = newResourcePosition;
-}
-void ResourceInfo::setTilePosition(TilePosition newResourceTilePosition)
-{
-	resourceTilePosition = newResourceTilePosition;
-}
-void ResourceInfo::setUnitType(UnitType newUnitType)
-{
-	unitType = newUnitType;
+			// Update resource grid
+			for (int x = g.second.getTilePosition().x - 1; x <= g.second.getTilePosition().x + g.second.getUnitType().tileWidth() + 1; x++)
+			{
+				for (int y = g.second.getTilePosition().y - 1; y <= g.second.getTilePosition().y + g.second.getUnitType().tileHeight() + 1; y++)
+				{
+					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
+					{
+						//resourceGrid[x][y] = 1;
+					}
+				}
+			}
+		}
+		if (g.second.getGathererCount() < 3)
+		{
+			saturated = false;
+			break;
+		}
+	}
 }
 
-// Resource updating
-void storeMineral(Unit resource, map <Unit, ResourceInfo>& myMinerals)
+void ResourceTrackerClass::storeMineral(Unit resource)
 {
 	// If this is a new unit, initialize at 0 workers, initial resources and find position
 	ResourceInfo newResource(0, resource->getInitialResources(), resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus), resource->getPosition(), resource->getTilePosition(), resource->getType());
 	myMinerals[resource] = newResource;
 	return;
 }
-void storeGas(Unit resource, map <Unit, ResourceInfo>& myGas)
+
+void ResourceTrackerClass::storeGas(Unit resource)
 {
 	// If this is a new unit, initialize at 0 workers, initial resources and find position
 	ResourceInfo newResource(0, resource->getInitialResources(), resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus), resource->getPosition(), resource->getTilePosition(), resource->getType());
 	myGas[resource] = newResource;
 	return;
 }
-Unit assignResource(map <Unit, ResourceInfo>& myMinerals, map <Unit, ResourceInfo>& myGas)
-{
-	int cnt = 1;
-	for (auto &gas : myGas)
-	{
-		if (gas.second.getUnitType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
-		{
-			gas.second.setGathererCount(gas.second.getGathererCount() + 1);
-			return gas.first;
-		}
-	}
 
-	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
-	while (cnt <= 2)
-	{
-		for (auto &mineral : myMinerals)
-		{
-			if (mineral.second.getGathererCount() < cnt)
-			{
-				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
-				return mineral.first;
-			}
-		}
-		cnt++;
-	}
-	return nullptr;
+void ResourceTrackerClass::storeBoulder(Unit resource)
+{
+	ResourceInfo newResource(0, 0, resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus), resource->getPosition(), resource->getTilePosition(), resource->getType());
+	myBoulders[resource] = newResource;
+	return;
+}
+
+void ResourceTrackerClass::removeMineral(Unit resource)
+{
+	myMinerals.erase(resource);
+}
+
+void ResourceTrackerClass::removeGas(Unit resource)
+{
+	
+	myGas.erase(resource);
 }

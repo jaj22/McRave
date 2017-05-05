@@ -12,27 +12,26 @@ class UnitTrackerClass
 {
 	map <Unit, UnitInfoClass> enemyUnits;
 	map <Unit, UnitInfoClass> allyUnits;
-
 public:
 	map<Unit, UnitInfoClass> getMyUnits() { return allyUnits; }
 	map<Unit, UnitInfoClass> getEnUnits() { return enemyUnits; }
 
+	void update();
+
+	// Command manager
 	void unitMicroTarget(Unit, Unit);
 	void unitExploreArea(Unit);
+	void unitGetCommand(Unit);
+	void commandUpdate();
 
+	// Strategy manager
 	int unitGetGlobalStrategy();
 	void unitGetLocalStrategy(Unit, Unit);
-	void unitGetCommand(Unit);
+
+	// Target manager
 	void unitGetTarget(Unit);
 	void unitGetClusterTarget(Unit);
-	void unitUpdate(Unit);
-	void unitDeath(Unit);
-
-	// Command manager?
-	void unitLocalWinCommand(Unit);
-	void unitLocalLoseCommand(Unit);
-	void unitGlobalWinCommand(Unit);
-	void unitGlobalLoseCommand(Unit);
+	void unitDeath(Unit);	
 
 	// Special units
 	void templarManager(Unit);
@@ -73,21 +72,6 @@ extern bool outsideBase;
 extern int forceExpand;
 
 // Miscellaneous
-extern vector<Unit> combatProbe;
 extern int supply;
-
-// Special Unit Functions
-void shuttleManager(Unit unit);
-void shuttleHarass(Unit unit);
-void observerManager(Unit unit);
-void reaverManager(Unit unit);
-void carrierManager(Unit unit);
-void corsairManager(Unit unit);
-void templarManager(Unit unit);
-void arbiterManager(Unit unit);
-
-// Unit Tracking Functions
-void storeEnemyUnit(Unit unit, map<Unit, UnitInfoClass>& enemyUnits);
-void storeAllyUnit(Unit unit, map<Unit, UnitInfoClass>& allyUnits);
 
 typedef Singleton<UnitTrackerClass> UnitTracker;

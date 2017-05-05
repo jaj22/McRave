@@ -7,18 +7,17 @@ using namespace BWAPI;
 
 class ProbeTrackerClass
 {
-
+	map <Unit, ProbeInfo>& myProbes;
+public:
+	void storeProbe(Unit);
+	void removeProbe(Unit);
+	void assignProbe(Unit);
+	void update();
 };
 
-void storeProbe(Unit probe, map <Unit, ProbeInfo>& myProbes);
-
-// External Variables
-extern vector<Unit> combatProbe;
-extern bool saturated, gasNeeded;
-
-// Functions
-Unit assignProbe(Unit probe);
-void assignCombat(Unit probe);
-void unAssignCombat(Unit probe);
+extern bool scouting;
+extern int resourceGrid[256][256];
+extern Unit scout;
+extern int supply;
 
 typedef Singleton<ProbeTrackerClass> ProbeTracker;
