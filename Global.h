@@ -3,6 +3,8 @@
 #include <BWTA.h>
 #include "src\bwem.h"
 
+#include "Singleton.h"
+
 // Include other source files
 #include "BuildingManager.h"
 #include "ProductionManager.h"

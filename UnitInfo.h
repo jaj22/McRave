@@ -16,10 +16,8 @@ class UnitInfoClass {
 
 public:
 	UnitInfoClass();
-	UnitInfoClass(UnitType, Position, double, double, double, UnitCommandType, int, int, int);
+	UnitInfoClass(UnitType, Position, double, double, double, UnitCommandType, int, int, int, Unit);
 	~UnitInfoClass();
-
-
 
 	// Accessors
 	UnitType getUnitType() const;
@@ -51,5 +49,3 @@ public:
 	void setLastCommandFrame(int);
 	void setStim(bool);
 };
-
-bool stimResearched = false;

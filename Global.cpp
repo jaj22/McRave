@@ -7,6 +7,7 @@
 #include "Header.h"
 #include "Global.h"
 
+
 // Author notes:
 // Classes
 // Make geometry class, use corner checking and display on grids?
@@ -481,22 +482,22 @@ void McRave::onFrame()
 		unit.second = 0;
 	}
 
-	// If unit has been dead for over 500 frames, erase it (needed manual loop)
-	for (map<Unit, UnitInfoClass>::iterator itr = enemyUnits.begin(); itr != enemyUnits.end();)
-	{
-		if ((*itr).second.getDeadFrame() != 0 && (*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount() || itr->first && itr->first->exists() && itr->first->getPlayer() != Broodwar->enemy())
-		{
-			itr = enemyUnits.erase(itr);
-		}
-		else
-		{
-			++itr;
-		}
-	}
+	//// If unit has been dead for over 500 frames, erase it (needed manual loop)
+	//for (map<Unit, UnitInfoClass>::iterator itr = UnitTracker::Instance().getEnUnits().begin(); itr != UnitTracker::Instance().getEnUnits().end();)
+	//{
+	//	if ((*itr).second.getDeadFrame() != 0 && (*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount() || itr->first && itr->first->exists() && itr->first->getPlayer() != Broodwar->enemy())
+	//	{
+	//		itr = enemyUnits.erase(itr);
+	//	}
+	//	else
+	//	{
+	//		++itr;
+	//	}
+	//}
 
 #pragma region EnemyInfo
 	// Stored enemy units iterator
-	for (auto &u : enemyUnits)
+	for (auto u : UnitTracker::Instance().getEnUnits())
 	{
 		// If nullptr, continue
 		if (!u.first)
@@ -629,17 +630,9 @@ void McRave::onFrame()
 		}
 
 
-		// Return if not latency frame
-		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0 && allyUnits.find(u) != allyUnits.end())
-		{
-			allyUnits[u].setPosition(u->getPosition());
-			continue;
-		}
-		// Update unit
-		else
-		{
-			UnitTracker::Instance().unitUpdate(u);
-		}
+		// Return if not latency frame	
+		UnitTracker::Instance().unitUpdate(u);
+		
 
 		// Skip loaded/stuck units otherwise
 		if (u->isLoaded() || u->isStuck())
@@ -836,23 +829,8 @@ void McRave::onFrame()
 	allyStrength = 0.0;
 	outsideBase = false;
 
-	
-
-	// If unit has been dead for over 500 frames, erase it (needed manual loop)
-	for (map<Unit, UnitInfoClass>::iterator itr = allyUnits.begin(); itr != allyUnits.end();)
-	{
-		if (itr->second.getDeadFrame() != 0 && itr->second.getDeadFrame() + 500 < Broodwar->getFrameCount())
-		{
-			itr = allyUnits.erase(itr);
-		}
-		else
-		{
-			++itr;
-		}
-	}
-
 	// Check through all alive units or units dead within 500 frames
-	for (auto &u : allyUnits)
+	for (auto u : UnitTracker::Instance().getMyUnits())
 	{
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
@@ -1060,7 +1038,7 @@ void McRave::onFrame()
 		queuedGas += b.first.gasPrice();
 
 		// If probe died, replace the probe
-		if (!b.second.second->exists())
+		if (!b.second.second || !b.second.second->exists())
 		{
 			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
 			continue;
@@ -1336,9 +1314,9 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
 {
+	UnitTracker::Instance().unitDeath(unit);
 	if (unit->getPlayer() == Broodwar->self())
-	{
-		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
+	{		
 		supply -= unit->getType().supplyRequired();
 		// For probes, adjust the resource maps to align properly
 		if (unit->getType() == UnitTypes::Protoss_Probe)

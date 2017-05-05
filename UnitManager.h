@@ -14,8 +14,8 @@ class UnitTrackerClass
 	map <Unit, UnitInfoClass> allyUnits;
 
 public:
-	const map<Unit, UnitInfoClass> getMyUnits() { return allyUnits;  }
-	const map<Unit, UnitInfoClass> getEnUnits() { return enemyUnits; }
+	map<Unit, UnitInfoClass> getMyUnits() { return allyUnits; }
+	map<Unit, UnitInfoClass> getEnUnits() { return enemyUnits; }
 
 	void unitMicroTarget(Unit, Unit);
 	void unitExploreArea(Unit);
@@ -26,6 +26,7 @@ public:
 	void unitGetTarget(Unit);
 	void unitGetClusterTarget(Unit);
 	void unitUpdate(Unit);
+	void unitDeath(Unit);
 
 	// Command manager?
 	void unitLocalWinCommand(Unit);
@@ -37,6 +38,9 @@ public:
 	void templarManager(Unit);
 	void reaverManager(Unit);
 	void arbiterManager(Unit);
+
+	void storeEnemyUnit(Unit, map<Unit, UnitInfoClass>&);
+	void storeAllyUnit(Unit, map<Unit, UnitInfoClass>&);
 
 	Position unitFlee(Unit unit, Unit currentTarget);
 };
