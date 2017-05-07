@@ -1,4 +1,7 @@
 #include "StrategyManager.h"
+#include "TerrainManager.h"
+#include "UnitManager.h"
+#include "GridManager.h"
 
 void StrategyTrackerClass::update()
 {
@@ -9,8 +12,7 @@ void StrategyTrackerClass::update()
 
 void StrategyTrackerClass::updateAlly()
 {
-	// Reset
-	aSmall = 0, aMedium = 0, aLarge = 0;
+	// Reset	
 	globalAllyStrength = 0.0;
 
 	// Check through all alive units or units dead within 500 frames
@@ -38,7 +40,7 @@ void StrategyTrackerClass::updateAlly()
 				}
 				if (u.second.getLocal() < 0)
 				{
-					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->enemy()->getTextColor(), (u.second.getLocal()));
+					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getLocal());
 				}
 				else if (u.second.getLocal() > 0)
 				{
@@ -47,21 +49,7 @@ void StrategyTrackerClass::updateAlly()
 				else
 				{
 					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Text::Default, u.second.getLocal());
-				}
-
-				// Store size of unit
-				if (u.second.getUnitType().size() == UnitSizeTypes::Small)
-				{
-					aSmall++;
-				}
-				else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
-				{
-					aMedium++;
-				}
-				else
-				{
-					aLarge++;
-				}
+				}				
 			}
 		}
 		else
@@ -76,8 +64,7 @@ void StrategyTrackerClass::updateAlly()
 
 void StrategyTrackerClass::updateEnemy()
 {
-	// Reset
-	eSmall = 0, eMedium = 0, eLarge = 0;
+	// Reset	
 	globalEnemyStrength = 0.0;
 
 	// Stored enemy units iterator
@@ -98,7 +85,7 @@ void StrategyTrackerClass::updateEnemy()
 			}
 
 			// Strength based calculations ignore workers and buildings
-			if ((u.second.getUnitType().isBuilding() && u.second.getStrength() > 1.0) || (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker()) || u.first->exists() && allyTerritory.find(getRegion(u.first->getTilePosition())) != allyTerritory.end())
+			if ((u.second.getUnitType().isBuilding() && u.second.getStrength() > 1.0) || (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker()) || u.first->exists() && TerrainTracker::Instance().getAllyTerritory().find(getRegion(u.first->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
 			{
 				// Add composition and strength
 				enemyComposition[u.second.getUnitType()] += 1;
@@ -115,21 +102,7 @@ void StrategyTrackerClass::updateEnemy()
 				Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getUnitType().height() / 2), u.second.getUnitType().height() / 2, u.second.getUnitType().height() / 3, Broodwar->enemy()->getColor());
 			}
 
-			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());
-
-			// Store size of unit
-			if (u.second.getUnitType().size() == UnitSizeTypes::Small)
-			{
-				eSmall++;
-			}
-			else if (u.second.getUnitType().size() == UnitSizeTypes::Medium)
-			{
-				eMedium++;
-			}
-			else
-			{
-				eLarge++;
-			}
+			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());				
 		}
 
 		// If unit is dead

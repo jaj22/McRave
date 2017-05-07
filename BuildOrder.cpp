@@ -1,4 +1,8 @@
 #include "BuildOrder.h"
+#include "GridManager.h"
+#include "UnitManager.h"
+#include "ResourceManager.h"
+#include "ProductionManager.h"
 
 using namespace BWAPI;
 bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
@@ -7,15 +11,21 @@ bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
 // Changes: Terran only runs 20 Nexus!
 // Make building desired into a class for easier storage
 
-void desiredBuildings()
+void BuildOrderTrackerClass::update()
 {
+	// Temporary variables
+	int supply = UnitTracker::Instance().getSupply();
+	bool saturated = ResourceTracker::Instance().isSaturated();
+	bool forceExpand = false;	
+	int inactiveNexusCnt = 0;
+
 	// Pylon, Forge, Nexus
 	buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((supply / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 	buildingDesired[UnitTypes::Protoss_Forge] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) / 3);
 	buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
-	if (!getEarlyBuild && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && idleGates.size() == 0)
+	if (!getEarlyBuild && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && ProductionTracker::Instance().getIdleGates().size() == 0)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus]++;
 	}
@@ -27,13 +37,13 @@ void desiredBuildings()
 	}
 
 	// If no idle gates and we are floating minerals, add 1 more
-	if (Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && idleGates.size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))
+	if (Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))
 	{
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && idleGates.size() == 0 && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 || forceExpand))
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && ProductionTracker::Instance().getIdleGates().size() && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 || forceExpand))
 	{
 		getEarlyBuild = false;
 		getMidBuild = true;
@@ -49,112 +59,72 @@ void desiredBuildings()
 	// If not early build, gas is now based on whether we need more or not rather than a supply amount	
 	if (!getEarlyBuild && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == buildingDesired[UnitTypes::Protoss_Nexus])
 	{
-		buildingDesired[UnitTypes::Protoss_Assimilator] = geysers.size();
+		buildingDesired[UnitTypes::Protoss_Assimilator] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
 	}
 
-}
-
-void getBuildOrder()
-{
-	desiredBuildings();
+	switch (Broodwar->enemy()->getRace())
 	{
-		switch (Broodwar->enemy()->getRace())
-		{
-			/* Protoss vs Zerg		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Dark Archons	*/
-			// IMPLEMENTING -- If Muta, mid build 2 (corsairs)
-		case Races::Enum::Zerg:
-			if (getEarlyBuild)
-			{
-				earlyBuilds(0);
-			}
-			else if (getMidBuild)
-			{
-				midBuilds(0);
-			}
-			else if (getLateBuild)
-			{
-				lateBuilds(1);
-			}
-			break;
-
-			/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
-		case Races::Enum::Terran:
-			if (getEarlyBuild)
-			{
-				earlyBuilds(1);
-			}
-			else if (getMidBuild)
-			{
-				if (forceExpand)
-				{
-					midBuilds(3);
-				}
-				else if (terranBio)
-				{
-					midBuilds(0);
-				}
-				else
-				{
-					midBuilds(0);
-				}
-			}
-			else if (getLateBuild)
-			{
-				lateBuilds(0);
-			}
-			break;
-
-			/* Protoss vs Protoss		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps */
-		case Races::Enum::Protoss:
-			if (getEarlyBuild)
-			{
-				earlyBuilds(0);
-			}
-			else if (getMidBuild)
-			{
-				midBuilds(0);
-
-			}
-			else if (getLateBuild)
-			{
-				lateBuilds(1);
-			}
-			break;
-		case Races::Enum::Random:
-		{
-			earlyBuilds(0);
-		}
+		/* Protoss vs Zerg		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Dark Archons	*/
+		// IMPLEMENTING -- If Muta, mid build 2 (corsairs)
+	case Races::Enum::Zerg:
+		earlyBuild = 0;
+		midBuild = 0;
+		lateBuild = 1;		
 		break;
-		case Races::Enum::Unknown:
-		{
-			earlyBuilds(0);
-		}
+
+		/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
+	case Races::Enum::Terran:
+		earlyBuild = 1;
+		midBuild = 0;
+		lateBuild = 0;
 		break;
-		}
+
+		/* Protoss vs Protoss		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps */
+	case Races::Enum::Protoss:
+		earlyBuild = 0;
+		midBuild = 0;
+		lateBuild = 1;
+		break;
+	case Races::Enum::Random:
+	{
+		earlyBuild = 0;
+	}
+	break;
+	case Races::Enum::Unknown:
+	{
+		earlyBuild = 0;
+	}
+	break;
+	}
+
+	if (getEarlyBuild)
+	{
+		earlyBuilds();
 	}
 }
 
-void midBuilds(int whichBuild)
+void BuildOrderTrackerClass::midBuilds()
 {
-	switch (whichBuild){
+	int supply = UnitTracker::Instance().getSupply();
+	switch (midBuild){
 	case 0:
 		// -- Reavers --		
 		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
 		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
-		currentStrategy.assign("Robo Tech");
+		//currentStrategy.assign("Robo Tech");
 		break;
 
 	case 1:
 		// -- Speedlots	--	
 		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-		currentStrategy.assign("Speedlot Tech");
+		//currentStrategy.assign("Speedlot Tech");
 		break;
 
 	case 2:
 		// -- Corsairs --
 		buildingDesired[UnitTypes::Protoss_Stargate] = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 4);
-		currentStrategy.assign("Corsair Tech");
+		//currentStrategy.assign("Corsair Tech");
 		break;
 	case 3:
 		// -- 2 Nexus Reaver --
@@ -164,13 +134,13 @@ void midBuilds(int whichBuild)
 			buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) / 2);
 		}
 		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		currentStrategy.assign("Range Robo Expand");
+		//currentStrategy.assign("Range Robo Expand");
 	}
 }
 
-void lateBuilds(int whichBuild)
+void BuildOrderTrackerClass::lateBuilds()
 {
-	switch (whichBuild)
+	switch (lateBuild)
 	{
 	case 0:
 		// -- Arbiters and High Templars -- 
@@ -178,27 +148,28 @@ void lateBuilds(int whichBuild)
 		buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
 		buildingDesired[UnitTypes::Protoss_Stargate] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
 		buildingDesired[UnitTypes::Protoss_Arbiter_Tribunal] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
-		currentStrategy.assign("Arbiter and Templar Tech");
+		//currentStrategy.assign("Arbiter and Templar Tech");
 		break;
 	case 1:
 		// -- High Templars and Dark Templars --
 		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
 		buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
-		currentStrategy.assign("Templar Tech");
+		//currentStrategy.assign("Templar Tech");
 		break;
 	case 2:
 		// -- Carriers --
 		buildingDesired[UnitTypes::Protoss_Stargate] = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Fleet_Beacon));
 		buildingDesired[UnitTypes::Protoss_Fleet_Beacon] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
-		currentStrategy.assign("Carrier Tech");
+		//currentStrategy.assign("Carrier Tech");
 		break;
 	}
 
 }
 
-void earlyBuilds(int whichBuild)
+void BuildOrderTrackerClass::earlyBuilds()
 {
-	switch (whichBuild)
+	int supply = UnitTracker::Instance().getSupply();
+	switch (earlyBuild)
 	{
 	case 0:
 		// -- 2 Gate Core --
@@ -212,7 +183,7 @@ void earlyBuilds(int whichBuild)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
 		}
-		currentStrategy.assign("Two Gate Core");
+		//currentStrategy.assign("Two Gate Core");
 		break;
 	case 1:
 		// -- 1 Gate Core --		
@@ -233,7 +204,7 @@ void earlyBuilds(int whichBuild)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
 		}
-		currentStrategy.assign("One Gate Core");
+		//currentStrategy.assign("One Gate Core");
 		break;
 	case 2:
 		// -- 12 Nexus --
@@ -241,7 +212,7 @@ void earlyBuilds(int whichBuild)
 		{
 			buildingDesired[UnitTypes::Protoss_Nexus] = 2;
 		}
-		currentStrategy.assign("Early Expand");
+		//currentStrategy.assign("Early Expand");
 		break;
 	}
 }

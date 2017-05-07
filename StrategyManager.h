@@ -1,11 +1,11 @@
-#include "UnitManager.h"
+#pragma once
+#include "Singleton.h"
+#include <BWAPI.h>
+#include <BWTA.h>
 
+using namespace std;
+using namespace BWAPI;
 using namespace UnitTypes;
-
-// Future place of better strategy stuff
-//
-//
-//
 
 class StrategyTrackerClass
 {

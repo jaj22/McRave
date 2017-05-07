@@ -1,31 +1,28 @@
+#pragma once
 #include <BWAPI.h>
 #include <BWTA.h>
-#include <vector>
+#include "Singleton.h"
 
 using namespace BWAPI;
 using namespace std;
 
-// External building positioning variables
-extern vector <TilePosition> activeExpansion;
-extern vector <TilePosition> nextExpansion;
-extern TilePosition playerStartingTilePosition;
-extern map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
-extern set <BWTA::Region*> allyTerritory;
+class BuildingTrackerClass
+{
+	int queuedMineral, queuedGas;
+	map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
+public:	
+	TilePosition getBuildLocation(UnitType);
+	TilePosition getCannonLocation();
+	TilePosition getNexusLocation();
+	TilePosition getGasLocation();
 
-// External resource variables
-extern int queuedMineral, queuedGas, reservedMineral, reservedGas;
-extern vector<Unit> geysers;
-extern int resourceGrid[256][256];
+	int getQueuedMineral() { return queuedMineral; }
+	int getQueuedGas() { return queuedGas; }
 
-// Build Order variables
-extern bool terranBio;
-extern map <UnitType, double> unitScore;
-extern int supply;
-extern bool noZealots;
+	void update();
+	void queueBuildings();
+	void constructBuildings();
+	void updateQueue(UnitType);
+};
 
-// Function declarations
-TilePosition buildingManager(UnitType building);
-bool canBuildHere(UnitType building, TilePosition buildTilePosition);
-TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosition, bool ignoreCond);
-void productionManager(Unit building);
-TilePosition cannonManager(TilePosition base, UnitType building);
+typedef Singleton<BuildingTrackerClass> BuildingTracker;

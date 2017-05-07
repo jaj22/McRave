@@ -1,3 +1,4 @@
+#pragma once
 #include <BWAPI.h>
 #include "Singleton.h"
 #include "ProbeInfo.h"
@@ -7,17 +8,13 @@ using namespace BWAPI;
 
 class ProbeTrackerClass
 {
-	map <Unit, ProbeInfo>& myProbes;
+	map <Unit, ProbeInfo> myProbes;
+	Unit scout;
 public:
+	void update();
 	void storeProbe(Unit);
 	void removeProbe(Unit);
-	void assignProbe(Unit);
-	void update();
+	void assignProbe(Unit);	
 };
-
-extern bool scouting;
-extern int resourceGrid[256][256];
-extern Unit scout;
-extern int supply;
 
 typedef Singleton<ProbeTrackerClass> ProbeTracker;

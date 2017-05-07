@@ -1,3 +1,4 @@
+#pragma once
 #include "ResourceInfo.h"
 #include "Singleton.h"
 
@@ -9,9 +10,9 @@ class ResourceTrackerClass
 	bool saturated;
 public:
 
-	map <Unit, ResourceInfo> getMyMinerals() { return myMinerals; }
-	map <Unit, ResourceInfo> getMyGas() { return myGas; }
-	map <Unit, ResourceInfo> getMyBoulders() { return myBoulders; }
+	map <Unit, ResourceInfo>& getMyMinerals() { return myMinerals; }
+	map <Unit, ResourceInfo>& getMyGas() { return myGas; }
+	map <Unit, ResourceInfo>& getMyBoulders() { return myBoulders; }
 
 	bool isSaturated() { return saturated; }
 

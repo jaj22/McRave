@@ -1,5 +1,7 @@
 #include "UnitManager.h"
+#include "TerrainManager.h"
 #include "BWTA.h"
+#include "GridManager.h"
 
 using namespace BWAPI;
 using namespace std;
@@ -35,6 +37,16 @@ bool isThisACorner(Position position)
 
 void UnitTrackerClass::update()
 {
+	// Reset sizes
+	for (auto &size : allySizes)
+	{
+		size.second = 0;
+	}
+	for (auto &size : enemySizes)
+	{
+		size.second = 0;
+	}
+	supply = 0;
 	// Store units
 	for (auto u : Broodwar->self()->getUnits())
 	{		
@@ -42,9 +54,10 @@ void UnitTrackerClass::update()
 		{
 			continue;
 		}
-		if (u && u->exists() && u->isCompleted())
+		supply = supply + u->getType().supplyRequired();
+		if (u && u->exists() && u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding())
 		{
-			storeAllyUnit(u, allyUnits);
+			storeAllyUnit(u, allyUnits);			
 		}
 	}
 	for (auto u : Broodwar->enemy()->getUnits())
@@ -78,19 +91,6 @@ void UnitTrackerClass::update()
 		{
 			++itr;
 		}
-	}
-
-}
-
-void UnitTrackerClass::unitDeath(Unit unit)
-{
-	if (unit->getPlayer() == Broodwar->self())
-	{
-		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());		
-	}
-	else
-	{
-		enemyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
 	}
 }
 
@@ -152,22 +152,9 @@ Position UnitTrackerClass::unitFlee(Unit unit, Unit currentTarget)
 		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
 			Position newPosition = Position(TilePosition(x, y));
-			if (enemyGroundStrengthGrid[x][y] < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
+			if (GridTracker::Instance().getEGroundGrid(x,y) < 1 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition) && !isThisACorner(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
 			{
-				return newPosition;
-
-				// Corner checking is the same as walkable check (larger area)
-				//for (int i = 0; i <= 1; i++)
-				//{
-				//	for (int j = 0; j <= 1; j++)
-				//	{
-				//		// Not a fully functional walkable check -- IMPLEMENTING
-				//		if (Broodwar->isWalkable(((x * 4) + i), ((y * 4) + j)))
-				//		{
-				//			return newPosition + Position(i * 8, j * 8);
-				//		}
-				//	}
-				//}
+				return newPosition;			
 			}
 		}
 		//Otherwise, move to another position
@@ -217,10 +204,6 @@ double unitGetStrength(UnitType unitType)
 	if (unitType == UnitTypes::Zerg_Lurker)
 	{
 		return 20.0;
-	}
-	if (unitType == UnitTypes::Protoss_Arbiter || unitType == UnitTypes::Terran_Science_Vessel)
-	{
-		return 100.0;
 	}
 	if (unitType == UnitTypes::Protoss_Reaver)
 	{
@@ -277,9 +260,6 @@ double unitGetStrength(UnitType unitType)
 		{
 			damage = damage * 1.33;
 		}
-
-		// Check for movement speed upgrades
-
 
 		// Hp		
 		hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
@@ -382,7 +362,7 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit, map<Unit, UnitInfoClass>& enemy
 	if (enemyUnits.find(unit) == enemyUnits.end())
 	{
 		UnitInfoClass newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetStrength(unit->getType()), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0, 0, nullptr);
-		enemyUnits[unit] = newUnit;
+		enemyUnits[unit] = newUnit;		
 	}
 	// Update unit
 	else
@@ -393,11 +373,12 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit, map<Unit, UnitInfoClass>& enemy
 		enemyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
 		enemyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->enemy()));
 	}
-
 	if ((unit->isCloaked() || unit->isBurrowed()) && !unit->isDetected())
 	{
 		enemyUnits[unit].setStrength(unitGetStrength(unit->getType()));
-	}
+	}	
+	// Update sizes
+	enemySizes[unit->getType().size()] += 1;
 	return;
 }
 void UnitTrackerClass::storeAllyUnit(Unit unit, map<Unit, UnitInfoClass>& allyUnits)
@@ -406,7 +387,7 @@ void UnitTrackerClass::storeAllyUnit(Unit unit, map<Unit, UnitInfoClass>& allyUn
 	if (allyUnits.find(unit) == allyUnits.end())
 	{
 		UnitInfoClass newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetStrength(unit->getType()), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unit->getLastCommand().getType(), 0, 0, 0, nullptr);
-		allyUnits[unit] = newUnit;
+		allyUnits[unit] = newUnit;		
 	}
 	// Update unit
 	else
@@ -417,7 +398,21 @@ void UnitTrackerClass::storeAllyUnit(Unit unit, map<Unit, UnitInfoClass>& allyUn
 		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
 		allyUnits[unit].setCommand(unit->getLastCommand().getType());
 	}
+	// Update sizes
+	allySizes[unit->getType().size()] += 1;	
 	return;
+}
+
+void UnitTrackerClass::removeUnit(Unit unit)
+{
+	if (unit->getPlayer() == Broodwar->self())
+	{
+		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
+	}
+	else
+	{
+		enemyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
+	}
 }
 
 //#pragma region SpecialUnits
@@ -583,7 +578,7 @@ void UnitTrackerClass::templarManager(Unit unit)
 			}
 		}
 	}
-	unit->move(supportPosition);
+	//unit->move(supportPosition);
 	return;
 }
 
@@ -601,13 +596,13 @@ void UnitTrackerClass::arbiterManager(Unit unit)
 	// Find a position that is the highest concentration of units
 	unitGetClusterTarget(unit);
 
-	if (supportPosition != Positions::None && supportPosition != Positions::Unknown && supportPosition != Positions::Invalid)
+	if (true)//supportPosition != Positions::None && supportPosition != Positions::Unknown && supportPosition != Positions::Invalid)
 	{
-		unit->move(supportPosition);
+		//unit->move(supportPosition);
 	}
 	else
 	{
-		unit->move(playerStartingPosition);
+		unit->move(TerrainTracker::Instance().getPlayerStartingPosition());
 	}
 	if (unit->getUnitsInRadius(640, Filter::IsEnemy).size() > 4)
 	{

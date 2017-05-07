@@ -1,4 +1,6 @@
 #include "ResourceManager.h"
+#include "TerrainManager.h"
+#include "GridManager.h"
 
 void ResourceTrackerClass::update()
 {
@@ -6,9 +8,10 @@ void ResourceTrackerClass::update()
 	{
 		if (r && r->exists())
 		{
-			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) > 0 && /*(allyTerritory.find(getRegion(r->getTilePosition())) != allyTerritory.end() ||*/ (Broodwar->getFrameCount() > 5 && Broodwar->getFrameCount() < 50))
+			// Need better solution than GUIR
+			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) > 0 && r->getUnitsInRadius(320, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus).size() > 0)
 			{
-				if (r->getType().isMineralField() && myMinerals.find(r) == myMinerals.end() && r->getInitialResources() > 0)
+				if (r->getType().isMineralField() && r->getInitialResources() > 0 && myMinerals.find(r) == myMinerals.end())
 				{
 					storeMineral(r);
 				}
@@ -27,18 +30,8 @@ void ResourceTrackerClass::update()
 	{
 		if (m.first->exists())
 		{
-			m.second.setRemainingResources(m.first->getResources());
-			// Update resource grid
-			for (int x = m.second.getTilePosition().x - 2; x <= m.second.getTilePosition().x + m.second.getUnitType().tileWidth() + 2; x++)
-			{
-				for (int y = m.second.getTilePosition().y - 2; y <= m.second.getTilePosition().y + m.second.getUnitType().tileHeight() + 2; y++)
-				{
-					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
-					{
-						//resourceGrid[x][y] = 1;
-					}
-				}
-			}
+			m.second.setRemainingResources(m.first->getResources());	
+			Broodwar->drawTextMap(m.second.getPosition(), "%d", m.second.getGathererCount());
 		}
 		if (saturated && m.second.getGathererCount() < 2)
 		{
@@ -52,18 +45,7 @@ void ResourceTrackerClass::update()
 		{
 			g.second.setUnitType(g.first->getType());
 			g.second.setRemainingResources(g.first->getResources());
-
-			// Update resource grid
-			for (int x = g.second.getTilePosition().x - 1; x <= g.second.getTilePosition().x + g.second.getUnitType().tileWidth() + 1; x++)
-			{
-				for (int y = g.second.getTilePosition().y - 1; y <= g.second.getTilePosition().y + g.second.getUnitType().tileHeight() + 1; y++)
-				{
-					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
-					{
-						//resourceGrid[x][y] = 1;
-					}
-				}
-			}
+			Broodwar->drawTextMap(g.second.getPosition(), "%d", g.second.getGathererCount());
 		}
 		if (g.second.getGathererCount() < 3)
 		{

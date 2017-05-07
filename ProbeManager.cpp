@@ -1,59 +1,18 @@
 #include "ProbeManager.h"
 #include "ResourceManager.h"
+#include "GridManager.h"
+#include "UnitManager.h"
 
 using namespace BWAPI;
 using namespace std;
 
-void ProbeTrackerClass::storeProbe(Unit probe)
-{
-	ProbeInfo newProbe;
-	myProbes[probe] = newProbe;
-	return;
-}
-
-void ProbeTrackerClass::removeProbe(Unit probe)
-{
-	//
-}
-
-void ProbeTrackerClass::assignProbe(Unit probe)
-{
-	// Assign a task if none
-	int cnt = 1;
-	for (auto &gas : ResourceTracker::Instance().getMyGas())
-	{
-		if (gas.second.getUnitType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
-		{
-			gas.second.setGathererCount(gas.second.getGathererCount() + 1);
-			myProbes[probe].setTarget(gas.first);
-		}
-	}
-
-	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
-	while (cnt <= 2)
-	{
-		for (auto &mineral : ResourceTracker::Instance().getMyMinerals())
-		{
-			if (mineral.second.getGathererCount() < cnt)
-			{
-				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
-				myProbes[probe].setTarget(mineral.first);
-			}
-		}
-		cnt++;
-	}
-	return;
-}
+bool scouting = true;
 
 void ProbeTrackerClass::update()
 {
 	for (auto u : Broodwar->self()->getUnits())
 	{
-		if (u->getType() != UnitTypes::Protoss_Probe)
-		{
-			continue;
-		}
-		if (myProbes.find(u) == myProbes.end())
+		if (u->exists() && u->isCompleted() && u->getType() == UnitTypes::Protoss_Probe && myProbes.find(u) == myProbes.end())
 		{
 			storeProbe(u);
 		}
@@ -76,11 +35,11 @@ void ProbeTrackerClass::update()
 		}
 
 		// Attack units in mineral line
-		if (resourceGrid[u.first->getTilePosition().x][u.first->getTilePosition().y] > 0 && u.first->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && (u.first->getHitPoints() + u.first->getShields()) > 20)
+		if (GridTracker::Instance().getResourceGrid(u.first->getTilePosition().x, u.first->getTilePosition().y) > 0 && u.first->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && (u.first->getHitPoints() + u.first->getShields()) > 20)
 		{
 			u.first->attack(u.first->getClosestUnit(Filter::IsEnemy, 320));
 		}
-		else if (u.first->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && (resourceGrid[u.first->getTilePosition().x][u.first->getTilePosition().y] == 0 || (u.first->getHitPoints() + u.first->getShields()) <= 20))
+		else if (u.first->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && (GridTracker::Instance().getResourceGrid(u.first->getTilePosition().x, u.first->getTilePosition().y) == 0 || (u.first->getHitPoints() + u.first->getShields()) <= 20))
 		{
 			u.first->stop();
 		}
@@ -108,17 +67,17 @@ void ProbeTrackerClass::update()
 			}
 
 			// If not scouting and there's boulders to remove
-			if (!scouting && ResourceTracker::Instance().getMyBoulders().size() > 0)
+			/*if (!scouting && ResourceTracker::Instance().getMyBoulders().size() > 0)
 			{
-				for (auto b : ResourceTracker::Instance().getMyBoulders())
-				{
-					if (b.first && b.first->exists() && !u.first->isGatheringMinerals() && u.first->getDistance(b.second.getPosition()) < 512)
-					{
-						u.first->gather(b.first);
-						break;
-					}
-				}
+			for (auto b : ResourceTracker::Instance().getMyBoulders())
+			{
+			if (b.first && b.first->exists() && !u.first->isGatheringMinerals() && u.first->getDistance(b.second.getPosition()) < 512)
+			{
+			u.first->gather(b.first);
+			break;
 			}
+			}
+			}*/
 
 			// If we have been given a command this frame already, continue
 			if (u.first->getLastCommandFrame() >= Broodwar->getFrameCount() && (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build))
@@ -156,7 +115,7 @@ void ProbeTrackerClass::update()
 		}
 		if (u.first == scout)
 		{
-			if (supply >= 18 && scouting)
+			if (UnitTracker::Instance().getSupply() >= 18 && scouting)
 			{
 				for (auto start : getStartLocations())
 				{
@@ -174,4 +133,56 @@ void ProbeTrackerClass::update()
 			}
 		}
 	}
+}
+
+void ProbeTrackerClass::storeProbe(Unit probe)
+{
+	ProbeInfo newProbe;
+	myProbes[probe] = newProbe;
+	return;
+}
+
+void ProbeTrackerClass::removeProbe(Unit probe)
+{
+	if (ResourceTracker::Instance().getMyGas().find(probe) != ResourceTracker::Instance().getMyGas().end())
+	{
+		ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyGas()[probe].getGathererCount() - 1);
+	}
+	if (ResourceTracker::Instance().getMyMinerals().find(probe) != ResourceTracker::Instance().getMyMinerals().end())
+	{
+		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[probe].getGathererCount() - 1);
+	}
+	myProbes.erase(probe);
+}
+
+void ProbeTrackerClass::assignProbe(Unit probe)
+{
+	// Assign a task if none
+	int cnt = 1;
+
+	for (auto &gas : ResourceTracker::Instance().getMyGas())
+	{
+		if (gas.second.getUnitType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
+		{
+			gas.second.setGathererCount(gas.second.getGathererCount() + 1);
+			myProbes[probe].setTarget(gas.first);
+			return;
+		}
+	}
+
+	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
+	while (cnt <= 2)
+	{
+		for (auto &mineral : ResourceTracker::Instance().getMyMinerals())
+		{
+			if (mineral.second.getGathererCount() < cnt)
+			{
+				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
+				myProbes[probe].setTarget(mineral.first);
+				return;
+			}
+		}
+		cnt++;
+	}
+	return;
 }

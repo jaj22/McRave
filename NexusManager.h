@@ -1,25 +1,16 @@
+#pragma once
 #include <BWAPI.h>
+#include <BWTA.h>
+#include "Singleton.h"
+#include "NexusInfo.h"
 
-using namespace BWAPI;
-using namespace std;
-
-class NexusInfo{
-private:
-	int staticD;
-	TilePosition staticP;
+class NexusTrackerClass
+{
+	map <Unit, NexusInfo> myNexus;
 public:
-	// Constructors
-	NexusInfo();
-	~NexusInfo();
-	NexusInfo(int, TilePosition);
-	
-	// Accessors
-	int getStaticD() const;
-	TilePosition getStaticP() const;
-
-	// Mutators
-	void setStaticD(int newStaticD);
-	void setStaticP(TilePosition newStaticP);
+	void update();
+	void storeNexus();
+	void trainProbes();
 };
 
-void updateDefenses(Unit nexus, map <Unit, NexusInfo>& myNexus);
+typedef Singleton<NexusTrackerClass> NexusTracker;

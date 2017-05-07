@@ -1,35 +1,8 @@
 #include "NexusManager.h"
-
-// Constructors
-NexusInfo::NexusInfo()
-{
-	staticD = 0;
-}
-NexusInfo::~NexusInfo()
-{
-
-}
-NexusInfo::NexusInfo(int newStaticD, TilePosition newStaticP)
-{
-	staticD = newStaticD;
-	staticP = newStaticP;
-}
-
-// Accessors
-int NexusInfo::getStaticD() const
-{
-	return staticD;
-}
-TilePosition NexusInfo::getStaticP() const
-{
-	return staticP;
-}
-
-// Mutators
-void NexusInfo::setStaticD(int newStaticD)
-{
-	staticD = newStaticD;
-}
+#include "GridManager.h"
+#include "ProductionManager.h"
+#include "BuildingManager.h"
+#include "ResourceManager.h"
 
 TilePosition staticDefensePosition(Unit nexus)
 {
@@ -52,11 +25,36 @@ TilePosition staticDefensePosition(Unit nexus)
 	return TilePosition(avgX, avgY);
 }
 
-// Defense updating
-void updateDefenses(Unit nexus, map <Unit, NexusInfo>& myNexus)
+void NexusTrackerClass::update()
 {
-	// Create new object
-	NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus));
-	// Store it in the map
-	myNexus[nexus] = newUnit;
+	storeNexus();
+	trainProbes();
 }
+
+void NexusTrackerClass::storeNexus()
+{
+	for (auto nexus : Broodwar->self()->getUnits())
+	{
+		if (nexus->getType() == UnitTypes::Protoss_Nexus)
+		{
+			// Create new object
+			NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus));
+			// Store it in the map
+			myNexus[nexus] = newUnit;
+		}
+	}
+}
+
+void NexusTrackerClass::trainProbes()
+{
+	for (auto nexus : myNexus)
+	{
+		if (!ResourceTracker::Instance().isSaturated() && nexus.first->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + ProductionTracker::Instance().getReservedMineral() + BuildingTracker::Instance().getQueuedMineral()))
+		{
+			nexus.first->train(UnitTypes::Protoss_Probe);
+		}
+	}
+}
+
+
+

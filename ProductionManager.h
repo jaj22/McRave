@@ -1,15 +1,29 @@
+#pragma once
 #include <BWAPI.h>
+#include "Singleton.h"
 
 using namespace BWAPI;
 using namespace std;
 
-extern map <int, UnitType> idleBuildings;
-extern map <int, UnitType> idleGates;
-extern map <int, TechType> idleTech;
-extern map <int, UpgradeType> idleUpgrade;
-extern int queuedMineral, queuedGas, reservedMineral, reservedGas;
-extern int supply;
-extern map <UnitType, double> unitScore;
-extern bool noZealots;
+class ProductionTrackerClass
+{
+	map <int, UnitType> idleBuildings;
+	map <int, UnitType> idleGates;
+	map <int, TechType> idleTech;
+	map <int, UpgradeType> idleUpgrade;
+	int reservedMineral, reservedGas;
+public:
+	map <int, UnitType>& getIdleBuildings() { return idleBuildings; }
+	map <int, UnitType>& getIdleGates() { return idleGates; }
+	map <int, TechType>& getIdleTech() { return idleTech; }
+	map <int, UpgradeType>& getIdleUpgrade() { return idleUpgrade; }
 
-void productionManager(Unit building);
+	int getReservedMineral() { return reservedMineral; }
+	int getReservedGas() { return reservedGas; }
+
+	void update();
+	void updateGateway();
+	void updateReservedResources();
+};
+
+typedef Singleton<ProductionTrackerClass> ProductionTracker;
