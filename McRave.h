@@ -13,7 +13,6 @@
 #include "ResourceManager.h"
 #include "ProbeManager.h"
 #include "UnitManager.h"
-#include "UnitScore.h"
 #include "NexusManager.h"
 #include "StrategyManager.h"
 #include "GridManager.h"
@@ -21,13 +20,10 @@
 
 // Include standard libraries that are needed
 #include <vector>
-#include <iostream>
 #include <Windows.h>
 #include <set>
 #include <iterator>
-#include <fstream>
 #include <BWTA.h>
-#include <utility>
 
 // Namespaces
 using namespace BWAPI;

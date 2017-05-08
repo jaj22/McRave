@@ -4,6 +4,10 @@
 #include "Singleton.h"
 #include "NexusInfo.h"
 
+using namespace BWAPI;
+using namespace BWTA;
+using namespace std;
+
 class NexusTrackerClass
 {
 	map <Unit, NexusInfo> myNexus;

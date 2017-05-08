@@ -6,6 +6,10 @@
 
 void UnitTrackerClass::commandUpdate()
 {
+	if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
+	{
+		return;
+	}
 	for (auto u : allyUnits)
 	{
 		if (u.first->getType().isWorker() || u.first->getType().isBuilding())
@@ -16,7 +20,7 @@ void UnitTrackerClass::commandUpdate()
 		if (!u.first || !u.first->exists() || u.first->isLockedDown() || u.first->isMaelstrommed() || u.first->isStasised() || !u.first->isPowered() || !u.first->isCompleted())
 		{
 			continue;
-		}
+		}		
 		unitGetCommand(u.first);
 	}
 }
@@ -44,8 +48,6 @@ void UnitTrackerClass::unitGetCommand(Unit unit)
 	unitGetLocalStrategy(unit, target);
 	int stratG = unitGetGlobalStrategy();
 	int stratL = allyUnits[unit].getStrategy();
-
-	Broodwar << stratL << endl;
 
 	// If target and unit are both valid and we're not ignoring local calculations
 	if (stratL != 3)

@@ -1,11 +1,12 @@
 #pragma once
 #include <BWAPI.h>
 #include <BWTA.h>
-#include "src\bwem.h"
 #include "Singleton.h"
+#include "src\bwem.h"
 #include "UnitInfo.h"
 
 using namespace BWAPI;
+using namespace BWTA;
 using namespace std;
 using namespace BWEM;
 

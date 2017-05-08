@@ -4,6 +4,7 @@
 #include "Singleton.h"
 
 using namespace BWAPI;
+using namespace BWTA;
 using namespace std;
 
 class BuildingTrackerClass

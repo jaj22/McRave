@@ -1,10 +1,11 @@
 #pragma once
-#include "Singleton.h"
 #include <BWAPI.h>
 #include <BWTA.h>
+#include "Singleton.h"
 
-using namespace std;
 using namespace BWAPI;
+using namespace BWTA;
+using namespace std;
 using namespace UnitTypes;
 
 class StrategyTrackerClass
@@ -21,8 +22,7 @@ public:
 	void updateAlly();
 	void updateEnemy();
 	void updateComposition();
-	void updateUnitScore(UnitType, int);
-	
+	void updateUnitScore(UnitType, int);	
 };
 
 typedef Singleton<StrategyTrackerClass> StrategyTracker;

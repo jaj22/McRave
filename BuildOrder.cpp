@@ -4,13 +4,6 @@
 #include "ResourceManager.h"
 #include "ProductionManager.h"
 
-using namespace BWAPI;
-bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
-
-// Building consistency order: nexus, pylon, gas, gate, forge, core, robo, stargate, citadel, support, fleet, archives, observatory, tribunal
-// Changes: Terran only runs 20 Nexus!
-// Make building desired into a class for easier storage
-
 void BuildOrderTrackerClass::update()
 {
 	// Temporary variables
@@ -101,6 +94,14 @@ void BuildOrderTrackerClass::update()
 	{
 		earlyBuilds();
 	}
+	else if (getMidBuild)
+	{
+		midBuilds();
+	}
+	else if (getLateBuild)
+	{
+		lateBuilds();
+	}
 }
 
 void BuildOrderTrackerClass::midBuilds()
@@ -140,6 +141,7 @@ void BuildOrderTrackerClass::midBuilds()
 
 void BuildOrderTrackerClass::lateBuilds()
 {
+	int supply = UnitTracker::Instance().getSupply();
 	switch (lateBuild)
 	{
 	case 0:

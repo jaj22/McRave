@@ -1,4 +1,6 @@
 #include "TargetManager.h"
+#include "UnitManager.h"
+#include "GridManager.h"
 
 void UnitTrackerClass::unitGetTarget(Unit unit)
 {

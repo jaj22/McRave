@@ -14,26 +14,25 @@ TilePosition buildTilePosition;
 
 bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
-	// TEMPORARY CHANGES:
-	// +1 and -1 on end/start
-	// mod 2/3 x mod 2 y
-
+	// Offset for first pylon
 	int offset = 0;
+	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) == 0)
+	{
+		offset = 3;
+	}
+
+	// Space out by at least 1 tile every 4 tiles horizontally, 3 vertically
 	if (!ignoreCond && (buildTilePosition.x % 3 == 0 || buildTilePosition.x % 2 == 0 || buildTilePosition.y % 2 == 0) || Broodwar->canBuildHere(buildTilePosition, building, nullptr, true) == false)
 	{
 		return false;
-	}
+	}	
 
-	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) == 0)
-	{
-		offset = 2;
-	}
-
+	// For every tile of a buildings size
 	for (int x = buildTilePosition.x - offset; x <= buildTilePosition.x + building.tileWidth() + offset; x++)
 	{
 		for (int y = buildTilePosition.y - offset; y <= buildTilePosition.y + building.tileHeight() + offset; y++)
 		{
-			// If the location is outside the boundaries, return false
+			// If the location is outside the boundaries of the map, return false
 			if (x < 0 || x > Broodwar->mapWidth() || y < 0 || y > Broodwar->mapHeight())
 			{
 				return false;
@@ -45,14 +44,14 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 			}
 		}
 	}
-	// If building is on an expansion tile, don't build there	
+	// For every tile of an expansion
 	for (auto base : TerrainTracker::Instance().getNextExpansion())
 	{
 		for (int i = 0; i <= building.tileWidth() + 1; i++)
 		{
 			for (int j = 0; j <= building.tileHeight() + 1; j++)
 			{
-				// If the x value of this tile of the building is within an expansion, return false
+				// If the x value of this tile of the building is within an expansion and the y value of this tile of the building is within an expansion, return false
 				if (buildTilePosition.x + i >= base.x && buildTilePosition.x + i <= base.x + 4 && buildTilePosition.y + j >= base.y && buildTilePosition.y + j <= base.y + 3)
 				{
 					return false;
@@ -65,7 +64,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	{
 		return true;
 	}
-	// If we missed anything, return false and try again	
+	// If we missed anything, return false
 	return false;
 }
 
@@ -147,6 +146,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 TilePosition BuildingTrackerClass::getCannonLocation()
 {
 	//return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, staticP, true);
+	return TilePositions::None;
 }
 
 TilePosition BuildingTrackerClass::getGasLocation()
@@ -158,6 +158,7 @@ TilePosition BuildingTrackerClass::getGasLocation()
 			return gas.second.getTilePosition();
 		}
 	}
+	return TilePositions::None;
 }
 
 TilePosition nexusManager()
@@ -197,6 +198,7 @@ void BuildingTrackerClass::queueBuildings()
 		}
 	}
 }
+
 void BuildingTrackerClass::constructBuildings()
 {
 	// Queued minerals for buildings needed

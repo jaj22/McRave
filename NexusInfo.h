@@ -3,6 +3,7 @@
 #include <BWTA.h>
 
 using namespace BWAPI;
+using namespace BWTA;
 using namespace std;
 
 class NexusInfo{

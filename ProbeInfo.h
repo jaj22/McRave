@@ -1,8 +1,10 @@
 #pragma once
 #include <BWAPI.h>
+#include <BWTA.h>
 
-using namespace std;
 using namespace BWAPI;
+using namespace BWTA;
+using namespace std;
 
 class ProbeInfo{
 private:

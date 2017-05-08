@@ -1,7 +1,7 @@
 #pragma once
-#include "Singleton.h"
 #include <BWAPI.h>
 #include <BWTA.h>
+#include "Singleton.h"
 
 using namespace BWAPI;
 using namespace BWTA;

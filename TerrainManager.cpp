@@ -1,12 +1,14 @@
 #include "TerrainManager.h"
+#include "ProbeManager.h"
 #include "src\bwem.h"
-
-bool analyzeHome = true;
-bool analysis_just_finished = true;
-int currentSize = 0;
 
 void TerrainTrackerClass::update()
 {
+	// Three stage analysis
+	// 1) Wait for BWTA to analyze or load map cache
+	// 2) Analyze starting position
+	// 3) Analye map when enemy found
+
 	// Only do this loop once if map analysis done
 	if (analyzed)
 	{
@@ -23,12 +25,12 @@ void TerrainTrackerClass::update()
 			nextExpansion.push_back(playerStartingTilePosition);
 			activeExpansion.push_back(playerStartingTilePosition);
 		}
-		if (analysis_just_finished)
+		if (analyzeMap)
 		{
 			map <int, TilePosition> testBases;
 			if (enemyBasePositions.size() > 0)
 			{
-				analysis_just_finished = false;
+				analyzeMap = false;
 				for (auto base : getBaseLocations())
 				{
 					int distances = getGroundDistance2(base->getTilePosition(), playerStartingTilePosition) - getGroundDistance2(base->getTilePosition(), enemyStartingTilePosition) - base->getTilePosition().getDistance(TilePosition(Broodwar->mapWidth(), Broodwar->mapHeight()));
@@ -130,25 +132,25 @@ void TerrainTrackerClass::update()
 			Broodwar->drawCircleMap(position, 80, Broodwar->self()->getColor());
 		}
 	}
-	//for (auto p : defendHere)
-	//{
-	//	// Remove blocking mineral patches (maps like Destination)
-	//	if (boulders.size() > 0 && Broodwar->getUnitsInRadius(p, 64, Filter::IsMineralField && Filter::Resources == 0).size() > 0)
-	//	{
-	//		defendHere.erase(find(defendHere.begin(), defendHere.end(), p));
-	//		break;
-	//	}
-	//}
+	for (auto p : defendHere)
+	{
+		// Remove blocking mineral patches (maps like Destination)
+		if (Broodwar->getUnitsInRadius(p, 64, Filter::IsMineralField && Filter::Resources == 0).size() > 0)
+		{
+			defendHere.erase(find(defendHere.begin(), defendHere.end(), p));
+			break;
+		}
+	}
 	for (auto u : Broodwar->enemy()->getUnits())
 	{
 		if (u->getPlayer() == Broodwar->enemy())
 		{
 			if (u->getType().isBuilding())
 			{
-				/*if (scouting && Broodwar->enemy()->getRace() == Races::Terran && u->getDistance(getNearestChokepoint(unit->getPosition())->getCenter()) < 256)
+				if (ProbeTracker::Instance().isScouting() && Broodwar->enemy()->getRace() == Races::Terran && u->getDistance(getNearestChokepoint(u->getPosition())->getCenter()) < 256)
 				{
-					wallIn = true;
-				}*/
+					wallin = true;
+				}
 				if (enemyBasePositions.size() == 0)
 				{
 					// Find closest base location to building

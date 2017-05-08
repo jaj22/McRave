@@ -92,19 +92,6 @@ void McRave::onPlayerLeft(BWAPI::Player player)
 void McRave::onNukeDetect(BWAPI::Position target)
 {
 
-	// Check if the target is a valid position
-	if (target)
-	{
-		// if so, print the location of the nuclear strike target
-		Broodwar << "Nuclear Launch Detected at " << target << std::endl;
-	}
-	else
-	{
-		// Otherwise, ask other players where the nuke is!
-		Broodwar->sendText("Where's the nuke?");
-	}
-
-	// You can also retrieve all the nuclear missile targets using Broodwar->getNukeDots()!
 }
 
 void McRave::onUnitDiscover(BWAPI::Unit unit)
@@ -149,7 +136,7 @@ void McRave::onUnitRenegade(BWAPI::Unit unit)
 
 void McRave::onSaveGame(std::string gameName)
 {
-	Broodwar << "The game was saved to \"" << gameName << "\"" << std::endl;
+
 }
 
 void McRave::onUnitComplete(BWAPI::Unit unit)
