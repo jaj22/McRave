@@ -28,13 +28,13 @@ void ProbeTrackerClass::storeProbes()
 
 void ProbeTrackerClass::removeProbe(Unit probe)
 {
-	if (ResourceTracker::Instance().getMyGas().find(probe) != ResourceTracker::Instance().getMyGas().end())
+	if (ResourceTracker::Instance().getMyGas().find(myProbes[probe].getTarget()) != ResourceTracker::Instance().getMyGas().end())
 	{
-		ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyGas()[probe].getGathererCount() - 1);
+		ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].getGathererCount() - 1);
 	}
-	if (ResourceTracker::Instance().getMyMinerals().find(probe) != ResourceTracker::Instance().getMyMinerals().end())
+	if (ResourceTracker::Instance().getMyMinerals().find(myProbes[probe].getTarget()) != ResourceTracker::Instance().getMyMinerals().end())
 	{
-		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[probe].getGathererCount() - 1);
+		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].getGathererCount() - 1);
 	}
 	myProbes.erase(probe);
 }

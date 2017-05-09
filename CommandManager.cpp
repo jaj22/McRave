@@ -20,7 +20,8 @@ void UnitTrackerClass::commandUpdate()
 		if (!u.first || !u.first->exists() || u.first->isLockedDown() || u.first->isMaelstrommed() || u.first->isStasised() || !u.first->isPowered() || !u.first->isCompleted())
 		{
 			continue;
-		}		
+		}
+
 		unitGetCommand(u.first);
 	}
 }
@@ -47,7 +48,7 @@ void UnitTrackerClass::unitGetCommand(Unit unit)
 
 	unitGetLocalStrategy(unit, target);
 	int stratG = unitGetGlobalStrategy();
-	int stratL = allyUnits[unit].getStrategy();
+	int stratL = allyUnits[unit].getStrategy();	
 
 	// If target and unit are both valid and we're not ignoring local calculations
 	if (stratL != 3)
@@ -241,7 +242,7 @@ void UnitTrackerClass::unitGetLocalStrategy(Unit unit, Unit target)
 	}
 
 	// Check every ally being in range of the target
-	for (auto u : UnitTracker::Instance().getMyUnits())
+	for (auto &u : UnitTracker::Instance().getMyUnits())
 	{
 		// Reset unit strength
 		thisUnit = 0.0;
@@ -301,14 +302,14 @@ void UnitTrackerClass::unitGetLocalStrategy(Unit unit, Unit target)
 	}
 
 	// Store the difference of strengths 
-	allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
-
+	allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);	
 
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
 	{
 		if (TerrainTracker::Instance().getAllyTerritory().find(getRegion(target->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
 		{
+			
 			allyUnits[unit].setStrategy(1);
 			return;
 		}

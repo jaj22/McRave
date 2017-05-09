@@ -3,7 +3,7 @@
 #include "src\bwem.h"
 
 void TerrainTrackerClass::update()
-{
+{	
 	// Three stage analysis
 	// 1) Wait for BWTA to analyze or load map cache
 	// 2) Analyze starting position

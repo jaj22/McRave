@@ -59,6 +59,7 @@ void UnitTrackerClass::update()
 		{
 			storeAllyUnit(u, allyUnits);			
 		}
+
 	}
 	for (auto u : Broodwar->enemy()->getUnits())
 	{

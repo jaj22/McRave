@@ -35,13 +35,13 @@ public:
 	void setWalled() { wallin = true; }
 	
 	BWEM::CPPath getPath() { return path; }
-	set <BWTA::Region*> getTerritory() { return territory; }
-	set <BWTA::Region*> getAllyTerritory() { return allyTerritory; }
+	set <BWTA::Region*>& getTerritory() { return territory; }
+	set <BWTA::Region*>& getAllyTerritory() { return allyTerritory; }
 	vector<BWTA::Region*> getEnemyTerritory() { return enemyTerritory; }
-	vector<Position> getDefendHere() { return defendHere; }
-	vector<Position> getEnemyBasePositions() { return enemyBasePositions; }
-	vector<TilePosition> getNextExpansion() { return nextExpansion; }
-	vector<TilePosition> getActiveExpansion() { return activeExpansion; }
+	vector<Position>& getDefendHere() { return defendHere; }
+	vector<Position>& getEnemyBasePositions() { return enemyBasePositions; }
+	vector<TilePosition>& getNextExpansion() { return nextExpansion; }
+	vector<TilePosition>& getActiveExpansion() { return activeExpansion; }
 	Position getEnemyStartingPosition() { return enemyStartingPosition; }
 	Position getPlayerStartingPosition() { return playerStartingPosition; }
 	TilePosition getEnemyStartingTilePosition() { return enemyStartingTilePosition; }

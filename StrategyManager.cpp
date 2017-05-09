@@ -16,7 +16,7 @@ void StrategyTrackerClass::updateAlly()
 	globalAllyStrength = 0.0;
 
 	// Check through all alive units or units dead within 500 frames
-	for (auto u : UnitTracker::Instance().getMyUnits())
+	for (auto &u : UnitTracker::Instance().getMyUnits())
 	{
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
