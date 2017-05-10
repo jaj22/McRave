@@ -2,13 +2,30 @@
 #include "UnitManager.h"
 #include "GridManager.h"
 
-void UnitTrackerClass::unitGetTarget(Unit unit)
+void TargetTrackerClass::update()
+{
+	// Update all unit targets
+	for (auto &u : UnitTracker::Instance().getMyUnits())
+	{
+		if (u.second.getUnitType() == UnitTypes::Protoss_Reaver || u.second.getUnitType() == UnitTypes::Protoss_High_Templar || u.second.getUnitType() == UnitTypes::Protoss_Arbiter)
+		{
+			unitGetClusterTarget(u.first);
+		}
+		else
+		{
+			unitGetTarget(u.first);
+		}
+	}
+}
+
+void TargetTrackerClass::unitGetTarget(Unit unit)
 {
 	double highest = 0.0, thisUnit = 0.0;
+	UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
 
 	Unit target = nullptr;
 
-	for (auto &u : enemyUnits)
+	for (auto &u : UnitTracker::Instance().getEnUnits())
 	{
 		if (!u.first)
 		{
@@ -30,11 +47,11 @@ void UnitTrackerClass::unitGetTarget(Unit unit)
 
 		if (u.first->exists())
 		{
-			thisUnit = u.second.getMaxStrength() / distance;
+			thisUnit = u.second.getPriority() / distance;
 		}
 		else
 		{
-			thisUnit = 0.1*u.second.getMaxStrength() / distance;
+			thisUnit = 0.1*u.second.getPriority() / distance;
 		}
 
 
@@ -55,17 +72,18 @@ void UnitTrackerClass::unitGetTarget(Unit unit)
 	// If the target is not nullptr, store
 	if (target)
 	{
-		allyUnits[unit].setTarget(target);
-		allyUnits[unit].setTargetPosition(enemyUnits[target].getPosition());
+		UnitTracker::Instance().getMyUnits()[unit].setTarget(target);
+		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(UnitTracker::Instance().getEnUnits()[target].getPosition());
 	}
 	return;
 }
 
-void UnitTrackerClass::unitGetClusterTarget(Unit unit)
+void TargetTrackerClass::unitGetClusterTarget(Unit unit)
 {
 	// Cluster variables, range of spells is 10
 	int highest = 0, range = 10;
 	TilePosition clusterTile;
+	UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
 
 	// Reaver range is 8
 	if (unit->getType() == UnitTypes::Protoss_Reaver)
@@ -120,7 +138,7 @@ void UnitTrackerClass::unitGetClusterTarget(Unit unit)
 	{
 		if (unit->getType() == UnitTypes::Protoss_Reaver)
 		{
-			return UnitTrackerClass::unitGetTarget(unit);
+			return TargetTrackerClass::unitGetTarget(unit);
 		}
 		else
 		{
@@ -130,17 +148,17 @@ void UnitTrackerClass::unitGetClusterTarget(Unit unit)
 	// Return ground cluster for Reavers
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
-		allyUnits[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 128));
+		UnitTracker::Instance().getMyUnits()[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 128));
 	}
 	// Return tank cluster for Arbiters
 	else if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
-		allyUnits[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128));
+		UnitTracker::Instance().getMyUnits()[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128));
 	}
 	// Return unit cluster for High Templars
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
-		allyUnits[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding, 128));
+		UnitTracker::Instance().getMyUnits()[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding, 128));
 	}
 	return;
 }

@@ -10,14 +10,14 @@ using namespace std;
 class UnitInfoClass {
 	UnitType unitType, targetType;
 	Position unitPosition, targetPosition;
-	double unitStrength, unitMaxStrength, unitLocal, unitRange;
+	double unitStrength, unitMaxStrength, unitLocal, unitRange, unitPriority;
 	UnitCommandType unitCommand;
 	Unit target;
 	int deadFrame, strategy, lastCommandFrame;
 
 public:
 	UnitInfoClass();
-	UnitInfoClass(UnitType, Position, double, double, double, UnitCommandType, int, int, int, Unit);
+	UnitInfoClass(UnitType, Position, double, double, double, double, UnitCommandType, int, int, int, Unit);
 	~UnitInfoClass();
 
 	// Accessors
@@ -28,6 +28,7 @@ public:
 	double getMaxStrength() const;
 	double getLocal() const;
 	double getRange() const;
+	double getPriority() const;
 	UnitCommandType getCommand() const;
 	Unit getTarget() const;
 	int getDeadFrame() const;
@@ -43,6 +44,7 @@ public:
 	void setMaxStrength(double);
 	void setLocal(double);
 	void setRange(double);
+	void setPriority(double);
 	void setCommand(UnitCommandType);
 	void setTarget(Unit);
 	void setDeadFrame(int);

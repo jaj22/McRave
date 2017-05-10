@@ -18,7 +18,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	int offset = 0;
 	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) == 0)
 	{
-		offset = 3;
+		offset = 2;
 	}
 
 	// Space out by at least 1 tile every 4 tiles horizontally, 3 vertically
@@ -39,6 +39,10 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 			}
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
 			if (GridTracker::Instance().getResourceGrid(x, y) > 0 || (!ignoreCond && building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0) || TerrainTracker::Instance().getAllyTerritory().find(getRegion(buildTilePosition)) == TerrainTracker::Instance().getAllyTerritory().end())
+			{
+				return false;
+			}
+			if (getNearestChokepoint(TilePosition(x, y))->getCenter().getDistance(Position(TilePosition(x, y))) < 256)
 			{
 				return false;
 			}
@@ -68,7 +72,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	return false;
 }
 
-TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
+TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
 	int x = buildTilePosition.x;
 	int y = buildTilePosition.y;
@@ -78,7 +82,7 @@ TilePosition getBuildLocationNear(UnitType building, TilePosition buildTilePosit
 	int dx = 0;
 	int dy = 1;
 	// Searches in a spiral around the specified tile position (usually a nexus)
-	while (length < 50)
+	while (length < 80)
 	{
 		//If we can build here, return this tile position
 		if (x > 0 && x < Broodwar->mapWidth() && y > 0 && y < Broodwar->mapHeight())
@@ -143,17 +147,11 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	return TilePositions::None;
 }
 
-TilePosition BuildingTrackerClass::getCannonLocation()
-{
-	//return getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, staticP, true);
-	return TilePositions::None;
-}
-
 TilePosition BuildingTrackerClass::getGasLocation()
 {
 	for (auto gas : ResourceTracker::Instance().getMyGas())
 	{
-		if (gas.second.getUnitType().isResourceContainer())
+		if (gas.second.getUnitType() == UnitTypes::Resource_Vespene_Geyser)
 		{
 			return gas.second.getTilePosition();
 		}
@@ -161,7 +159,7 @@ TilePosition BuildingTrackerClass::getGasLocation()
 	return TilePositions::None;
 }
 
-TilePosition nexusManager()
+TilePosition BuildingTrackerClass::getNexusLocation()
 {
 	for (auto base : TerrainTracker::Instance().getNextExpansion())
 	{
@@ -182,7 +180,7 @@ void BuildingTrackerClass::update()
 void BuildingTrackerClass::queueBuildings()
 {
 	// For each building in the protoss race
-	for (auto b : BuildOrderTracker::Instance().getBuildingDesired())
+	for (auto &b : BuildOrderTracker::Instance().getBuildingDesired())
 	{
 		// If our visible count is lower than our desired count
 		if (b.second > Broodwar->self()->visibleUnitCount(b.first) && queuedBuildings.find(b.first) == queuedBuildings.end())
@@ -255,11 +253,11 @@ void BuildingTrackerClass::constructBuildings()
 			b.second.second->build(b.first, b.second.first);
 			continue;
 		}
-
 	}
 }
 
 void BuildingTrackerClass::updateQueue(UnitType building)
 {
+	// When a building is created, remove from queue
 	queuedBuildings.erase(building);
 }

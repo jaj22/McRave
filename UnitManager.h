@@ -16,40 +16,23 @@ class UnitTrackerClass
 	map <Unit, UnitInfoClass> allyUnits;
 	map <UnitSizeType, int> allySizes;
 	map <UnitSizeType, int> enemySizes;
-	int supply;
+	int supply; 
+
 public:
+	// Accessors
 	map<Unit, UnitInfoClass>& getMyUnits() { return allyUnits; }
 	map<Unit, UnitInfoClass>& getEnUnits() { return enemyUnits; }
 	map<UnitSizeType, int>& getMySizes() { return allySizes; }
 	map<UnitSizeType, int>& getEnSizes() { return enemySizes; }
 	int getSupply() { return supply; }
 
+	// Updating
 	void update();
-
-	// Command manager
-	void unitMicroTarget(Unit, Unit);
-	void unitExploreArea(Unit);
-	void unitGetCommand(Unit);
-	void commandUpdate();
-
-	// Strategy manager
-	int unitGetGlobalStrategy();
-	void unitGetLocalStrategy(Unit, Unit);
-
-	// Target manager
-	void unitGetTarget(Unit);
-	void unitGetClusterTarget(Unit);	
-
-	// Special units
-	void templarManager(Unit);
-	void reaverManager(Unit);
-	void arbiterManager(Unit);
-
+	void storeUnits();
+	void removeUnits();	
 	void storeEnemyUnit(Unit, map<Unit, UnitInfoClass>&);
 	void storeAllyUnit(Unit, map<Unit, UnitInfoClass>&);
-	void removeUnit(Unit);
-
-	Position unitFlee(Unit unit, Unit currentTarget);
+	void decayUnit(Unit);
 };
 
 typedef Singleton<UnitTrackerClass> UnitTracker;

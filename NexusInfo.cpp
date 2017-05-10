@@ -3,30 +3,47 @@
 // Constructors
 NexusInfo::NexusInfo()
 {
-	staticD = 0;
+	staticDefenseCount = 0;
+	staticPosition = TilePositions::None;
+	pylon = nullptr;
 }
 NexusInfo::~NexusInfo()
 {
 
 }
-NexusInfo::NexusInfo(int newStaticD, TilePosition newStaticP)
+NexusInfo::NexusInfo(int newStaticDefenseCount, TilePosition newStaticPosition, Unit newPylon)
 {
-	staticD = newStaticD;
-	staticP = newStaticP;
+	staticDefenseCount = newStaticDefenseCount;
+	staticPosition = newStaticPosition;
+	pylon = newPylon;
 }
 
 // Accessors
-int NexusInfo::getStaticD() const
+int NexusInfo::getStaticDefenseCount() const
 {
-	return staticD;
+	return staticDefenseCount;
 }
-TilePosition NexusInfo::getStaticP() const
+TilePosition NexusInfo::getStaticPosition() const
 {
-	return staticP;
+	return staticPosition;
+}
+Unit NexusInfo::getPylon() const
+{
+	return pylon;
 }
 
+
 // Mutators
-void NexusInfo::setStaticD(int newStaticD)
+void NexusInfo::setStaticDefenseCount(int newStaticDefenseCount)
 {
-	staticD = newStaticD;
+	staticDefenseCount = newStaticDefenseCount;
+}
+
+void NexusInfo::setStaticPosition(TilePosition newPosition)
+{
+	staticPosition = newPosition;
+}
+void NexusInfo::setPylon(Unit newPylon)
+{
+	pylon = newPylon;
 }

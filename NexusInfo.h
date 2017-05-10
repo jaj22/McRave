@@ -8,19 +8,22 @@ using namespace std;
 
 class NexusInfo{
 private:
-	int staticD;
-	TilePosition staticP;
+	int staticDefenseCount;
+	TilePosition staticPosition;
+	Unit pylon;
 public:
 	// Constructors
 	NexusInfo();
 	~NexusInfo();
-	NexusInfo(int, TilePosition);
+	NexusInfo(int, TilePosition, Unit);
 
 	// Accessors
-	int getStaticD() const;
-	TilePosition getStaticP() const;
+	int getStaticDefenseCount() const;
+	TilePosition getStaticPosition() const;
+	Unit getPylon() const;
 
 	// Mutators
-	void setStaticD(int newStaticD);
-	void setStaticP(TilePosition newStaticP);
+	void setStaticDefenseCount(int);
+	void setStaticPosition(TilePosition);
+	void setPylon(Unit);
 };

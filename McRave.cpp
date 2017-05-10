@@ -7,21 +7,28 @@
 #include "Header.h"
 #include "McRave.h"
 
-
-// Author notes:
-// Geometry class, use corner checking and display on grids?
+// TODOS:
+// Threat grids to minimize O(n^2) iterations in CommandTrackerClass::updateLocalStrategy
+// Save decision state (in UnitInfo?, new map?) (attack, retreat, contain)
 // Static defenses need redoing
-// Crash testing when losing
 // Don't train Zealots against T unless speed upgraded
-// Zerg don't move out early - Testing
+// Spider mine removal from expansions
+// Observer spacing out by not moving to areas occupied by Observers destination
+// Change two gate core build - PvP maybe add Battery?
+// Zealots pushing out of base early against Zerg
+// Move unit sizing to simplify strength calculations of explosive/concussive damage
+
+// Testing:
 // Boulder removal, heartbreak ridge is an issue - Testing
 // If scout dies, no base found - Testing
-// Unit class - Testing
 // Invis units not being kited - Testing
+// Mobility grid - Testing
+// Crash testing when losing - Testing possible fix
 
-
-
-bool BWTAhandling = false;
+// Observer Manager
+// - Current Position, Target Position
+// - If any expansion is unbuildable and a probe is within range of it, move observer to it
+// - (Edit probe manager so that when building, destroy mines around it)
 
 void McRave::onStart()
 {
@@ -30,10 +37,7 @@ void McRave::onStart()
 
 	// Set the command optimization level so that common commands can be grouped and reduce the bot's APM (Actions Per Minute).
 	Broodwar->setCommandOptimizationLevel(2);
-
-	// Turn off latency compensation - disabled until micro/production fixed
-	//Broodwar->setLatCom(false);
-
+	
 	theMap.Initialize();
 	theMap.EnableAutomaticPathAnalysis();
 	bool startingLocationsOK = theMap.FindBasesForStartingLocations();
@@ -62,16 +66,17 @@ void McRave::onFrame()
 {
 	TerrainTracker::Instance().update();
 	GridTracker::Instance().update();
-	UnitTracker::Instance().update();
-	UnitTracker::Instance().commandUpdate(); // Eventually seperate into command class
-	ProbeTracker::Instance().update();
 	ResourceTracker::Instance().update();
-	StrategyTracker::Instance().update();	
-	ProductionTracker::Instance().update();
+	StrategyTracker::Instance().update();
+	ProbeTracker::Instance().update();
+	UnitTracker::Instance().update();
+	TargetTracker::Instance().update();
+	CommandTracker::Instance().update();	
 	BuildOrderTracker::Instance().update();
 	BuildingTracker::Instance().update();
-	InterfaceTracker::Instance().update();
-	NexusTracker::Instance().update();
+	ProductionTracker::Instance().update();
+	NexusTracker::Instance().update();		
+	InterfaceTracker::Instance().update();	
 }
 
 void McRave::onSendText(std::string text)
@@ -118,7 +123,7 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
 {
-	UnitTracker::Instance().removeUnit(unit);
+	UnitTracker::Instance().decayUnit(unit);
 	ProbeTracker::Instance().removeProbe(unit);
 	
 	// Ally territory removal
@@ -147,7 +152,6 @@ void McRave::onUnitComplete(BWAPI::Unit unit)
 DWORD WINAPI AnalyzeThread()
 {
 	BWTA::analyze();
-
 	TerrainTracker::Instance().setAnalyzed();	
 	return 0;
 }

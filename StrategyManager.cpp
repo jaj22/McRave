@@ -136,6 +136,14 @@ void StrategyTrackerClass::updateComposition()
 			Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
 			offset = offset + 10;
 		}
+		// Force expand based on enemy composition
+		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
+		{
+			if (t.first == UnitTypes::Terran_Bunker || (t.first == UnitTypes::Zerg_Sunken_Colony && t.second >= 2) || (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2))
+			{
+				fastExpand = true;
+			}
+		}
 		t.second = 0;
 	}
 }
@@ -187,8 +195,8 @@ void StrategyTrackerClass::updateUnitScore(UnitType unit, int count)
 		if (Broodwar->enemy()->getRace() == Races::Zerg)
 		{
 	case Enum::Zerg_Zergling:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
+		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
 		break;
 	case Enum::Zerg_Hydralisk:
 		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));

@@ -29,17 +29,16 @@ void NexusTrackerClass::update()
 {
 	storeNexus();
 	trainProbes();
+	updateDefenses();
 }
 
 void NexusTrackerClass::storeNexus()
 {
 	for (auto nexus : Broodwar->self()->getUnits())
 	{
-		if (nexus->getType() == UnitTypes::Protoss_Nexus)
+		if (nexus->getType() == UnitTypes::Protoss_Nexus && myNexus.find(nexus) == myNexus.end())
 		{
-			// Create new object
-			NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus));
-			// Store it in the map
+			NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus), nullptr);		
 			myNexus[nexus] = newUnit;
 		}
 	}
@@ -56,5 +55,35 @@ void NexusTrackerClass::trainProbes()
 	}
 }
 
+void NexusTrackerClass::updateDefenses()
+{
+	for (auto &nexus : myNexus)
+	{
+		if (Broodwar->getUnitsOnTile(nexus.second.getStaticPosition(), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
+		{
+			nexus.second.setPylon(Broodwar->getClosestUnit(Position(nexus.second.getStaticPosition()), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon, 128));
+		}
+		if (!nexus.second.getPylon())
+		{
+			Unit builder = Broodwar->getClosestUnit(Position(nexus.second.getStaticPosition()), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
+			TilePosition here = BuildingTracker::Instance().getBuildLocationNear(UnitTypes::Protoss_Pylon, nexus.second.getStaticPosition(), true);
+			if (here != TilePositions::None && builder)
+			{
+				// Queue at this building type a pair of building placement and builder
+				BuildingTracker::Instance().getQueuedBuildings().emplace(UnitTypes::Protoss_Pylon, make_pair(here, builder));
+			}
+		}
+		else if (nexus.second.getPylon() && nexus.second.getPylon()->isCompleted() && nexus.second.getStaticDefenseCount() < 2)
+		{
+			Unit builder = Broodwar->getClosestUnit(Position(nexus.second.getStaticPosition()), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
+			TilePosition here = BuildingTracker::Instance().getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, nexus.second.getStaticPosition(), true);
+			if (here != TilePositions::None && builder)
+			{
+				// Queue at this building type a pair of building placement and builder
+				BuildingTracker::Instance().getQueuedBuildings().emplace(UnitTypes::Protoss_Photon_Cannon, make_pair(here, builder));
+			}
+		}
+	}
+}
 
 

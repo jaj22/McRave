@@ -6,17 +6,20 @@
 #include "Singleton.h"
 
 // Include other source files
-#include "Interface.h"
 #include "BuildingManager.h"
-#include "ProductionManager.h"
 #include "BuildOrder.h"
-#include "ResourceManager.h"
-#include "ProbeManager.h"
-#include "UnitManager.h"
-#include "NexusManager.h"
-#include "StrategyManager.h"
+#include "CommandManager.h"
 #include "GridManager.h"
+#include "Interface.h"
+#include "NexusManager.h"
+#include "ProbeManager.h"
+#include "ProductionManager.h"
+#include "ResourceManager.h"
+#include "UnitManager.h"
+#include "StrategyManager.h"
+#include "TargetManager.h"
 #include "TerrainManager.h"
+
 
 // Include standard libraries that are needed
 #include <vector>

@@ -17,8 +17,11 @@ public:
 	TilePosition getNexusLocation();
 	TilePosition getGasLocation();
 
+	TilePosition getBuildLocationNear(UnitType, TilePosition, bool);
+
 	int getQueuedMineral() { return queuedMineral; }
 	int getQueuedGas() { return queuedGas; }
+	map <UnitType, pair<TilePosition, Unit>>& getQueuedBuildings() { return queuedBuildings; }
 
 	void update();
 	void queueBuildings();

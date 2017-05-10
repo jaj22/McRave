@@ -1,7 +1,9 @@
 #include "ProbeManager.h"
 #include "ResourceManager.h"
+#include "TerrainManager.h"
 #include "GridManager.h"
 #include "UnitManager.h"
+#include "StrategyManager.h"
 
 using namespace BWAPI;
 using namespace std;
@@ -37,6 +39,20 @@ void ProbeTrackerClass::removeProbe(Unit probe)
 		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].getGathererCount() - 1);
 	}
 	myProbes.erase(probe);
+	
+	// If scouting probe died, assume where enemy is based on death location
+	if (probe == scout && isScouting() && TerrainTracker::Instance().getEnemyBasePositions().size() == 0)
+	{
+		double closestD = 0.0;
+		BaseLocation* closestB = getNearestBaseLocation(probe->getTilePosition());
+		for (auto base : getStartLocations())
+		{
+			if (probe->getDistance(base->getPosition()) < closestD || closestD == 0.0)
+			{
+				closestB = base;
+			}
+		}
+	}
 }
 
 void ProbeTrackerClass::assignProbe(Unit probe)

@@ -3,6 +3,7 @@
 #include "UnitManager.h"
 #include "ResourceManager.h"
 #include "ProductionManager.h"
+#include "StrategyManager.h"
 
 void BuildOrderTrackerClass::update()
 {
@@ -104,6 +105,57 @@ void BuildOrderTrackerClass::update()
 	}
 }
 
+void BuildOrderTrackerClass::earlyBuilds()
+{
+	int supply = UnitTracker::Instance().getSupply();
+	switch (earlyBuild)
+	{
+	case 0:
+		// -- 2 Gate Core --
+		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 3);
+		buildingDesired[UnitTypes::Protoss_Assimilator] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2);
+		if (supply >= 20 && supply < 24)
+		{
+			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
+		}
+		else if (supply >= 24)
+		{
+			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
+		}
+		//currentStrategy.assign("Two Gate Core");
+		break;
+	case 1:
+		// -- 1 Gate Core --		
+		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
+		if (supply >= 20)
+		{
+			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
+		}
+		if (supply >= 22)
+		{
+			buildingDesired[UnitTypes::Protoss_Assimilator] = 1;
+		}
+		if (supply >= 26)
+		{
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = 1;
+		}
+		if (supply >= 36)
+		{
+			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
+		}
+		//currentStrategy.assign("One Gate Core");
+		break;
+	case 2:
+		// -- 12 Nexus --
+		if (supply >= 24)
+		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = 2;
+		}
+		//currentStrategy.assign("Early Expand");
+		break;
+	}
+}
+
 void BuildOrderTrackerClass::midBuilds()
 {
 	int supply = UnitTracker::Instance().getSupply();
@@ -166,57 +218,6 @@ void BuildOrderTrackerClass::lateBuilds()
 		break;
 	}
 
-}
-
-void BuildOrderTrackerClass::earlyBuilds()
-{
-	int supply = UnitTracker::Instance().getSupply();
-	switch (earlyBuild)
-	{
-	case 0:
-		// -- 2 Gate Core --
-		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 3);
-		buildingDesired[UnitTypes::Protoss_Assimilator] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2);
-		if (supply >= 20 && supply < 24)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
-		}
-		else if (supply >= 24)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
-		}
-		//currentStrategy.assign("Two Gate Core");
-		break;
-	case 1:
-		// -- 1 Gate Core --		
-		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
-		if (supply >= 20)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
-		}
-		if (supply >= 22)
-		{
-			buildingDesired[UnitTypes::Protoss_Assimilator] = 1;
-		}
-		if (supply >= 26)
-		{
-			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = 1;
-		}
-		if (supply >= 36)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
-		}
-		//currentStrategy.assign("One Gate Core");
-		break;
-	case 2:
-		// -- 12 Nexus --
-		if (supply >= 24)
-		{
-			buildingDesired[UnitTypes::Protoss_Nexus] = 2;
-		}
-		//currentStrategy.assign("Early Expand");
-		break;
-	}
 }
 
 // PvT range expand:

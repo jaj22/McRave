@@ -15,6 +15,7 @@ public:
 	void update();
 	void storeNexus();
 	void trainProbes();
+	void updateDefenses();
 };
 
 typedef Singleton<NexusTrackerClass> NexusTracker;

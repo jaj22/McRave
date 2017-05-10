@@ -14,6 +14,7 @@ class ProductionTrackerClass
 	map <int, TechType> idleTech;
 	map <int, UpgradeType> idleUpgrade;
 	int reservedMineral, reservedGas;
+	bool noZealots;
 public:
 	map <int, UnitType>& getIdleBuildings() { return idleBuildings; }
 	map <int, UnitType>& getIdleGates() { return idleGates; }
@@ -24,7 +25,11 @@ public:
 	int getReservedGas() { return reservedGas; }
 
 	void update();
-	void updateGateway();
+	void updateGateway(Unit);
+	void updateRobo(Unit);
+	void updateStargate(Unit);
+	void updateLuxuryTech(Unit);
+	void updateRequiredTech(Unit);
 	void updateReservedResources();
 };
 

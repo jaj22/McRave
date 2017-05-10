@@ -1,5 +1,6 @@
 #include "GridManager.h"
 #include "UnitManager.h"
+#include "TerrainManager.h"
 #include "ResourceManager.h"
 
 void GridTrackerClass::reset()
@@ -33,6 +34,10 @@ void GridTrackerClass::reset()
 			if (allyDetectorGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", allyDetectorGrid[x][y]);
+			}
+			if (mobilityGrid[x][y] > 0)
+			{
+				Broodwar->drawTextMap(x * 32, y * 32, "%d", mobilityGrid[x][y]);
 			}
 
 			if (allyClusterGrid[x][y] > strongest)
@@ -204,6 +209,31 @@ void GridTrackerClass::updateNeutralGrids()
 				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;					
+				}
+			}
+		}
+	}
+}
+
+void GridTrackerClass::updateMobilityGrids()
+{
+	for (int x = 0; x <= Broodwar->mapWidth(); x++)
+	{
+		for (int y = 0; y <= Broodwar->mapHeight(); y++)
+		{
+			// If the tile has mobility
+			if (theMap.GetTile(TilePosition(x, y), utils::check_t::no_check).Walkable())
+			{
+				for (int i = -1; i <= 1; i++)
+				{
+					for (int j = -1; j <= 1; j++)
+					{
+						// Give other tiles with mobility an increased score
+						if (theMap.GetTile(TilePosition(x + i, y + j), utils::check_t::no_check).Walkable())
+						{
+							mobilityGrid[x + i][y + j] += 1;
+						}
+					}
 				}
 			}
 		}

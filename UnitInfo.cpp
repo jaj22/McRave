@@ -1,12 +1,13 @@
 #include "UnitInfo.h"
 
-UnitInfoClass::UnitInfoClass(UnitType newType, Position newPosition, double newStrength, double newMaxStrength, double newRange, UnitCommandType newCommand, int newDeadFrame, int newStrategy, int newCommandFrame, Unit newTarget)
+UnitInfoClass::UnitInfoClass(UnitType newType, Position newPosition, double newStrength, double newMaxStrength, double newRange, double newPriority, UnitCommandType newCommand, int newDeadFrame, int newStrategy, int newCommandFrame, Unit newTarget)
 {
 	unitType = newType;
 	unitPosition = newPosition;
 	unitStrength = newStrength;
 	unitMaxStrength = newMaxStrength;
 	unitRange = newRange;
+	unitPriority = newPriority;
 	unitCommand = newCommand;
 	deadFrame = newDeadFrame;
 	strategy = newStrategy;
@@ -58,6 +59,10 @@ double UnitInfoClass::getLocal() const
 {
 	return unitLocal;
 }
+double UnitInfoClass::getPriority() const
+{
+	return unitPriority;
+}
 UnitCommandType UnitInfoClass::getCommand() const
 {
 	return unitCommand;
@@ -107,6 +112,10 @@ void UnitInfoClass::setRange(double newRange)
 {
 	unitRange = newRange;
 }
+void UnitInfoClass::setPriority(double newPriority)
+{
+	unitPriority = newPriority;
+}
 void UnitInfoClass::setCommand(UnitCommandType newCommand)
 {
 	unitCommand = newCommand;
@@ -127,3 +136,4 @@ void UnitInfoClass::setLastCommandFrame(int newCommandFrame)
 {
 	lastCommandFrame = newCommandFrame;
 }
+

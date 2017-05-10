@@ -13,9 +13,14 @@ class StrategyTrackerClass
 	map <UnitType, int> enemyComposition;
 	map <UnitType, double> unitScore;
 	double globalAllyStrength, globalEnemyStrength;
+	bool fastExpand = false;
 public:
 	double globalAlly() { return globalAllyStrength; }
 	double globalEnemy() {	return globalEnemyStrength;	}
+	map <UnitType, double>& getUnitScore() { return unitScore; }
+	bool isFastExpand() { return fastExpand; }
+	bool setFastExpand(bool FE) { fastExpand = FE; }
+	
 	
 	// Updating
 	void update();
