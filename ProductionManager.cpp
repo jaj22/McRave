@@ -179,7 +179,7 @@ void ProductionTrackerClass::updateGateway(Unit building)
 		}
 	}
 	// If we need a Dragoon
-	if (StrategyTracker::Instance().getUnitScore()[UnitTypes::Protoss_Dragoon] >= StrategyTracker::Instance().getUnitScore()[UnitTypes::Protoss_Zealot] && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+	if ((noZealots || StrategyTracker::Instance().getUnitScore()[UnitTypes::Protoss_Dragoon] >= StrategyTracker::Instance().getUnitScore()[UnitTypes::Protoss_Zealot]) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 	{
 		// If we can afford a Dragoon, train
 		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && supply + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())

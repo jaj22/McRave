@@ -3,6 +3,8 @@
 #include "TerrainManager.h"
 #include "ResourceManager.h"
 
+bool doOnce = true;
+
 void GridTrackerClass::reset()
 {
 	double strongest = 0.0;
@@ -37,7 +39,7 @@ void GridTrackerClass::reset()
 			}
 			if (mobilityGrid[x][y] > 0)
 			{
-				Broodwar->drawTextMap(x * 32, y * 32, "%d", mobilityGrid[x][y]);
+				//Broodwar->drawTextMap(x * 32, y * 32, "%d", mobilityGrid[x][y]);
 			}
 
 			if (allyClusterGrid[x][y] > strongest)
@@ -57,6 +59,7 @@ void GridTrackerClass::reset()
 
 			// Reset other grids
 			allyDetectorGrid[x][y] = 0;
+			allyPositionGrid[x][y] = 0;
 		}
 	}
 }
@@ -67,6 +70,7 @@ void GridTrackerClass::update()
 	updateAllyGrids();
 	updateEnemyGrids();
 	updateNeutralGrids();
+	updateMobilityGrids();
 }
 
 void GridTrackerClass::updateAllyGrids()
@@ -195,7 +199,7 @@ void GridTrackerClass::updateNeutralGrids()
 			{
 				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
 				{
-					resourceGrid[x][y] = 1;					
+					resourceGrid[x][y] = 1;
 				}
 			}
 		}
@@ -208,7 +212,7 @@ void GridTrackerClass::updateNeutralGrids()
 			{
 				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
 				{
-					resourceGrid[x][y] = 1;					
+					resourceGrid[x][y] = 1;
 				}
 			}
 		}
@@ -217,25 +221,35 @@ void GridTrackerClass::updateNeutralGrids()
 
 void GridTrackerClass::updateMobilityGrids()
 {
-	for (int x = 0; x <= Broodwar->mapWidth(); x++)
+	if (doOnce)
 	{
-		for (int y = 0; y <= Broodwar->mapHeight(); y++)
+		Broodwar << "Test" << endl;
+		doOnce = false;
+		for (int x = 0; x <= Broodwar->mapWidth(); x++)
 		{
-			// If the tile has mobility
-			if (theMap.GetTile(TilePosition(x, y), utils::check_t::no_check).Walkable())
+			for (int y = 0; y <= Broodwar->mapHeight(); y++)
 			{
-				for (int i = -1; i <= 1; i++)
+				// If the tile has mobility
+				if (theMap.GetTile(TilePosition(x, y)).Walkable())
 				{
-					for (int j = -1; j <= 1; j++)
+					mobilityGrid[x][y] += 1;
+					for (int i = -1; i <= 1; i++)
 					{
-						// Give other tiles with mobility an increased score
-						if (theMap.GetTile(TilePosition(x + i, y + j), utils::check_t::no_check).Walkable())
+						for (int j = -1; j <= 1; j++)
 						{
-							mobilityGrid[x + i][y + j] += 1;
+							// Give other tiles with mobility an increased score
+							if (theMap.GetTile(TilePosition(x + i, y + j)).Walkable())
+							{
+								mobilityGrid[x + i][y + j] += 1;
+							}
 						}
 					}
 				}
 			}
 		}
 	}
+	/*for (auto u : UnitTracker::Instance().getMyUnits())
+	{
+		allyPositionGrid[TilePosition(u.second.getPosition()).x][TilePosition(u.second.getPosition()).y] += 1;
+	}*/
 }

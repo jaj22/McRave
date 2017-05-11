@@ -7,16 +7,15 @@
 void CommandTrackerClass::update()
 {
 	for (auto &u : UnitTracker::Instance().getMyUnits())
-	{
-		updateLocalStrategy(u.first, u.second.getTarget());
-		updateGlobalStrategy(u.first, u.second.getTarget());
-		
+	{		
 		// Latency returning for now, else make a decision
 		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
 		{
 			return;
 		}
 		updateDecisions(u.first, u.second.getTarget());
+		updateLocalStrategy(u.first, u.second.getTarget());
+		updateGlobalStrategy(u.first, u.second.getTarget());
 	}
 }
 
@@ -24,6 +23,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 {
 	double closestD = 0.0;
 	Position closestP;
+
 
 	// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, not powered or not completed
 	if (!unit || !unit->exists() || unit->isLockedDown() || unit->isMaelstrommed() || unit->isStasised() || !unit->isPowered() || !unit->isCompleted())
@@ -159,7 +159,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 
 void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 {
-	// Variables for calculating local strengths
+	// Variables for calculating local strengths	
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0, thisUnit = 0.0;
 	Position targetPosition = UnitTracker::Instance().getEnUnits()[target].getPosition();
 	int radius = min(800, 384 + UnitTracker::Instance().getSupply() * 4);
@@ -329,8 +329,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(0);
 			return;
 		}
-		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
-		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(targetPosition);
+		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);		
 		return;
 	}
 	// If last command was disengage/no command
@@ -338,8 +337,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	{
 		// Latch based system for at least 120% advantage to engage
 		if (allyLocalStrength >= enemyLocalStrength*1.2)
-		{
-			UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(targetPosition);
+		{			
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 			return;
 		}
@@ -388,9 +386,10 @@ void CommandTrackerClass::updateGlobalStrategy(Unit unit, Unit target)
 void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 {
 	// Variables
-	bool kite = false;
+	bool kite = false;	
 	int range = UnitTracker::Instance().getMyUnits()[unit].getRange();
-	int offset = 0;
+	UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
+	int offset = 0;	
 
 	// Stop offset required for units with animations
 	if (unit->getType() == UnitTypes::Protoss_Dragoon)
@@ -444,7 +443,8 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 	// Else, regardless of if kite is true or not, attack if weapon is off cooldown
 	else if (unit->getGroundWeaponCooldown() <= 0)
 	{
-		unit->attack(target);
+		unit->attack(target);	
+		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(target->getPosition());
 	}
 	return;
 }
@@ -503,54 +503,67 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit currentTarget)
 	}
 
 	Position initialPosition = Position(TilePosition(x, y));
-	// Spiral variables
-	int length = 1;
-	int j = 0;
-	bool first = true;
-	bool okay = false;
-	int dx = 0;
-	int dy = 1;
-	// Searches in a spiral around the specified tile position
-	while (length < 2000)
+	Position finalPosition = initialPosition;
+	int bestPos = 0;
+	for (int i = initialPosition.x - 3; i <= initialPosition.x + 3; i++)
 	{
-		//If threat is low, move there
-		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
+		for (int i = initialPosition.y - 3; i <= initialPosition.y + 3; i++)
 		{
-			Position newPosition = Position(TilePosition(x, y));
-			if (GridTracker::Instance().getEGroundGrid(x, y) < 1 && GridTracker::Instance().getMobilityGrid(x, y) > 0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
+			if (GridTracker::Instance().getEGroundGrid(x, y) < 1 && GridTracker::Instance().getMobilityGrid(x, y) > 0)
 			{
-				return newPosition;
-			}
-		}
-		//Otherwise, move to another position
-		x = x + dx;
-		y = y + dy;
-		//Count how many steps we take in this direction
-		j++;
-		if (j == length) //if we've reached the end, its time to turn
-		{
-			//reset step counter
-			j = 0;
-
-			//Increment step counter
-			if (!first)
-				length++;
-
-			//First=true for every other turn so we spiral out at the right rate
-			first = !first;
-
-			//Turn counter clockwise 90 degrees:
-			if (dx == 0)
-			{
-				dx = dy;
-				dy = 0;
-			}
-			else
-			{
-				dy = -dx;
-				dx = 0;
+				bestPos = GridTracker::Instance().getMobilityGrid(x, y);
+				finalPosition = Position(x * 32, y * 32);
 			}
 		}
 	}
-	return initialPosition;
+	//// Spiral variables
+	//int length = 1;
+	//int j = 0;
+	//bool first = true;
+	//bool okay = false;
+	//int dx = 0;
+	//int dy = 1;
+	//// Searches in a spiral around the specified tile position
+	//while (length < 2000)
+	//{
+	//	//If threat is low, move there
+	//	if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
+	//	{
+	//		Position newPosition = Position(TilePosition(x, y));
+	//		if (GridTracker::Instance().getEGroundGrid(x, y) < 1 && GridTracker::Instance().getMobilityGrid(x, y) > 0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
+	//		{
+	//			return newPosition;
+	//		}
+	//	}
+	//	//Otherwise, move to another position
+	//	x = x + dx;
+	//	y = y + dy;
+	//	//Count how many steps we take in this direction
+	//	j++;
+	//	if (j == length) //if we've reached the end, its time to turn
+	//	{
+	//		//reset step counter
+	//		j = 0;
+
+	//		//Increment step counter
+	//		if (!first)
+	//			length++;
+
+	//		//First=true for every other turn so we spiral out at the right rate
+	//		first = !first;
+
+	//		//Turn counter clockwise 90 degrees:
+	//		if (dx == 0)
+	//		{
+	//			dx = dy;
+	//			dy = 0;
+	//		}
+	//		else
+	//		{
+	//			dy = -dx;
+	//			dx = 0;
+	//		}
+	//	}
+	//}
+	return finalPosition;
 }

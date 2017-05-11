@@ -21,9 +21,7 @@ void TargetTrackerClass::update()
 void TargetTrackerClass::unitGetTarget(Unit unit)
 {
 	double highest = 0.0, thisUnit = 0.0;
-	UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
-
-	Unit target = nullptr;
+	Unit target = nullptr;	
 
 	for (auto &u : UnitTracker::Instance().getEnUnits())
 	{

@@ -17,6 +17,7 @@ class GridTrackerClass
 	int tankClusterGrid[256][256];
 	int allyClusterGrid[256][256];
 	int allyDetectorGrid[256][256];
+	int allyPositionGrid[256][256];
 	int resourceGrid[256][256];
 	int mobilityGrid[256][256];
 public:

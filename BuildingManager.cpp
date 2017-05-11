@@ -42,10 +42,10 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 			{
 				return false;
 			}
-			if (getNearestChokepoint(TilePosition(x, y))->getCenter().getDistance(Position(TilePosition(x, y))) < 256)
+			/*if (getNearestChokepoint(TilePosition(x, y))->getCenter().getDistance(Position(TilePosition(x, y))) < 256)
 			{
 				return false;
-			}
+			}*/
 		}
 	}
 	// For every tile of an expansion
@@ -133,6 +133,10 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		if (building == UnitTypes::Protoss_Assimilator)
 		{
 			buildTilePosition = getGasLocation();
+		}
+		else if (building == UnitTypes::Protoss_Nexus)
+		{
+			buildTilePosition = getNexusLocation();
 		}
 		else
 		{
@@ -256,8 +260,11 @@ void BuildingTrackerClass::constructBuildings()
 	}
 }
 
-void BuildingTrackerClass::updateQueue(UnitType building)
+void BuildingTrackerClass::updateQueue(Unit building)
 {
 	// When a building is created, remove from queue
-	queuedBuildings.erase(building);
+	if (building->getPlayer() == Broodwar->self())
+	{
+		queuedBuildings.erase(building->getType());
+	}
 }

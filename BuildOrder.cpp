@@ -10,7 +10,6 @@ void BuildOrderTrackerClass::update()
 	// Temporary variables
 	int supply = UnitTracker::Instance().getSupply();
 	bool saturated = ResourceTracker::Instance().isSaturated();
-	bool forceExpand = false;	
 	int inactiveNexusCnt = 0;
 
 	// Pylon, Forge, Nexus
@@ -25,7 +24,7 @@ void BuildOrderTrackerClass::update()
 	}
 
 	// If forcing an early natural expansion
-	if (forceExpand == 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
+	if (StrategyTracker::Instance().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus]++;
 	}
@@ -37,7 +36,7 @@ void BuildOrderTrackerClass::update()
 	}
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && ProductionTracker::Instance().getIdleGates().size() && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 || forceExpand))
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && ProductionTracker::Instance().getIdleGates().size() == 0 && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 || StrategyTracker::Instance().isFastExpand()))
 	{
 		getEarlyBuild = false;
 		getMidBuild = true;
@@ -139,7 +138,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 		{
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = 1;
 		}
-		if (supply >= 36)
+		if (supply >= 30)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
 		}

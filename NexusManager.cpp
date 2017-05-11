@@ -57,8 +57,13 @@ void NexusTrackerClass::trainProbes()
 
 void NexusTrackerClass::updateDefenses()
 {
-	for (auto &nexus : myNexus)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge) == 0)
 	{
+		return;
+	}
+
+	for (auto &nexus : myNexus)
+	{		
 		if (Broodwar->getUnitsOnTile(nexus.second.getStaticPosition(), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
 		{
 			nexus.second.setPylon(Broodwar->getClosestUnit(Position(nexus.second.getStaticPosition()), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon, 128));
@@ -84,6 +89,7 @@ void NexusTrackerClass::updateDefenses()
 			}
 		}
 	}
+
 }
 
 

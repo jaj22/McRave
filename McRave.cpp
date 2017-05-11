@@ -118,7 +118,7 @@ void McRave::onUnitHide(BWAPI::Unit unit)
 
 void McRave::onUnitCreate(BWAPI::Unit unit)
 {
-	BuildingTracker::Instance().updateQueue(unit->getType());	
+	BuildingTracker::Instance().updateQueue(unit);	
 }
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
@@ -133,6 +133,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 
 void McRave::onUnitMorph(BWAPI::Unit unit)
 {	
+	BuildingTracker::Instance().updateQueue(unit);
 }
 
 void McRave::onUnitRenegade(BWAPI::Unit unit)

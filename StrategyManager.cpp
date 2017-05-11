@@ -144,6 +144,10 @@ void StrategyTrackerClass::updateComposition()
 				fastExpand = true;
 			}
 		}
+		else
+		{
+			fastExpand = false;
+		}
 		t.second = 0;
 	}
 }
