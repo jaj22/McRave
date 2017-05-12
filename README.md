@@ -1,4 +1,4 @@
-# CMProtoBot nicknamed McRave by BWAPI Community \o/
+# McRave - A Broodwar Bot
 ## For any questions, email christianmccrave@gmail.com
 ## Bot started 01/03/2017, latest update 05/08/2017
 
