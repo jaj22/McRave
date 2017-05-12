@@ -53,7 +53,7 @@ void UnitTrackerClass::update()
 
 void UnitTrackerClass::storeUnits()
 {	
-	for (auto u : Broodwar->self()->getUnits())
+	for (auto &u : Broodwar->self()->getUnits())
 	{
 		if (u->getType() == UnitTypes::Protoss_Scarab)
 		{
@@ -69,7 +69,7 @@ void UnitTrackerClass::storeUnits()
 			supply = supply + u->getType().supplyRequired();
 		}
 	}
-	for (auto u : Broodwar->enemy()->getUnits())
+	for (auto &u : Broodwar->enemy()->getUnits())
 	{
 		if (u && u->exists() && u->isCompleted())
 		{

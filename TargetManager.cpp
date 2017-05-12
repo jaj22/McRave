@@ -68,7 +68,7 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 	}
 
 	// If the target is not nullptr, store
-	if (target)
+	if (target && unit->getGroundWeaponCooldown() == 0)
 	{
 		UnitTracker::Instance().getMyUnits()[unit].setTarget(target);
 		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(UnitTracker::Instance().getEnUnits()[target].getPosition());

@@ -387,8 +387,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 {
 	// Variables
 	bool kite = false;	
-	int range = UnitTracker::Instance().getMyUnits()[unit].getRange();
-	UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
+	int range = UnitTracker::Instance().getMyUnits()[unit].getRange();	
 	int offset = 0;	
 
 	// Stop offset required for units with animations
@@ -402,10 +401,10 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 	}
 
 	// If unit receieved an attack command on the target already, don't give another order - TODO: Test if it could be removed maybe to prevent goon stop bug
-	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit->getTarget() == target)
+	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && UnitTracker::Instance().getMyUnits()[unit].getTarget() == target)
 	{
 		return;
-	}
+	}	
 
 	// If kiting unnecessary, disable
 	if (target->getType().isBuilding() || unit->getType() == UnitTypes::Protoss_Corsair)
@@ -427,6 +426,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 	// If kite is true and weapon on cooldown, move
 	if (kite && Broodwar->getFrameCount() - UnitTracker::Instance().getMyUnits()[unit].getLastCommandFrame() > offset - Broodwar->getLatencyFrames() && unit->getGroundWeaponCooldown() > 0)
 	{
+		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
 		Position correctedFleePosition = unitFlee(unit, target);
 		// Want Corsairs to move closer always if possible
 		if (unit->getType() == UnitTypes::Protoss_Corsair)
@@ -459,18 +459,37 @@ void CommandTrackerClass::unitExploreArea(Unit unit)
 	// Untouched resources
 }
 
-Position CommandTrackerClass::unitFlee(Unit unit, Unit currentTarget)
+Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 {
 	// If either the unit or current target are invalid, return
-	if (!unit || !currentTarget)
+	if (!unit || !target)
 	{
 		return Positions::None;
 	}
+	
+	//// TODO: Find a reasonable balance between distance and mobility
+	//TilePosition initialTilePosition = unit->getTilePosition();
+	//Position initialPosition = unit->getPosition();
+	//Position finalPosition = Position(initialTilePosition);
+	//int bestPos = 0;
+	//for (int i = initialTilePosition.x - 4; i <= initialTilePosition.x + 4; i++)
+	//{
+	//	for (int j = initialTilePosition.y - 4; j <= initialTilePosition.y + 4; j++)
+	//	{
+	//		//if (GridTracker::Instance().getEGroundGrid(i, j) == 0 && GridTracker::Instance().getMobilityGrid(i, j) >= 7 && (initialPosition.getDistance(getNearestChokepoint(initialTilePosition)->getCenter()) < 128 || getRegion(initialTilePosition) == getRegion(TilePosition(i, j))) && (Position(i * 32, j * 32).getDistance(UnitTracker::Instance().getEnUnits()[target].getPosition()) > furthestD || furthestD == 0.0))
+	//		if (GridTracker::Instance().getEGroundGrid(i, j) == 0 && GridTracker::Instance().getMobilityGrid(i, j) * Position(i * 32, j * 32).getDistance(UnitTracker::Instance().getEnUnits()[target].getPosition()) > bestPos && (Position(i*32,j*32).getDistance(getNearestChokepoint(initialTilePosition)->getCenter()) < 128 || getRegion(initialTilePosition) == getRegion(TilePosition(i, j))))
+	//		{
+	//			bestPos = GridTracker::Instance().getMobilityGrid(i, j) * Position(i * 32, j * 32).getDistance(UnitTracker::Instance().getEnUnits()[target].getPosition());
+	//			finalPosition = Position(i * 32, j * 32);
+	//		}
+	//	}
+	//}	
+	//return finalPosition;
 
 	// Unit Flee Variables
 	double slopeDegree;
 	int x, y;
-	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[currentTarget].getPosition();
+	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[target].getPosition();
 	Position currentUnitPosition = unit->getPosition();
 	TilePosition currentUnitTilePosition = unit->getTilePosition();
 
@@ -501,69 +520,56 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit currentTarget)
 	{
 		y = (int)(currentUnitTilePosition.y - abs(5 * sin(slopeDegree)));
 	}
-
+	
+	// Spiral variables
 	Position initialPosition = Position(TilePosition(x, y));
-	Position finalPosition = initialPosition;
-	int bestPos = 0;
-	for (int i = initialPosition.x - 3; i <= initialPosition.x + 3; i++)
+	int length = 1;
+	int j = 0;
+	bool first = true;
+	bool okay = false;
+	int dx = 0;
+	int dy = 1;
+	// Searches in a spiral around the specified tile position
+	while (length < 2000)
 	{
-		for (int i = initialPosition.y - 3; i <= initialPosition.y + 3; i++)
+		//If threat is low, move there
+		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 		{
-			if (GridTracker::Instance().getEGroundGrid(x, y) < 1 && GridTracker::Instance().getMobilityGrid(x, y) > 0)
+			Position newPosition = Position(TilePosition(x, y));
+			if (GridTracker::Instance().getEGroundGrid(x, y) == 0.0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
 			{
-				bestPos = GridTracker::Instance().getMobilityGrid(x, y);
-				finalPosition = Position(x * 32, y * 32);
+				return newPosition;
+			}
+		}
+		//Otherwise, move to another position
+		x = x + dx;
+		y = y + dy;
+		//Count how many steps we take in this direction
+		j++;
+		if (j == length) //if we've reached the end, its time to turn
+		{
+			//reset step counter
+			j = 0;
+
+			//Increment step counter
+			if (!first)
+				length++;
+
+			//First=true for every other turn so we spiral out at the right rate
+			first = !first;
+
+			//Turn counter clockwise 90 degrees:
+			if (dx == 0)
+			{
+				dx = dy;
+				dy = 0;
+			}
+			else
+			{
+				dy = -dx;
+				dx = 0;
 			}
 		}
 	}
-	//// Spiral variables
-	//int length = 1;
-	//int j = 0;
-	//bool first = true;
-	//bool okay = false;
-	//int dx = 0;
-	//int dy = 1;
-	//// Searches in a spiral around the specified tile position
-	//while (length < 2000)
-	//{
-	//	//If threat is low, move there
-	//	if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
-	//	{
-	//		Position newPosition = Position(TilePosition(x, y));
-	//		if (GridTracker::Instance().getEGroundGrid(x, y) < 1 && GridTracker::Instance().getMobilityGrid(x, y) > 0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
-	//		{
-	//			return newPosition;
-	//		}
-	//	}
-	//	//Otherwise, move to another position
-	//	x = x + dx;
-	//	y = y + dy;
-	//	//Count how many steps we take in this direction
-	//	j++;
-	//	if (j == length) //if we've reached the end, its time to turn
-	//	{
-	//		//reset step counter
-	//		j = 0;
-
-	//		//Increment step counter
-	//		if (!first)
-	//			length++;
-
-	//		//First=true for every other turn so we spiral out at the right rate
-	//		first = !first;
-
-	//		//Turn counter clockwise 90 degrees:
-	//		if (dx == 0)
-	//		{
-	//			dx = dy;
-	//			dy = 0;
-	//		}
-	//		else
-	//		{
-	//			dy = -dx;
-	//			dx = 0;
-	//		}
-	//	}
-	//}
-	return finalPosition;
+	return initialPosition;
 }

@@ -234,8 +234,9 @@ void BuildingTrackerClass::constructBuildings()
 			}
 		}
 
-		// If drawing is on, draw a box around the build position -- MOVE -> drawing section			
+		// If drawing is on, draw a box around the build position			
 		Broodwar->drawLineMap(Position(b.second.first), b.second.second->getPosition(), Broodwar->self()->getColor());
+		Broodwar->drawBoxMap(Position(b.second.first), Position(TilePosition(b.second.first.x + b.first.tileWidth(), b.second.first.y + b.first.tileHeight())), Broodwar->self()->getColor());
 
 
 		// If we issued a command to this Probe already, skip
