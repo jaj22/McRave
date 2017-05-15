@@ -19,7 +19,11 @@ void ResourceTrackerClass::update()
 				if (myGas.find(r) == myGas.end() && r->getType() == UnitTypes::Resource_Vespene_Geyser)
 				{
 					storeGas(r);
-				}
+				}				
+			}
+			if (r->getInitialResources() == 0 && r->getDistance(TerrainTracker::Instance().getPlayerStartingPosition()) < 2560)
+			{
+				storeBoulder(r);
 			}
 		}
 	}
@@ -30,8 +34,7 @@ void ResourceTrackerClass::update()
 	{
 		if (m.first->exists())
 		{
-			m.second.setRemainingResources(m.first->getResources());	
-			Broodwar->drawTextMap(m.second.getPosition(), "%d", m.second.getGathererCount());
+			m.second.setRemainingResources(m.first->getResources());				
 		}
 		if (saturated && m.second.getGathererCount() < 2)
 		{
@@ -44,8 +47,7 @@ void ResourceTrackerClass::update()
 		if (g.first->exists())
 		{
 			g.second.setUnitType(g.first->getType());
-			g.second.setRemainingResources(g.first->getResources());
-			Broodwar->drawTextMap(g.second.getPosition(), "%d", g.second.getGathererCount());
+			g.second.setRemainingResources(g.first->getResources());			
 		}
 		if (g.second.getGathererCount() < 3)
 		{

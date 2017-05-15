@@ -15,6 +15,10 @@ class BuildOrderTrackerClass
 public:
 	map <UnitType, int>& getBuildingDesired() { return buildingDesired; }
 	
+	bool isEarlyBuild() { return getEarlyBuild; }
+	bool isMidBuild() { return getMidBuild; }
+	bool isLateBuild() { return getLateBuild; }
+
 	void update();
 	void earlyBuilds();
 	void midBuilds();

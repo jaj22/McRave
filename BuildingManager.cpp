@@ -22,10 +22,10 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	}
 
 	// Space out by at least 1 tile every 4 tiles horizontally, 3 vertically
-	if (!ignoreCond && (buildTilePosition.x % 3 == 0 || buildTilePosition.x % 2 == 0 || buildTilePosition.y % 2 == 0) || Broodwar->canBuildHere(buildTilePosition, building, nullptr, true) == false)
+	if (!ignoreCond && (buildTilePosition.x % 3 == 0 || buildTilePosition.x % 2 == 0 || buildTilePosition.y % 3 == 0 || Broodwar->canBuildHere(buildTilePosition, building, nullptr, true) == false))
 	{
 		return false;
-	}	
+	}
 
 	// For every tile of a buildings size
 	for (int x = buildTilePosition.x - offset; x <= buildTilePosition.x + building.tileWidth() + offset; x++)
@@ -38,11 +38,15 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 				return false;
 			}
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			if (GridTracker::Instance().getResourceGrid(x, y) > 0 || (!ignoreCond && building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0) || TerrainTracker::Instance().getAllyTerritory().find(getRegion(buildTilePosition)) == TerrainTracker::Instance().getAllyTerritory().end())
+			if ((building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0) || (!ignoreCond && building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0) || TerrainTracker::Instance().getAllyTerritory().find(getRegion(buildTilePosition)) == TerrainTracker::Instance().getAllyTerritory().end())
 			{
 				return false;
 			}
-			/*if (getNearestChokepoint(TilePosition(x, y))->getCenter().getDistance(Position(TilePosition(x, y))) < 256)
+			if (getNearestChokepoint(TilePosition(x, y)) && getNearestChokepoint(TilePosition(x, y))->getCenter().getDistance(Position(TilePosition(x, y))) < 16)
+			{
+				return false;
+			}
+			/*if (!ignoreCond && GridTracker::Instance().getMobilityGrid(x, y) <= 9)
 			{
 				return false;
 			}*/

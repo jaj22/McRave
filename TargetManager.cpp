@@ -60,7 +60,7 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 		}
 
 		// If this is the strongest enemy around, target it
-		if (thisUnit > highest || highest == 0)
+		if (thisUnit > highest || highest == 0.0)
 		{
 			target = u.first;
 			highest = thisUnit;
@@ -68,7 +68,7 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 	}
 
 	// If the target is not nullptr, store
-	if (target && unit->getGroundWeaponCooldown() == 0)
+	if (target)
 	{
 		UnitTracker::Instance().getMyUnits()[unit].setTarget(target);
 		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(UnitTracker::Instance().getEnUnits()[target].getPosition());

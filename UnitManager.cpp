@@ -16,27 +16,14 @@ bool stimResearched = false;
 // Add scout intercepting (based on velocity and direction?)
 // Combat sim so there's no army swarming 1 unit
 
-bool isThisACorner(Position position)
-{
-	// Given a position check -32 pixels to +32 pixels for being walkable mini tiles
-	int x1 = (position.x - 32) / 8;
-	int y1 = (position.y - 32) / 8;
-
-	for (int i = x1; i <= x1 + 12; i++)
-	{
-		for (int j = y1; j <= y1 + 12; j++)
-		{
-			if (!Broodwar->isWalkable(i, j))
-			{
-				return true;
-			}
-		}
-	}
-	return false;
+void UnitTrackerClass::update()
+{	
+	storeUnits();
+	removeUnits();
 }
 
-void UnitTrackerClass::update()
-{
+void UnitTrackerClass::storeUnits()
+{	
 	// Reset sizes and supply
 	for (auto &size : allySizes)
 	{
@@ -47,21 +34,18 @@ void UnitTrackerClass::update()
 		size.second = 0;
 	}
 	supply = 0;
-	storeUnits();
-	removeUnits();
-}
 
-void UnitTrackerClass::storeUnits()
-{	
+	// For all ally units
 	for (auto &u : Broodwar->self()->getUnits())
 	{
 		if (u->getType() == UnitTypes::Protoss_Scarab)
 		{
 			continue;
 		}		
+		// Store if exists and not building or worker
 		if (u && u->exists() && u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding())
 		{
-			storeAllyUnit(u, allyUnits);
+			storeAllyUnit(u);
 		}
 		// Add supply of this unit
 		if (u->getType().supplyRequired() > 0)
@@ -69,11 +53,14 @@ void UnitTrackerClass::storeUnits()
 			supply = supply + u->getType().supplyRequired();
 		}
 	}
+
+	// For all enemy units
 	for (auto &u : Broodwar->enemy()->getUnits())
 	{
-		if (u && u->exists() && u->isCompleted())
+		// Store if exists
+		if (u && u->exists())
 		{
-			storeEnemyUnit(u, enemyUnits);
+			storeEnemyUnit(u);
 		}
 	}
 }
@@ -283,7 +270,7 @@ double unitGetPriority(UnitType unitType)
 	}
 }
 
-void UnitTrackerClass::storeEnemyUnit(Unit unit, map<Unit, UnitInfoClass>& enemyUnits)
+void UnitTrackerClass::storeEnemyUnit(Unit unit)
 {
 	// Create new unit
 	if (enemyUnits.find(unit) == enemyUnits.end())
@@ -309,7 +296,7 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit, map<Unit, UnitInfoClass>& enemy
 	return;
 }
 
-void UnitTrackerClass::storeAllyUnit(Unit unit, map<Unit, UnitInfoClass>& allyUnits)
+void UnitTrackerClass::storeAllyUnit(Unit unit)
 {
 	// Create new unit
 	if (allyUnits.find(unit) == allyUnits.end())
@@ -407,58 +394,7 @@ void UnitTrackerClass::decayUnit(Unit unit)
 //}
 //
 
-//void observerManager(Unit unit)
-//{		
-//	// Make sure we don't overwrite commands
-//	if (unit->getLastCommandFrame() < Broodwar->getFrameCount())
-//	{
-//		unit->move(supportPosition);
-//	}
-//}
-//
 
-//void UnitTrackerClass::templarManager(Unit unit)
-//{
-//	Unit target = allyUnits[unit].getTarget();
-//	int stratL = allyUnits[unit].getStrategy();
-//	if (stratL == 1 || stratL == 0)
-//	{
-//		if (target != unit)
-//		{
-//			if (unit->getEnergy() > 75)
-//			{
-//				unit->useTech(TechTypes::Psionic_Storm, target);
-//				return;
-//			}
-//			else if (unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar) && (unit->getEnergy() < 70 || unit->isUnderAttack()))
-//			{
-//				unit->useTech(TechTypes::Archon_Warp, unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
-//				return;
-//			}
-//		}
-//	}
-//	return;
-//}
-//
-//void UnitTrackerClass::arbiterManager(Unit unit)
-//{
-//	// Find a position that is the highest concentration of units
-//	unitGetClusterTarget(unit);
-//
-//	if (true)//supportPosition != Positions::None && supportPosition != Positions::Unknown && supportPosition != Positions::Invalid)
-//	{
-//		//unit->move(supportPosition);
-//	}
-//	else
-//	{
-//		unit->move(TerrainTracker::Instance().getPlayerStartingPosition());
-//	}
-//	if (unit->getUnitsInRadius(640, Filter::IsEnemy).size() > 4)
-//	{
-//		Unit target = allyUnits[unit].getTarget();
-//		if (target)
-//		{
-//			unit->useTech(TechTypes::Stasis_Field, target);
-//		}
-//	}
-//}
+
+
+

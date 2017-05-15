@@ -3,6 +3,7 @@
 #include "UnitManager.h"
 #include "StrategyManager.h"
 #include "BuildingManager.h"
+#include "BuildOrder.h"
 
 
 
@@ -11,9 +12,13 @@ void ProductionTrackerClass::update()
 	int supply = UnitTracker::Instance().getSupply();
 	int queuedMineral = BuildingTracker::Instance().getQueuedMineral();
 	int queuedGas = BuildingTracker::Instance().getQueuedGas();
-	if (Broodwar->enemy()->getRace() == Races::Terran && !Broodwar->self()->getUpgradeLevel(UpgradeTypes::Leg_Enhancements))
+	if (Broodwar->enemy()->getRace() == Races::Terran)
 	{
 		noZealots = true;
+	}
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
+	{
+		noZealots = false;
 	}
 
 	for (auto building : Broodwar->self()->getUnits())

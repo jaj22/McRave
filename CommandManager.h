@@ -15,6 +15,9 @@ public:
 	void updateDecisions(Unit, Unit);
 	void updateLocalStrategy(Unit, Unit);
 	void updateGlobalStrategy(Unit, Unit);
+	void arbiterManager(Unit);
+	void observerManager(Unit);
+	void templarManager(Unit);
 
 
 	void unitGetLocalStrategy(Unit, Unit);

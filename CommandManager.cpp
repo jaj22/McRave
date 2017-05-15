@@ -7,15 +7,16 @@
 void CommandTrackerClass::update()
 {
 	for (auto &u : UnitTracker::Instance().getMyUnits())
-	{		
-		// Latency returning for now, else make a decision
-		if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
-		{
-			return;
-		}
-		updateDecisions(u.first, u.second.getTarget());
+	{
 		updateLocalStrategy(u.first, u.second.getTarget());
 		updateGlobalStrategy(u.first, u.second.getTarget());
+
+		//// Latency returning for now, else make a decision
+		//if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
+		//{
+		//	return;
+		//}
+		updateDecisions(u.first, u.second.getTarget());
 	}
 }
 
@@ -23,7 +24,6 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 {
 	double closestD = 0.0;
 	Position closestP;
-
 
 	// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, not powered or not completed
 	if (!unit || !unit->exists() || unit->isLockedDown() || unit->isMaelstrommed() || unit->isStasised() || !unit->isPowered() || !unit->isCompleted())
@@ -33,14 +33,27 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	if (!target || target == nullptr)
 	{
 		return;
-	}	
+	}
 
 	// If Reaver, train scarabs
 	if (unit->getType() == UnitTypes::Protoss_Reaver && unit->getScarabCount() < 5)
 	{
 		unit->train(UnitTypes::Protoss_Scarab);
 	}
-	
+
+	if (unit->getType() == UnitTypes::Protoss_High_Templar)
+	{
+		templarManager(unit);
+	}
+	else if (unit->getType() == UnitTypes::Protoss_Arbiter)
+	{
+		arbiterManager(unit);
+	}
+	else if (unit->getType() == UnitTypes::Protoss_Observer)
+	{
+		observerManager(unit);
+	}
+
 	// Attack
 	if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 1 && target->exists())
 	{
@@ -300,7 +313,6 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	{
 		if (TerrainTracker::Instance().getAllyTerritory().find(getRegion(target->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
 		{
-
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 			return;
 		}
@@ -314,7 +326,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	}
 
 	// If unit is in range of a target and not currently threatened, attack instead of running
-	if (unit->getDistance(targetPosition) <= UnitTracker::Instance().getMyUnits()[unit].getRange() && (GridTracker::Instance().getEGroundGrid(unit->getTilePosition().x, unit->getTilePosition().y) == 0 || unit->getType() == UnitTypes::Protoss_Reaver))
+	if (unit->getDistance(targetPosition) <= UnitTracker::Instance().getMyUnits()[unit].getRange() && (GridTracker::Instance().getEGroundGrid(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 || unit->getType() == UnitTypes::Protoss_Reaver))
 	{
 		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 		return;
@@ -329,7 +341,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(0);
 			return;
 		}
-		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);		
+		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 		return;
 	}
 	// If last command was disengage/no command
@@ -337,7 +349,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	{
 		// Latch based system for at least 120% advantage to engage
 		if (allyLocalStrength >= enemyLocalStrength*1.2)
-		{			
+		{
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 			return;
 		}
@@ -386,9 +398,9 @@ void CommandTrackerClass::updateGlobalStrategy(Unit unit, Unit target)
 void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 {
 	// Variables
-	bool kite = false;	
-	int range = UnitTracker::Instance().getMyUnits()[unit].getRange();	
-	int offset = 0;	
+	bool kite = false;
+	int range = (int)UnitTracker::Instance().getMyUnits()[unit].getRange();
+	int offset = 0;
 
 	// Stop offset required for units with animations
 	if (unit->getType() == UnitTypes::Protoss_Dragoon)
@@ -400,11 +412,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 		offset = 1;
 	}
 
-	// If unit receieved an attack command on the target already, don't give another order - TODO: Test if it could be removed maybe to prevent goon stop bug
-	if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && UnitTracker::Instance().getMyUnits()[unit].getTarget() == target)
-	{
-		return;
-	}	
+
 
 	// If kiting unnecessary, disable
 	if (target->getType().isBuilding() || unit->getType() == UnitTypes::Protoss_Corsair)
@@ -418,33 +426,33 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 	}
 
 	// If kiting is a good idea, enable
-	else if (target->getType() == UnitTypes::Terran_Vulture_Spider_Mine || (range > 32 && unit->isUnderAttack()) || (UnitTracker::Instance().getEnUnits()[target].getRange() <= range && (unit->getDistance(target) < range - UnitTracker::Instance().getEnUnits()[target].getRange() && UnitTracker::Instance().getEnUnits()[target].getRange() > 0 && range > 32 || unit->getHitPoints() < 40)))
+	else if (target->getType() == UnitTypes::Terran_Vulture_Spider_Mine || (range > 32 && unit->isUnderAttack()) || (UnitTracker::Instance().getEnUnits()[target].getRange() <= range && (unit->getDistance(target) <= range - UnitTracker::Instance().getEnUnits()[target].getRange() && UnitTracker::Instance().getEnUnits()[target].getRange() > 0 && range > 32 || unit->getHitPoints() < 40)))
 	{
 		kite = true;
 	}
 
 	// If kite is true and weapon on cooldown, move
-	if (kite && Broodwar->getFrameCount() - UnitTracker::Instance().getMyUnits()[unit].getLastCommandFrame() > offset - Broodwar->getLatencyFrames() && unit->getGroundWeaponCooldown() > 0)
+	if (Broodwar->getFrameCount() - UnitTracker::Instance().getMyUnits()[unit].getLastCommandFrame() > offset - Broodwar->getLatencyFrames())
 	{
-		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
-		Position correctedFleePosition = unitFlee(unit, target);
-		// Want Corsairs to move closer always if possible
-		if (unit->getType() == UnitTypes::Protoss_Corsair)
+		if (kite && unit->getGroundWeaponCooldown() > 0)
 		{
-			unit->move(target->getPosition());
+			Position correctedFleePosition = unitFlee(unit, target);
+			UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(correctedFleePosition);
+			if (correctedFleePosition != BWAPI::Positions::None && (unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->getLastCommand().getTargetPosition().getDistance(correctedFleePosition) > 5))
+			{
+				unit->move(Position(correctedFleePosition.x + rand() % 3 + (-1), correctedFleePosition.y + rand() % 3 + (-1)));				
+			}
+		}
+		else if (unit->getGroundWeaponCooldown() <= 0 && !unit->isStartingAttack())
+		{
+			// If unit receieved an attack command on the target already, don't give another order - TODO: Test if it could be removed maybe to prevent goon stop bug
+			if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && Broodwar->getFrameCount() - unit->getLastCommandFrame() < unit->getType().groundWeapon().damageCooldown() && UnitTracker::Instance().getMyUnits()[unit].getTarget() == target)
+			{
+				return;
+			}
+			unit->attack(target);
 			UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(target->getPosition());
 		}
-		else if (correctedFleePosition != BWAPI::Positions::None && (unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->getLastCommand().getTargetPosition().getDistance(correctedFleePosition) > 5))
-		{
-			unit->move(Position(correctedFleePosition.x + rand() % 3 + (-1), correctedFleePosition.y + rand() % 3 + (-1)));
-			UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(correctedFleePosition);
-		}
-	}
-	// Else, regardless of if kite is true or not, attack if weapon is off cooldown
-	else if (unit->getGroundWeaponCooldown() <= 0)
-	{
-		unit->attack(target);	
-		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(target->getPosition());
 	}
 	return;
 }
@@ -466,110 +474,174 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	{
 		return Positions::None;
 	}
-	
-	//// TODO: Find a reasonable balance between distance and mobility
-	//TilePosition initialTilePosition = unit->getTilePosition();
-	//Position initialPosition = unit->getPosition();
-	//Position finalPosition = Position(initialTilePosition);
-	//int bestPos = 0;
-	//for (int i = initialTilePosition.x - 4; i <= initialTilePosition.x + 4; i++)
+
+	//// Unit Flee Variables
+	//double slopeDegree;
+	int x = unit->getPosition().x;
+	int y = unit->getPosition().y;
+	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[target].getPosition();
+	//Position currentUnitPosition = unit->getPosition();
+	//TilePosition currentUnitTilePosition = unit->getTilePosition();
+
+	//// Divide by zero check, if zero then we are fleeing horizontally, no problem if fleeing vertically.
+	//if ((currentUnitPosition.x - currentTargetPosition.x) == 0)
 	//{
-	//	for (int j = initialTilePosition.y - 4; j <= initialTilePosition.y + 4; j++)
+	//	slopeDegree = 1.571;
+	//}
+	//else
+	//{
+	//	slopeDegree = atan((currentUnitPosition.y - currentTargetPosition.y) / (currentUnitPosition.x - currentTargetPosition.x));
+	//}
+
+	//// Need to make sure we are fleeing at the same angle the units are attacking each other at
+	//if (currentUnitPosition.x > currentTargetPosition.x)
+	//{
+	//	x = (int)(currentUnitPosition.x + (128 * cos(slopeDegree)));
+	//}
+	//else
+	//{
+	//	x = (int)(currentUnitPosition.x - (128 * cos(slopeDegree)));
+	//}
+	//if (currentUnitPosition.y > currentTargetPosition.y)
+	//{
+	//	y = (int)(currentUnitPosition.y + abs(128 * sin(slopeDegree)));
+	//}
+	//else
+	//{
+	//	y = (int)(currentUnitPosition.y - abs(128 * sin(slopeDegree)));
+	//}
+
+	// TODO: Find a reasonable balance between distance and mobility	
+	int initialX = int((x - x % 8 - (0.5*unit->getType().width())) / 8);
+	int initialY = int((y - y % 8 - (0.5*unit->getType().height())) / 8);
+	Position finalPosition = Position(x,y);
+	int bestPos = 0;
+	double myMobile = 0.0;
+
+	double distanceTarget = unit->getDistance(target);
+	double distanceHome = unit->getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
+
+	// Search a 45x45 mini tile area around the unit for mobility
+	// There's a bunch of crappy math in here to convert between Tiles, Mini Tiles and Pixels, it works but needs redoing
+	for (int i = initialX - 22; i <= initialX + 22; i++)
+	{
+		for (int j = initialY - 22; j <= initialY + 22; j++)
+		{			
+			distanceTarget = Position(i * 8, j * 8).getDistance(currentTargetPosition);
+			distanceHome = Position(i * 8, j * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(i, j) == 0 && GridTracker::Instance().getEGroundGrid((i - (i % 32)) / 4, (j - (j % 32)) / 4) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome > myMobile /*|| (GridTracker::Instance().getMobilityMiniGrid(i, j) == myMobile && distanceTarget > myDistance))*/)
+			{
+				myMobile = GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget/ distanceHome;
+				finalPosition = Position(i * 8, j * 8);	
+			}
+		}
+	}
+	//Broodwar->drawCircleMap(finalPosition, 2, Colors::Red, true);
+	return finalPosition;
+
+
+
+	//// Spiral variables
+	//Position initialPosition = Position(TilePosition(x, y));
+	//int length = 1;
+	//int j = 0;
+	//bool first = true;
+	//bool okay = false;
+	//int dx = 0;
+	//int dy = 1;
+	//// Searches in a spiral around the specified tile position
+	//while (length < 2000)
+	//{
+	//	//If threat is low, move there
+	//	if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 	//	{
-	//		//if (GridTracker::Instance().getEGroundGrid(i, j) == 0 && GridTracker::Instance().getMobilityGrid(i, j) >= 7 && (initialPosition.getDistance(getNearestChokepoint(initialTilePosition)->getCenter()) < 128 || getRegion(initialTilePosition) == getRegion(TilePosition(i, j))) && (Position(i * 32, j * 32).getDistance(UnitTracker::Instance().getEnUnits()[target].getPosition()) > furthestD || furthestD == 0.0))
-	//		if (GridTracker::Instance().getEGroundGrid(i, j) == 0 && GridTracker::Instance().getMobilityGrid(i, j) * Position(i * 32, j * 32).getDistance(UnitTracker::Instance().getEnUnits()[target].getPosition()) > bestPos && (Position(i*32,j*32).getDistance(getNearestChokepoint(initialTilePosition)->getCenter()) < 128 || getRegion(initialTilePosition) == getRegion(TilePosition(i, j))))
+	//		Position newPosition = Position(TilePosition(x, y));
+	//		if (GridTracker::Instance().getEGroundGrid(x, y) == 0.0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
 	//		{
-	//			bestPos = GridTracker::Instance().getMobilityGrid(i, j) * Position(i * 32, j * 32).getDistance(UnitTracker::Instance().getEnUnits()[target].getPosition());
-	//			finalPosition = Position(i * 32, j * 32);
+	//			return newPosition;
 	//		}
 	//	}
-	//}	
-	//return finalPosition;
+	//	//Otherwise, move to another position
+	//	x = x + dx;
+	//	y = y + dy;
+	//	//Count how many steps we take in this direction
+	//	j++;
+	//	if (j == length) //if we've reached the end, its time to turn
+	//	{
+	//		//reset step counter
+	//		j = 0;
 
-	// Unit Flee Variables
-	double slopeDegree;
-	int x, y;
-	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[target].getPosition();
-	Position currentUnitPosition = unit->getPosition();
-	TilePosition currentUnitTilePosition = unit->getTilePosition();
+	//		//Increment step counter
+	//		if (!first)
+	//			length++;
 
-	// Divide by zero check, if zero then we are fleeing horizontally, no problem if fleeing vertically.
-	if ((currentUnitPosition.x - currentTargetPosition.x) == 0)
+	//		//First=true for every other turn so we spiral out at the right rate
+	//		first = !first;
+
+	//		//Turn counter clockwise 90 degrees:
+	//		if (dx == 0)
+	//		{
+	//			dx = dy;
+	//			dy = 0;
+	//		}
+	//		else
+	//		{
+	//			dy = -dx;
+	//			dx = 0;
+	//		}
+	//	}
+	//}
+	//return initialPosition;
+}
+
+void CommandTrackerClass::arbiterManager(Unit unit)
+{
+	if (GridTracker::Instance().getSupportPosition() != Positions::None && GridTracker::Instance().getSupportPosition() != Positions::Unknown && GridTracker::Instance().getSupportPosition() != Positions::Invalid)
 	{
-		slopeDegree = 1.571;
+		unit->move(GridTracker::Instance().getSupportPosition());
 	}
 	else
 	{
-		slopeDegree = atan((currentUnitPosition.y - currentTargetPosition.y) / (currentUnitPosition.x - currentTargetPosition.x));
+		unit->move(TerrainTracker::Instance().getPlayerStartingPosition());
 	}
-
-	// Need to make sure we are fleeing at the same angle the units are attacking each other at
-	if (currentUnitPosition.x > currentTargetPosition.x)
+	if (unit->getUnitsInRadius(640, Filter::IsEnemy).size() > 4)
 	{
-		x = (int)(currentUnitTilePosition.x + (5 * cos(slopeDegree)));
-	}
-	else
-	{
-		x = (int)(currentUnitTilePosition.x - (5 * cos(slopeDegree)));
-	}
-	if (currentUnitPosition.y > currentTargetPosition.y)
-	{
-		y = (int)(currentUnitTilePosition.y + abs(5 * sin(slopeDegree)));
-	}
-	else
-	{
-		y = (int)(currentUnitTilePosition.y - abs(5 * sin(slopeDegree)));
-	}
-	
-	// Spiral variables
-	Position initialPosition = Position(TilePosition(x, y));
-	int length = 1;
-	int j = 0;
-	bool first = true;
-	bool okay = false;
-	int dx = 0;
-	int dy = 1;
-	// Searches in a spiral around the specified tile position
-	while (length < 2000)
-	{
-		//If threat is low, move there
-		if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
+		Unit target = UnitTracker::Instance().getMyUnits()[unit].getTarget();
+		if (target)
 		{
-			Position newPosition = Position(TilePosition(x, y));
-			if (GridTracker::Instance().getEGroundGrid(x, y) == 0.0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
-			{
-				return newPosition;
-			}
+			unit->useTech(TechTypes::Stasis_Field, target);
 		}
-		//Otherwise, move to another position
-		x = x + dx;
-		y = y + dy;
-		//Count how many steps we take in this direction
-		j++;
-		if (j == length) //if we've reached the end, its time to turn
+	}
+}
+
+void CommandTrackerClass::observerManager(Unit unit)
+{		
+	// Make sure we don't overwrite commands
+	if (unit->getLastCommandFrame() < Broodwar->getFrameCount())
+	{
+		unit->move(GridTracker::Instance().getSupportPosition());
+	}
+}
+
+void CommandTrackerClass::templarManager(Unit unit)
+{
+	Unit target = UnitTracker::Instance().getMyUnits()[unit].getTarget();
+	int stratL = UnitTracker::Instance().getMyUnits()[unit].getStrategy();
+	if (stratL == 1 || stratL == 0)
+	{
+		if (target != unit)
 		{
-			//reset step counter
-			j = 0;
-
-			//Increment step counter
-			if (!first)
-				length++;
-
-			//First=true for every other turn so we spiral out at the right rate
-			first = !first;
-
-			//Turn counter clockwise 90 degrees:
-			if (dx == 0)
+			if (unit->getEnergy() > 75)
 			{
-				dx = dy;
-				dy = 0;
+				unit->useTech(TechTypes::Psionic_Storm, target);
+				return;
 			}
-			else
+			else if (unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar) && (unit->getEnergy() < 70 || unit->isUnderAttack()))
 			{
-				dy = -dx;
-				dx = 0;
+				unit->useTech(TechTypes::Archon_Warp, unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
+				return;
 			}
 		}
 	}
-	return initialPosition;
+	return;
 }

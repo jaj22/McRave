@@ -30,8 +30,8 @@ public:
 	void update();
 	void storeUnits();
 	void removeUnits();	
-	void storeEnemyUnit(Unit, map<Unit, UnitInfoClass>&);
-	void storeAllyUnit(Unit, map<Unit, UnitInfoClass>&);
+	void storeEnemyUnit(Unit);
+	void storeAllyUnit(Unit);
 	void decayUnit(Unit);
 };
 

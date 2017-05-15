@@ -96,6 +96,10 @@ void ProbeTrackerClass::scoutProbe()
 		{
 			scout = u.first;
 		}
+		if (TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
+		{
+			scouting = false;
+		}
 		if (u.first == scout)
 		{
 			if (UnitTracker::Instance().getSupply() >= 18 && scouting)
@@ -111,8 +115,7 @@ void ProbeTrackerClass::scoutProbe()
 			}
 			else if (u.first->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
 			{
-				u.first->stop();
-				scouting = false;
+				u.first->stop();				
 			}
 		}
 	}
@@ -169,8 +172,8 @@ void ProbeTrackerClass::enforceAssignments()
 			}
 
 			// If not scouting and there's boulders to remove
-			if (!scouting && ResourceTracker::Instance().getMyBoulders().size() > 0)
-			{
+			if (!scouting && ResourceTracker::Instance().getMyBoulders().size() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
+			{				
 				for (auto b : ResourceTracker::Instance().getMyBoulders())
 				{
 					if (b.first && b.first->exists() && !u.first->isGatheringMinerals() && u.first->getDistance(b.second.getPosition()) < 512)

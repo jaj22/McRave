@@ -3,6 +3,7 @@
 #include "ProductionManager.h"
 #include "BuildingManager.h"
 #include "ResourceManager.h"
+#include "TerrainManager.h"
 
 TilePosition staticDefensePosition(Unit nexus)
 {
@@ -57,18 +58,25 @@ void NexusTrackerClass::trainProbes()
 
 void NexusTrackerClass::updateDefenses()
 {
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge) == 0)
-	{
-		return;
-	}
-
 	for (auto &nexus : myNexus)
-	{		
-		if (Broodwar->getUnitsOnTile(nexus.second.getStaticPosition(), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
+	{
+		if (!TerrainTracker::Instance().getAnalyzed())
 		{
-			nexus.second.setPylon(Broodwar->getClosestUnit(Position(nexus.second.getStaticPosition()), Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon, 128));
+			continue;
 		}
-		if (!nexus.second.getPylon())
+
+		// Emplace the ally territory
+		TerrainTracker::Instance().getAllyTerritory().emplace(getRegion(nexus.second.getStaticPosition()));
+
+
+		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge) == 0 || !nexus.first->isCompleted())
+		{
+			continue;
+		}
+
+		nexus.second.setStaticDefenseCount(nexus.first->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size());
+		Broodwar->drawCircleMap(Position(nexus.second.getStaticPosition()), 12, Colors::Red, true);		
+		if (!Broodwar->hasPower(nexus.second.getStaticPosition()) && Broodwar->getUnitsInRadius(Position(nexus.second.getStaticPosition()), 256, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() == 0)
 		{
 			Unit builder = Broodwar->getClosestUnit(Position(nexus.second.getStaticPosition()), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
 			TilePosition here = BuildingTracker::Instance().getBuildLocationNear(UnitTypes::Protoss_Pylon, nexus.second.getStaticPosition(), true);
@@ -78,7 +86,7 @@ void NexusTrackerClass::updateDefenses()
 				BuildingTracker::Instance().getQueuedBuildings().emplace(UnitTypes::Protoss_Pylon, make_pair(here, builder));
 			}
 		}
-		else if (nexus.second.getPylon() && nexus.second.getPylon()->isCompleted() && nexus.second.getStaticDefenseCount() < 2)
+		else if (nexus.second.getStaticDefenseCount() < 2 && Broodwar->hasPower(nexus.second.getStaticPosition()))
 		{
 			Unit builder = Broodwar->getClosestUnit(Position(nexus.second.getStaticPosition()), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
 			TilePosition here = BuildingTracker::Instance().getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, nexus.second.getStaticPosition(), true);
@@ -89,7 +97,6 @@ void NexusTrackerClass::updateDefenses()
 			}
 		}
 	}
-
 }
 
 

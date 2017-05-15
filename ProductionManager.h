@@ -14,7 +14,7 @@ class ProductionTrackerClass
 	map <int, TechType> idleTech;
 	map <int, UpgradeType> idleUpgrade;
 	int reservedMineral, reservedGas;
-	bool noZealots;
+	bool noZealots = false;
 public:
 	map <int, UnitType>& getIdleBuildings() { return idleBuildings; }
 	map <int, UnitType>& getIdleGates() { return idleGates; }
@@ -23,6 +23,7 @@ public:
 
 	int getReservedMineral() { return reservedMineral; }
 	int getReservedGas() { return reservedGas; }
+	bool getNoZealots() { return noZealots; }
 
 	void update();
 	void updateGateway(Unit);
@@ -31,6 +32,7 @@ public:
 	void updateLuxuryTech(Unit);
 	void updateRequiredTech(Unit);
 	void updateReservedResources();
+	void setNoZealots(bool);
 };
 
 typedef Singleton<ProductionTrackerClass> ProductionTracker;

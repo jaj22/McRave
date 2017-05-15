@@ -20,16 +20,16 @@ void StrategyTrackerClass::updateAlly()
 	{	
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
-		{
+		{			
 			// Strength based calculations ignore workers and buildings
 			if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
 			{
 				// Add strength				
 				globalAllyStrength += u.second.getStrength();
-
+								
 				// Set last command frame
 				if (u.first->isStartingAttack())
-				{
+				{					
 					u.second.setLastCommandFrame(Broodwar->getFrameCount());
 				}
 

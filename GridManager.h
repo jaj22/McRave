@@ -20,6 +20,10 @@ class GridTrackerClass
 	int allyPositionGrid[256][256];
 	int resourceGrid[256][256];
 	int mobilityGrid[256][256];
+	Position supportPosition;
+
+	double mobilityMiniGrid[1024][1024];
+	int antiMobilityMiniGrid[1024][1024];
 public:
 	void reset();
 	void update();	
@@ -28,6 +32,7 @@ public:
 	void updateNeutralGrids();
 	void updateMobilityGrids();
 
+	Position getSupportPosition() { return supportPosition; }
 	double getEGroundGrid(int x, int y) { return enemyGroundStrengthGrid[x][y]; }
 	double getEAairGrid(int x, int y) { return enemyAirStrengthGrid[x][y]; }	
 	int getEGroundCluster(int x, int y) { return enemyGroundClusterGrid[x][y]; }
@@ -37,6 +42,8 @@ public:
 	int getADetectorGrid(int x, int y) { return allyDetectorGrid[x][y]; }
 	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }
 	int getMobilityGrid(int x, int y) { return mobilityGrid[x][y]; }
+	double getMobilityMiniGrid(int x, int y) { return mobilityMiniGrid[x][y]; }
+	int getAntiMobilityMiniGrid(int x, int y) { return antiMobilityMiniGrid[x][y]; }
 };
 
 typedef Singleton<GridTrackerClass> GridTracker;

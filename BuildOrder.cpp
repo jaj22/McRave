@@ -4,6 +4,7 @@
 #include "ResourceManager.h"
 #include "ProductionManager.h"
 #include "StrategyManager.h"
+#include "TerrainManager.h"
 
 void BuildOrderTrackerClass::update()
 {
@@ -30,7 +31,7 @@ void BuildOrderTrackerClass::update()
 	}
 
 	// If no idle gates and we are floating minerals, add 1 more
-	if (Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))
+	if (Broodwar->self()->minerals() > 800 || Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))
 	{
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
@@ -39,7 +40,7 @@ void BuildOrderTrackerClass::update()
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0 && ProductionTracker::Instance().getIdleGates().size() == 0 && (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 || StrategyTracker::Instance().isFastExpand()))
 	{
 		getEarlyBuild = false;
-		getMidBuild = true;
+		getMidBuild = true;		
 	}
 
 	// If we are in mid game builds and we hit at least 4 gates, chances are we need to tech again
@@ -68,7 +69,14 @@ void BuildOrderTrackerClass::update()
 		/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
 	case Races::Enum::Terran:
 		earlyBuild = 1;
-		midBuild = 0;
+		if (TerrainTracker::Instance().isWalled())
+		{
+			midBuild = 3;
+		}
+		else
+		{
+			midBuild = 0;
+		}
 		lateBuild = 0;
 		break;
 

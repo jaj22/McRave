@@ -8,10 +8,9 @@
 #include "McRave.h"
 
 // TODOS:
+
 // Threat grids to minimize O(n^2) iterations in CommandTrackerClass::updateLocalStrategy
 // Save decision state (in UnitInfo?, new map?) (attack, retreat, contain)
-// Static defenses need redoing
-// Don't train Zealots against T unless speed upgraded
 // Spider mine removal from expansions
 // Observer spacing out by not moving to areas occupied by Observers destination
 // Change two gate core build - PvP maybe add Battery?
@@ -19,10 +18,7 @@
 // Move unit sizing to simplify strength calculations of explosive/concussive damage
 
 // Testing:
-// Boulder removal, heartbreak ridge is an issue - Testing
 // If scout dies, no base found - Testing
-// Invis units not being kited - Testing
-// Mobility grid - Testing
 // Crash testing when losing - Testing possible fix
 
 // Observer Manager
@@ -37,6 +33,9 @@ void McRave::onStart()
 
 	// Set the command optimization level so that common commands can be grouped and reduce the bot's APM (Actions Per Minute).
 	Broodwar->setCommandOptimizationLevel(2);
+
+	Broodwar->setLatCom(true);
+	Broodwar->setLocalSpeed(0);
 	
 	theMap.Initialize();
 	theMap.EnableAutomaticPathAnalysis();
@@ -118,7 +117,7 @@ void McRave::onUnitHide(BWAPI::Unit unit)
 
 void McRave::onUnitCreate(BWAPI::Unit unit)
 {
-	BuildingTracker::Instance().updateQueue(unit);	
+	BuildingTracker::Instance().updateQueue(unit);
 }
 
 void McRave::onUnitDestroy(BWAPI::Unit unit)
