@@ -2,6 +2,7 @@
 #include "TerrainManager.h"
 #include "BWTA.h"
 #include "GridManager.h"
+#include "SpecialUnitManager.h"
 
 using namespace BWAPI;
 using namespace std;
@@ -51,7 +52,7 @@ void UnitTrackerClass::storeUnits()
 		if (u->getType().supplyRequired() > 0)
 		{
 			supply = supply + u->getType().supplyRequired();
-		}
+		}		
 	}
 
 	// For all enemy units

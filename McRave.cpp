@@ -70,6 +70,7 @@ void McRave::onFrame()
 	ProbeTracker::Instance().update();
 	UnitTracker::Instance().update();
 	TargetTracker::Instance().update();
+	SpecialUnitTracker::Instance().update();
 	CommandTracker::Instance().update();	
 	BuildOrderTracker::Instance().update();
 	BuildingTracker::Instance().update();

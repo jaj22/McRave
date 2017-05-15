@@ -99,9 +99,9 @@ void TargetTrackerClass::unitGetClusterTarget(Unit unit)
 				// Reavers want ground clusters
 				if (unit->getType() == UnitTypes::Protoss_Reaver)
 				{
-					if (GridTracker::Instance().getEGroundCluster(x,y) > highest)
+					if (GridTracker::Instance().getEnemyGrdCluster(x,y) > highest)
 					{
-						highest = GridTracker::Instance().getEGroundCluster(x, y);
+						highest = GridTracker::Instance().getEnemyGrdCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
 				}
@@ -117,14 +117,14 @@ void TargetTrackerClass::unitGetClusterTarget(Unit unit)
 				// High Templars can have air or ground clusters
 				else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 				{
-					if (GridTracker::Instance().getEGroundCluster(x, y) > highest)
+					if (GridTracker::Instance().getEnemyGrdCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getEGroundCluster(x, y);
+						highest = GridTracker::Instance().getEnemyGrdCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
-					if (GridTracker::Instance().getEAirCluster(x, y) > highest)
+					if (GridTracker::Instance().getEnemyAirCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getEAirCluster(x, y);
+						highest = GridTracker::Instance().getEnemyAirCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
 				}

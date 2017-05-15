@@ -16,9 +16,11 @@
 #include "ProductionManager.h"
 #include "ResourceManager.h"
 #include "UnitManager.h"
+#include "SpecialUnitManager.h"
 #include "StrategyManager.h"
 #include "TargetManager.h"
 #include "TerrainManager.h"
+
 
 
 // Include standard libraries that are needed

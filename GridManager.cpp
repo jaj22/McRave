@@ -2,6 +2,7 @@
 #include "UnitManager.h"
 #include "TerrainManager.h"
 #include "ResourceManager.h"
+#include "SpecialUnitManager.h"
 
 bool doOnce = true;
 
@@ -33,9 +34,9 @@ void GridTrackerClass::reset()
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", resourceGrid[x][y]);
 			}
-			if (allyDetectorGrid[x][y] > 0)
+			if (observerGrid[x][y] > 0)
 			{
-				//Broodwar->drawTextMap(x * 32, y * 32, "%d", allyDetectorGrid[x][y]);
+				//Broodwar->drawTextMap(x * 32, y * 32, "%d", observerGrid[x][y]);
 			}
 			if (mobilityGrid[x][y] > 0)
 			{
@@ -58,8 +59,7 @@ void GridTrackerClass::reset()
 			allyClusterGrid[x][y] = 0;
 
 			// Reset other grids
-			allyDetectorGrid[x][y] = 0;
-			allyPositionGrid[x][y] = 0;
+			observerGrid[x][y] = 0;
 		}
 	}
 	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
@@ -101,6 +101,10 @@ void GridTrackerClass::update()
 
 void GridTrackerClass::updateAllyGrids()
 {
+	// -- Anti Mobility Grid --
+	// For all my units, it gets the units tile position and uses it to find the closest mini tile on which it's standing on
+	// Any mini tile on which a unit is standing is considered not mobile
+	// All buildings have a buffer zone of 2 mini tiles around it to prevent issues with collision on edges and All buildings have a slightly higher width and height due to BWAPI
 	for (auto u : Broodwar->self()->getUnits())
 	{
 		int startX = 0;
@@ -138,7 +142,7 @@ void GridTrackerClass::updateAllyGrids()
 		int offsetX = u.second.getPosition().x % 32;
 		int offsetY = u.second.getPosition().y % 32;
 
-		// Ally cluster
+		// Ally cluster grid
 		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
 		{
 			for (int x = unitTilePosition.x - 5; x <= unitTilePosition.x + 6; x++)
@@ -153,7 +157,7 @@ void GridTrackerClass::updateAllyGrids()
 			}
 		}
 
-		// Ally detection
+		// Ally detection grid
 		if (u.second.getUnitType() == UnitTypes::Protoss_Observer)
 		{
 			for (int x = unitTilePosition.x - 5; x <= unitTilePosition.x + 6; x++)
@@ -162,7 +166,7 @@ void GridTrackerClass::updateAllyGrids()
 				{
 					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= 160)
 					{
-						allyDetectorGrid[x][y] += 1;
+						observerGrid[x][y] += 1;
 					}
 				}
 			}
@@ -196,7 +200,7 @@ void GridTrackerClass::updateEnemyGrids()
 			{
 				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
 				{
-					if ((u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= (range * 32) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
+					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= (range * 32))
 					{
 						enemyGroundStrengthGrid[x][y] += u.second.getStrength();
 					}
@@ -211,7 +215,7 @@ void GridTrackerClass::updateEnemyGrids()
 			{
 				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
 				{
-					if (u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32) && x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
+					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32))
 					{
 						enemyAirStrengthGrid[x][y] += u.second.getStrength();
 					}
@@ -336,6 +340,52 @@ void GridTrackerClass::updateMobilityGrids()
 							}
 						}
 					}
+				}
+			}
+		}
+	}
+}
+
+void GridTrackerClass::updateObserverGrids()
+{
+	for (auto u : SpecialUnitTracker::Instance().getMyObservers())
+	{
+		int initialx = TilePosition(u.second.getDestination()).x;
+		int initialy = TilePosition(u.second.getDestination()).y;
+		int offsetX = u.second.getPosition().x % 32;
+		int offsetY = u.second.getPosition().y % 32;
+
+		for (int x = initialx - 9; x <= initialx + 9; x++)
+		{
+			for (int y = initialy - 9; y <= initialy + 9; y++)
+			{
+				// Create a circle of detection rather than a square
+				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (Position(offsetX, offsetY) + u.second.getPosition()).getDistance(Position(x * 32, y * 32)) < 288)
+				{
+					observerGrid[x][y] += 1;
+				}
+			}
+		}
+	}
+}
+
+void GridTrackerClass::updateArbiterGrids()
+{
+	for (auto u : SpecialUnitTracker::Instance().getMyArbiters())
+	{
+		int initialx = TilePosition(u.second.getDestination()).x;
+		int initialy = TilePosition(u.second.getDestination()).y;
+		int offsetX = u.second.getPosition().x % 32;
+		int offsetY = u.second.getPosition().y % 32;
+
+		for (int x = initialx - 9; x <= initialx + 9; x++)
+		{
+			for (int y = initialy - 9; y <= initialy + 9; y++)
+			{
+				// Create a circle of detection rather than a square
+				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (Position(offsetX, offsetY) + u.second.getPosition()).getDistance(Position(x * 32, y * 32)) < 288)
+				{
+					arbiterGrid[x][y] += 1;
 				}
 			}
 		}

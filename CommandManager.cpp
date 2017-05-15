@@ -11,6 +11,12 @@ void CommandTrackerClass::update()
 		updateLocalStrategy(u.first, u.second.getTarget());
 		updateGlobalStrategy(u.first, u.second.getTarget());
 
+		// For now, special units still relies on unit manager information somewhat but not for commands
+		if (u.second.getUnitType() == UnitTypes::Protoss_High_Templar || u.second.getUnitType() == UnitTypes::Protoss_Arbiter || u.second.getUnitType() == UnitTypes::Protoss_Observer)
+		{
+			continue;
+		}
+
 		//// Latency returning for now, else make a decision
 		//if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
 		//{
@@ -41,19 +47,6 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 		unit->train(UnitTypes::Protoss_Scarab);
 	}
 
-	if (unit->getType() == UnitTypes::Protoss_High_Templar)
-	{
-		templarManager(unit);
-	}
-	else if (unit->getType() == UnitTypes::Protoss_Arbiter)
-	{
-		arbiterManager(unit);
-	}
-	else if (unit->getType() == UnitTypes::Protoss_Observer)
-	{
-		observerManager(unit);
-	}
-
 	// Attack
 	if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 1 && target->exists())
 	{
@@ -71,7 +64,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 		}
 
 		// Create concave when containing units
-		if (GridTracker::Instance().getEGroundGrid(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 && globalStrategy == 1)
+		if (GridTracker::Instance().getEnemyGrd(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 && globalStrategy == 1)
 		{
 			Position fleePosition = unitFlee(unit, target);
 			if (fleePosition != Positions::None)
@@ -326,7 +319,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	}
 
 	// If unit is in range of a target and not currently threatened, attack instead of running
-	if (unit->getDistance(targetPosition) <= UnitTracker::Instance().getMyUnits()[unit].getRange() && (GridTracker::Instance().getEGroundGrid(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 || unit->getType() == UnitTypes::Protoss_Reaver))
+	if (unit->getDistance(targetPosition) <= UnitTracker::Instance().getMyUnits()[unit].getRange() && (GridTracker::Instance().getEnemyGrd(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 || unit->getType() == UnitTypes::Protoss_Reaver))
 	{
 		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 		return;
@@ -406,13 +399,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 	if (unit->getType() == UnitTypes::Protoss_Dragoon)
 	{
 		offset = 9;
-	}
-	if (unit->getType() == UnitTypes::Protoss_Reaver)
-	{
-		offset = 1;
-	}
-
-
+	}	
 
 	// If kiting unnecessary, disable
 	if (target->getType().isBuilding() || unit->getType() == UnitTypes::Protoss_Corsair)
@@ -420,6 +407,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 		kite = false;
 	}
 
+	// Reavers should always kite away from their target if it has lower range
 	else if (unit->getType() == UnitTypes::Protoss_Reaver && UnitTracker::Instance().getEnUnits()[target].getRange() < range)
 	{
 		kite = true;
@@ -443,7 +431,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 				unit->move(Position(correctedFleePosition.x + rand() % 3 + (-1), correctedFleePosition.y + rand() % 3 + (-1)));				
 			}
 		}
-		else if (unit->getGroundWeaponCooldown() <= 0 && !unit->isStartingAttack())
+		else if (unit->getGroundWeaponCooldown() <= 0)
 		{
 			// If unit receieved an attack command on the target already, don't give another order - TODO: Test if it could be removed maybe to prevent goon stop bug
 			if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && Broodwar->getFrameCount() - unit->getLastCommandFrame() < unit->getType().groundWeapon().damageCooldown() && UnitTracker::Instance().getMyUnits()[unit].getTarget() == target)
@@ -529,7 +517,7 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 		{			
 			distanceTarget = Position(i * 8, j * 8).getDistance(currentTargetPosition);
 			distanceHome = Position(i * 8, j * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
-			if (GridTracker::Instance().getAntiMobilityMiniGrid(i, j) == 0 && GridTracker::Instance().getEGroundGrid((i - (i % 32)) / 4, (j - (j % 32)) / 4) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome > myMobile /*|| (GridTracker::Instance().getMobilityMiniGrid(i, j) == myMobile && distanceTarget > myDistance))*/)
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(i, j) == 0 && GridTracker::Instance().getEnemyGrd((i - (i % 32)) / 4, (j - (j % 32)) / 4) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome > myMobile /*|| (GridTracker::Instance().getMobilityMiniGrid(i, j) == myMobile && distanceTarget > myDistance))*/)
 			{
 				myMobile = GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget/ distanceHome;
 				finalPosition = Position(i * 8, j * 8);	
@@ -556,7 +544,7 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	//	if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
 	//	{
 	//		Position newPosition = Position(TilePosition(x, y));
-	//		if (GridTracker::Instance().getEGroundGrid(x, y) == 0.0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
+	//		if (GridTracker::Instance().getEnemyGrd(x, y) == 0.0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
 	//		{
 	//			return newPosition;
 	//		}
