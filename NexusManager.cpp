@@ -39,7 +39,7 @@ void NexusTrackerClass::storeNexus()
 	{
 		if (nexus->getType() == UnitTypes::Protoss_Nexus && myNexus.find(nexus) == myNexus.end())
 		{
-			NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus), nullptr);		
+			NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus));		
 			myNexus[nexus] = newUnit;
 		}
 	}

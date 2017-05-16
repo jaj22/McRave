@@ -12,6 +12,7 @@ private:
 	TilePosition staticPosition;
 public:
 	// Constructors
+	NexusInfo();
 	NexusInfo(int, TilePosition);
 
 	// Accessors

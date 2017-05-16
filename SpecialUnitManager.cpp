@@ -7,7 +7,6 @@
 void SpecialUnitTrackerClass::update()
 {
 	storeUnits();
-	removeUnits();
 	updateArbiters();
 	updateObservers();
 	updateTemplars();

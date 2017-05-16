@@ -36,10 +36,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	{
 		return;
 	}
-	if (!target || target == nullptr)
-	{
-		return;
-	}
+		
 
 	// If Reaver, train scarabs
 	if (unit->getType() == UnitTypes::Protoss_Reaver && unit->getScarabCount() < 5)
@@ -47,37 +44,27 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 		unit->train(UnitTypes::Protoss_Scarab);
 	}
 
-	// Attack
-	if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 1 && target->exists())
+	// Check if we have a target
+	if (target && target != nullptr)
 	{
-		unitMicroTarget(unit, target);
-		return;
-	}
-	// Retreat
-	if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 0)
-	{
-		// Force engage Zealots on ramp
-		if (TerrainTracker::Instance().getAllyTerritory().size() <= 1 && unit->getDistance(TerrainTracker::Instance().getDefendHere().at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
+		// Attack
+		if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 1 && target->exists())
 		{
 			unitMicroTarget(unit, target);
 			return;
 		}
-
-		// Create concave when containing units
-		if (GridTracker::Instance().getEnemyGrd(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 && globalStrategy == 1)
+		// Retreat
+		if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 0)
 		{
-			Position fleePosition = unitFlee(unit, target);
-			if (fleePosition != Positions::None)
+			// Force engage Zealots on ramp
+			if (TerrainTracker::Instance().getAllyTerritory().size() <= 1 && unit->getDistance(TerrainTracker::Instance().getDefendHere().at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
 			{
-				unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
+				unitMicroTarget(unit, target);
+				return;
 			}
-			return;
-		}
 
-		// For each defensive position, find closest one		
-		for (auto position : TerrainTracker::Instance().getDefendHere())
-		{
-			if (unit->getDistance(position) < 320 || TerrainTracker::Instance().getAllyTerritory().find(getRegion(unit->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+			// Create concave when containing units
+			if (GridTracker::Instance().getEnemyGrd(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 && globalStrategy == 1)
 			{
 				Position fleePosition = unitFlee(unit, target);
 				if (fleePosition != Positions::None)
@@ -86,19 +73,33 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 				}
 				return;
 			}
-			if (unit->getDistance(position) <= closestD || closestD == 0.0)
-			{
-				closestD = unit->getDistance(position);
-				closestP = position;
-			}
-		}
 
-		// If last command was too far away from this position, move there
-		if (unit->getLastCommand().getTargetPosition().getDistance(TerrainTracker::Instance().getDefendHere().at(0)) > 5)
-		{
-			unit->move(Position(TerrainTracker::Instance().getDefendHere().at(0).x + rand() % 3 + (-1), TerrainTracker::Instance().getDefendHere().at(0).y + rand() % 3 + (-1)));
+			// For each defensive position, find closest one		
+			for (auto position : TerrainTracker::Instance().getDefendHere())
+			{
+				if (unit->getDistance(position) < 320 || TerrainTracker::Instance().getAllyTerritory().find(getRegion(unit->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+				{
+					Position fleePosition = unitFlee(unit, target);
+					if (fleePosition != Positions::None)
+					{
+						unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
+					}
+					return;
+				}
+				if (unit->getDistance(position) <= closestD || closestD == 0.0)
+				{
+					closestD = unit->getDistance(position);
+					closestP = position;
+				}
+			}
+
+			// If last command was too far away from this position, move there
+			if (unit->getLastCommand().getTargetPosition().getDistance(TerrainTracker::Instance().getDefendHere().at(0)) > 5)
+			{
+				unit->move(Position(TerrainTracker::Instance().getDefendHere().at(0).x + rand() % 3 + (-1), TerrainTracker::Instance().getDefendHere().at(0).y + rand() % 3 + (-1)));
+			}
+			return;
 		}
-		return;
 	}
 
 
@@ -158,7 +159,15 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 			unitMicroTarget(unit, target);
 			return;
 		}
-		unit->attack(TerrainTracker::Instance().getEnemyBasePositions().back());
+		for (auto base : TerrainTracker::Instance().getEnemyBasePositions())
+		{
+			if (unit->getDistance(base) < closestD || closestD == 0.0)
+			{
+				closestP = base;
+				closestD = unit->getDistance(base);
+			}
+		}
+		unit->attack(closestP);
 		return;
 	}
 }
@@ -434,7 +443,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 		else if (unit->getGroundWeaponCooldown() <= 0)
 		{
 			// If unit receieved an attack command on the target already, don't give another order - TODO: Test if it could be removed maybe to prevent goon stop bug
-			if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && UnitTracker::Instance().getMyUnits()[unit].getTarget() == target)
+			if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit->getLastCommand().getTarget() == target)
 			{
 				return;
 			}

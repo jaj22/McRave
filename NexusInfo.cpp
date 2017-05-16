@@ -7,6 +7,12 @@ NexusInfo::NexusInfo(int newStaticDefenseCount, TilePosition newStaticPosition)
 	staticPosition = newStaticPosition;
 }
 
+NexusInfo::NexusInfo()
+{
+	staticDefenseCount = 0;
+	staticPosition = TilePositions::None;
+}
+
 // Accessors
 int NexusInfo::getStaticDefenseCount() const
 {

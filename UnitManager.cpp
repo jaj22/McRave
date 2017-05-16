@@ -168,7 +168,7 @@ double unitGetStrength(UnitType unitType)
 	{
 		return 5.0;
 	}
-	return 0.5;
+	return 1.0;
 }
 double unitGetAirStrength(UnitType unitType)
 {
