@@ -33,14 +33,14 @@ void GridTrackerClass::reset()
 			if (resourceGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", resourceGrid[x][y]);
-			}
-			if (observerGrid[x][y] > 0)
-			{
-				//Broodwar->drawTextMap(x * 32, y * 32, "%d", observerGrid[x][y]);
-			}
+			}			
 			if (mobilityGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", mobilityGrid[x][y]);
+			}
+			if (observerGrid[x][y] > 0)
+			{
+				Broodwar->drawTextMap(x * 32, y * 32, "%d", observerGrid[x][y]);
 			}
 
 			if (allyClusterGrid[x][y] > strongest)
@@ -143,7 +143,7 @@ void GridTrackerClass::updateAllyGrids()
 		int offsetY = u.second.getPosition().y % 32;
 
 		// Ally cluster grid
-		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
+		if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding() && u.second.getUnitType() != UnitTypes::Protoss_Arbiter && u.second.getUnitType() != UnitTypes::Protoss_Observer)
 		{
 			for (int x = unitTilePosition.x - 5; x <= unitTilePosition.x + 6; x++)
 			{
@@ -152,21 +152,6 @@ void GridTrackerClass::updateAllyGrids()
 					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= 160)
 					{
 						allyClusterGrid[x][y] += 1;
-					}
-				}
-			}
-		}
-
-		// Ally detection grid
-		if (u.second.getUnitType() == UnitTypes::Protoss_Observer)
-		{
-			for (int x = unitTilePosition.x - 5; x <= unitTilePosition.x + 6; x++)
-			{
-				for (int y = unitTilePosition.y - 5; y <= unitTilePosition.y + 6; y++)
-				{
-					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= 160)
-					{
-						observerGrid[x][y] += 1;
 					}
 				}
 			}
@@ -362,7 +347,7 @@ void GridTrackerClass::updateObserverGrids()
 				// Create a circle of detection rather than a square
 				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (Position(offsetX, offsetY) + u.second.getPosition()).getDistance(Position(x * 32, y * 32)) < 288)
 				{
-					observerGrid[x][y] += 1;
+					observerGrid[x][y] = 1;
 				}
 			}
 		}

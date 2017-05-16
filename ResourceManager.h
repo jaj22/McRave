@@ -25,8 +25,8 @@ public:
 	void storeMineral(Unit);
 	void storeGas(Unit);
 	void storeBoulder(Unit);
-	void removeMineral(Unit);
-	void removeGas(Unit);
+	void removeResource(Unit);
+
 	void update();
 };
 

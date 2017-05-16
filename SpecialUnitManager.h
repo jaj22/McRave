@@ -14,7 +14,6 @@ class SpecialUnitTrackerClass
 	map <Unit, SpecialUnitInfoClass> myObservers;
 	map <Unit, SpecialUnitInfoClass> myTemplars;
 public:
-
 	void update();
 	void updateArbiters();
 	void updateObservers();

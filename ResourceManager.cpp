@@ -80,13 +80,18 @@ void ResourceTrackerClass::storeBoulder(Unit resource)
 	return;
 }
 
-void ResourceTrackerClass::removeMineral(Unit resource)
+void ResourceTrackerClass::removeResource(Unit resource)
 {
-	myMinerals.erase(resource);
-}
-
-void ResourceTrackerClass::removeGas(Unit resource)
-{
-	
-	myGas.erase(resource);
+	if (myMinerals.find(resource) != myMinerals.end())
+	{
+		myMinerals.erase(resource);
+	}
+	if (myGas.find(resource) != myGas.end())
+	{
+		myGas.erase(resource);
+	}
+	if (myBoulders.find(resource) != myBoulders.end())
+	{
+		myBoulders.erase(resource);
+	}
 }

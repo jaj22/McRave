@@ -1,7 +1,13 @@
 #include "SpecialUnitInfo.h"
 
-SpecialUnitInfo::SpecialUnitInfo(Position newPosition, Position newDestination)
+SpecialUnitInfoClass::SpecialUnitInfoClass(Position newPosition, Position newDestination)
 {
 	position = newPosition;
 	destination = newDestination;
+}
+
+SpecialUnitInfoClass::SpecialUnitInfoClass()
+{
+	position = Positions::None;
+	destination = Positions::None;
 }

@@ -158,7 +158,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 			unitMicroTarget(unit, target);
 			return;
 		}
-		unit->attack(TerrainTracker::Instance().getEnemyBasePositions().front());
+		unit->attack(TerrainTracker::Instance().getEnemyBasePositions().back());
 		return;
 	}
 }
@@ -434,7 +434,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 		else if (unit->getGroundWeaponCooldown() <= 0)
 		{
 			// If unit receieved an attack command on the target already, don't give another order - TODO: Test if it could be removed maybe to prevent goon stop bug
-			if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && Broodwar->getFrameCount() - unit->getLastCommandFrame() < unit->getType().groundWeapon().damageCooldown() && UnitTracker::Instance().getMyUnits()[unit].getTarget() == target)
+			if (unit->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && UnitTracker::Instance().getMyUnits()[unit].getTarget() == target)
 			{
 				return;
 			}

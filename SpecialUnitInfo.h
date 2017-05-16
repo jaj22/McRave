@@ -10,7 +10,7 @@ class SpecialUnitInfoClass
 {
 	Position position, destination;
 public:
-
+	SpecialUnitInfoClass();
 	SpecialUnitInfoClass(Position, Position);
 
 	Position getPosition() { return position; }

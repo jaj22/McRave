@@ -2,6 +2,7 @@
 #include "TerrainManager.h"
 #include "GridManager.h"
 #include "UnitManager.h"
+#include "BuildOrder.h"
 
 void SpecialUnitTrackerClass::update()
 {
@@ -22,9 +23,9 @@ void SpecialUnitTrackerClass::updateArbiters()
 		double closestD = u.second.getDestination().getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
 		for (int x = initial_x - 12; x <= initial_x + 12; x++)
 		{
-			for (int y = initial_y - 12; x <= initial_y + 12; y++)
+			for (int y = initial_y - 12; y <= initial_y + 12; y++)
 			{
-				if (GridTracker::Instance().getArbiterGrid(x, y) == 0 && GridTracker::Instance().getEnemyAir(x, y) == 0 && GridTracker::Instance().getAllyCluster(x, y) > 0 && Position(TilePosition(x, y)).getDistance(TerrainTracker::Instance().getPlayerStartingPosition()) < closestD)
+				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && GridTracker::Instance().getArbiterGrid(x, y) == 0 && GridTracker::Instance().getEnemyAir(x, y) == 0 && GridTracker::Instance().getAllyCluster(x, y) > 0 && Position(TilePosition(x, y)).getDistance(TerrainTracker::Instance().getPlayerStartingPosition()) < closestD)
 				{
 					newDestination = Position(TilePosition(x, y));
 				}
@@ -51,15 +52,18 @@ void SpecialUnitTrackerClass::updateObservers()
 	for (auto u : myObservers)
 	{
 		// First check if any expansions need detection on them
-		for (auto base : TerrainTracker::Instance().getNextExpansion())
+		if (BuildOrderTracker::Instance().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
 		{
-			// If an expansion is unbuildable and we've scouted it already, move there to detect burrowed units
-			if (!Broodwar->canBuildHere(base, UnitTypes::Protoss_Nexus, nullptr, true))
+			for (auto base : TerrainTracker::Instance().getNextExpansion())
 			{
-				u.second.setDestination(Position(base));
-				u.first->move(Position(base));
-				GridTracker::Instance().updateObserverGrids();
-				continue;
+				// If an expansion is unbuildable and we've scouted it already, move there to detect burrowed units
+				if (!Broodwar->canBuildHere(base, UnitTypes::Protoss_Nexus, nullptr, true))
+				{
+					u.second.setDestination(Position(base));
+					u.first->move(Position(base));
+					GridTracker::Instance().updateObserverGrids();
+					continue;
+				}
 			}
 		}
 		
@@ -68,15 +72,16 @@ void SpecialUnitTrackerClass::updateObservers()
 		// TODO: Add enemy detection to optimal
 		int initial_x = TilePosition(u.second.getPosition()).x;
 		int initial_y = TilePosition(u.second.getPosition()).y;
-		Position newDestination = u.second.getDestination();
+		Position newDestination = TerrainTracker::Instance().getPlayerStartingPosition();
 		double closestD = u.second.getDestination().getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
-		for (int x = initial_x - 12; x <= initial_x + 12; x++)
+		for (int x = initial_x - 24; x <= initial_x + 24; x++)
 		{
-			for (int y = initial_y - 12; x <= initial_y + 12; y++)
+			for (int y = initial_y - 24; y <= initial_y + 24; y++)
 			{
-				if (GridTracker::Instance().getObserverGrid(x,y) == 0 && GridTracker::Instance().getEnemyAir(x,y) == 0 && GridTracker::Instance().getAllyCluster(x,y) > 0 && Position(TilePosition(x,y)).getDistance(TerrainTracker::Instance().getPlayerStartingPosition()) < closestD)
+				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && GridTracker::Instance().getObserverGrid(x, y) == 0 && GridTracker::Instance().getEnemyAir(x, y) == 0.0 && GridTracker::Instance().getAllyCluster(x, y) > GridTracker::Instance().getAllyCluster(newDestination.x / 32, newDestination.y / 32) && Position(TilePosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD)
 				{
 					newDestination = Position(TilePosition(x, y));
+					closestD = Position(TilePosition(x, y)).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
 				}
 			}
 		}
@@ -96,6 +101,10 @@ void SpecialUnitTrackerClass::storeUnits()
 {
 	for (auto &u : Broodwar->self()->getUnits())
 	{
+		if (!u->isCompleted())
+		{
+			continue;
+		}
 		if (u->getType() == UnitTypes::Protoss_Arbiter)
 		{
 			myArbiters[u] = SpecialUnitInfoClass(u->getPosition(), u->getPosition());

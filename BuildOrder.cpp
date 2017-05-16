@@ -169,7 +169,7 @@ void BuildOrderTrackerClass::midBuilds()
 	switch (midBuild){
 	case 0:
 		// -- Reavers --		
-		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
+		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon)/4);
 		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
 		//currentStrategy.assign("Robo Tech");
