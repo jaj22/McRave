@@ -11,12 +11,6 @@ using namespace BWTA;
 bool harassing = false;
 bool stimResearched = false;
 
-// Store units current command and what that command is doing (moving, where? enemy expansion/enemy main/enemy harass)
-//		This storage can be used to count the strength of those units doing that command and see if it's sufficient to defend/attack that area
-// Map invisible units to number of detectors moving to position?
-// Add scout intercepting (based on velocity and direction?)
-// Combat sim so there's no army swarming 1 unit
-
 void UnitTrackerClass::update()
 {	
 	storeUnits();
@@ -159,7 +153,7 @@ double unitGetStrength(UnitType unitType)
 			damage = damage * 1.33;
 		}
 
-		// Hp		
+		// Hp, assume half strength for shields, they're not very strong in most matchups
 		hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
 
 		// Assume strength doubled for units that can use Stim to prevent poking into armies frequently
@@ -218,7 +212,9 @@ double unitGetVisibleStrength(Unit unit)
 	if (unit->isStimmed())
 	{
 		stimResearched = true;
-	}
+	}	
+
+	// Make units under an Arbiter feel stronger
 	if (unit->getPlayer() == Broodwar->self() && unit->isCloaked() && !unit->isDetected())
 	{
 		return 4.0 * hp * unitGetStrength(unit->getType());
@@ -227,7 +223,8 @@ double unitGetVisibleStrength(Unit unit)
 }
 double unitGetTrueRange(UnitType unitType, Player who)
 {
-	// Ranged upgrade check
+	// Ranged upgrade check for Dragoons, Marines, Hydralisks and Bunkers
+
 	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 	{
 		return 192.0;
@@ -235,10 +232,6 @@ double unitGetTrueRange(UnitType unitType, Player who)
 	else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
 	{
 		return 160.0;
-	}
-	else if (unitType == UnitTypes::Protoss_Reaver)
-	{
-		return 256.0;
 	}
 	else if (unitType == UnitTypes::Terran_Bunker)
 	{
@@ -250,6 +243,12 @@ double unitGetTrueRange(UnitType unitType, Player who)
 		{
 			return 160.0;
 		}
+	}
+
+	// Correct range of Reavers
+	else if (unitType == UnitTypes::Protoss_Reaver)
+	{
+		return 256.0;
 	}
 	return double(unitType.groundWeapon().maxRange());
 }

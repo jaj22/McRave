@@ -22,7 +22,7 @@ class TerrainTrackerClass
 	set <BWTA::Region*> allyTerritory;
 	vector<BWTA::Region*> enemyTerritory;
 	vector<Position> defendHere;
-	vector<Position> enemyBasePositions;
+	set<Position> enemyBasePositions;
 	vector<TilePosition> nextExpansion;
 	vector<TilePosition> activeExpansion;
 	Position enemyStartingPosition, playerStartingPosition;
@@ -33,13 +33,15 @@ public:
 	bool getAnalyzed() { return analyzed; }
 	bool isWalled() { return wallin; }
 	void setWalled() { wallin = true; }
+
+	void removeEnemyBase(Unit);
 	
 	BWEM::CPPath getPath() { return path; }
 	set <BWTA::Region*>& getTerritory() { return territory; }
 	set <BWTA::Region*>& getAllyTerritory() { return allyTerritory; }
 	vector<BWTA::Region*> getEnemyTerritory() { return enemyTerritory; }
 	vector<Position>& getDefendHere() { return defendHere; }
-	vector<Position>& getEnemyBasePositions() { return enemyBasePositions; }
+	set<Position>& getEnemyBasePositions() { return enemyBasePositions; }
 	vector<TilePosition>& getNextExpansion() { return nextExpansion; }
 	vector<TilePosition>& getActiveExpansion() { return activeExpansion; }
 	Position getEnemyStartingPosition() { return enemyStartingPosition; }

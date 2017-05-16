@@ -1,21 +1,10 @@
 #include "NexusInfo.h"
 
 // Constructors
-NexusInfo::NexusInfo()
-{
-	staticDefenseCount = 0;
-	staticPosition = TilePositions::None;
-	pylon = nullptr;
-}
-NexusInfo::~NexusInfo()
-{
-
-}
-NexusInfo::NexusInfo(int newStaticDefenseCount, TilePosition newStaticPosition, Unit newPylon)
+NexusInfo::NexusInfo(int newStaticDefenseCount, TilePosition newStaticPosition)
 {
 	staticDefenseCount = newStaticDefenseCount;
 	staticPosition = newStaticPosition;
-	pylon = newPylon;
 }
 
 // Accessors
@@ -26,10 +15,6 @@ int NexusInfo::getStaticDefenseCount() const
 TilePosition NexusInfo::getStaticPosition() const
 {
 	return staticPosition;
-}
-Unit NexusInfo::getPylon() const
-{
-	return pylon;
 }
 
 
@@ -42,8 +27,4 @@ void NexusInfo::setStaticDefenseCount(int newStaticDefenseCount)
 void NexusInfo::setStaticPosition(TilePosition newPosition)
 {
 	staticPosition = newPosition;
-}
-void NexusInfo::setPylon(Unit newPylon)
-{
-	pylon = newPylon;
 }

@@ -14,6 +14,7 @@ class NexusTrackerClass
 public:
 	void update();
 	void storeNexus();
+	void removeNexus(Unit);
 	void trainProbes();
 	void updateDefenses();
 };

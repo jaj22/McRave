@@ -94,7 +94,28 @@ void SpecialUnitTrackerClass::updateObservers()
 
 void SpecialUnitTrackerClass::updateTemplars()
 {
-
+	for (auto u : myTemplars)
+	{
+		Unit target = UnitTracker::Instance().getMyUnits()[u.first].getTarget();
+		int stratL = UnitTracker::Instance().getMyUnits()[u.first].getStrategy();
+		if (stratL == 1 || stratL == 0)
+		{
+			if (target)
+			{
+				if (u.first->getEnergy() > 75)
+				{
+					u.first->useTech(TechTypes::Psionic_Storm, target);
+					return;
+				}
+				else if (u.first->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar) && (u.first->getEnergy() < 70 || u.first->isUnderAttack()))
+				{
+					u.first->useTech(TechTypes::Archon_Warp, u.first->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
+					return;
+				}
+			}
+		}
+	}
+	return;
 }
 
 void SpecialUnitTrackerClass::storeUnits()
@@ -120,7 +141,18 @@ void SpecialUnitTrackerClass::storeUnits()
 	}
 }
 
-void SpecialUnitTrackerClass::removeUnits()
+void SpecialUnitTrackerClass::removeUnit(Unit unit)
 {
-	// Erase units using manual iteration
+	if (myArbiters.find(unit) != myArbiters.end())
+	{
+		myArbiters.erase(unit);
+	}
+	else if (myObservers.find(unit) != myObservers.end())
+	{
+		myObservers.erase(unit);
+	}
+	else if (myTemplars.find(unit) != myTemplars.end())
+	{
+		myTemplars.erase(unit);
+	}
 }

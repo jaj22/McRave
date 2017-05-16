@@ -45,6 +45,18 @@ void NexusTrackerClass::storeNexus()
 	}
 }
 
+void NexusTrackerClass::removeNexus(Unit nexus)
+{
+	if (myNexus.find(nexus) != myNexus.end())
+	{
+		myNexus.erase(nexus);
+		if (TerrainTracker::Instance().getAllyTerritory().find(getRegion(nexus->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+		{
+			TerrainTracker::Instance().getAllyTerritory().erase(getRegion(nexus->getTilePosition()));
+		}
+	}
+}
+
 void NexusTrackerClass::trainProbes()
 {
 	for (auto nexus : myNexus)
@@ -66,7 +78,7 @@ void NexusTrackerClass::updateDefenses()
 		}
 
 		// Emplace the ally territory
-		TerrainTracker::Instance().getAllyTerritory().emplace(getRegion(nexus.second.getStaticPosition()));
+		TerrainTracker::Instance().getAllyTerritory().emplace(getRegion(nexus.first->getTilePosition()));
 
 
 		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge) == 0 || !nexus.first->isCompleted())
@@ -74,8 +86,8 @@ void NexusTrackerClass::updateDefenses()
 			continue;
 		}
 
-		nexus.second.setStaticDefenseCount(nexus.first->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size());
-		Broodwar->drawCircleMap(Position(nexus.second.getStaticPosition()), 12, Colors::Red, true);		
+		nexus.second.setStaticDefenseCount(nexus.first->getUnitsInRadius(640, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size());
+				
 		if (!Broodwar->hasPower(nexus.second.getStaticPosition()) && Broodwar->getUnitsInRadius(Position(nexus.second.getStaticPosition()), 256, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() == 0)
 		{
 			Unit builder = Broodwar->getClosestUnit(Position(nexus.second.getStaticPosition()), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);

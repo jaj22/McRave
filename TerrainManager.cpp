@@ -2,12 +2,15 @@
 #include "ProbeManager.h"
 #include "src\bwem.h"
 
+// TODO:
+// nextExpansion doesn't need to be a vector, can be a map indexed by distance, useful to expand to an area that is currently not under threat (won't need testbases map either)
+
 void TerrainTrackerClass::update()
 {	
 	// Three stage analysis
 	// 1) Wait for BWTA to analyze or load map cache
 	// 2) Analyze starting position
-	// 3) Analye map when enemy found
+	// 3) Analye map when enemy found	
 
 	// Only do this loop once if map analysis done
 	if (analyzed)
@@ -110,7 +113,7 @@ void TerrainTrackerClass::update()
 			currentSize = allyTerritory.size();
 			// For each region that is ally territory
 			for (auto *region : allyTerritory)
-			{
+			{				
 				// For each chokepoint of each ally region				
 				for (auto Chokepoint : region->getChokepoints())
 				{
@@ -165,7 +168,7 @@ void TerrainTrackerClass::update()
 						}
 					}
 
-					enemyBasePositions.push_back(enemyStartingPosition);
+					enemyBasePositions.emplace(enemyStartingPosition);
 					path = theMap.GetPath(playerStartingPosition, enemyStartingPosition);
 				}
 			}
@@ -176,4 +179,12 @@ void TerrainTrackerClass::update()
 void TerrainTrackerClass::setAnalyzed()
 {
 	analyzed = true;
+}
+
+void TerrainTrackerClass::removeEnemyBase(Unit base)
+{
+	if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
+	{
+		enemyBasePositions.erase(base->getPosition());
+	}
 }

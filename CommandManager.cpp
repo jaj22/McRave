@@ -602,34 +602,8 @@ void CommandTrackerClass::arbiterManager(Unit unit)
 	}
 }
 
-void CommandTrackerClass::observerManager(Unit unit)
-{		
-	// Make sure we don't overwrite commands
-	if (unit->getLastCommandFrame() < Broodwar->getFrameCount())
-	{
-		unit->move(GridTracker::Instance().getSupportPosition());
-	}
-}
 
 void CommandTrackerClass::templarManager(Unit unit)
 {
-	Unit target = UnitTracker::Instance().getMyUnits()[unit].getTarget();
-	int stratL = UnitTracker::Instance().getMyUnits()[unit].getStrategy();
-	if (stratL == 1 || stratL == 0)
-	{
-		if (target != unit)
-		{
-			if (unit->getEnergy() > 75)
-			{
-				unit->useTech(TechTypes::Psionic_Storm, target);
-				return;
-			}
-			else if (unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar) && (unit->getEnergy() < 70 || unit->isUnderAttack()))
-			{
-				unit->useTech(TechTypes::Archon_Warp, unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
-				return;
-			}
-		}
-	}
-	return;
+	
 }

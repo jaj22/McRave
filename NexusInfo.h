@@ -10,20 +10,16 @@ class NexusInfo{
 private:
 	int staticDefenseCount;
 	TilePosition staticPosition;
-	Unit pylon;
 public:
 	// Constructors
-	NexusInfo();
-	~NexusInfo();
-	NexusInfo(int, TilePosition, Unit);
+	NexusInfo(int, TilePosition);
 
 	// Accessors
 	int getStaticDefenseCount() const;
 	TilePosition getStaticPosition() const;
-	Unit getPylon() const;
+
 
 	// Mutators
 	void setStaticDefenseCount(int);
 	void setStaticPosition(TilePosition);
-	void setPylon(Unit);
 };

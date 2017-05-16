@@ -36,7 +36,14 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 			continue;
 		}
 
+		// If the enemy is stasised, ignore it
 		if (u.first->exists() && u.first->isStasised())
+		{
+			continue;
+		}
+
+		// If the enemy is further than 20 tiles away, ignore it
+		if (u.first->getDistance(unit) > 640)
 		{
 			continue;
 		}
@@ -82,6 +89,7 @@ void TargetTrackerClass::unitGetClusterTarget(Unit unit)
 	int highest = 0, range = 10;
 	TilePosition clusterTile;
 	UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
+	UnitTracker::Instance().getMyUnits()[unit].setTarget(nullptr);
 
 	// Reaver range is 8
 	if (unit->getType() == UnitTypes::Protoss_Reaver)

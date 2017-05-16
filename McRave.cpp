@@ -8,23 +8,19 @@
 #include "McRave.h"
 
 // TODOS:
-
+// Separate targeting from local calculation reference points (causes unit confusion)
 // Threat grids to minimize O(n^2) iterations in CommandTrackerClass::updateLocalStrategy
 // Save decision state (in UnitInfo?, new map?) (attack, retreat, contain)
-// Spider mine removal from expansions
-// Observer spacing out by not moving to areas occupied by Observers destination
 // Change two gate core build - PvP maybe add Battery?
-// Zealots pushing out of base early against Zerg
+// Find regroup function and use it for 1 gate core defenses in PvP
 // Move unit sizing to simplify strength calculations of explosive/concussive damage
+// Massive slowdown (possibly building placement issues again)
 
 // Testing:
 // If scout dies, no base found - Testing
 // Crash testing when losing - Testing possible fix
-
-// Observer Manager
-// - Current Position, Target Position
-// - If any expansion is unbuildable and a probe is within range of it, move observer to it
-// - (Edit probe manager so that when building, destroy mines around it)
+// Spider mine removal from expansions - Testing
+// Observer spacing - Initial tests are good, needs enemy detection grids to avoid being killed (scans included)
 
 void McRave::onStart()
 {
@@ -96,12 +92,10 @@ void McRave::onPlayerLeft(BWAPI::Player player)
 
 void McRave::onNukeDetect(BWAPI::Position target)
 {
-
 }
 
 void McRave::onUnitDiscover(BWAPI::Unit unit)
-{
-	
+{	
 }
 
 void McRave::onUnitEvade(BWAPI::Unit unit)
@@ -124,10 +118,12 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 void McRave::onUnitDestroy(BWAPI::Unit unit)
 {
 	UnitTracker::Instance().decayUnit(unit);
+	SpecialUnitTracker::Instance().removeUnit(unit);
 	ProbeTracker::Instance().removeProbe(unit);
+	ResourceTracker::Instance().removeResource(unit);
+	TerrainTracker::Instance().removeEnemyBase(unit);
 	
 	// Ally territory removal
-	// Enemy base position removal
 	// Mineral field removal, active expansion removal, inactive count increase	
 }
 
@@ -142,12 +138,10 @@ void McRave::onUnitRenegade(BWAPI::Unit unit)
 
 void McRave::onSaveGame(std::string gameName)
 {
-
 }
 
 void McRave::onUnitComplete(BWAPI::Unit unit)
 {
-
 }
 
 DWORD WINAPI AnalyzeThread()
