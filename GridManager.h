@@ -18,6 +18,9 @@ class GridTrackerClass
 	int tankClusterGrid[256][256];
 	int allyClusterGrid[256][256];
 
+	// Enemy mini grid testing
+	double enemyGroundStrengthMiniGrid[1024][1024];
+
 	// Neutral grids	
 	int resourceGrid[256][256];
 
@@ -44,6 +47,10 @@ public:
 
 	Position getSupportPosition() { return supportPosition; }
 	double getEnemyGrd(int x, int y) { return enemyGroundStrengthGrid[x][y]; }
+
+	double getEnemyMiniGrd(int x, int y) { return enemyGroundStrengthMiniGrid[x][y]; }
+
+
 	double getEnemyAir(int x, int y) { return enemyAirStrengthGrid[x][y]; }	
 	int getEnemyGrdCluster(int x, int y) { return enemyGroundClusterGrid[x][y]; }
 	int getEnemyAirCluster(int x, int y) { return enemyAirClusterGrid[x][y]; }

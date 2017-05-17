@@ -14,10 +14,11 @@ class UnitInfoClass {
 	UnitCommandType unitCommand;
 	Unit target;
 	int deadFrame, strategy, lastCommandFrame;
+	WalkPosition miniTile;
 
 public:
 	UnitInfoClass();
-	UnitInfoClass(UnitType, Position, double, double, double, double, UnitCommandType, int, int, int, Unit);
+	UnitInfoClass(UnitType, Position, double, double, double, double, UnitCommandType, int, int, int, Unit, WalkPosition);
 	~UnitInfoClass();
 
 	// Accessors
@@ -35,6 +36,7 @@ public:
 	int getStrategy() const;
 	int getLastCommandFrame() const;
 	bool hasStim() const;
+	WalkPosition getMiniTile() const;
 
 	// Mutators
 	void setUnitType(UnitType);
@@ -51,4 +53,5 @@ public:
 	void setStrategy(int);
 	void setLastCommandFrame(int);
 	void setStim(bool);
+	void setMiniTile(WalkPosition);
 };

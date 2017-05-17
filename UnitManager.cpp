@@ -269,13 +269,41 @@ double unitGetPriority(UnitType unitType)
 		return unitGetStrength(unitType);
 	}
 }
+WalkPosition getMiniTile(Unit unit)
+{
+	int x = unit->getPosition().x;
+	int y = unit->getPosition().y;
+
+	// We want to fight the closest mini tile without using BWAPI commands (or else it originates to a tile position, lower resolution)
+	int mini_x = (x - x % 8 - (0.5*unit->getType().width())) / 8;
+	int mini_y = (y - y % 8 - (0.5*unit->getType().height())) / 8;
+
+	return WalkPosition(mini_x, mini_y);
+}
+set<WalkPosition> UnitTrackerClass::getMiniTilesUnderUnit(Unit unit)
+{
+	int x = allyUnits[unit].getMiniTile().x;
+	int y = allyUnits[unit].getMiniTile().y;
+	int width = allyUnits[unit].getUnitType().width() / 4;
+	int height = allyUnits[unit].getUnitType().height() / 4;
+	set<WalkPosition> returnValues;
+
+	for (int i = x; i <= x + width; i++)
+	{
+		for (int j = y; j <= y + height; j++)
+		{
+			returnValues.emplace(WalkPosition(i, j));
+		}
+	}	
+	return returnValues;
+}
 
 void UnitTrackerClass::storeEnemyUnit(Unit unit)
 {
 	// Create new unit
 	if (enemyUnits.find(unit) == enemyUnits.end())
 	{
-		UnitInfoClass newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetStrength(unit->getType()), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unitGetPriority(unit->getType()), unit->getLastCommand().getType(), 0, 0, 0, nullptr);
+		UnitInfoClass newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetStrength(unit->getType()), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unitGetPriority(unit->getType()), unit->getLastCommand().getType(), 0, 0, 0, nullptr, getMiniTile(unit));
 		enemyUnits[unit] = newUnit;		
 	}
 	// Update unit
@@ -286,6 +314,7 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 		enemyUnits[unit].setStrength(unitGetVisibleStrength(unit));
 		enemyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
 		enemyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->enemy()));
+		enemyUnits[unit].setMiniTile(getMiniTile(unit));
 	}
 	if ((unit->isCloaked() || unit->isBurrowed()) && !unit->isDetected())
 	{
@@ -301,7 +330,7 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 	// Create new unit
 	if (allyUnits.find(unit) == allyUnits.end())
 	{
-		UnitInfoClass newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetStrength(unit->getType()), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unitGetPriority(unit->getType()), unit->getLastCommand().getType(), 0, 0, 0, nullptr);
+		UnitInfoClass newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetStrength(unit->getType()), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unitGetPriority(unit->getType()), unit->getLastCommand().getType(), 0, 0, 0, nullptr, getMiniTile(unit));
 		allyUnits[unit] = newUnit;		
 	}
 	// Update unit
@@ -312,6 +341,7 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 		allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
 		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
 		allyUnits[unit].setCommand(unit->getLastCommand().getType());
+		allyUnits[unit].setMiniTile(getMiniTile(unit));
 	}
 	// Update sizes
 	allySizes[unit->getType().size()] += 1;	

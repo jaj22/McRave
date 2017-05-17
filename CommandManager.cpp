@@ -328,10 +328,22 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	}
 
 	// If unit is in range of a target and not currently threatened, attack instead of running
-	if (unit->getDistance(targetPosition) <= UnitTracker::Instance().getMyUnits()[unit].getRange() && (GridTracker::Instance().getEnemyGrd(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 || unit->getType() == UnitTypes::Protoss_Reaver))
+	if (unit->getDistance(targetPosition) <= UnitTracker::Instance().getMyUnits()[unit].getRange())
 	{
-		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
-		return;
+		bool safeTile = true;
+		Broodwar << UnitTracker::Instance().getMiniTilesUnderUnit(unit).size() << endl;
+		for (auto miniTile : UnitTracker::Instance().getMiniTilesUnderUnit(unit))
+		{
+			if (GridTracker::Instance().getEnemyMiniGrd(miniTile.x, miniTile.y) > 0.0)
+			{
+				safeTile = false;
+			}
+		}
+		if (safeTile || unit->getType() == UnitTypes::Protoss_Reaver)
+		{
+			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
+			return;
+		}
 	}
 
 	// If last command was engage
@@ -470,125 +482,31 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	if (!unit || !target)
 	{
 		return Positions::None;
-	}
-
-	//// Unit Flee Variables
-	//double slopeDegree;
-	int x = unit->getPosition().x;
-	int y = unit->getPosition().y;
-	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[target].getPosition();
-	//Position currentUnitPosition = unit->getPosition();
-	//TilePosition currentUnitTilePosition = unit->getTilePosition();
-
-	//// Divide by zero check, if zero then we are fleeing horizontally, no problem if fleeing vertically.
-	//if ((currentUnitPosition.x - currentTargetPosition.x) == 0)
-	//{
-	//	slopeDegree = 1.571;
-	//}
-	//else
-	//{
-	//	slopeDegree = atan((currentUnitPosition.y - currentTargetPosition.y) / (currentUnitPosition.x - currentTargetPosition.x));
-	//}
-
-	//// Need to make sure we are fleeing at the same angle the units are attacking each other at
-	//if (currentUnitPosition.x > currentTargetPosition.x)
-	//{
-	//	x = (int)(currentUnitPosition.x + (128 * cos(slopeDegree)));
-	//}
-	//else
-	//{
-	//	x = (int)(currentUnitPosition.x - (128 * cos(slopeDegree)));
-	//}
-	//if (currentUnitPosition.y > currentTargetPosition.y)
-	//{
-	//	y = (int)(currentUnitPosition.y + abs(128 * sin(slopeDegree)));
-	//}
-	//else
-	//{
-	//	y = (int)(currentUnitPosition.y - abs(128 * sin(slopeDegree)));
-	//}
-
-	// TODO: Find a reasonable balance between distance and mobility	
-	int initialX = int((x - x % 8 - (0.5*unit->getType().width())) / 8);
-	int initialY = int((y - y % 8 - (0.5*unit->getType().height())) / 8);
-	Position finalPosition = Position(x,y);
-	int bestPos = 0;
-	double myMobile = 0.0;
-
+	}	
+	WalkPosition start = UnitTracker::Instance().getMyUnits()[unit].getMiniTile();
+	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[unit].getTargetPosition();
+	Position finalPosition = UnitTracker::Instance().getMyUnits()[unit].getPosition();
+	double highestMobility = 0.0;
 	double distanceTarget = unit->getDistance(target);
 	double distanceHome = unit->getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
 
 	// Search a 45x45 mini tile area around the unit for mobility
 	// There's a bunch of crappy math in here to convert between Tiles, Mini Tiles and Pixels, it works but needs redoing
-	for (int i = initialX - 22; i <= initialX + 22; i++)
+	for (int i = start.x - 22; i <= start.x + 22; i++)
 	{
-		for (int j = initialY - 22; j <= initialY + 22; j++)
+		for (int j = start.y - 22; j <= start.y + 22; j++)
 		{			
 			distanceTarget = Position(i * 8, j * 8).getDistance(currentTargetPosition);
 			distanceHome = Position(i * 8, j * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
-			if (GridTracker::Instance().getAntiMobilityMiniGrid(i, j) == 0 && GridTracker::Instance().getEnemyGrd((i - (i % 32)) / 4, (j - (j % 32)) / 4) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome > myMobile /*|| (GridTracker::Instance().getMobilityMiniGrid(i, j) == myMobile && distanceTarget > myDistance))*/)
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(i, j) == 0 && GridTracker::Instance().getEnemyMiniGrd(i,j) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome > highestMobility /*|| (GridTracker::Instance().getMobilityMiniGrid(i, j) == myMobile && distanceTarget > myDistance))*/)
 			{
-				myMobile = GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget/ distanceHome;
+				highestMobility = GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget/ distanceHome;
 				finalPosition = Position(i * 8, j * 8);	
 			}
 		}
 	}
 	//Broodwar->drawCircleMap(finalPosition, 2, Colors::Red, true);
-	return finalPosition;
-
-
-
-	//// Spiral variables
-	//Position initialPosition = Position(TilePosition(x, y));
-	//int length = 1;
-	//int j = 0;
-	//bool first = true;
-	//bool okay = false;
-	//int dx = 0;
-	//int dy = 1;
-	//// Searches in a spiral around the specified tile position
-	//while (length < 2000)
-	//{
-	//	//If threat is low, move there
-	//	if (x >= 0 && x < BWAPI::Broodwar->mapWidth() && y >= 0 && y < BWAPI::Broodwar->mapHeight())
-	//	{
-	//		Position newPosition = Position(TilePosition(x, y));
-	//		if (GridTracker::Instance().getEnemyGrd(x, y) == 0.0 && (newPosition.getDistance(getNearestChokepoint(currentUnitPosition)->getCenter()) < 128 || (getRegion(currentUnitPosition)) == getRegion(newPosition)) && Broodwar->getUnitsOnTile(TilePosition(x, y)).size() < 2)
-	//		{
-	//			return newPosition;
-	//		}
-	//	}
-	//	//Otherwise, move to another position
-	//	x = x + dx;
-	//	y = y + dy;
-	//	//Count how many steps we take in this direction
-	//	j++;
-	//	if (j == length) //if we've reached the end, its time to turn
-	//	{
-	//		//reset step counter
-	//		j = 0;
-
-	//		//Increment step counter
-	//		if (!first)
-	//			length++;
-
-	//		//First=true for every other turn so we spiral out at the right rate
-	//		first = !first;
-
-	//		//Turn counter clockwise 90 degrees:
-	//		if (dx == 0)
-	//		{
-	//			dx = dy;
-	//			dy = 0;
-	//		}
-	//		else
-	//		{
-	//			dy = -dx;
-	//			dx = 0;
-	//		}
-	//	}
-	//}
-	//return initialPosition;
+	return finalPosition;	
 }
 
 void CommandTrackerClass::arbiterManager(Unit unit)

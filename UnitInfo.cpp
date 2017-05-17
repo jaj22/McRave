@@ -1,6 +1,6 @@
 #include "UnitInfo.h"
 
-UnitInfoClass::UnitInfoClass(UnitType newType, Position newPosition, double newStrength, double newMaxStrength, double newRange, double newPriority, UnitCommandType newCommand, int newDeadFrame, int newStrategy, int newCommandFrame, Unit newTarget)
+UnitInfoClass::UnitInfoClass(UnitType newType, Position newPosition, double newStrength, double newMaxStrength, double newRange, double newPriority, UnitCommandType newCommand, int newDeadFrame, int newStrategy, int newCommandFrame, Unit newTarget, WalkPosition newMiniTile)
 {
 	unitType = newType;
 	unitPosition = newPosition;
@@ -13,6 +13,7 @@ UnitInfoClass::UnitInfoClass(UnitType newType, Position newPosition, double newS
 	strategy = newStrategy;
 	lastCommandFrame = newCommandFrame;
 	target = newTarget;
+	miniTile = newMiniTile;
 }
 UnitInfoClass::UnitInfoClass()
 {
@@ -26,6 +27,7 @@ UnitInfoClass::UnitInfoClass()
 	strategy = 0;
 	lastCommandFrame = 0;
 	target = nullptr;
+	miniTile = WalkPositions::None;
 }
 UnitInfoClass::~UnitInfoClass()
 {
@@ -83,6 +85,10 @@ int UnitInfoClass::getLastCommandFrame() const
 {
 	return lastCommandFrame;
 }
+WalkPosition UnitInfoClass::getMiniTile() const
+{
+	return miniTile;
+}
 
 void UnitInfoClass::setUnitType(UnitType newUnitType)
 {
@@ -136,4 +142,7 @@ void UnitInfoClass::setLastCommandFrame(int newCommandFrame)
 {
 	lastCommandFrame = newCommandFrame;
 }
-
+void UnitInfoClass::setMiniTile(WalkPosition newMiniTile)
+{
+	miniTile = newMiniTile;
+}

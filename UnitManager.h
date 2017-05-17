@@ -25,6 +25,7 @@ public:
 	map<UnitSizeType, int>& getMySizes() { return allySizes; }
 	map<UnitSizeType, int>& getEnSizes() { return enemySizes; }
 	int getSupply() { return supply; }
+	set<WalkPosition> getMiniTilesUnderUnit(Unit);
 
 	// Updating
 	void update();
