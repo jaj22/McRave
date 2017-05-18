@@ -3,6 +3,7 @@
 #include "StrategyManager.h"
 #include "TerrainManager.h"
 #include "UnitManager.h"
+#include "NexusManager.h"
 
 void CommandTrackerClass::update()
 {
@@ -36,7 +37,6 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	{
 		return;
 	}
-
 
 	// If Reaver, train scarabs
 	if (unit->getType() == UnitTypes::Protoss_Reaver && unit->getScarabCount() < 5)
@@ -112,6 +112,14 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 				if (TerrainTracker::Instance().getAllyTerritory().find(getNearestChokepoint(TilePosition(TerrainTracker::Instance().getPath().at(1)->Center()))->getRegions().second) != TerrainTracker::Instance().getAllyTerritory().end() || TerrainTracker::Instance().getAllyTerritory().find(getNearestChokepoint(TilePosition(TerrainTracker::Instance().getPath().at(1)->Center()))->getRegions().first) != TerrainTracker::Instance().getAllyTerritory().end())
 				{
 					closestP = Position(TerrainTracker::Instance().getPath().at(2)->Center());
+				}
+			}
+			else if (Broodwar->getFrameCount() < 5000)
+			{
+				for (auto nexus : NexusTracker::Instance().getMyNexus())
+				{
+					unit->move((Position(nexus.second.getStaticPosition()) + Position(nexus.first->getPosition()))/2);
+					return;
 				}
 			}
 			else
@@ -307,8 +315,14 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
 	{
-		if (TerrainTracker::Instance().getAllyTerritory().find(getRegion(target->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+		if (Broodwar->getFrameCount() > 5000 && TerrainTracker::Instance().getAllyTerritory().find(getRegion(target->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
 		{
+			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
+			return;
+		}
+		else if (Broodwar->getFrameCount() < 5000 && GridTracker::Instance().getResourceGrid(unit->getTilePosition().x, unit->getTilePosition().y) > 0)
+		{
+			Broodwar << "Test" << endl;
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 			return;
 		}
@@ -541,7 +555,6 @@ void CommandTrackerClass::arbiterManager(Unit unit)
 		}
 	}
 }
-
 
 void CommandTrackerClass::templarManager(Unit unit)
 {

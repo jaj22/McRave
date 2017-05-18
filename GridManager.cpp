@@ -258,7 +258,8 @@ void GridTrackerClass::updateEnemyGrids()
 }
 
 void GridTrackerClass::updateNeutralGrids()
-{
+{	
+	double distanceTo = 0.0;
 	for (auto m : ResourceTracker::Instance().getMyMinerals())
 		// Update resource grid
 		for (int x = m.second.getTilePosition().x - 2; x <= m.second.getTilePosition().x + m.second.getUnitType().tileWidth() + 2; x++)
@@ -268,7 +269,7 @@ void GridTrackerClass::updateNeutralGrids()
 				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
-				}
+				}				
 			}
 		}
 	for (auto g : ResourceTracker::Instance().getMyGas())

@@ -12,6 +12,9 @@ class NexusTrackerClass
 {
 	map <Unit, NexusInfo> myNexus;
 public:
+
+	map <Unit, NexusInfo> getMyNexus() { return myNexus; }
+
 	void update();
 	void storeNexus();
 	void removeNexus(Unit);

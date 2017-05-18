@@ -8,6 +8,7 @@
 #include "McRave.h"
 
 // TODOS:
+// If being rushed, move units to mineral line
 // Separate targeting from local calculation reference points (causes unit confusion)
 // Threat grids to minimize O(n^2) iterations in CommandTrackerClass::updateLocalStrategy
 // Save decision state (in UnitInfo?, new map?) (attack, retreat, contain)

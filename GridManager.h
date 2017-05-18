@@ -35,6 +35,7 @@ class GridTrackerClass
 	int templarGrid[256][256];
 
 	Position supportPosition;
+	Position earlyDefensePosition;
 public:
 	void reset();
 	void update();	
@@ -47,6 +48,7 @@ public:
 	void updateAllyMovement(Unit, WalkPosition);
 
 	Position getSupportPosition() { return supportPosition; }
+	Position getEarlyDefensePosition() { return earlyDefensePosition; }
 	double getEnemyGrd(int x, int y) { return enemyGroundStrengthGrid[x][y]; }
 
 	double getEnemyMiniGrd(int x, int y) { return enemyGroundStrengthMiniGrid[x][y]; }
