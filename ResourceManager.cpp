@@ -1,6 +1,7 @@
 #include "ResourceManager.h"
 #include "TerrainManager.h"
 #include "GridManager.h"
+#include "ProbeManager.h"
 
 void ResourceTrackerClass::update()
 {
@@ -84,7 +85,7 @@ void ResourceTrackerClass::removeResource(Unit resource)
 {
 	if (myMinerals.find(resource) != myMinerals.end())
 	{
-		myMinerals.erase(resource);
+		myMinerals.erase(resource);		
 	}
 	if (myGas.find(resource) != myGas.end())
 	{
@@ -93,5 +94,13 @@ void ResourceTrackerClass::removeResource(Unit resource)
 	if (myBoulders.find(resource) != myBoulders.end())
 	{
 		myBoulders.erase(resource);
+	}
+
+	for (auto probe : ProbeTracker::Instance().getMyProbes())
+	{
+		if (probe.second.getTarget() == resource)
+		{
+			probe.second.setTarget(nullptr);
+		}
 	}
 }

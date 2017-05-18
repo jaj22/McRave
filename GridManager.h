@@ -44,6 +44,7 @@ public:
 	void updateMobilityGrids();
 	void updateObserverGrids();
 	void updateArbiterGrids();
+	void updateAllyMovement(Unit, WalkPosition);
 
 	Position getSupportPosition() { return supportPosition; }
 	double getEnemyGrd(int x, int y) { return enemyGroundStrengthGrid[x][y]; }

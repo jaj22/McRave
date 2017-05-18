@@ -16,6 +16,7 @@ class ProbeTrackerClass
 public:
 
 	bool isScouting() { return scouting; }
+	map <Unit, ProbeInfo> getMyProbes() { return myProbes; }
 
 	void update();
 	void storeProbes();

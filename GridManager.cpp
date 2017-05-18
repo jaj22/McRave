@@ -70,7 +70,7 @@ void GridTrackerClass::reset()
 			if (antiMobilityMiniGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
-			}			
+			}
 
 			if (mobilityMiniGrid[x][y] > 0 && antiMobilityMiniGrid[x][y] == 0)
 			{
@@ -247,7 +247,7 @@ void GridTrackerClass::updateEnemyGrids()
 			{
 				for (int j = u.second.getMiniTile().y - miniRange - 2; j <= 2 + u.second.getMiniTile().y + miniRange; j++)
 				{
-					if (Position(i * 8, j * 8).getDistance(u.second.getPosition()) - u.second.getUnitType().width() / 2 < u.second.getRange())
+					if (i > 0 && i < Broodwar->mapWidth() * 4 && j > 0 && j < Broodwar->mapHeight() * 4 && Position(i * 8, j * 8).getDistance(u.second.getPosition()) - u.second.getUnitType().width() / 2 < miniRange * 8)
 					{
 						enemyGroundStrengthMiniGrid[i][j] += u.second.getStrength();
 					}
@@ -334,7 +334,7 @@ void GridTrackerClass::updateMobilityGrids()
 				{
 					if (getNearestChokepoint(Position(x * 8, y * 8)) && getNearestChokepoint(Position(x * 8, y * 8))->getCenter().getDistance(Position(x * 8, y * 8)) < 3200)
 					{
-						mobilityMiniGrid[x][y] += cbrt(3200.0 / (32.0 + (double)Position(x * 8, y * 8).getDistance(getNearestChokepoint(Position(x * 8, y * 8))->getCenter())));
+						mobilityMiniGrid[x][y] += (3200.0 / (32.0 + (double)Position(x * 8, y * 8).getDistance(getNearestChokepoint(Position(x * 8, y * 8))->getCenter())));
 					}
 					for (int i = -4; i <= 4; i++)
 					{
@@ -395,6 +395,17 @@ void GridTrackerClass::updateArbiterGrids()
 					arbiterGrid[x][y] += 1;
 				}
 			}
+		}
+	}
+}
+
+void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
+{
+	for (int x = here.x - unit->getType().width() / 16; x <= here.x + unit->getType().width() / 16; x++)
+	{
+		for (int y = here.y - unit->getType().height() / 16; y <= here.y + unit->getType().height() / 16; y++)
+		{
+			antiMobilityMiniGrid[x][y] = 1;
 		}
 	}
 }

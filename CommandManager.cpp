@@ -47,22 +47,9 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	// Check if we have a target
 	if (target && target != nullptr)
 	{
-		// Attack
-		if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 1 && target->exists())
-		{
-			unitMicroTarget(unit, target);
-			return;
-		}
 		// Retreat
 		if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 0)
 		{
-			// Force engage Zealots on ramp
-			if (TerrainTracker::Instance().getAllyTerritory().size() <= 1 && unit->getDistance(TerrainTracker::Instance().getDefendHere().at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
-			{
-				unitMicroTarget(unit, target);
-				return;
-			}
-
 			// Create concave when containing units
 			if (GridTracker::Instance().getEnemyGrd(unit->getTilePosition().x, unit->getTilePosition().y) == 0.0 && globalStrategy == 1)
 			{
@@ -102,8 +89,13 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 			}
 			return;
 		}
+		// Attack
+		if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 1 && target->exists())
+		{
+			unitMicroTarget(unit, target);
+			return;
+		}
 	}
-
 
 	if (globalStrategy == 0)
 	{
@@ -322,6 +314,13 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 		}
 	}
 
+	// Force Zealots to engage on ramp
+	if (TerrainTracker::Instance().getAllyTerritory().size() <= 1 && unit->getDistance(TerrainTracker::Instance().getDefendHere().at(0)) < 64 && unit->getType() == UnitTypes::Protoss_Zealot && unit->getUnitsInRadius(64, Filter::IsEnemy).size() > 0)
+	{
+		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
+		return;
+	}
+
 	// Force Zealots to stay on Tanks
 	if (unit->getType() == UnitTypes::Protoss_Zealot && target->exists() && (UnitTracker::Instance().getEnUnits()[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || UnitTracker::Instance().getEnUnits()[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
 	{
@@ -486,28 +485,41 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	}
 	WalkPosition start = UnitTracker::Instance().getMyUnits()[unit].getMiniTile();
 	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[unit].getTargetPosition();
-	Position finalPosition = UnitTracker::Instance().getMyUnits()[unit].getPosition();
+	WalkPosition finalPosition = UnitTracker::Instance().getMyUnits()[unit].getMiniTile();
 	double highestMobility = 0.0;
 	double distanceTarget = unit->getDistance(target);
 	double distanceHome = unit->getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
 
-	// Search a 30x30 (31) mini tile area around the unit for mobility
-	// There's a bunch of crappy math in here to convert between Tiles, Mini Tiles and Pixels, it works but needs redoing
-	for (int i = start.x - 15; i <= start.x + 15; i++)
+	// Search a 30x30 (31) mini tile area around the unit for mobility	
+	for (int x = start.x - 15; x <= start.x + 15; x++)
 	{
-		for (int j = start.y - 15; j <= start.y + 15; j++)
+		for (int y = start.y - 15; y <= start.y + 15; y++)
 		{
-			distanceTarget = Position(i * 8, j * 8).getDistance(currentTargetPosition);
-			distanceHome = Position(i * 8, j * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
-			if (GridTracker::Instance().getAntiMobilityMiniGrid(i, j) == 0 && GridTracker::Instance().getEnemyMiniGrd(i, j) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome > highestMobility /*|| (GridTracker::Instance().getMobilityMiniGrid(i, j) == myMobile && distanceTarget > myDistance))*/)
+			distanceTarget = Position(x * 8, y * 8).getDistance(currentTargetPosition);
+			distanceHome = Position(x * 8, y * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && GridTracker::Instance().getEnemyMiniGrd(x, y) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome > highestMobility)
 			{
-				highestMobility = GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome;
-				finalPosition = Position(i * 8, j * 8);
+				bool safeTile = true;
+				for (int i = x - unit->getType().width() / 16; i <= x + unit->getType().width() / 16; i++)
+				{
+					for (int j = y - unit->getType().height() / 16; j <= y + unit->getType().height() / 16; j++)
+					{
+						if (GridTracker::Instance().getEnemyMiniGrd(i, j) > 0.0 && GridTracker::Instance().getAntiMobilityMiniGrid(i,j) > 0)
+						{						
+							safeTile = false;
+						}
+					}
+				}
+				if (safeTile)
+				{
+					highestMobility = GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome;
+					finalPosition = WalkPosition(x, y);
+				}
 			}
 		}
 	}
-	//Broodwar->drawCircleMap(finalPosition, 2, Colors::Red, true);
-	return finalPosition;
+	GridTracker::Instance().updateAllyMovement(unit, finalPosition);
+	return Position(finalPosition);
 }
 
 void CommandTrackerClass::arbiterManager(Unit unit)
