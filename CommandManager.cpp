@@ -36,7 +36,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	{
 		return;
 	}
-		
+
 
 	// If Reaver, train scarabs
 	if (unit->getType() == UnitTypes::Protoss_Reaver && unit->getScarabCount() < 5)
@@ -69,6 +69,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 				Position fleePosition = unitFlee(unit, target);
 				if (fleePosition != Positions::None)
 				{
+					UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(fleePosition);
 					unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
 				}
 				return;
@@ -82,6 +83,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 					Position fleePosition = unitFlee(unit, target);
 					if (fleePosition != Positions::None)
 					{
+						UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(fleePosition);
 						unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
 					}
 					return;
@@ -154,9 +156,9 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	// Check if we should attack
 	if (globalStrategy == 1 && TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
 	{
-		if (target && target->exists() && unit->getDistance(target) < 512)
+		if (target)
 		{
-			unitMicroTarget(unit, target);
+			unit->attack(UnitTracker::Instance().getEnUnits()[target].getPosition());
 			return;
 		}
 		for (auto base : TerrainTracker::Instance().getEnemyBasePositions())
@@ -328,10 +330,9 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	}
 
 	// If unit is in range of a target and not currently threatened, attack instead of running
-	if (unit->getDistance(targetPosition) <= UnitTracker::Instance().getMyUnits()[unit].getRange())
+	if (unit->getDistance(targetPosition) + unit->getType().width() / 2 + target->getType().width() / 2 <= UnitTracker::Instance().getMyUnits()[unit].getRange())
 	{
 		bool safeTile = true;
-		Broodwar << UnitTracker::Instance().getMiniTilesUnderUnit(unit).size() << endl;
 		for (auto miniTile : UnitTracker::Instance().getMiniTilesUnderUnit(unit))
 		{
 			if (GridTracker::Instance().getEnemyMiniGrd(miniTile.x, miniTile.y) > 0.0)
@@ -420,7 +421,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 	if (unit->getType() == UnitTypes::Protoss_Dragoon)
 	{
 		offset = 9;
-	}	
+	}
 
 	// If kiting unnecessary, disable
 	if (target->getType().isBuilding() || unit->getType() == UnitTypes::Protoss_Corsair)
@@ -445,11 +446,11 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 	{
 		if (kite && unit->getGroundWeaponCooldown() > 0)
 		{
-			Position correctedFleePosition = unitFlee(unit, target);
-			UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(correctedFleePosition);
-			if (correctedFleePosition != BWAPI::Positions::None && (unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->getLastCommand().getTargetPosition().getDistance(correctedFleePosition) > 5))
+			Position fleePosition = unitFlee(unit, target);
+			UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(fleePosition);
+			if (fleePosition != BWAPI::Positions::None && (unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->getLastCommand().getTargetPosition().getDistance(fleePosition) > 5))
 			{
-				unit->move(Position(correctedFleePosition.x + rand() % 3 + (-1), correctedFleePosition.y + rand() % 3 + (-1)));				
+				unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
 			}
 		}
 		else if (unit->getGroundWeaponCooldown() <= 0)
@@ -482,7 +483,7 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	if (!unit || !target)
 	{
 		return Positions::None;
-	}	
+	}
 	WalkPosition start = UnitTracker::Instance().getMyUnits()[unit].getMiniTile();
 	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[unit].getTargetPosition();
 	Position finalPosition = UnitTracker::Instance().getMyUnits()[unit].getPosition();
@@ -490,23 +491,23 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	double distanceTarget = unit->getDistance(target);
 	double distanceHome = unit->getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
 
-	// Search a 45x45 mini tile area around the unit for mobility
+	// Search a 30x30 (31) mini tile area around the unit for mobility
 	// There's a bunch of crappy math in here to convert between Tiles, Mini Tiles and Pixels, it works but needs redoing
-	for (int i = start.x - 22; i <= start.x + 22; i++)
+	for (int i = start.x - 15; i <= start.x + 15; i++)
 	{
-		for (int j = start.y - 22; j <= start.y + 22; j++)
-		{			
+		for (int j = start.y - 15; j <= start.y + 15; j++)
+		{
 			distanceTarget = Position(i * 8, j * 8).getDistance(currentTargetPosition);
 			distanceHome = Position(i * 8, j * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
-			if (GridTracker::Instance().getAntiMobilityMiniGrid(i, j) == 0 && GridTracker::Instance().getEnemyMiniGrd(i,j) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome > highestMobility /*|| (GridTracker::Instance().getMobilityMiniGrid(i, j) == myMobile && distanceTarget > myDistance))*/)
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(i, j) == 0 && GridTracker::Instance().getEnemyMiniGrd(i, j) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome > highestMobility /*|| (GridTracker::Instance().getMobilityMiniGrid(i, j) == myMobile && distanceTarget > myDistance))*/)
 			{
-				highestMobility = GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget/ distanceHome;
-				finalPosition = Position(i * 8, j * 8);	
+				highestMobility = GridTracker::Instance().getMobilityMiniGrid(i, j) * distanceTarget / distanceHome;
+				finalPosition = Position(i * 8, j * 8);
 			}
 		}
 	}
 	//Broodwar->drawCircleMap(finalPosition, 2, Colors::Red, true);
-	return finalPosition;	
+	return finalPosition;
 }
 
 void CommandTrackerClass::arbiterManager(Unit unit)
@@ -532,5 +533,5 @@ void CommandTrackerClass::arbiterManager(Unit unit)
 
 void CommandTrackerClass::templarManager(Unit unit)
 {
-	
+
 }

@@ -42,12 +42,6 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 			continue;
 		}
 
-		// If the enemy is further than 20 tiles away, ignore it
-		if (u.first->getDistance(unit) > 640)
-		{
-			continue;
-		}
-
 		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
 
 		if (u.first->exists())

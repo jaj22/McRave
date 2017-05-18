@@ -67,29 +67,19 @@ void GridTrackerClass::reset()
 	{
 		for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 		{
-			/*if (antiMobilityMiniGrid[x][y] > 0)
+			if (antiMobilityMiniGrid[x][y] > 0)
 			{
-			Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
+				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
+			}			
 
-			}*/
-			/*
-
-
-			if (x > 100 && x < 200 && y > 100 && y < 200)
+			if (mobilityMiniGrid[x][y] > 0 && antiMobilityMiniGrid[x][y] == 0)
 			{
-			Broodwar->setTextSize(Text::Size::Small);
-			Broodwar->drawTextMap(Position(x * 8, y * 8), "%d", mobilityMiniGrid[x][y]);
-			Broodwar->setTextSize(Text::Size::Default);
-			}*/
-
-			/*if (mobilityMiniGrid[x][y] > 0 && antiMobilityMiniGrid[x][y] == 0)
-			{
-			Broodwar->drawCircleMap(Position(x * 8 + 4, y * 8 + 4), (int)mobilityMiniGrid[x][y] / 32, Broodwar->self()->getColor());
-			}*/
+				//Broodwar->drawCircleMap(Position(x * 8 + 4, y * 8 + 4), (int)mobilityMiniGrid[x][y] / 32, Broodwar->self()->getColor());
+			}
 
 			if (enemyGroundStrengthMiniGrid[x][y] > 0)
 			{
-				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
+				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
 			}
 
 			antiMobilityMiniGrid[x][y] = 0;
@@ -248,12 +238,16 @@ void GridTrackerClass::updateEnemyGrids()
 	{
 		if (u.second.getDeadFrame() == 0)
 		{
-			int mini_range = u.second.getRange() / 8;
-			for (int i = u.second.getMiniTile().x - mini_range - 2; i <= 2 + u.second.getMiniTile().x + mini_range; i++)
+			int miniRange = u.second.getRange() / 8;
+			if (!u.second.getUnitType().isBuilding() && miniRange < 10)
 			{
-				for (int j = u.second.getMiniTile().y - mini_range - 2; j <= 2 + u.second.getMiniTile().y + mini_range; j++)
+				miniRange = 10;
+			}
+			for (int i = u.second.getMiniTile().x - miniRange - 2; i <= 2 + u.second.getMiniTile().x + miniRange; i++)
+			{
+				for (int j = u.second.getMiniTile().y - miniRange - 2; j <= 2 + u.second.getMiniTile().y + miniRange; j++)
 				{
-					if (Position(i * 8, j * 8).getDistance(u.second.getPosition()) < u.second.getRange())
+					if (Position(i * 8, j * 8).getDistance(u.second.getPosition()) - u.second.getUnitType().width() / 2 < u.second.getRange())
 					{
 						enemyGroundStrengthMiniGrid[i][j] += u.second.getStrength();
 					}
@@ -338,9 +332,9 @@ void GridTrackerClass::updateMobilityGrids()
 			{
 				if (theMap.GetMiniTile(WalkPosition(x, y)).Walkable())
 				{
-					if (getNearestChokepoint(Position(x * 8, y * 8)) && getNearestChokepoint(Position(x * 8, y * 8))->getCenter().getDistance(Position(x * 8, y * 8)) < 6400)
+					if (getNearestChokepoint(Position(x * 8, y * 8)) && getNearestChokepoint(Position(x * 8, y * 8))->getCenter().getDistance(Position(x * 8, y * 8)) < 3200)
 					{
-						mobilityMiniGrid[x][y] += 6400.0 / (64.0 + (double)Position(x * 8, y * 8).getDistance(getNearestChokepoint(Position(x * 8, y * 8))->getCenter()));
+						mobilityMiniGrid[x][y] += cbrt(3200.0 / (32.0 + (double)Position(x * 8, y * 8).getDistance(getNearestChokepoint(Position(x * 8, y * 8))->getCenter())));
 					}
 					for (int i = -4; i <= 4; i++)
 					{
