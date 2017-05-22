@@ -122,7 +122,7 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	SpecialUnitTracker::Instance().removeUnit(unit);
 	ProbeTracker::Instance().removeProbe(unit);
 	ResourceTracker::Instance().removeResource(unit);
-	TerrainTracker::Instance().removeEnemyBase(unit);
+	TerrainTracker::Instance().removeTerritory(unit);
 	
 	// Ally territory removal
 	// Mineral field removal, active expansion removal, inactive count increase	

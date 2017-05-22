@@ -44,7 +44,7 @@ void ProductionTrackerClass::update()
 				}
 				break;
 			case UnitTypes::Enum::Protoss_Cybernetics_Core:
-				if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon) >= 1)
+				if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && idleGates.size() == 0)
 				{
 					if (Broodwar->self()->minerals() >= UpgradeTypes::Singularity_Charge.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Singularity_Charge.gasPrice())
 					{
@@ -222,7 +222,7 @@ void ProductionTrackerClass::updateRobo(Unit building)
 	int queuedMineral = BuildingTracker::Instance().getQueuedMineral();
 	int queuedGas = BuildingTracker::Instance().getQueuedGas();
 	// If we need an Observer
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1))
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && ((StrategyTracker::Instance().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1)))
 	{
 		// If we can afford an Observer, train, otherwise, add to priority
 		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)

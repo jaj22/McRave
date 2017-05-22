@@ -127,7 +127,7 @@ void ProbeTrackerClass::enforceAssignments()
 	for (auto &u : myProbes)
 	{
 		// If no valid target, try to get a new one
-		if (u.second.getTarget() == nullptr)
+		if (!u.second.getTarget())
 		{
 			assignProbe(u.first);
 			// Any idle Probes can gather closest mineral field until they are assigned again

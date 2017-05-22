@@ -22,6 +22,11 @@ void ResourceTrackerClass::update()
 					storeGas(r);
 				}				
 			}
+			// BWTA needs a frame buffer
+			if (Broodwar->getFrameCount() > 200 && (myMinerals.find(r) != myMinerals.end() || myGas.find(r) != myGas.end()) && TerrainTracker::Instance().getAnalyzed() && TerrainTracker::Instance().getAllyTerritory().find(getRegion(r->getTilePosition())) == TerrainTracker::Instance().getAllyTerritory().end())
+			{
+				removeResource(r);
+			}
 			if (r->getInitialResources() == 0 && r->getDistance(TerrainTracker::Instance().getPlayerStartingPosition()) < 2560)
 			{
 				storeBoulder(r);
@@ -41,6 +46,7 @@ void ResourceTrackerClass::update()
 		{
 			saturated = false;
 		}
+		Broodwar->drawTextMap(m.second.getPosition(), "%d", m.second.getGathererCount());
 	}
 
 	for (auto &g : myGas)
@@ -100,7 +106,6 @@ void ResourceTrackerClass::removeResource(Unit resource)
 	{
 		if (probe.second.getTarget() == resource)
 		{
-			Broodwar << "Dead Mineral" << endl;
 			probe.second.setTarget(nullptr);
 		}
 	}

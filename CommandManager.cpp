@@ -114,11 +114,11 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 					closestP = Position(TerrainTracker::Instance().getPath().at(2)->Center());
 				}
 			}
-			else if (Broodwar->getFrameCount() < 7500)
+			else if (Broodwar->getFrameCount() < 6000)
 			{
 				for (auto nexus : NexusTracker::Instance().getMyNexus())
 				{
-					unit->move((Position(nexus.second.getStaticPosition()) + Position(nexus.first->getPosition()))/2);
+					unit->move((Position(nexus.second.getStaticPosition()) + Position(nexus.first->getPosition())) / 2);
 					return;
 				}
 			}
@@ -154,26 +154,23 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	}
 
 	// Check if we should attack
-	if (globalStrategy == 1)
+	if (globalStrategy == 1 && TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
 	{
-		if (TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
+		if (target)
 		{
-			if (target)
-			{
-				unit->attack(UnitTracker::Instance().getEnUnits()[target].getPosition());
-				return;
-			}
-			for (auto base : TerrainTracker::Instance().getEnemyBasePositions())
-			{
-				if (unit->getDistance(base) < closestD || closestD == 0.0)
-				{
-					closestP = base;
-					closestD = unit->getDistance(base);
-				}
-			}
-			unit->attack(closestP);
+			unit->attack(UnitTracker::Instance().getEnUnits()[target].getPosition());
 			return;
-		}		
+		}
+		for (auto base : TerrainTracker::Instance().getEnemyBasePositions())
+		{
+			if (unit->getDistance(base) < closestD || closestD == 0.0)
+			{
+				closestP = base;
+				closestD = unit->getDistance(base);
+			}
+		}
+		unit->attack(closestP);
+		return;
 	}
 }
 
@@ -315,20 +312,31 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	// Store the difference of strengths 
 	UnitTracker::Instance().getMyUnits()[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 
+	if (Broodwar->enemy()->getRace() != Races::Terran && Broodwar->getFrameCount() < 6000)
+	{
+		if (target && target->exists())
+		{
+			if (GridTracker::Instance().getResourceGrid(unit->getTilePosition().x, unit->getTilePosition().y) > 0)
+			{
+				UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
+				return;
+			}
+			else
+			{
+				UnitTracker::Instance().getMyUnits()[unit].setStrategy(0);
+				return;
+			}
+		}
+	}
+
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
 	{
-		if (Broodwar->getFrameCount() > 5000 && TerrainTracker::Instance().getAllyTerritory().find(getRegion(target->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+		if (Broodwar->getFrameCount() > 6000 && TerrainTracker::Instance().getAllyTerritory().find(getRegion(target->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
 		{
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 			return;
-		}
-		else if (Broodwar->getFrameCount() < 5000 && GridTracker::Instance().getResourceGrid(unit->getTilePosition().x, unit->getTilePosition().y) > 0)
-		{
-			Broodwar << "Test" << endl;
-			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
-			return;
-		}
+		}		
 	}
 
 	// Force Zealots to engage on ramp
@@ -401,7 +409,7 @@ void CommandTrackerClass::updateGlobalStrategy(Unit unit, Unit target)
 		return;
 	}
 
-	// If we're not Terran and dont have goons yet, dont move out
+	// If Zerg, wait for a larger army before moving out
 	if (Broodwar->enemy()->getRace() != Races::Terran && Broodwar->getFrameCount() < 6000)
 	{
 		globalStrategy = 0;
@@ -409,13 +417,7 @@ void CommandTrackerClass::updateGlobalStrategy(Unit unit, Unit target)
 	}
 
 	if (StrategyTracker::Instance().globalAlly() > StrategyTracker::Instance().globalEnemy())
-	{
-		// If Zerg, wait for a larger army before moving out
-		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) == 0)
-		{
-			globalStrategy = 0;
-			return;
-		}
+	{		
 		globalStrategy = 1;
 		return;
 	}
@@ -472,7 +474,7 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 		{
 			Position fleePosition = unitFlee(unit, target);
 			UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(fleePosition);
-			if (fleePosition != BWAPI::Positions::None && (unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->getLastCommand().getTargetPosition().getDistance(fleePosition) > 5))
+			if (fleePosition != BWAPI::Positions::None)
 			{
 				unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
 			}
@@ -516,21 +518,21 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	double distanceHome = unit->getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
 
 	// Search a 30x30 (31) mini tile area around the unit for mobility	
-	for (int x = start.x - 15; x <= start.x + 15; x++)
+	for (int x = start.x - 30; x <= start.x + 30; x++)
 	{
-		for (int y = start.y - 15; y <= start.y + 15; y++)
+		for (int y = start.y - 30; y <= start.y + 30; y++)
 		{
 			distanceTarget = Position(x * 8, y * 8).getDistance(currentTargetPosition);
 			distanceHome = Position(x * 8, y * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
 			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && GridTracker::Instance().getEnemyMiniGrd(x, y) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome > highestMobility)
 			{
 				bool safeTile = true;
-				for (int i = x - unit->getType().width() / 16; i <= x + unit->getType().width() / 16; i++)
+				for (int i = x - unit->getType().width() / 4; i <= x + unit->getType().width() / 4; i++)
 				{
-					for (int j = y - unit->getType().height() / 16; j <= y + unit->getType().height() / 16; j++)
-					{						
-						if (GridTracker::Instance().getEnemyMiniGrd(i, j) > 0.0 && GridTracker::Instance().getAntiMobilityMiniGrid(i,j) > 0)
-						{						
+					for (int j = y - unit->getType().height() / 4; j <= y + unit->getType().height() / 4; j++)
+					{
+						if (GridTracker::Instance().getEnemyMiniGrd(i, j) > 0.0 || GridTracker::Instance().getAntiMobilityMiniGrid(i, j) > 0)
+						{
 							safeTile = false;
 						}
 					}

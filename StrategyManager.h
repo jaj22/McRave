@@ -14,12 +14,14 @@ class StrategyTrackerClass
 	map <UnitType, double> unitScore;
 	double globalAllyStrength, globalEnemyStrength;
 	bool fastExpand = false;
+	bool invis = false;
 public:
 	double globalAlly() { return globalAllyStrength; }
 	double globalEnemy() {	return globalEnemyStrength;	}
 	map <UnitType, double>& getUnitScore() { return unitScore; }
 	bool isFastExpand() { return fastExpand; }
 	bool setFastExpand(bool FE) { fastExpand = FE; }
+	bool needDetection() { return invis; }
 	
 	
 	// Updating

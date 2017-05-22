@@ -18,6 +18,11 @@ void BuildOrderTrackerClass::update()
 	buildingDesired[UnitTypes::Protoss_Forge] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) / 3);
 	buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
+	if (StrategyTracker::Instance().needDetection())
+	{
+		buildingDesired[UnitTypes::Protoss_Observatory] = 1;
+	}
+
 	// If we are saturated, expand
 	if (!getEarlyBuild && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && ProductionTracker::Instance().getIdleGates().size() == 0)
 	{
@@ -120,7 +125,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 	case 0:
 		// -- 2 Gate Core --
 		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 3);
-		buildingDesired[UnitTypes::Protoss_Assimilator] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 2);
+		buildingDesired[UnitTypes::Protoss_Assimilator] = supply >= 30;
 		if (supply >= 20 && supply < 24)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
@@ -169,7 +174,7 @@ void BuildOrderTrackerClass::midBuilds()
 	switch (midBuild){
 	case 0:
 		// -- Reavers --		
-		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon)/4);
+		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 4);
 		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
 		//currentStrategy.assign("Robo Tech");

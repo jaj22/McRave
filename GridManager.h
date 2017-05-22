@@ -17,6 +17,7 @@ class GridTrackerClass
 	int enemyAirClusterGrid[256][256];
 	int tankClusterGrid[256][256];
 	int allyClusterGrid[256][256];
+	int distanceGridHome[1024][1024];
 
 	// Enemy mini grid testing
 	double enemyGroundStrengthMiniGrid[1024][1024];
@@ -34,6 +35,7 @@ class GridTrackerClass
 	int arbiterGrid[256][256];
 	int templarGrid[256][256];
 
+	bool distanceOnce = true;
 	Position supportPosition;
 	Position earlyDefensePosition;
 public:
@@ -46,6 +48,9 @@ public:
 	void updateObserverGrids();
 	void updateArbiterGrids();
 	void updateAllyMovement(Unit, WalkPosition);
+
+	void updateDistanceGrid();
+	int getDistanceHome(int x, int y) { return distanceGridHome[x][y]; }
 
 	Position getSupportPosition() { return supportPosition; }
 	Position getEarlyDefensePosition() { return earlyDefensePosition; }

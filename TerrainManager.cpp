@@ -6,7 +6,7 @@
 // nextExpansion doesn't need to be a vector, can be a map indexed by distance, useful to expand to an area that is currently not under threat (won't need testbases map either)
 
 void TerrainTrackerClass::update()
-{	
+{
 	// Three stage analysis
 	// 1) Wait for BWTA to analyze or load map cache
 	// 2) Analyze starting position
@@ -113,7 +113,7 @@ void TerrainTrackerClass::update()
 			currentSize = allyTerritory.size();
 			// For each region that is ally territory
 			for (auto *region : allyTerritory)
-			{		
+			{
 				if (region == nullptr)
 				{
 					continue;
@@ -185,10 +185,14 @@ void TerrainTrackerClass::setAnalyzed()
 	analyzed = true;
 }
 
-void TerrainTrackerClass::removeEnemyBase(Unit base)
+void TerrainTrackerClass::removeTerritory(Unit base)
 {
 	if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
 	{
 		enemyBasePositions.erase(base->getPosition());
+	}
+	if (allyTerritory.find(getRegion(base->getTilePosition())) != allyTerritory.end())
+	{
+		allyTerritory.erase(getRegion(base->getTilePosition()));
 	}
 }

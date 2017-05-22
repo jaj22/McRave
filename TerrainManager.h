@@ -34,7 +34,7 @@ public:
 	bool isWalled() { return wallin; }
 	void setWalled() { wallin = true; }
 
-	void removeEnemyBase(Unit);
+	void removeTerritory(Unit);
 	
 	BWEM::CPPath getPath() { return path; }
 	set <BWTA::Region*>& getTerritory() { return territory; }

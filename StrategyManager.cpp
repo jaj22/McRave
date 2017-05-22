@@ -78,6 +78,11 @@ void StrategyTrackerClass::updateEnemy()
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
 		{
+			if (u.second.getUnitType() == UnitTypes::Protoss_Dark_Templar || u.second.getUnitType() == UnitTypes::Protoss_Citadel_of_Adun || u.second.getUnitType() == UnitTypes::Terran_Wraith || u.second.getUnitType() == UnitTypes::Terran_Ghost || u.second.getUnitType() == UnitTypes::Zerg_Lurker)
+			{
+					invis = true;
+			}
+
 			// If tile is visible but unit is not, remove position
 			if (!u.first->exists() && u.second.getPosition() != Positions::None && Broodwar->isVisible(TilePosition(u.second.getPosition())))
 			{
@@ -136,6 +141,9 @@ void StrategyTrackerClass::updateComposition()
 			Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
 			offset = offset + 10;
 		}
+
+		
+
 		// Force expand based on enemy composition
 		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
 		{

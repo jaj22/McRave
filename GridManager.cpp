@@ -42,7 +42,7 @@ void GridTrackerClass::reset()
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", observerGrid[x][y]);
 			}
-
+			
 
 			if (allyClusterGrid[x][y] > strongest)
 			{
@@ -72,20 +72,25 @@ void GridTrackerClass::reset()
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
 			}
 
+			if (Broodwar->getFrameCount() > 200 && distanceGridHome[x][y] <= 25)
+			{
+				//Broodwar->drawCircleMap(x * 8, y * 8, 1, true);
+			}
+
 			if (mobilityMiniGrid[x][y] > 0 && antiMobilityMiniGrid[x][y] == 0)
 			{
 				//Broodwar->drawCircleMap(Position(x * 8 + 4, y * 8 + 4), (int)mobilityMiniGrid[x][y] / 32, Broodwar->self()->getColor());
 				/*if (mobilityMiniGrid[x][y] < 4)
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
 				}
 				else if (mobilityMiniGrid[x][y] >= 4 && mobilityMiniGrid[x][y] < 7)
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);					
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
 				}
 				else if (mobilityMiniGrid[x][y] >= 7)
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
 				}*/
 			}
 
@@ -107,6 +112,7 @@ void GridTrackerClass::update()
 	updateAllyGrids();
 	updateEnemyGrids();
 	updateNeutralGrids();
+	//updateDistanceGrid();
 }
 
 void GridTrackerClass::updateAllyGrids()
@@ -253,7 +259,7 @@ void GridTrackerClass::updateEnemyGrids()
 			int miniRange = u.second.getRange() / 8;
 			if (!u.second.getUnitType().isBuilding() && miniRange < 10)
 			{
-				miniRange = 10;
+				miniRange = 20;
 			}
 			for (int i = u.second.getMiniTile().x - miniRange - 2; i <= 2 + u.second.getMiniTile().x + miniRange; i++)
 			{
@@ -270,7 +276,7 @@ void GridTrackerClass::updateEnemyGrids()
 }
 
 void GridTrackerClass::updateNeutralGrids()
-{	
+{
 	double distanceTo = 0.0;
 	for (auto m : ResourceTracker::Instance().getMyMinerals())
 		// Update resource grid
@@ -281,7 +287,7 @@ void GridTrackerClass::updateNeutralGrids()
 				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
-				}				
+				}
 			}
 		}
 	for (auto g : ResourceTracker::Instance().getMyGas())
@@ -344,7 +350,7 @@ void GridTrackerClass::updateMobilityGrids()
 			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 			{
 				if (theMap.GetMiniTile(WalkPosition(x, y)).Walkable())
-				{					
+				{
 					for (int i = -12; i <= 12; i++)
 					{
 						for (int j = -12; j <= 12; j++)
@@ -352,7 +358,7 @@ void GridTrackerClass::updateMobilityGrids()
 							// The more tiles around x,y that are walkable, the more mobility x,y has				
 							if (x + i >= 0 && x + i <= Broodwar->mapWidth() * 4 && y + j >= 0 && y + j <= Broodwar->mapHeight() * 4 && theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
 							{
-								mobilityMiniGrid[x][y] += 1.0;
+								mobilityMiniGrid[x][y] += 1;
 							}
 						}
 					}
@@ -364,7 +370,7 @@ void GridTrackerClass::updateMobilityGrids()
 						// Scale of 1-10 of how close the position is
 						mobilityMiniGrid[x][y] = 10;
 					}
-					
+
 					//Max a mini grid to 10
 					mobilityMiniGrid[x][y] = min(mobilityMiniGrid[x][y], 10);
 				}
@@ -426,6 +432,47 @@ void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
 		for (int y = here.y - unit->getType().height() / 16; y <= here.y + unit->getType().height() / 16; y++)
 		{
 			antiMobilityMiniGrid[x][y] = 1;
+		}
+	}
+}
+
+void GridTrackerClass::updateDistanceGrid()
+{
+	if (TerrainTracker::Instance().getAnalyzed() && distanceOnce)
+	{
+		for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
+		{
+			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
+			{
+				distanceGridHome[x][y] = 0;
+			}
+		}
+		int x = TerrainTracker::Instance().getPlayerStartingTilePosition().x*4;
+		int y = TerrainTracker::Instance().getPlayerStartingTilePosition().y*4;
+		int mapWidth = Broodwar->mapWidth()*4;
+		int mapHeight = Broodwar->mapHeight()*4;
+		distanceOnce = false;
+
+		bool done = false;
+		int cnt = 0;
+		while (!done)
+		{
+			cnt++;
+			for (int i = x - cnt; i <= x + cnt; i++)
+			{
+				for (int j = y - cnt; j <= y + cnt; j++)
+				{
+					if (i >= 0 && i <= mapWidth && j >= 0 && j <= mapHeight && distanceGridHome[i][j] == 0 && mobilityMiniGrid[i][j] > 0)
+					{
+						distanceGridHome[i][j] = cnt;
+					}
+				}
+			}
+			if (cnt >= 1024)
+			{
+				Broodwar << "Test" << endl;
+				done = true;
+			}
 		}
 	}
 }
