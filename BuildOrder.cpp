@@ -82,7 +82,7 @@ void BuildOrderTrackerClass::update()
 
 		/* Protoss vs Protoss		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps */
 	case Races::Enum::Protoss:
-		earlyBuild = 0;
+		earlyBuild = 1;
 		midBuild = 0;
 		lateBuild = 1;
 		break;

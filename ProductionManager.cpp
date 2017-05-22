@@ -9,6 +9,7 @@
 
 void ProductionTrackerClass::update()
 {
+	updateReservedResources();
 	int supply = UnitTracker::Instance().getSupply();
 	int queuedMineral = BuildingTracker::Instance().getQueuedMineral();
 	int queuedGas = BuildingTracker::Instance().getQueuedGas();

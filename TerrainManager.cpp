@@ -113,7 +113,11 @@ void TerrainTrackerClass::update()
 			currentSize = allyTerritory.size();
 			// For each region that is ally territory
 			for (auto *region : allyTerritory)
-			{				
+			{		
+				if (region == nullptr)
+				{
+					continue;
+				}
 				// For each chokepoint of each ally region				
 				for (auto Chokepoint : region->getChokepoints())
 				{

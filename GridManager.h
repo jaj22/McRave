@@ -25,7 +25,7 @@ class GridTrackerClass
 	int resourceGrid[256][256];
 
 	// Mobility grids
-	double mobilityMiniGrid[1024][1024];
+	int mobilityMiniGrid[1024][1024];
 	int antiMobilityMiniGrid[1024][1024];
 	int mobilityGrid[256][256];
 
@@ -62,7 +62,7 @@ public:
 	
 	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }
 	int getMobilityGrid(int x, int y) { return mobilityGrid[x][y]; }
-	double getMobilityMiniGrid(int x, int y) { return mobilityMiniGrid[x][y]; }
+	int getMobilityMiniGrid(int x, int y) { return mobilityMiniGrid[x][y]; }
 	int getAntiMobilityMiniGrid(int x, int y) { return antiMobilityMiniGrid[x][y]; }
 
 	int getObserverGrid(int x, int y) { return observerGrid[x][y]; }

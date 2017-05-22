@@ -100,6 +100,7 @@ void ResourceTrackerClass::removeResource(Unit resource)
 	{
 		if (probe.second.getTarget() == resource)
 		{
+			Broodwar << "Dead Mineral" << endl;
 			probe.second.setTarget(nullptr);
 		}
 	}

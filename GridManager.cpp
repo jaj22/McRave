@@ -75,11 +75,23 @@ void GridTrackerClass::reset()
 			if (mobilityMiniGrid[x][y] > 0 && antiMobilityMiniGrid[x][y] == 0)
 			{
 				//Broodwar->drawCircleMap(Position(x * 8 + 4, y * 8 + 4), (int)mobilityMiniGrid[x][y] / 32, Broodwar->self()->getColor());
+				/*if (mobilityMiniGrid[x][y] < 4)
+				{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
+				}
+				else if (mobilityMiniGrid[x][y] >= 4 && mobilityMiniGrid[x][y] < 7)
+				{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);					
+				}
+				else if (mobilityMiniGrid[x][y] >= 7)
+				{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
+				}*/
 			}
 
 			if (enemyGroundStrengthMiniGrid[x][y] > 0)
 			{
-				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
+				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
 			}
 
 			antiMobilityMiniGrid[x][y] = 0;
@@ -332,22 +344,29 @@ void GridTrackerClass::updateMobilityGrids()
 			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 			{
 				if (theMap.GetMiniTile(WalkPosition(x, y)).Walkable())
-				{
-					if (getNearestChokepoint(Position(x * 8, y * 8)) && getNearestChokepoint(Position(x * 8, y * 8))->getCenter().getDistance(Position(x * 8, y * 8)) < 3200)
+				{					
+					for (int i = -12; i <= 12; i++)
 					{
-						mobilityMiniGrid[x][y] += (3200.0 / (32.0 + (double)Position(x * 8, y * 8).getDistance(getNearestChokepoint(Position(x * 8, y * 8))->getCenter())));
-					}
-					for (int i = -4; i <= 4; i++)
-					{
-						for (int j = -4; j <= 4; j++)
+						for (int j = -12; j <= 12; j++)
 						{
-							// Give other tiles with mobility an increased score					
+							// The more tiles around x,y that are walkable, the more mobility x,y has				
 							if (x + i >= 0 && x + i <= Broodwar->mapWidth() * 4 && y + j >= 0 && y + j <= Broodwar->mapHeight() * 4 && theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
 							{
 								mobilityMiniGrid[x][y] += 1.0;
 							}
 						}
 					}
+					// Shrink to ratio out of 10						
+					mobilityMiniGrid[x][y] = int(double(mobilityMiniGrid[x][y]) / 81);
+
+					if (getNearestChokepoint(Position(x * 8, y * 8)) && getNearestChokepoint(Position(x * 8, y * 8))->getCenter().getDistance(Position(x * 8, y * 8)) < 320)
+					{
+						// Scale of 1-10 of how close the position is
+						mobilityMiniGrid[x][y] = 10;
+					}
+					
+					//Max a mini grid to 10
+					mobilityMiniGrid[x][y] = min(mobilityMiniGrid[x][y], 10);
 				}
 			}
 		}
