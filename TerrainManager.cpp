@@ -11,6 +11,15 @@ void TerrainTrackerClass::update()
 	// 1) Wait for BWTA to analyze or load map cache
 	// 2) Analyze starting position
 	// 3) Analye map when enemy found	
+	
+	// BWEM Transfering
+	/*for (auto & area : theMap.Instance().Areas())
+	{
+		for (auto & base : area.Bases())
+		{
+			
+		}
+	}*/
 
 	// Only do this loop once if map analysis done
 	if (analyzed)

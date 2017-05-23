@@ -7,21 +7,21 @@
 #include "Header.h"
 #include "McRave.h"
 
+// IMPORTANT: Move to BWEM and ditch BWTA, too slow
+// Pylons not being built sometimes - unknown cause, new building placer must be culprit
+
 // TODOS:
-// If being rushed, move units to mineral line
+// Extra probes for when expanding so it's saturated faster
 // Separate targeting from local calculation reference points (causes unit confusion)
 // Threat grids to minimize O(n^2) iterations in CommandTrackerClass::updateLocalStrategy
 // Save decision state (in UnitInfo?, new map?) (attack, retreat, contain)
-// Change two gate core build - PvP maybe add Battery?
-// Find regroup function and use it for 1 gate core defenses in PvP
 // Move unit sizing to simplify strength calculations of explosive/concussive damage
 // Massive slowdown (possibly building placement issues again)
 
 // Testing:
 // If scout dies, no base found - Testing
-// Crash testing when losing - Testing possible fix
+// If being rushed, move units to mineral line - Testing
 // Spider mine removal from expansions - Testing
-// Observer spacing - Initial tests are good, needs enemy detection grids to avoid being killed (scans included)
 
 void McRave::onStart()
 {

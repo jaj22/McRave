@@ -14,23 +14,28 @@ TilePosition buildTilePosition;
 
 bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
-	// Offset for first pylon
+	
 	int offset = 0;
+	// Offset for first pylon
 	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) == 0)
 	{
-		offset = 2;
+		if (TerrainTracker::Instance().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 512)
+		{
+			return false;
+		}
+		offset = 3;
 	}
 
-	// Space out by at least 1 tile every 4 tiles horizontally, 3 vertically
-	if (!ignoreCond && (buildTilePosition.x % 3 == 0 || buildTilePosition.x % 2 == 0 || buildTilePosition.y % 3 == 0 || Broodwar->canBuildHere(buildTilePosition, building, nullptr, true) == false))
+	// Offset for production buildings
+	if (building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility)
 	{
-		return false;
+		offset = 1;
 	}
 
 	// For every tile of a buildings size
-	for (int x = buildTilePosition.x - offset; x <= buildTilePosition.x + building.tileWidth() + offset; x++)
+	for (int x = buildTilePosition.x - offset; x < buildTilePosition.x + building.tileWidth() + offset; x++)
 	{
-		for (int y = buildTilePosition.y - offset; y <= buildTilePosition.y + building.tileHeight() + offset; y++)
+		for (int y = buildTilePosition.y - offset; y < buildTilePosition.y + building.tileHeight() + offset; y++)
 		{
 			// If the location is outside the boundaries of the map, return false
 			if (x < 0 || x > Broodwar->mapWidth() || y < 0 || y > Broodwar->mapHeight())
@@ -38,20 +43,28 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 				return false;
 			}
 			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			if ((building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0) || (!ignoreCond && building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0) || TerrainTracker::Instance().getAllyTerritory().find(getRegion(buildTilePosition)) == TerrainTracker::Instance().getAllyTerritory().end())
+			if ((building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0) /*|| (!ignoreCond && building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)*/ || TerrainTracker::Instance().getAllyTerritory().find(getRegion(buildTilePosition)) == TerrainTracker::Instance().getAllyTerritory().end())
 			{
 				return false;
 			}
 			if (getNearestChokepoint(TilePosition(x, y)) && getNearestChokepoint(TilePosition(x, y))->getCenter().getDistance(Position(TilePosition(x, y))) < 16)
 			{
 				return false;
-			}
-			/*if (!ignoreCond && GridTracker::Instance().getMobilityGrid(x, y) <= 9)
+			}		
+			if (GridTracker::Instance().getReserveGrid(x, y) > 0)
 			{
-				return false;
-			}*/
+				if ((building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility) && !Broodwar->isBuildable(TilePosition(x, y), true))
+				{
+					return false;
+				}
+				else
+				{
+					return false;
+				}
+			}
 		}
 	}
+
 	// For every tile of an expansion
 	for (auto base : TerrainTracker::Instance().getNextExpansion())
 	{

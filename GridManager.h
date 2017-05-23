@@ -18,6 +18,7 @@ class GridTrackerClass
 	int tankClusterGrid[256][256];
 	int allyClusterGrid[256][256];
 	int distanceGridHome[1024][1024];
+	int reserveGrid[256][256];
 
 	// Enemy mini grid testing
 	double enemyGroundStrengthMiniGrid[1024][1024];
@@ -51,6 +52,8 @@ public:
 
 	void updateDistanceGrid();
 	int getDistanceHome(int x, int y) { return distanceGridHome[x][y]; }
+
+	int getReserveGrid(int x, int y) { return reserveGrid[x][y]; }
 
 	Position getSupportPosition() { return supportPosition; }
 	Position getEarlyDefensePosition() { return earlyDefensePosition; }

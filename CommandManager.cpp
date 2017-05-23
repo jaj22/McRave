@@ -18,11 +18,6 @@ void CommandTrackerClass::update()
 			continue;
 		}
 
-		//// Latency returning for now, else make a decision
-		//if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
-		//{
-		//	return;
-		//}
 		updateDecisions(u.first, u.second.getTarget());
 	}
 }
@@ -100,8 +95,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	if (globalStrategy == 0)
 	{
 		if (TerrainTracker::Instance().getEnemyBasePositions().size() > 0 && TerrainTracker::Instance().getAllyTerritory().size() > 0)
-		{
-			// Pick random enemy bases to attack (cap at ~3-4 units?)
+		{			
 			closestD = 1000.0;
 			closestP = TerrainTracker::Instance().getDefendHere().at(0);
 
@@ -156,7 +150,7 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 	// Check if we should attack
 	if (globalStrategy == 1 && TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
 	{
-		if (target)
+		if (target && UnitTracker::Instance().getEnUnits()[target].getPosition() != Positions::None)
 		{
 			unit->attack(UnitTracker::Instance().getEnUnits()[target].getPosition());
 			return;
@@ -522,9 +516,13 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	{
 		for (int y = start.y - 30; y <= start.y + 30; y++)
 		{
-			distanceTarget = Position(x * 8, y * 8).getDistance(currentTargetPosition);
-			distanceHome = Position(x * 8, y * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
-			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && GridTracker::Instance().getEnemyMiniGrd(x, y) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128))
+			if (x < 0 || x > Broodwar->mapWidth() * 4 || y < 0 || y > Broodwar->mapHeight() * 4)
+			{
+				continue;
+			}
+			distanceTarget = max(1.0, Position(x * 8, y * 8).getDistance(currentTargetPosition));
+			distanceHome = max(1.0, Position(x * 8, y * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition()));
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && GridTracker::Instance().getEnemyMiniGrd(x, y) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome > highestMobility/* && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(unit->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || (Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128))*/)
 			{
 				bool safeTile = true;
 				for (int i = x - unit->getType().width() / 4; i <= x + unit->getType().width() / 4; i++)
@@ -571,5 +569,23 @@ void CommandTrackerClass::arbiterManager(Unit unit)
 
 void CommandTrackerClass::templarManager(Unit unit)
 {
-
+	Unit target = UnitTracker::Instance().getMyUnits()[unit].getTarget();
+	int stratL = UnitTracker::Instance().getMyUnits()[unit].getStrategy();
+	if (stratL == 1 || stratL == 0)
+	{
+		if (target != unit)
+		{
+			if (unit->getEnergy() > 75)
+			{
+				unit->useTech(TechTypes::Psionic_Storm, target);
+				return;
+			}
+			else if (unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar) && (unit->getEnergy() < 70 || unit->isUnderAttack()))
+			{
+				unit->useTech(TechTypes::Archon_Warp, unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
+				return;
+			}
+		}
+	}
+	return;
 }
