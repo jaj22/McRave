@@ -164,8 +164,8 @@ void ProbeTrackerClass::enforceAssignments()
 				continue;
 			}
 
-			// If idle and carrying minerals, return cargo			
-			if (u.first->isIdle() && u.first->isCarryingMinerals())
+			// If idle and carrying gas or minerals, return cargo			
+			if (u.first->isIdle() && (u.first->isCarryingGas() || u.first->isCarryingMinerals()))
 			{
 				u.first->returnCargo();
 				continue;

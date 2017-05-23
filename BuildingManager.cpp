@@ -217,7 +217,7 @@ void BuildingTrackerClass::constructBuildings()
 		// If probe died, replace the probe
 		if (!b.second.second || !b.second.second->exists())
 		{
-			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
+			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas);
 			continue;
 		}
 

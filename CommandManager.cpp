@@ -524,7 +524,7 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 		{
 			distanceTarget = Position(x * 8, y * 8).getDistance(currentTargetPosition);
 			distanceHome = Position(x * 8, y * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
-			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && GridTracker::Instance().getEnemyMiniGrd(x, y) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome > highestMobility)
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && GridTracker::Instance().getEnemyMiniGrd(x, y) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128))
 			{
 				bool safeTile = true;
 				for (int i = x - unit->getType().width() / 4; i <= x + unit->getType().width() / 4; i++)
