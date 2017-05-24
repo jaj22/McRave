@@ -13,13 +13,12 @@ using namespace BWTA;
 TilePosition buildTilePosition;
 
 bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
-{
-	
+{	
 	int offset = 0;
-	// Offset for first pylon
-	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) == 0)
+	// Offset for first 2 pylons
+	if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
 	{
-		if (TerrainTracker::Instance().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 512)
+		if (TerrainTracker::Instance().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 320)
 		{
 			return false;
 		}
@@ -32,6 +31,11 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 		offset = 1;
 	}
 
+	if (!Broodwar->canBuildHere(buildTilePosition, building))
+	{
+		return false;
+	}
+
 	// For every tile of a buildings size
 	for (int x = buildTilePosition.x - offset; x < buildTilePosition.x + building.tileWidth() + offset; x++)
 	{
@@ -42,12 +46,19 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 			{
 				return false;
 			}
-			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			if ((building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0) /*|| (!ignoreCond && building == UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(x * 32, y * 32, 128, Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)*/ || TerrainTracker::Instance().getAllyTerritory().find(getRegion(buildTilePosition)) == TerrainTracker::Instance().getAllyTerritory().end())
+
+			if (building = UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 2 && Broodwar->getUnitsInRadius(Position(x * 32, y * 32), 160, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
 			{
 				return false;
 			}
-			if (getNearestChokepoint(TilePosition(x, y)) && getNearestChokepoint(TilePosition(x, y))->getCenter().getDistance(Position(TilePosition(x, y))) < 16)
+
+			if (!Broodwar->isBuildable(TilePosition(x, y), true))
+			{
+				return false;
+			}
+			
+			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
+			if ((building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0) || TerrainTracker::Instance().getAllyTerritory().find(getRegion(buildTilePosition)) == TerrainTracker::Instance().getAllyTerritory().end())
 			{
 				return false;
 			}		
@@ -68,12 +79,12 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	// For every tile of an expansion
 	for (auto base : TerrainTracker::Instance().getNextExpansion())
 	{
-		for (int i = 0; i <= building.tileWidth() + 1; i++)
+		for (int i = 0; i < building.tileWidth(); i++)
 		{
-			for (int j = 0; j <= building.tileHeight() + 1; j++)
+			for (int j = 0; j < building.tileHeight(); j++)
 			{
 				// If the x value of this tile of the building is within an expansion and the y value of this tile of the building is within an expansion, return false
-				if (buildTilePosition.x + i >= base.x && buildTilePosition.x + i <= base.x + 4 && buildTilePosition.y + j >= base.y && buildTilePosition.y + j <= base.y + 3)
+				if (buildTilePosition.x + i > base.x && buildTilePosition.x + i < base.x + 4 && buildTilePosition.y + j > base.y && buildTilePosition.y + j < base.y + 3)
 				{
 					return false;
 				}
@@ -99,7 +110,7 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 	int dx = 0;
 	int dy = 1;
 	// Searches in a spiral around the specified tile position (usually a nexus)
-	while (length < 80)
+	while (length < 150)
 	{
 		//If we can build here, return this tile position
 		if (x > 0 && x < Broodwar->mapWidth() && y > 0 && y < Broodwar->mapHeight())
@@ -139,6 +150,7 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 			}
 		}
 	}
+	Broodwar << "Out of tiles" << endl;
 	return TilePositions::None;
 }
 

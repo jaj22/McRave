@@ -339,6 +339,7 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 		allyUnits[unit].setUnitType(unit->getType());
 		allyUnits[unit].setPosition(unit->getPosition());
 		allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
+		allyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
 		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
 		allyUnits[unit].setCommand(unit->getLastCommand().getType());
 		allyUnits[unit].setMiniTile(getMiniTile(unit));

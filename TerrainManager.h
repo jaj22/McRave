@@ -20,7 +20,6 @@ class TerrainTrackerClass
 	BWEM::CPPath path;
 	set <BWTA::Region*> territory;
 	set <BWTA::Region*> allyTerritory;
-	vector<BWTA::Region*> enemyTerritory;
 	vector<Position> defendHere;
 	set<Position> enemyBasePositions;
 	vector<TilePosition> nextExpansion;
@@ -38,8 +37,7 @@ public:
 	
 	BWEM::CPPath getPath() { return path; }
 	set <BWTA::Region*>& getTerritory() { return territory; }
-	set <BWTA::Region*>& getAllyTerritory() { return allyTerritory; }
-	vector<BWTA::Region*> getEnemyTerritory() { return enemyTerritory; }
+	set <BWTA::Region*>& getAllyTerritory() { return allyTerritory; }	
 	vector<Position>& getDefendHere() { return defendHere; }
 	set<Position>& getEnemyBasePositions() { return enemyBasePositions; }
 	vector<TilePosition>& getNextExpansion() { return nextExpansion; }

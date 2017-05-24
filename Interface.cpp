@@ -3,20 +3,22 @@
 #include "UnitManager.h"
 #include "StrategyManager.h"
 #include "TerrainManager.h"
+#include "BuildingManager.h"
+#include "BuildOrder.h"
 
 void InterfaceTrackerClass::update()
 {
 	int offset = 0;
 
-	//// Show what buildings we want
-	//for (auto b : buildingDesired)
-	//{
-	//	if (b.second > 0)
-	//	{
-	//		Broodwar->drawTextScreen(0, offset, "%s : %d", b.first.toString().c_str(), b.second);
-	//		offset = offset + 10;
-	//	}
-	//}		
+	// Show what buildings we want
+	for (auto b : BuildOrderTracker::Instance().getBuildingDesired())
+	{
+		if (b.second > 0)
+		{
+			Broodwar->drawTextScreen(0, offset, "%s : %d", b.first.toString().c_str(), b.second);
+			offset = offset + 10;
+		}
+	}		
 
 	// Display some information about our queued resources required for structure building			
 	//Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());

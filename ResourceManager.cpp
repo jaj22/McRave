@@ -10,7 +10,7 @@ void ResourceTrackerClass::update()
 		if (r && r->exists())
 		{
 			// Need better solution than GUIR - BWEM?
-			if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) > 0 && r->getUnitsInRadius(320, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus).size() > 0)
+			if (GridTracker::Instance().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 1)
 			{
 				if (r->getType().isMineralField() && r->getInitialResources() > 0 && myMinerals.find(r) == myMinerals.end())
 				{
@@ -21,9 +21,8 @@ void ResourceTrackerClass::update()
 				{
 					storeGas(r);
 				}				
-			}
-			// BWTA needs a frame buffer
-			if (Broodwar->getFrameCount() > 2000 && (myMinerals.find(r) != myMinerals.end() || myGas.find(r) != myGas.end()) && TerrainTracker::Instance().getAnalyzed() && TerrainTracker::Instance().getAllyTerritory().find(getRegion(r->getTilePosition())) == TerrainTracker::Instance().getAllyTerritory().end())
+			}	
+			else if (GridTracker::Instance().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 0)
 			{
 				removeResource(r);
 			}

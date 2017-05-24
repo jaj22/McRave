@@ -11,6 +11,7 @@
 // Pylons not being built sometimes - unknown cause, new building placer must be culprit
 
 // TODOS:
+// Pylon grid, if > number of pylons, don't build there to prevent stacking
 // Extra probes for when expanding so it's saturated faster
 // Separate targeting from local calculation reference points (causes unit confusion)
 // Threat grids to minimize O(n^2) iterations in CommandTrackerClass::updateLocalStrategy

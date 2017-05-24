@@ -19,6 +19,7 @@ class GridTrackerClass
 	int allyClusterGrid[256][256];
 	int distanceGridHome[1024][1024];
 	int reserveGrid[256][256];
+	int nexusGrid[256][256]; 
 
 	// Enemy mini grid testing
 	double enemyGroundStrengthMiniGrid[1024][1024];
@@ -29,7 +30,6 @@ class GridTrackerClass
 	// Mobility grids
 	int mobilityMiniGrid[1024][1024];
 	int antiMobilityMiniGrid[1024][1024];
-	int mobilityGrid[256][256];
 
 	// Special Unit grids
 	int observerGrid[256][256];
@@ -54,6 +54,7 @@ public:
 	int getDistanceHome(int x, int y) { return distanceGridHome[x][y]; }
 
 	int getReserveGrid(int x, int y) { return reserveGrid[x][y]; }
+	int getNexusGrid(int x, int y) { return nexusGrid[x][y]; }
 
 	Position getSupportPosition() { return supportPosition; }
 	Position getEarlyDefensePosition() { return earlyDefensePosition; }
@@ -69,7 +70,6 @@ public:
 	int getAllyCluster(int x, int y) { return allyClusterGrid[x][y]; }
 	
 	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }
-	int getMobilityGrid(int x, int y) { return mobilityGrid[x][y]; }
 	int getMobilityMiniGrid(int x, int y) { return mobilityMiniGrid[x][y]; }
 	int getAntiMobilityMiniGrid(int x, int y) { return antiMobilityMiniGrid[x][y]; }
 

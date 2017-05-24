@@ -54,6 +54,10 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 					UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(fleePosition);
 					unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
 				}
+				else
+				{
+					unit->move(TerrainTracker::Instance().getPlayerStartingPosition());
+				}
 				return;
 			}
 
@@ -67,6 +71,10 @@ void CommandTrackerClass::updateDecisions(Unit unit, Unit target)
 					{
 						UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(fleePosition);
 						unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
+					}
+					else
+					{
+						unit->move(TerrainTracker::Instance().getPlayerStartingPosition());
 					}
 					return;
 				}
@@ -470,7 +478,11 @@ void CommandTrackerClass::unitMicroTarget(Unit unit, Unit target)
 			UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(fleePosition);
 			if (fleePosition != BWAPI::Positions::None)
 			{
-				unit->move(Position(fleePosition.x + rand() % 3 + (-1), fleePosition.y + rand() % 3 + (-1)));
+				unit->move(fleePosition);
+			}
+			else
+			{
+				unit->move(TerrainTracker::Instance().getPlayerStartingPosition());
 			}
 		}
 		else if (unit->getGroundWeaponCooldown() <= 0)
@@ -506,7 +518,7 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	}
 	WalkPosition start = UnitTracker::Instance().getMyUnits()[unit].getMiniTile();
 	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[unit].getTargetPosition();
-	WalkPosition finalPosition = UnitTracker::Instance().getMyUnits()[unit].getMiniTile();
+	WalkPosition finalPosition = WalkPositions::None;
 	double highestMobility = 0.0;
 	double distanceTarget = unit->getDistance(target);
 	double distanceHome = unit->getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
@@ -522,14 +534,14 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 			}
 			distanceTarget = max(1.0, Position(x * 8, y * 8).getDistance(currentTargetPosition));
 			distanceHome = max(1.0, Position(x * 8, y * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition()));
-			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && GridTracker::Instance().getEnemyMiniGrd(x, y) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome > highestMobility/* && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(unit->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || (Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128))*/)
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && GridTracker::Instance().getEnemyMiniGrd(x, y) == 0.0 && GridTracker::Instance().getMobilityMiniGrid(x, y) * distanceTarget / distanceHome > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(unit->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || (getNearestChokepoint(TilePosition(x / 4, y / 4)) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128)))
 			{
 				bool safeTile = true;
-				for (int i = x - unit->getType().width() / 4; i <= x + unit->getType().width() / 4; i++)
+				for (int i = x - unit->getType().width() / 16; i <= x + unit->getType().width() / 16; i++)
 				{
-					for (int j = y - unit->getType().height() / 4; j <= y + unit->getType().height() / 4; j++)
+					for (int j = y - unit->getType().height() / 16; j <= y + unit->getType().height() / 16; j++)
 					{
-						if (GridTracker::Instance().getEnemyMiniGrd(i, j) > 0.0 || GridTracker::Instance().getAntiMobilityMiniGrid(i, j) > 0)
+						if (GridTracker::Instance().getEnemyMiniGrd(i, j) > 0.0 || GridTracker::Instance().getMobilityMiniGrid(i, j) == 0 || GridTracker::Instance().getAntiMobilityMiniGrid(i,j) == 1)
 						{
 							safeTile = false;
 						}
@@ -543,7 +555,10 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 			}
 		}
 	}
-	GridTracker::Instance().updateAllyMovement(unit, finalPosition);
+	if (finalPosition != WalkPositions::None)
+	{
+		GridTracker::Instance().updateAllyMovement(unit, finalPosition);
+	}
 	return Position(finalPosition);
 }
 

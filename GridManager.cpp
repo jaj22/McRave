@@ -8,7 +8,6 @@ bool doOnce = true;
 
 void GridTrackerClass::reset()
 {
-	double strongest = 0.0;
 	// For each tile, draw the current threat onto the tile
 	for (int x = 0; x <= Broodwar->mapWidth(); x++)
 	{
@@ -33,11 +32,7 @@ void GridTrackerClass::reset()
 			if (resourceGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", resourceGrid[x][y]);
-			}
-			if (mobilityGrid[x][y] > 0)
-			{
-				//Broodwar->drawTextMap(x * 32, y * 32, "%d", mobilityGrid[x][y]);
-			}
+			}			
 			if (observerGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", observerGrid[x][y]);
@@ -46,13 +41,9 @@ void GridTrackerClass::reset()
 			{
 				//Broodwar->drawBoxMap(Position(x * 32, y * 32), Position(x*32 + 32, y*32 + 32), Colors::Black);
 			}
-
-
-
-			if (allyClusterGrid[x][y] > strongest)
+			if (nexusGrid[x][y] > 0)
 			{
-				supportPosition = Position(x * 32, y * 32);
-				strongest = allyClusterGrid[x][y];
+				//Broodwar->drawBoxMap(Position(x * 32, y * 32), Position(x*32 + 32, y*32 + 32), Colors::Black);
 			}
 
 			// Reset strength grids
@@ -76,17 +67,12 @@ void GridTrackerClass::reset()
 			if (antiMobilityMiniGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
-			}
+			}		
 
-			if (Broodwar->getFrameCount() > 200 && distanceGridHome[x][y] <= 25)
-			{
-				//Broodwar->drawCircleMap(x * 8, y * 8, 1, true);
-			}
-
-			if (mobilityMiniGrid[x][y] > 0 && antiMobilityMiniGrid[x][y] == 0)
+			if (mobilityMiniGrid[x][y] >= 0 && antiMobilityMiniGrid[x][y] == 0)
 			{
 				//Broodwar->drawCircleMap(Position(x * 8 + 4, y * 8 + 4), (int)mobilityMiniGrid[x][y] / 32, Broodwar->self()->getColor());
-			/*	if (mobilityMiniGrid[x][y] < 4)
+				/*if (mobilityMiniGrid[x][y] < 4)
 				{
 					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
 				}
@@ -162,6 +148,17 @@ void GridTrackerClass::updateAllyGrids()
 					for (int y = startY - offset; y < startY + u->getType().tileHeight() + offset; y++)
 					{
 						reserveGrid[x][y] = 1;
+					}
+				}	
+				if (u->getType().isResourceDepot())
+				{
+					offset = 10;
+					for (int x = startX - offset; x < startX + u->getType().tileWidth() + offset; x++)
+					{
+						for (int y = startY - offset; y < startY + u->getType().tileHeight() + offset; y++)
+						{
+							nexusGrid[x][y] = 1;
+						}
 					}
 				}
 			}
@@ -348,27 +345,12 @@ void GridTrackerClass::updateMobilityGrids()
 {
 	if (doOnce && TerrainTracker::Instance().getAnalyzed())
 	{
-		doOnce = false;
-		for (int x = 0; x <= Broodwar->mapWidth(); x++)
+		doOnce = false;	
+		for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
 		{
-			for (int y = 0; y <= Broodwar->mapHeight(); y++)
+			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 			{
-				// If the tile has mobility
-				if (x >= 1 && x <= Broodwar->mapWidth() - 1 && y >= 1 && y <= Broodwar->mapHeight() - 1 && theMap.GetTile(TilePosition(x, y)).Walkable())
-				{
-					mobilityGrid[x][y] += 1;
-					for (int i = -1; i <= 1; i++)
-					{
-						for (int j = -1; j <= 1; j++)
-						{
-							// Give other tiles with mobility an increased score
-							if (x + i >= 0 && x + i <= Broodwar->mapWidth() && y + j >= 0 && y + j <= Broodwar->mapHeight() && theMap.GetTile(TilePosition(x + i, y + j)).Walkable())
-							{
-								mobilityGrid[x + i][y + j] += 1;
-							}
-						}
-					}
-				}
+				mobilityMiniGrid[x][y] += 0;
 			}
 		}
 		for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
@@ -464,6 +446,7 @@ void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
 
 void GridTrackerClass::updateDistanceGrid()
 {
+	// TODO: Goal with this grid is to create a ground distance grid from home for unit micro
 	if (TerrainTracker::Instance().getAnalyzed() && distanceOnce)
 	{
 		for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
