@@ -32,7 +32,7 @@ void GridTrackerClass::reset()
 			if (resourceGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", resourceGrid[x][y]);
-			}			
+			}
 			if (observerGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", observerGrid[x][y]);
@@ -67,26 +67,26 @@ void GridTrackerClass::reset()
 			if (antiMobilityMiniGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
-			}		
+			}
 
 			if (mobilityMiniGrid[x][y] >= 0 && antiMobilityMiniGrid[x][y] == 0)
 			{
 				//Broodwar->drawCircleMap(Position(x * 8 + 4, y * 8 + 4), (int)mobilityMiniGrid[x][y] / 32, Broodwar->self()->getColor());
 				/*if (mobilityMiniGrid[x][y] < 4)
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
 				}
 				else if (mobilityMiniGrid[x][y] >= 4 && mobilityMiniGrid[x][y] < 7)
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
 				}
 				else if (mobilityMiniGrid[x][y] >= 7 && mobilityMiniGrid[x][y] < 10)
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
 				}
 				else if (mobilityMiniGrid[x][y] >= 10)
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
 				}*/
 			}
 
@@ -149,7 +149,7 @@ void GridTrackerClass::updateAllyGrids()
 					{
 						reserveGrid[x][y] = 1;
 					}
-				}	
+				}
 				if (u->getType().isResourceDepot())
 				{
 					offset = 10;
@@ -345,7 +345,7 @@ void GridTrackerClass::updateMobilityGrids()
 {
 	if (doOnce && TerrainTracker::Instance().getAnalyzed())
 	{
-		doOnce = false;	
+		doOnce = false;
 		for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
 		{
 			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
@@ -387,27 +387,23 @@ void GridTrackerClass::updateMobilityGrids()
 	}
 }
 
-void GridTrackerClass::updateObserverGrids()
-{
-	for (auto u : SpecialUnitTracker::Instance().getMyObservers())
-	{
-		int initialx = TilePosition(u.second.getDestination()).x;
-		int initialy = TilePosition(u.second.getDestination()).y;
-		int offsetX = u.second.getPosition().x % 32;
-		int offsetY = u.second.getPosition().y % 32;
+void GridTrackerClass::updateObserverMovement(Unit observer)
+{	
+	int initialx = SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().x/32;
+	int initialy = SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().y/32;
 
-		for (int x = initialx - 9; x <= initialx + 9; x++)
+	for (int x = initialx - 5; x <= initialx + 5; x++)
+	{
+		for (int y = initialy - 5; y <= initialy + 5; y++)
 		{
-			for (int y = initialy - 9; y <= initialy + 9; y++)
+			// Create a circle of detection rather than a square
+			if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && Position(SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination()).getDistance(Position(x * 32, y * 32)) < 160)
 			{
-				// Create a circle of detection rather than a square
-				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (Position(offsetX, offsetY) + u.second.getPosition()).getDistance(Position(x * 32, y * 32)) < 288)
-				{
-					observerGrid[x][y] = 1;
-				}
+				observerGrid[x][y] = 1;
 			}
 		}
 	}
+
 }
 
 void GridTrackerClass::updateArbiterGrids()

@@ -14,6 +14,7 @@
 #include "NexusManager.h"
 #include "ProbeManager.h"
 #include "ProductionManager.h"
+#include "PylonManager.h"
 #include "ResourceManager.h"
 #include "UnitManager.h"
 #include "SpecialUnitManager.h"

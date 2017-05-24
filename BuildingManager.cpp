@@ -1,10 +1,12 @@
+#include "BuildOrder.h"
 #include "BuildingManager.h"
 #include "GridManager.h"
 #include "TerrainManager.h"
+#include "PylonManager.h"
 #include "ResourceManager.h"
-#include "BuildOrder.h"
 #include <BWAPI.h>
 #include <BWTA.h>
+
 
 using namespace BWAPI;
 using namespace std;
@@ -13,12 +15,12 @@ using namespace BWTA;
 TilePosition buildTilePosition;
 
 bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
-{	
+{
 	int offset = 0;
 	// Offset for first 2 pylons
 	if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
 	{
-		if (TerrainTracker::Instance().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 320)
+		if (TerrainTracker::Instance().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 640)
 		{
 			return false;
 		}
@@ -31,15 +33,21 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 		offset = 1;
 	}
 
-	if (!Broodwar->canBuildHere(buildTilePosition, building))
+	// Check for powered tiles based on building size
+	if (building != UnitTypes::Protoss_Pylon && !PylonTracker::Instance().hasPower(buildTilePosition, building))
+	{
+		return false;
+	}
+
+	if (building == UnitTypes::Protoss_Pylon && !Broodwar->canBuildHere(buildTilePosition, building))
 	{
 		return false;
 	}
 
 	// For every tile of a buildings size
-	for (int x = buildTilePosition.x - offset; x < buildTilePosition.x + building.tileWidth() + offset; x++)
+	for (int x = buildTilePosition.x; x < buildTilePosition.x + building.tileWidth(); x++)
 	{
-		for (int y = buildTilePosition.y - offset; y < buildTilePosition.y + building.tileHeight() + offset; y++)
+		for (int y = buildTilePosition.y; y < buildTilePosition.y + building.tileHeight(); y++)
 		{
 			// If the location is outside the boundaries of the map, return false
 			if (x < 0 || x > Broodwar->mapWidth() || y < 0 || y > Broodwar->mapHeight())
@@ -47,28 +55,32 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 				return false;
 			}
 
-			if (building = UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 2 && Broodwar->getUnitsInRadius(Position(x * 32, y * 32), 160, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() > 0)
+			if (GridTracker::Instance().getReserveGrid(x, y) > 0)
 			{
 				return false;
 			}
 
-			if (!Broodwar->isBuildable(TilePosition(x, y), true))
+			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
+			if (building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0)
 			{
 				return false;
 			}
-			
-			// If the spot is not buildable, has a building on it or is within 2 tiles of a mineral field, return false
-			if ((building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0) || TerrainTracker::Instance().getAllyTerritory().find(getRegion(buildTilePosition)) == TerrainTracker::Instance().getAllyTerritory().end())
+
+			if (!Broodwar->isBuildable(TilePosition(x,y), true))
 			{
 				return false;
-			}		
-			if (GridTracker::Instance().getReserveGrid(x, y) > 0)
+			}
+		}
+	}
+
+	// If the building requires an offset (production buildings)
+	if (offset > 0)
+	{
+		for (int x = buildTilePosition.x - offset; x < buildTilePosition.x + building.tileWidth() + offset; x++)
+		{
+			for (int y = buildTilePosition.y - offset; y < buildTilePosition.y + building.tileHeight() + offset; y++)
 			{
-				if ((building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility) && !Broodwar->isBuildable(TilePosition(x, y), true))
-				{
-					return false;
-				}
-				else
+				if (GridTracker::Instance().getReserveGrid(x, y) > 0 && !Broodwar->isBuildable(TilePosition(x, y), true))
 				{
 					return false;
 				}
@@ -91,13 +103,8 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 			}
 		}
 	}
-	// If the building site has power for buildings that need it (all except nexus/pylon), return true
-	if (building == UnitTypes::Protoss_Pylon || Broodwar->hasPower(buildTilePosition, building) == true)
-	{
-		return true;
-	}
-	// If we missed anything, return false
-	return false;
+	// If no issues, return true
+	return true;
 }
 
 TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
@@ -111,7 +118,7 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 	int dy = 1;
 	// Searches in a spiral around the specified tile position (usually a nexus)
 	while (length < 150)
-	{
+	{		
 		//If we can build here, return this tile position
 		if (x > 0 && x < Broodwar->mapWidth() && y > 0 && y < Broodwar->mapHeight())
 		{
@@ -219,7 +226,7 @@ void BuildingTrackerClass::queueBuildings()
 		if (b.second > Broodwar->self()->visibleUnitCount(b.first) && queuedBuildings.find(b.first) == queuedBuildings.end())
 		{
 			TilePosition here = BuildingTracker::Instance().getBuildLocation(b.first);
-			Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
+			Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
 			// If the Tile Position and Builder are valid
 			if (here != TilePositions::None && builder)
 			{
@@ -237,20 +244,35 @@ void BuildingTrackerClass::constructBuildings()
 	for (auto &b : queuedBuildings)
 	{
 		queuedMineral += b.first.mineralPrice();
-		queuedGas += b.first.gasPrice();
+		queuedGas += b.first.gasPrice();		
 
 		// If probe died, replace the probe
 		if (!b.second.second || !b.second.second->exists())
 		{
-			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas);
+			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
+			continue;
+		}
+
+		// If probe is stuck, replace probe and tell probe to go back to mining
+		if (b.second.second->isStuck())
+		{
+			b.second.second->stop();
+			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
 			continue;
 		}
 
 		// If can't build here right now and the tile is visible, replace the building position
-		if (!Broodwar->canBuildHere(b.second.first, b.first, b.second.second) && Broodwar->isVisible(b.second.first))
+		for (int x = b.second.first.x; x <= b.second.first.x + b.first.tileWidth(); x++)
 		{
-			b.second.first = BuildingTracker::Instance().getBuildLocation(b.first);
-			continue;
+
+			for (int y = b.second.first.y; y <= b.second.first.y + b.first.tileHeight(); y++)
+			{
+				if (Broodwar->isVisible(TilePosition(x,y)) && (GridTracker::Instance().getReserveGrid(x, y) > 0 || !Broodwar->isBuildable(TilePosition(x,y))))
+				{
+					b.second.first = BuildingTracker::Instance().getBuildLocation(b.first);
+					continue;
+				}
+			}
 		}
 
 		// If the Probe has a target

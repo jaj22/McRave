@@ -46,8 +46,9 @@ public:
 	void updateEnemyGrids();
 	void updateNeutralGrids();
 	void updateMobilityGrids();
-	void updateObserverGrids();
 	void updateArbiterGrids();
+
+	void updateObserverMovement(Unit);
 	void updateAllyMovement(Unit, WalkPosition);
 
 	void updateDistanceGrid();

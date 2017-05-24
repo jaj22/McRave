@@ -14,7 +14,7 @@ void SpecialUnitTrackerClass::update()
 
 void SpecialUnitTrackerClass::updateArbiters()
 {
-	for (auto u : myArbiters)
+	for (auto & u : myArbiters)
 	{
 		int initial_x = TilePosition(u.second.getPosition()).x;
 		int initial_y = TilePosition(u.second.getPosition()).y;
@@ -48,7 +48,7 @@ void SpecialUnitTrackerClass::updateArbiters()
 
 void SpecialUnitTrackerClass::updateObservers()
 {
-	for (auto u : myObservers)
+	for (auto & u : myObservers)
 	{
 		// First check if any expansions need detection on them
 		if (BuildOrderTracker::Instance().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
@@ -60,8 +60,8 @@ void SpecialUnitTrackerClass::updateObservers()
 				{
 					u.second.setDestination(Position(base));
 					u.first->move(Position(base));
-					GridTracker::Instance().updateObserverGrids();
-					continue;
+					GridTracker::Instance().updateObserverMovement(u.first);
+					return;
 				}
 			}
 		}
@@ -86,14 +86,14 @@ void SpecialUnitTrackerClass::updateObservers()
 		}
 		u.second.setDestination(newDestination);
 		u.first->move(newDestination);
-		GridTracker::Instance().updateObserverGrids();
+		GridTracker::Instance().updateObserverMovement(u.first);
 		continue;
 	}
 }
 
 void SpecialUnitTrackerClass::updateTemplars()
 {
-	for (auto u : myTemplars)
+	for (auto & u : myTemplars)
 	{
 		Unit target = UnitTracker::Instance().getMyUnits()[u.first].getTarget();
 		int stratL = UnitTracker::Instance().getMyUnits()[u.first].getStrategy();
@@ -119,7 +119,7 @@ void SpecialUnitTrackerClass::updateTemplars()
 
 void SpecialUnitTrackerClass::storeUnits()
 {
-	for (auto &u : Broodwar->self()->getUnits())
+	for (auto & u : Broodwar->self()->getUnits())
 	{
 		if (!u->isCompleted())
 		{

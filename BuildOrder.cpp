@@ -41,8 +41,8 @@ void BuildOrderTrackerClass::update()
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
 
-	// If we have stabilized and have 4 dragoons, time to tech to mid game, ignore enemy early aggresion
-	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) >= 2 && ProductionTracker::Instance().getIdleGates().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2)
+	// If we have stabilized and have 4 dragoons, time to tech to mid game
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 2 && ProductionTracker::Instance().getIdleGates().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2)
 	{
 		getEarlyBuild = false;
 		getMidBuild = true;		
@@ -123,7 +123,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 	switch (earlyBuild)
 	{
 	case 0:
-		// -- 2 Gate Core into 3 Gate Goon --
+		// -- 2 Gate Core --
 		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 3);
 		buildingDesired[UnitTypes::Protoss_Assimilator] = supply >= 30;
 		if (supply >= 20 && supply < 24)
@@ -133,16 +133,11 @@ void BuildOrderTrackerClass::earlyBuilds()
 		else if (supply >= 24)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
-		}
-		else if (supply >= 60)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = 3;
-		}
+		}		
 		//currentStrategy.assign("Two Gate Core");
 		break;
 	case 1:
-		// -- 1 Gate Core into 3 Gate Goon --		
-		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
+		// -- 1 Gate Core --			
 		if (supply >= 20)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
@@ -150,18 +145,14 @@ void BuildOrderTrackerClass::earlyBuilds()
 		if (supply >= 22)
 		{
 			buildingDesired[UnitTypes::Protoss_Assimilator] = 1;
-		}
-		if (supply >= 26)
+		}		
+		if (supply >= 36)
 		{
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = 1;
-		}
-		if (supply >= 30)
+		}		
+		if (supply >= 52)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
-		}
-		if (supply >= 60)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = 3;
 		}
 		//currentStrategy.assign("One Gate Core");
 		break;
@@ -182,7 +173,7 @@ void BuildOrderTrackerClass::midBuilds()
 	switch (midBuild){
 	case 0:
 		// -- Reavers --		
-		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 4);
+		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 2);
 		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
 		//currentStrategy.assign("Robo Tech");

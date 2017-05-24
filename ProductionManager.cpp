@@ -5,8 +5,6 @@
 #include "BuildingManager.h"
 #include "BuildOrder.h"
 
-
-
 void ProductionTrackerClass::update()
 {
 	updateReservedResources();
@@ -77,9 +75,15 @@ void ProductionTrackerClass::update()
 				}
 				break;
 			case UnitTypes::Enum::Protoss_Citadel_of_Adun:
-				if (Broodwar->self()->minerals() >= UpgradeTypes::Leg_Enhancements.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Leg_Enhancements.gasPrice() + queuedGas + reservedGas)
+				if (Broodwar->self()->minerals() >= UpgradeTypes::Leg_Enhancements.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Leg_Enhancements.gasPrice())
 				{
 					building->upgrade(UpgradeTypes::Leg_Enhancements);
+					idleUpgrade.erase(building->getID());
+					return;
+				}
+				else
+				{
+					idleUpgrade.emplace(building->getID(), UpgradeTypes::Leg_Enhancements);
 				}
 				break;
 

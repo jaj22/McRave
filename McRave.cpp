@@ -8,7 +8,6 @@
 #include "McRave.h"
 
 // IMPORTANT: Move to BWEM and ditch BWTA, too slow
-// Pylons not being built sometimes - unknown cause, new building placer must be culprit
 
 // TODOS:
 // Pylon grid, if > number of pylons, don't build there to prevent stacking
@@ -22,7 +21,7 @@
 // Testing:
 // If scout dies, no base found - Testing
 // If being rushed, move units to mineral line - Testing
-// Spider mine removal from expansions - Testing
+// Spider mine removal from expansions - Testing 2.0
 
 void McRave::onStart()
 {
@@ -74,6 +73,7 @@ void McRave::onFrame()
 	BuildingTracker::Instance().update();
 	ProductionTracker::Instance().update();
 	NexusTracker::Instance().update();		
+	PylonTracker::Instance().update();
 	InterfaceTracker::Instance().update();	
 }
 
