@@ -181,7 +181,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	// Variables for calculating local strengths	
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0, thisUnit = 0.0;
 	Position targetPosition = UnitTracker::Instance().getEnUnits()[target].getPosition();
-	int radius = min(800, 384 + UnitTracker::Instance().getSupply() * 4);
+	int radius = min(512, 320 + UnitTracker::Instance().getSupply() * 4);
 
 	int aLarge = UnitTracker::Instance().getMySizes()[UnitSizeTypes::Large];
 	int aMedium = UnitTracker::Instance().getMySizes()[UnitSizeTypes::Medium];
@@ -348,8 +348,8 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 		return;
 	}
 
-	// Force Zealots to stay on Tanks
-	if (unit->getType() == UnitTypes::Protoss_Zealot && target->exists() && (UnitTracker::Instance().getEnUnits()[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || UnitTracker::Instance().getEnUnits()[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
+	// Force Zealots to stay on Tanks and Reavers to shoot if units are near it
+	if (unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_Zealot && target->exists() && (UnitTracker::Instance().getEnUnits()[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || UnitTracker::Instance().getEnUnits()[target].getUnitType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
 	{
 		UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 		return;
@@ -366,7 +366,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 				safeTile = false;
 			}
 		}
-		if (safeTile || unit->getType() == UnitTypes::Protoss_Reaver)
+		if (safeTile)
 		{
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 			return;
@@ -425,8 +425,8 @@ void CommandTrackerClass::updateGlobalStrategy(Unit unit, Unit target)
 	}
 	else
 	{
-		// If not Zerg, contain
-		if (Broodwar->enemy()->getRace() != Races::Zerg)
+		// If Terran, contain
+		if (Broodwar->enemy()->getRace() == Races::Terran)
 		{
 			globalStrategy = 1;
 			return;

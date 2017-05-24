@@ -87,10 +87,6 @@ void PylonTrackerClass::addToGrid(Unit unit)
 			}
 		}
 	}	
-	for (auto tile : mediumPowerSites)
-	{
-		Broodwar->drawTextMap(Position(tile.first), "%d", tile.second);
-	}
 }
 
 bool PylonTrackerClass::hasPower(TilePosition here, UnitType building)
