@@ -52,6 +52,7 @@ void ProbeTrackerClass::removeProbe(Unit probe)
 				closestB = base;
 			}
 		}
+		TerrainTracker::Instance().getEnemyBasePositions().emplace(closestB->getPosition());
 	}
 }
 

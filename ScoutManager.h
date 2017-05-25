@@ -10,6 +10,5 @@
 
 // Protoss
 // No gas - expect strictly Zealots, skip goon range
-// Early gas - expect Goons or fast DT, get observatory first
-// Nexus - immediately apply pressure
-//
+// Higher goon count at transition to midgame - get Reaver first
+// Lower goon count - get Observer first

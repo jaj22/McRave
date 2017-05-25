@@ -22,8 +22,6 @@
 #include "TargetManager.h"
 #include "TerrainManager.h"
 
-
-
 // Include standard libraries that are needed
 #include <vector>
 #include <Windows.h>

@@ -255,25 +255,11 @@ void BuildingTrackerClass::constructBuildings()
 
 		// If probe is stuck, replace probe and tell probe to go back to mining
 		if (b.second.second->isStuck())
-		{
+		{			
 			b.second.second->stop();
 			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
 			continue;
-		}
-
-		// If can't build here right now and the tile is visible, replace the building position
-		for (int x = b.second.first.x; x <= b.second.first.x + b.first.tileWidth(); x++)
-		{
-
-			for (int y = b.second.first.y; y <= b.second.first.y + b.first.tileHeight(); y++)
-			{
-				if (Broodwar->isVisible(TilePosition(x,y)) && (GridTracker::Instance().getReserveGrid(x, y) > 0 || !Broodwar->isBuildable(TilePosition(x,y))))
-				{
-					b.second.first = BuildingTracker::Instance().getBuildLocation(b.first);
-					continue;
-				}
-			}
-		}
+		}	
 
 		// If the Probe has a target
 		if (b.second.second->getTarget())
@@ -303,8 +289,21 @@ void BuildingTrackerClass::constructBuildings()
 			continue;
 		}
 
+		// If can't build here right now and the tile is visible, replace the building position
+		for (int x = b.second.first.x; x <= b.second.first.x + b.first.tileWidth(); x++)
+		{
+			for (int y = b.second.first.y; y <= b.second.first.y + b.first.tileHeight(); y++)
+			{
+				if (Broodwar->isVisible(TilePosition(x, y)) && (GridTracker::Instance().getReserveGrid(x, y) > 0 || !Broodwar->isBuildable(TilePosition(x, y))))
+				{
+					b.second.first = BuildingTracker::Instance().getBuildLocation(b.first);
+					continue;
+				}
+			}
+		}
+
 		// If Probe is not currently returning minerals or constructing, the build position is valid and can afford the building, then proceed with build
-		else if (b.second.first != TilePositions::None && Broodwar->self()->minerals() >= b.first.mineralPrice() && Broodwar->self()->gas() >= b.first.gasPrice())
+		if (b.second.first != TilePositions::None && Broodwar->self()->minerals() >= b.first.mineralPrice() && Broodwar->self()->gas() >= b.first.gasPrice())
 		{
 			b.second.second->build(b.first, b.second.first);
 			continue;

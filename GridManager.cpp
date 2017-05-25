@@ -58,6 +58,7 @@ void GridTrackerClass::reset()
 			// Reset other grids
 			observerGrid[x][y] = 0;
 			reserveGrid[x][y] = 0;
+			nexusGrid[x][y] = 0;
 		}
 	}
 	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)

@@ -10,15 +10,16 @@
 // IMPORTANT: Move to BWEM and ditch BWTA, too slow
 
 // TODOS:
-// Pylon grid, if > number of pylons, don't build there to prevent stacking
 // Extra probes for when expanding so it's saturated faster
 // Separate targeting from local calculation reference points (causes unit confusion)
 // Threat grids to minimize O(n^2) iterations in CommandTrackerClass::updateLocalStrategy
 // Save decision state (in UnitInfo?, new map?) (attack, retreat, contain)
 // Move unit sizing to simplify strength calculations of explosive/concussive damage
-// Massive slowdown (possibly building placement issues again)
+
+// Store all units inside one manager? myProbes, myBuildings, myUnits, mySpecialUnits
 
 // Testing:
+// Using threat range for local calculations - Testing
 // If scout dies, no base found - Testing
 // If being rushed, move units to mineral line - Testing
 // Spider mine removal from expansions - Testing 2.0

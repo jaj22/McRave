@@ -101,7 +101,7 @@ void ResourceTrackerClass::removeResource(Unit resource)
 		myBoulders.erase(resource);
 	}
 
-	for (auto probe : ProbeTracker::Instance().getMyProbes())
+	for (auto & probe : ProbeTracker::Instance().getMyProbes())
 	{
 		if (probe.second.getTarget() == resource)
 		{
