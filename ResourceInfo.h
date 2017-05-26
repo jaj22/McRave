@@ -26,7 +26,7 @@ public:
 	Unit getClosestNexus() const;
 	Position getPosition() const;
 	TilePosition getTilePosition() const;
-	UnitType getUnitType() const;
+	UnitType getType() const;
 
 	// Mutators
 	void setGathererCount(int newGathererCount);

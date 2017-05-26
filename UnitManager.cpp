@@ -3,22 +3,18 @@
 #include "BWTA.h"
 #include "GridManager.h"
 #include "SpecialUnitManager.h"
+#include "ProbeManager.h"
 
-using namespace BWAPI;
-using namespace std;
-using namespace BWTA;
-
-bool harassing = false;
-bool stimResearched = false;
+bool stimResearched;
 
 void UnitTrackerClass::update()
-{	
+{
 	storeUnits();
 	removeUnits();
 }
 
 void UnitTrackerClass::storeUnits()
-{	
+{
 	// Reset sizes and supply
 	for (auto &size : allySizes)
 	{
@@ -33,29 +29,43 @@ void UnitTrackerClass::storeUnits()
 	// For all ally units
 	for (auto &u : Broodwar->self()->getUnits())
 	{
-		if (u->getType() == UnitTypes::Protoss_Scarab)
+		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists() || !u->isCompleted())
 		{
 			continue;
-		}		
+		}
+		// Store Probes
+		if (u->getType() == UnitTypes::Protoss_Probe)
+		{
+			ProbeTracker::Instance().storeProbe(u);
+		}
+		// Store Special Units
+		else if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter)
+		{
+			SpecialUnitTracker::Instance().storeUnit(u);
+		}
 		// Store if exists and not building or worker
-		if (u && u->exists() && u->isCompleted() && !u->getType().isWorker() && !u->getType().isBuilding())
+		else if (!u->getType().isWorker() && !u->getType().isBuilding())
 		{
 			storeAllyUnit(u);
 		}
+
 		// Add supply of this unit
 		if (u->getType().supplyRequired() > 0)
 		{
 			supply = supply + u->getType().supplyRequired();
-		}		
+		}
 	}
 
 	// For all enemy units
-	for (auto &u : Broodwar->enemy()->getUnits())
+	for (auto player : Broodwar->enemies())
 	{
-		// Store if exists
-		if (u && u->exists())
+		for (auto &u : player->getUnits())
 		{
-			storeEnemyUnit(u);
+			// Store if exists
+			if (u && u->exists())
+			{
+				storeEnemyUnit(u);
+			}
 		}
 	}
 }
@@ -206,13 +216,13 @@ double unitGetVisibleStrength(Unit unit)
 	if (unit->isMaelstrommed() || unit->isStasised())
 	{
 		return 0;
-	}	
+	}
 
 	double hp = double(unit->getHitPoints() + (unit->getShields() / 2)) / double(unit->getType().maxHitPoints() + (unit->getType().maxShields() / 2));
 	if (unit->isStimmed())
 	{
 		stimResearched = true;
-	}	
+	}
 
 	// Make units under an Arbiter feel stronger
 	if (unit->getPlayer() == Broodwar->self() && unit->isCloaked() && !unit->isDetected())
@@ -269,23 +279,53 @@ double unitGetPriority(UnitType unitType)
 		return unitGetStrength(unitType);
 	}
 }
+double unitGetTrueSpeed(UnitType unitType, Player who)
+{
+	double speed = unitType.topSpeed();
+
+	// Adjust based on speed upgrades for Zerglings, Hydralisks, Ultralisks, Shuttle, Observer, Zealot, Vulture of 50%
+	if ((unitType == UnitTypes::Zerg_Zergling && who->getUpgradeLevel(UpgradeTypes::Metabolic_Boost)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Muscular_Augments)) || (unitType == UnitTypes::Zerg_Ultralisk && who->getUpgradeLevel(UpgradeTypes::Anabolic_Synthesis)) || (unitType == UnitTypes::Protoss_Shuttle && who->getUpgradeLevel(UpgradeTypes::Gravitic_Drive)) || (unitType == UnitTypes::Protoss_Observer && who->getUpgradeLevel(UpgradeTypes::Gravitic_Boosters)) || (unitType == UnitTypes::Protoss_Zealot && who->getUpgradeLevel(UpgradeTypes::Leg_Enhancements)) || (unitType == UnitTypes::Terran_Vulture && who->getUpgradeLevel(UpgradeTypes::Ion_Thrusters)))
+	{
+		speed = speed * 1.5;
+	}
+	else if (unitType == UnitTypes::Zerg_Overlord && who->getUpgradeLevel(UpgradeTypes::Pneumatized_Carapace))
+	{
+		speed = speed * 4.0;
+	}
+	else if (unitType == UnitTypes::Protoss_Scout && who->getUpgradeLevel(UpgradeTypes::Muscular_Augments))
+	{
+		speed = speed * 1.33;
+	}
+	return speed;
+}
+
 WalkPosition getMiniTile(Unit unit)
 {
 	int x = unit->getPosition().x;
 	int y = unit->getPosition().y;
 
-	// We want to fight the closest mini tile without using BWAPI commands (or else it originates to a tile position, lower resolution)
-	int mini_x = (x - x % 8 - (0.5*unit->getType().width())) / 8;
-	int mini_y = (y - y % 8 - (0.5*unit->getType().height())) / 8;
-
-	return WalkPosition(mini_x, mini_y);
+	// If it's a unit, we want to find the closest mini tile with the highest resolution (actual pixel width/height)
+	if (!unit->getType().isBuilding())
+	{
+		int mini_x = int((x - x % 8 - (0.5*unit->getType().width())) / 8);
+		int mini_y = int((y - y % 8 - (0.5*unit->getType().height())) / 8);
+		return WalkPosition(mini_x, mini_y);
+	}
+	// For buildings, we want the actual tile size resolution (convert half the tile size to pixels by 0.5*tile*32 = 16.0)
+	else
+	{
+		int mini_x = int((x - (16.0*unit->getType().tileWidth())) / 8);
+		int mini_y = int((y - (16.0*unit->getType().tileHeight())) / 8);
+		return WalkPosition(mini_x, mini_y);
+	}
+	return WalkPositions::None;
 }
 set<WalkPosition> UnitTrackerClass::getMiniTilesUnderUnit(Unit unit)
 {
 	int x = allyUnits[unit].getMiniTile().x;
 	int y = allyUnits[unit].getMiniTile().y;
-	int width = allyUnits[unit].getUnitType().width() / 4;
-	int height = allyUnits[unit].getUnitType().height() / 4;
+	int width = allyUnits[unit].getType().tileWidth() * 4;
+	int height = allyUnits[unit].getType().tileHeight() * 4;
 	set<WalkPosition> returnValues;
 
 	for (int i = x; i <= x + width; i++)
@@ -294,32 +334,23 @@ set<WalkPosition> UnitTrackerClass::getMiniTilesUnderUnit(Unit unit)
 		{
 			returnValues.emplace(WalkPosition(i, j));
 		}
-	}	
+	}
 	return returnValues;
 }
 
 void UnitTrackerClass::storeEnemyUnit(Unit unit)
 {
-	// Create new unit
-	if (enemyUnits.find(unit) == enemyUnits.end())
-	{
-		UnitInfoClass newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetStrength(unit->getType()), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unitGetPriority(unit->getType()), unit->getLastCommand().getType(), 0, 0, 0, nullptr, getMiniTile(unit));
-		enemyUnits[unit] = newUnit;		
-	}
-	// Update unit
-	else
-	{
-		enemyUnits[unit].setUnitType(unit->getType());
-		enemyUnits[unit].setPosition(unit->getPosition());
-		enemyUnits[unit].setStrength(unitGetVisibleStrength(unit));
-		enemyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
-		enemyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->enemy()));
-		enemyUnits[unit].setMiniTile(getMiniTile(unit));
-	}
-	if ((unit->isCloaked() || unit->isBurrowed()) && !unit->isDetected())
-	{
-		enemyUnits[unit].setStrength(unitGetStrength(unit->getType()));
-	}	
+	// Update units
+	enemyUnits[unit].setUnitType(unit->getType());
+	enemyUnits[unit].setPosition(unit->getPosition());
+	enemyUnits[unit].setStrength(unitGetVisibleStrength(unit));
+	enemyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
+	enemyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
+	enemyUnits[unit].setSpeed(unitGetTrueSpeed(unit->getType(), Broodwar->self()));
+	enemyUnits[unit].setPriority(unitGetPriority(unit->getType()));
+	enemyUnits[unit].setCommand(unit->getLastCommand().getType());
+	enemyUnits[unit].setMiniTile(getMiniTile(unit));
+
 	// Update sizes
 	enemySizes[unit->getType().size()] += 1;
 	return;
@@ -327,25 +358,18 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 
 void UnitTrackerClass::storeAllyUnit(Unit unit)
 {
-	// Create new unit
-	if (allyUnits.find(unit) == allyUnits.end())
-	{
-		UnitInfoClass newUnit(unit->getType(), unit->getPosition(), unitGetVisibleStrength(unit), unitGetStrength(unit->getType()), unitGetTrueRange(unit->getType(), Broodwar->enemy()), unitGetPriority(unit->getType()), unit->getLastCommand().getType(), 0, 0, 0, nullptr, getMiniTile(unit));
-		allyUnits[unit] = newUnit;		
-	}
-	// Update unit
-	else
-	{
-		allyUnits[unit].setUnitType(unit->getType());
-		allyUnits[unit].setPosition(unit->getPosition());
-		allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
-		allyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
-		allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
-		allyUnits[unit].setCommand(unit->getLastCommand().getType());
-		allyUnits[unit].setMiniTile(getMiniTile(unit));
-	}
-	// Update sizes
-	allySizes[unit->getType().size()] += 1;	
+	// Update units
+	allyUnits[unit].setUnitType(unit->getType());
+	allyUnits[unit].setPosition(unit->getPosition());
+	allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
+	allyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
+	allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
+	allyUnits[unit].setSpeed(unitGetTrueSpeed(unit->getType(), Broodwar->self()));
+	allyUnits[unit].setPriority(unitGetPriority(unit->getType()));
+	allyUnits[unit].setCommand(unit->getLastCommand().getType());
+	allyUnits[unit].setMiniTile(getMiniTile(unit));
+
+	allySizes[unit->getType().size()] += 1;
 	return;
 }
 

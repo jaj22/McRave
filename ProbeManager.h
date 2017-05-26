@@ -19,7 +19,7 @@ public:
 	map <Unit, ProbeInfo>& getMyProbes() { return myProbes; }
 
 	void update();
-	void storeProbes();
+	void storeProbe(Unit);
 	void removeProbe(Unit);
 	void assignProbe(Unit);	
 	void scoutProbe();

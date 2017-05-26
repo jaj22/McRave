@@ -8,50 +8,48 @@ using namespace std;
 
 // Class for storing information about all units
 class UnitInfoClass {
-	UnitType unitType, targetType;
-	Position unitPosition, targetPosition;
-	double unitStrength, unitMaxStrength, unitLocal, unitRange, unitPriority;
-	UnitCommandType unitCommand;
+	double strength, maxStrength, local, range, priority, speed;
+	int deadFrame, strategy, lastAttackFrame;
+	Position position, targetPosition;
+	WalkPosition miniTile;	
 	Unit target;
-	int deadFrame, strategy, lastCommandFrame;
-	WalkPosition miniTile;
-
+	UnitType type;
+	UnitCommandType command;
 public:
 	UnitInfoClass();
-	UnitInfoClass(UnitType, Position, double, double, double, double, UnitCommandType, int, int, int, Unit, WalkPosition);
 	~UnitInfoClass();
 
 	// Accessors
-	UnitType getUnitType() const;
-	Position getPosition() const;
-	Position getTargetPosition() const;
-	double getStrength() const;
-	double getMaxStrength() const;
-	double getLocal() const;
-	double getRange() const;
-	double getPriority() const;
-	UnitCommandType getCommand() const;
-	Unit getTarget() const;
-	int getDeadFrame() const;
-	int getStrategy() const;
-	int getLastCommandFrame() const;
-	bool hasStim() const;
-	WalkPosition getMiniTile() const;
+	UnitType getType(){ return type; }
+	Position getPosition(){ return position; }
+	Position getTargetPosition() { return targetPosition; }
+	double getStrength() { return strength; }
+	double getMaxStrength() { return maxStrength; }
+	double getLocal() { return local; }
+	double getRange() { return range; }
+	double getPriority() { return priority; }
+	double getSpeed() { return speed; }
+	UnitCommandType getCommand() { return command; }
+	Unit getTarget() { return target; }
+	int getDeadFrame() { return deadFrame; }
+	int getStrategy() { return strategy; }
+	int getLastAttackFrame() { return lastAttackFrame; }
+	WalkPosition getMiniTile() { return miniTile; }
 
 	// Mutators
-	void setUnitType(UnitType);
-	void setPosition(Position);
-	void setTargetPosition(Position);
-	void setStrength(double);
-	void setMaxStrength(double);
-	void setLocal(double);
-	void setRange(double);
-	void setPriority(double);
-	void setCommand(UnitCommandType);
-	void setTarget(Unit);
-	void setDeadFrame(int);
-	void setStrategy(int);
-	void setLastCommandFrame(int);
-	void setStim(bool);
-	void setMiniTile(WalkPosition);
+	void setUnitType(UnitType newType) { type = newType; }
+	void setPosition(Position newPosition){ position = newPosition; }
+	void setTargetPosition(Position newTargetPosition) { targetPosition = newTargetPosition; }
+	void setStrength(double newStrength) { strength = newStrength; }
+	void setMaxStrength(double newMaxStrength){ maxStrength = newMaxStrength; }
+	void setLocal(double newLocal) { local = newLocal; }
+	void setRange(double newRange) { range = newRange; }
+	void setPriority(double newPriority) { priority = newPriority; }
+	void setSpeed(double newSpeed) { speed = newSpeed; }
+	void setCommand(UnitCommandType newCommand) { command = newCommand; }
+	void setTarget(Unit newTarget){ target = newTarget; }
+	void setDeadFrame(int newDeadFrame) { deadFrame = newDeadFrame; }
+	void setStrategy(int newStrategy){ strategy = newStrategy; }
+	void setLastCommandFrame(int newAttackFrame) { lastAttackFrame = newAttackFrame; }
+	void setMiniTile(WalkPosition newMiniTile) { miniTile = newMiniTile; }
 };

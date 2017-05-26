@@ -10,20 +10,16 @@ using namespace std;
 
 void ProbeTrackerClass::update()
 {
-	storeProbes();
 	enforceAssignments();
 	scoutProbe();
 }
 
-void ProbeTrackerClass::storeProbes()
+void ProbeTrackerClass::storeProbe(Unit unit)
 {
-	for (auto probe : Broodwar->self()->getUnits())
+	if (unit->exists() && unit->isCompleted() && unit->getType() == UnitTypes::Protoss_Probe && myProbes.find(unit) == myProbes.end())
 	{
-		if (probe->exists() && probe->isCompleted() && probe->getType() == UnitTypes::Protoss_Probe && myProbes.find(probe) == myProbes.end())
-		{
-			ProbeInfo newProbe;
-			myProbes[probe] = newProbe;
-		}
+		ProbeInfo newProbe;
+		myProbes[unit] = newProbe;
 	}
 	return;
 }
@@ -39,7 +35,7 @@ void ProbeTrackerClass::removeProbe(Unit probe)
 		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].getGathererCount() - 1);
 	}
 	myProbes.erase(probe);
-	
+
 	// If scouting probe died, assume where enemy is based on death location
 	if (probe == scout && isScouting() && TerrainTracker::Instance().getEnemyBasePositions().size() == 0)
 	{
@@ -63,7 +59,7 @@ void ProbeTrackerClass::assignProbe(Unit probe)
 
 	for (auto &gas : ResourceTracker::Instance().getMyGas())
 	{
-		if (gas.second.getUnitType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
+		if (gas.second.getType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
 		{
 			gas.second.setGathererCount(gas.second.getGathererCount() + 1);
 			myProbes[probe].setTarget(gas.first);
@@ -116,7 +112,7 @@ void ProbeTrackerClass::scoutProbe()
 			}
 			else if (u.first->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
 			{
-				u.first->stop();				
+				u.first->stop();
 			}
 		}
 	}
@@ -174,7 +170,7 @@ void ProbeTrackerClass::enforceAssignments()
 
 			// If not scouting and there's boulders to remove
 			if (!scouting && ResourceTracker::Instance().getMyBoulders().size() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
-			{				
+			{
 				for (auto b : ResourceTracker::Instance().getMyBoulders())
 				{
 					if (b.first && b.first->exists() && !u.first->isGatheringMinerals() && u.first->getDistance(b.second.getPosition()) < 512)
@@ -186,7 +182,7 @@ void ProbeTrackerClass::enforceAssignments()
 			}
 
 			// If we have been given a command this frame already, continue
-			if (u.first->getLastCommandFrame() >= Broodwar->getFrameCount() && (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build))
+			if (!u.first->isIdle() && (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build))
 			{
 				continue;
 			}

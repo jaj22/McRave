@@ -11,6 +11,7 @@ using namespace std;
 class NexusTrackerClass
 {
 	map <Unit, NexusInfo> myNexus;
+	map <UnitType, pair<TilePosition, Unit>> queuedCannons;
 public:
 
 	map <Unit, NexusInfo>& getMyNexus() { return myNexus; }
@@ -20,6 +21,9 @@ public:
 	void removeNexus(Unit);
 	void trainProbes();
 	void updateDefenses();
+
+	void createCannonPosition();
+	void createPylonPosition();
 };
 
 typedef Singleton<NexusTrackerClass> NexusTracker;

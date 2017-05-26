@@ -18,7 +18,7 @@ public:
 	void updateArbiters();
 	void updateObservers();
 	void updateTemplars();
-	void storeUnits();
+	void storeUnit(Unit);
 	void removeUnit(Unit);
 
 	map <Unit, SpecialUnitInfoClass>& getMyArbiters() { return myArbiters; }

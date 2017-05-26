@@ -1,36 +1,36 @@
 #include "NexusInfo.h"
 
 // Constructors
-NexusInfo::NexusInfo(int newStaticDefenseCount, TilePosition newStaticPosition)
+NexusInfo::NexusInfo(int newCannonCount, TilePosition newStaticPosition)
 {
-	staticDefenseCount = newStaticDefenseCount;
-	staticPosition = newStaticPosition;
+	cannonCount = newCannonCount;
+	cannonPosition = newStaticPosition;
 }
 
 NexusInfo::NexusInfo()
 {
-	staticDefenseCount = 0;
-	staticPosition = TilePositions::None;
+	cannonCount = 0;
+	cannonPosition = TilePositions::None;
 }
 
 // Accessors
-int NexusInfo::getStaticDefenseCount() const
+int NexusInfo::getCannonCount()
 {
-	return staticDefenseCount;
+	return cannonCount;
 }
-TilePosition NexusInfo::getStaticPosition() const
+TilePosition NexusInfo::getCannonPosition()
 {
-	return staticPosition;
+	return cannonPosition;
 }
 
 
 // Mutators
-void NexusInfo::setStaticDefenseCount(int newStaticDefenseCount)
+void NexusInfo::setCannonCount(int newCannonCount)
 {
-	staticDefenseCount = newStaticDefenseCount;
+	cannonCount = newCannonCount;
 }
 
-void NexusInfo::setStaticPosition(TilePosition newPosition)
+void NexusInfo::setCannonPosition(TilePosition newPosition)
 {
-	staticPosition = newPosition;
+	cannonPosition = newPosition;
 }

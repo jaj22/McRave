@@ -12,19 +12,15 @@ class CommandTrackerClass
 	int globalStrategy;
 public:
 	void update();
-	void updateDecisions(Unit, Unit);
-	void updateLocalStrategy(Unit, Unit);
-	void updateGlobalStrategy(Unit, Unit);
-	void arbiterManager(Unit);
-	void observerManager(Unit);
-	void templarManager(Unit);
-
+	void getDecision(Unit, Unit);
+	void getLocalCalculation(Unit, Unit);
+	void getGlobalCalculation(Unit, Unit);
 
 	void unitGetLocalStrategy(Unit, Unit);
 	int unitGetGlobalStrategy();
-	void unitMicroTarget(Unit, Unit);
-	void unitExploreArea(Unit);
-	Position unitFlee(Unit, Unit);
+	void microTarget(Unit, Unit);
+	void exploreArea(Unit);
+	void fleeTarget(Unit, Unit);
 };
 
 typedef Singleton<CommandTrackerClass> CommandTracker;

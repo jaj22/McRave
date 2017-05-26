@@ -42,7 +42,7 @@ TilePosition ResourceInfo::getTilePosition() const
 {
 	return resourceTilePosition;
 }
-UnitType ResourceInfo::getUnitType() const
+UnitType ResourceInfo::getType() const
 {
 	return unitType;
 }

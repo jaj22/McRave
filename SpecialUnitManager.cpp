@@ -6,7 +6,6 @@
 
 void SpecialUnitTrackerClass::update()
 {
-	storeUnits();
 	updateArbiters();
 	updateObservers();
 	updateTemplars();
@@ -35,7 +34,7 @@ void SpecialUnitTrackerClass::updateArbiters()
 		u.second.setDestination(newDestination);
 		u.first->move(newDestination);
 		GridTracker::Instance().updateArbiterGrids();
-		
+
 		Unit target = UnitTracker::Instance().getMyUnits()[u.first].getTarget();
 		if (target)
 		{
@@ -43,7 +42,7 @@ void SpecialUnitTrackerClass::updateArbiters()
 		}
 	}
 
-	
+
 }
 
 void SpecialUnitTrackerClass::updateObservers()
@@ -65,7 +64,7 @@ void SpecialUnitTrackerClass::updateObservers()
 				}
 			}
 		}
-		
+
 		// Then find an optimal location to move to within a 25x25 tile area
 		// Optimal defined as: no ally observer around, no enemy air, at least 1 ally around and as close to the enemy as possible
 		// TODO: Add enemy detection to optimal
@@ -117,27 +116,21 @@ void SpecialUnitTrackerClass::updateTemplars()
 	return;
 }
 
-void SpecialUnitTrackerClass::storeUnits()
-{
-	for (auto & u : Broodwar->self()->getUnits())
+void SpecialUnitTrackerClass::storeUnit(Unit unit)
+{	
+	if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
-		if (!u->isCompleted())
-		{
-			continue;
-		}
-		if (u->getType() == UnitTypes::Protoss_Arbiter)
-		{
-			myArbiters[u] = SpecialUnitInfoClass(u->getPosition(), u->getPosition());
-		}
-		else if (u->getType() == UnitTypes::Protoss_Observer)
-		{
-			myObservers[u] = SpecialUnitInfoClass(u->getPosition(), u->getPosition());
-		}
-		else if (u->getType() == UnitTypes::Protoss_High_Templar)
-		{
-			myTemplars[u] = SpecialUnitInfoClass(u->getPosition(), u->getPosition());
-		}
+		myArbiters[unit] = SpecialUnitInfoClass(unit->getPosition(), unit->getPosition());
 	}
+	else if (unit->getType() == UnitTypes::Protoss_Observer)
+	{
+		myObservers[unit] = SpecialUnitInfoClass(unit->getPosition(), unit->getPosition());
+	}
+	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
+	{
+		myTemplars[unit] = SpecialUnitInfoClass(unit->getPosition(), unit->getPosition());
+	}
+
 }
 
 void SpecialUnitTrackerClass::removeUnit(Unit unit)

@@ -32,7 +32,6 @@ public:
 	bool getAnalyzed() { return analyzed; }
 	bool isWalled() { return wallin; }
 	void setWalled() { wallin = true; }
-
 	void removeTerritory(Unit);
 	
 	BWEM::CPPath getPath() { return path; }

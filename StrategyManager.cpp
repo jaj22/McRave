@@ -22,7 +22,7 @@ void StrategyTrackerClass::updateAlly()
 		if (u.second.getDeadFrame() == 0)
 		{			
 			// Strength based calculations ignore workers and buildings
-			if (!u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding())
+			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
 				// Add strength				
 				globalAllyStrength += u.second.getStrength();
@@ -78,7 +78,7 @@ void StrategyTrackerClass::updateEnemy()
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
 		{
-			if (u.second.getUnitType() == UnitTypes::Protoss_Dark_Templar || u.second.getUnitType() == UnitTypes::Protoss_Citadel_of_Adun || u.second.getUnitType() == UnitTypes::Terran_Wraith || u.second.getUnitType() == UnitTypes::Terran_Ghost || u.second.getUnitType() == UnitTypes::Zerg_Lurker)
+			if (u.second.getType() == UnitTypes::Protoss_Dark_Templar || u.second.getType() == UnitTypes::Protoss_Citadel_of_Adun || u.second.getType() == UnitTypes::Terran_Wraith || u.second.getType() == UnitTypes::Terran_Ghost || u.second.getType() == UnitTypes::Zerg_Lurker)
 			{
 					invis = true;
 			}
@@ -90,21 +90,21 @@ void StrategyTrackerClass::updateEnemy()
 			}
 
 			// Strength based calculations ignore workers and buildings
-			if ((u.second.getUnitType().isBuilding() && u.second.getStrength() > 1.0) || (!u.second.getUnitType().isBuilding() && !u.second.getUnitType().isWorker()) || u.first->exists() && TerrainTracker::Instance().getAllyTerritory().find(getRegion(u.first->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+			if ((u.second.getType().isBuilding() && u.second.getStrength() > 1.0) || (!u.second.getType().isBuilding() && !u.second.getType().isWorker()) || u.first->exists() && TerrainTracker::Instance().getAllyTerritory().find(getRegion(u.first->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
 			{
 				// Add composition and strength
-				enemyComposition[u.second.getUnitType()] += 1;
+				enemyComposition[u.second.getType()] += 1;
 				globalEnemyStrength += u.second.getStrength();
 			}
 
 			// Drawing
-			if (u.second.getUnitType().isBuilding())
+			if (u.second.getType().isBuilding())
 			{
-				Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getUnitType().height() / 2, u.second.getUnitType().height() / 3, Broodwar->enemy()->getColor());
+				Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
 			}
 			else
 			{
-				Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getUnitType().height() / 2), u.second.getUnitType().height() / 2, u.second.getUnitType().height() / 3, Broodwar->enemy()->getColor());
+				Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getType().height() / 2), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
 			}
 
 			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());				

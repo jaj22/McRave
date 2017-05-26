@@ -11,13 +11,25 @@
 // DISABLED CURRENTLY: Shuttles, Cannons
 
 // TODOS:
-// Extra probes for when expanding so it's saturated faster
-// Separate targeting from local calculation reference points (causes unit confusion)
-// Threat grids to minimize O(n^2) iterations in CommandTrackerClass::updateLocalStrategy
-// Save decision state (in UnitInfo?, new map?) (attack, retreat, contain)
-// Move unit sizing to simplify strength calculations of explosive/concussive damage
-
 // Store all units inside one manager? myProbes, myBuildings, myUnits, mySpecialUnits
+//		So far: probes, units, special units 
+// Move stim research to strategy
+// One time supply increase instead of resetting?
+// Threatrange grid
+
+// Nexus update TODO:
+// Store region
+// If cannon built in region, add to that Nexus
+
+// Resource update TODO:
+// Store region
+// If region is not ally territory, remove
+
+// Building update TODO:
+// Limit building number by region
+// Store the closest probe when ready to move to it
+// Assign probe to building position
+// Probe manager can have a function to check if probe has a building assigned to it and move to it/build it
 
 // Testing:
 // Using threat range for local calculations - Testing
@@ -61,7 +73,7 @@ void McRave::onEnd(bool isWinner)
 }
 
 void McRave::onFrame()
-{
+{	
 	TerrainTracker::Instance().update();
 	GridTracker::Instance().update();
 	ResourceTracker::Instance().update();

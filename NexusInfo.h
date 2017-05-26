@@ -7,20 +7,22 @@ using namespace BWTA;
 using namespace std;
 
 class NexusInfo{
-private:
-	int staticDefenseCount;
-	TilePosition staticPosition;
+	int cannonCount;
+	TilePosition cannonPosition, pylonPosition;
+	BWTA::Region* region;
 public:
 	// Constructors
 	NexusInfo();
 	NexusInfo(int, TilePosition);
 
 	// Accessors
-	int getStaticDefenseCount() const;
-	TilePosition getStaticPosition() const;
+	int getCannonCount();
+	TilePosition getCannonPosition();
+	BWTA::Region* getRegion();
 
 
 	// Mutators
-	void setStaticDefenseCount(int);
-	void setStaticPosition(TilePosition);
+	void setCannonCount(int newCount);
+	void setCannonPosition(TilePosition newTile);
+	void setRegion(BWTA::Region* newRegion);
 };

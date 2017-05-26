@@ -7,7 +7,7 @@ void TargetTrackerClass::update()
 	// Update all unit targets
 	for (auto &u : UnitTracker::Instance().getMyUnits())
 	{
-		if (u.second.getUnitType() == UnitTypes::Protoss_Reaver || u.second.getUnitType() == UnitTypes::Protoss_High_Templar || u.second.getUnitType() == UnitTypes::Protoss_Arbiter)
+		if (u.second.getType() == UnitTypes::Protoss_Reaver || u.second.getType() == UnitTypes::Protoss_High_Templar || u.second.getType() == UnitTypes::Protoss_Arbiter)
 		{
 			unitGetClusterTarget(u.first);
 		}
@@ -31,7 +31,7 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 		}
 
 		// If unit is dead or unattackble based on flying
-		if (u.second.getDeadFrame() > 0 || (u.second.getUnitType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver)))
+		if (u.second.getDeadFrame() > 0 || (u.second.getType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver)))
 		{
 			continue;
 		}
@@ -55,7 +55,7 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 
 
 		// Reduce building threat
-		if (u.second.getUnitType().isBuilding())
+		if (u.second.getType().isBuilding())
 		{
 			thisUnit = 0.1*thisUnit;
 		}

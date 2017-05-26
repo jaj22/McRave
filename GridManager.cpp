@@ -13,6 +13,7 @@ void GridTrackerClass::reset()
 	{
 		for (int y = 0; y <= Broodwar->mapHeight(); y++)
 		{
+			// Debug drawing
 			if (enemyGroundStrengthGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%.2f", enemyGroundStrengthGrid[x][y]);
@@ -65,6 +66,7 @@ void GridTrackerClass::reset()
 	{
 		for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 		{
+			// Debug drawing
 			if (antiMobilityMiniGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
@@ -118,10 +120,6 @@ void GridTrackerClass::update()
 
 void GridTrackerClass::updateAllyGrids()
 {
-	// -- Anti Mobility Grid --
-	// For all my units, it gets the units tile position and uses it to find the closest mini tile on which it's standing on
-	// Any mini tile on which a unit is standing is considered not mobile
-	// All buildings have a buffer zone of 2 mini tiles around it to prevent issues with collision on edges and All buildings have a slightly higher width and height due to BWAPI
 	for (auto u : Broodwar->self()->getUnits())
 	{
 		if (u->exists())
@@ -131,11 +129,11 @@ void GridTrackerClass::updateAllyGrids()
 			int offset = 0;
 			if (u->getType().isBuilding())
 			{
-				startX = (u->getTilePosition().x * 4) - 2;
-				startY = (u->getTilePosition().y * 4) - 2;
-				for (int x = startX; x < 4 + startX + u->getType().tileWidth() * 4; x++)
+				startX = (u->getTilePosition().x * 4);
+				startY = (u->getTilePosition().y * 4);
+				for (int x = startX; x < startX + u->getType().tileWidth() * 4; x++)
 				{
-					for (int y = startY; y < 4 + startY + u->getType().tileHeight() * 4; y++)
+					for (int y = startY; y < startY + u->getType().tileHeight() * 4; y++)
 					{
 						antiMobilityMiniGrid[x][y] = 1;
 					}
@@ -189,13 +187,13 @@ void GridTrackerClass::updateAllyGrids()
 		int offsetY = u.second.getPosition().y % 32;
 
 		// Ally cluster grid
-		if (u.second.getDeadFrame() == 0 && !u.second.getUnitType().isWorker() && !u.second.getUnitType().isBuilding() && u.second.getUnitType() != UnitTypes::Protoss_Arbiter && u.second.getUnitType() != UnitTypes::Protoss_Observer)
+		if (u.second.getDeadFrame() == 0 && !u.second.getType().isWorker() && !u.second.getType().isBuilding() && u.second.getType() != UnitTypes::Protoss_Arbiter && u.second.getType() != UnitTypes::Protoss_Observer)
 		{
 			for (int x = unitTilePosition.x - 5; x <= unitTilePosition.x + 6; x++)
 			{
 				for (int y = unitTilePosition.y - 5; y <= unitTilePosition.y + 6; y++)
 				{
-					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= 160)
+					if (TilePosition(x, y).isValid() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= 160)
 					{
 						allyClusterGrid[x][y] += 1;
 					}
@@ -231,38 +229,38 @@ void GridTrackerClass::updateEnemyGrids()
 			{
 				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
 				{
-					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= (range * 32))
+					if (TilePosition(x, y).isValid() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= (range * 32))
 					{
 						enemyGroundStrengthGrid[x][y] += u.second.getStrength();
 					}
 				}
 			}
 		}
-		if (u.second.getUnitType().airWeapon().damageAmount() > 0 && u.second.getDeadFrame() == 0)
+		if (u.second.getType().airWeapon().damageAmount() > 0 && u.second.getDeadFrame() == 0)
 		{
-			int range = (u.second.getUnitType().airWeapon().maxRange()) / 32;
+			int range = (u.second.getType().airWeapon().maxRange()) / 32;
 			// The + 1 is because we need to still check an additional tile
 			for (int x = unitTilePosition.x - range; x <= unitTilePosition.x + range + 1; x++)
 			{
 				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
 				{
-					if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32))
+					if (TilePosition(x, y).isValid() && u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32))
 					{
 						enemyAirStrengthGrid[x][y] += u.second.getStrength();
 					}
 				}
 			}
 		}
-		if (u.first && u.first->exists() && !u.second.getUnitType().isBuilding() && !u.first->isStasised() && !u.first->isMaelstrommed())
+		if (u.first && u.first->exists() && !u.second.getType().isBuilding() && !u.first->isStasised() && !u.first->isMaelstrommed())
 		{
 			// Cluster heatmap for psi/stasis (96x96)			
 			for (int x = unitTilePosition.x - 1; x <= unitTilePosition.x + 1; x++)
 			{
 				for (int y = unitTilePosition.y - 1; y <= unitTilePosition.y + 1; y++)
 				{
-					if ((x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight()))
+					if (TilePosition(x, y).isValid())
 					{
-						if (!u.second.getUnitType().isFlyer())
+						if (!u.second.getType().isFlyer())
 						{
 							enemyGroundClusterGrid[x][y] += 1;
 						}
@@ -270,7 +268,7 @@ void GridTrackerClass::updateEnemyGrids()
 						{
 							enemyAirClusterGrid[x][y] += 1;
 						}
-						if (u.second.getUnitType() == UnitTypes::Terran_Siege_Tank_Tank_Mode || u.second.getUnitType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
+						if (u.second.getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode || u.second.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
 						{
 							tankClusterGrid[x][y] += 1;
 						}
@@ -285,24 +283,49 @@ void GridTrackerClass::updateEnemyGrids()
 		if (u.second.getDeadFrame() == 0)
 		{
 			int miniRange = u.second.getRange() / 8;
-			if (!u.second.getUnitType().isBuilding() && miniRange < 10)
+			if (!u.second.getType().isBuilding() && miniRange < 10)
 			{
 				miniRange = 20;
 			}
-			for (int i = u.second.getMiniTile().x - 50; i <= 2 + u.second.getMiniTile().x + 50; i++)
+			for (int x = u.second.getMiniTile().x - 50; x <= 2 + u.second.getMiniTile().x + 50; x++)
 			{
-				for (int j = u.second.getMiniTile().y - 50; j <= 2 + u.second.getMiniTile().y + 50; j++)
+				for (int y = u.second.getMiniTile().y - 50; y <= 2 + u.second.getMiniTile().y + 50; y++)
 				{
-					if (i > 0 && i < Broodwar->mapWidth() * 4 && j > 0 && j < Broodwar->mapHeight() * 4)
+					if (WalkPosition(x, y).isValid())
 					{
-						if (Position(i * 8, j * 8).getDistance(u.second.getPosition()) < 320)
+						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) < 320)
 						{
-							enemyGroundDistanceGrid[i][j] += u.second.getPosition().getDistance(Position(i * 8, j * 8));
+							enemyGroundDistanceGrid[x][y] += u.second.getPosition().getDistance(Position(x * 8, y * 8));
 						}
-						if (Position(i * 8, j * 8).getDistance(u.second.getPosition()) - u.second.getUnitType().width() / 2 < miniRange * 8)
+						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().width() / 2 < miniRange * 8)
 						{
-							enemyGroundStrengthMiniGrid[i][j] += u.second.getStrength();
+							enemyGroundStrengthMiniGrid[x][y] += u.second.getStrength();
 						}
+					}					
+				}
+			}
+		}
+		if (u.second.getType().isBuilding())
+		{
+			WalkPosition start = u.second.getMiniTile();
+
+			for (int x = start.x; x < start.x + u.second.getType().tileWidth() * 4; x++)
+			{
+				for (int y = start.y; y < start.y + u.second.getType().tileHeight() * 4; y++)
+				{
+					antiMobilityMiniGrid[x][y] = 1;
+				}
+			}
+		}
+		else
+		{
+			for (int x = u.second.getMiniTile().x; x <= u.second.getMiniTile().x + u.second.getType().tileWidth() * 4; x++)
+			{
+				for (int y = u.second.getMiniTile().y; y <= u.second.getMiniTile().y + u.second.getType().tileHeight() * 4; y++)
+				{
+					if (WalkPosition(x, y).isValid())
+					{
+						antiMobilityMiniGrid[x][y] = 1;
 					}
 				}
 			}
@@ -315,11 +338,11 @@ void GridTrackerClass::updateNeutralGrids()
 	double distanceTo = 0.0;
 	for (auto m : ResourceTracker::Instance().getMyMinerals())
 		// Update resource grid
-		for (int x = m.second.getTilePosition().x - 2; x <= m.second.getTilePosition().x + m.second.getUnitType().tileWidth() + 2; x++)
+		for (int x = m.second.getTilePosition().x - 2; x <= m.second.getTilePosition().x + m.second.getType().tileWidth() + 2; x++)
 		{
-			for (int y = m.second.getTilePosition().y - 2; y <= m.second.getTilePosition().y + m.second.getUnitType().tileHeight() + 2; y++)
+			for (int y = m.second.getTilePosition().y - 2; y <= m.second.getTilePosition().y + m.second.getType().tileHeight() + 2; y++)
 			{
-				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
+				if (TilePosition(x,y).isValid() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
 				}
@@ -328,11 +351,11 @@ void GridTrackerClass::updateNeutralGrids()
 	for (auto g : ResourceTracker::Instance().getMyGas())
 	{
 		// Update resource grid
-		for (int x = g.second.getTilePosition().x - 1; x <= g.second.getTilePosition().x + g.second.getUnitType().tileWidth() + 1; x++)
+		for (int x = g.second.getTilePosition().x - 1; x <= g.second.getTilePosition().x + g.second.getType().tileWidth() + 1; x++)
 		{
-			for (int y = g.second.getTilePosition().y - 1; y <= g.second.getTilePosition().y + g.second.getUnitType().tileHeight() + 1; y++)
+			for (int y = g.second.getTilePosition().y - 1; y <= g.second.getTilePosition().y + g.second.getType().tileHeight() + 1; y++)
 			{
-				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
+				if (TilePosition(x, y).isValid() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
 				}
@@ -341,11 +364,11 @@ void GridTrackerClass::updateNeutralGrids()
 	}
 	for (auto u : Broodwar->neutral()->getUnits())
 	{
-		int startX = (u->getTilePosition().x * 4) - 2;
-		int startY = (u->getTilePosition().y * 4) - 2;
-		for (int x = startX; x < 4 + startX + u->getType().tileWidth() * 4; x++)
+		int startX = (u->getTilePosition().x * 4);
+		int startY = (u->getTilePosition().y * 4);
+		for (int x = startX; x < startX + u->getType().tileWidth() * 4; x++)
 		{
-			for (int y = startY; y < 4 + startY + u->getType().tileHeight() * 4; y++)
+			for (int y = startY; y < startY + u->getType().tileHeight() * 4; y++)
 			{
 				antiMobilityMiniGrid[x][y] = 1;
 			}
@@ -369,14 +392,14 @@ void GridTrackerClass::updateMobilityGrids()
 		{
 			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 			{
-				if (theMap.GetMiniTile(WalkPosition(x, y)).Walkable())
+				if (WalkPosition(x,y).isValid() && theMap.GetMiniTile(WalkPosition(x, y)).Walkable())
 				{
 					for (int i = -12; i <= 12; i++)
 					{
 						for (int j = -12; j <= 12; j++)
 						{
 							// The more tiles around x,y that are walkable, the more mobility x,y has				
-							if (x + i >= 0 && x + i <= Broodwar->mapWidth() * 4 && y + j >= 0 && y + j <= Broodwar->mapHeight() * 4 && theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
+							if (WalkPosition(x+i,y+j).isValid() && theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
 							{
 								mobilityMiniGrid[x][y] += 1;
 							}
@@ -409,7 +432,7 @@ void GridTrackerClass::updateObserverMovement(Unit observer)
 		for (int y = initialy - 5; y <= initialy + 5; y++)
 		{
 			// Create a circle of detection rather than a square
-			if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && Position(SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination()).getDistance(Position(x * 32, y * 32)) < 160)
+			if (TilePosition(x,y).isValid() && Position(SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination()).getDistance(Position(x * 32, y * 32)) < 160)
 			{
 				observerGrid[x][y] = 1;
 			}
@@ -432,7 +455,7 @@ void GridTrackerClass::updateArbiterGrids()
 			for (int y = initialy - 9; y <= initialy + 9; y++)
 			{
 				// Create a circle of detection rather than a square
-				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && (Position(offsetX, offsetY) + u.second.getPosition()).getDistance(Position(x * 32, y * 32)) < 288)
+				if (TilePosition(x, y).isValid() && (Position(offsetX, offsetY) + u.second.getPosition()).getDistance(Position(x * 32, y * 32)) < 288)
 				{
 					arbiterGrid[x][y] += 1;
 				}
@@ -447,48 +470,9 @@ void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
 	{
 		for (int y = here.y - unit->getType().height() / 16; y <= here.y + unit->getType().height() / 16; y++)
 		{
-			antiMobilityMiniGrid[x][y] = 1;
-		}
-	}
-}
-
-void GridTrackerClass::updateDistanceGrid()
-{
-	// TODO: Goal with this grid is to create a ground distance grid from home for unit micro
-	if (TerrainTracker::Instance().getAnalyzed() && distanceOnce)
-	{
-		for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
-		{
-			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
+			if (WalkPosition(x, y).isValid())
 			{
-				distanceGridHome[x][y] = 0;
-			}
-		}
-		int x = TerrainTracker::Instance().getPlayerStartingTilePosition().x * 4;
-		int y = TerrainTracker::Instance().getPlayerStartingTilePosition().y * 4;
-		int mapWidth = Broodwar->mapWidth() * 4;
-		int mapHeight = Broodwar->mapHeight() * 4;
-		distanceOnce = false;
-
-		bool done = false;
-		int cnt = 0;
-		while (!done)
-		{
-			cnt++;
-			for (int i = x - cnt; i <= x + cnt; i++)
-			{
-				for (int j = y - cnt; j <= y + cnt; j++)
-				{
-					if (i >= 0 && i <= mapWidth && j >= 0 && j <= mapHeight && distanceGridHome[i][j] == 0 && mobilityMiniGrid[i][j] > 0)
-					{
-						distanceGridHome[i][j] = cnt;
-					}
-				}
-			}
-			if (cnt >= 1024)
-			{
-				Broodwar << "Test" << endl;
-				done = true;
+				antiMobilityMiniGrid[x][y] = 1;
 			}
 		}
 	}
