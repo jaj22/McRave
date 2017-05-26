@@ -142,7 +142,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
 		}
-		if (supply >= 22)
+		if (supply >= 24)
 		{
 			buildingDesired[UnitTypes::Protoss_Assimilator] = 1;
 		}		
@@ -150,7 +150,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 		{
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = 1;
 		}		
-		if (supply >= 52)
+		if (supply >= 44)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
 		}

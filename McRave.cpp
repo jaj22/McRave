@@ -8,6 +8,7 @@
 #include "McRave.h"
 
 // IMPORTANT: Move to BWEM and ditch BWTA, too slow
+// DISABLED CURRENTLY: Shuttles, Cannons
 
 // TODOS:
 // Extra probes for when expanding so it's saturated faster

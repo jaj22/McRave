@@ -72,32 +72,36 @@ void GridTrackerClass::reset()
 
 			if (mobilityMiniGrid[x][y] >= 0 && antiMobilityMiniGrid[x][y] == 0)
 			{
-				//Broodwar->drawCircleMap(Position(x * 8 + 4, y * 8 + 4), (int)mobilityMiniGrid[x][y] / 32, Broodwar->self()->getColor());
-				/*if (mobilityMiniGrid[x][y] < 4)
-				{
-				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
-				}
-				else if (mobilityMiniGrid[x][y] >= 4 && mobilityMiniGrid[x][y] < 7)
-				{
-				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
-				}
-				else if (mobilityMiniGrid[x][y] >= 7 && mobilityMiniGrid[x][y] < 10)
-				{
-				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
-				}
-				else if (mobilityMiniGrid[x][y] >= 10)
-				{
-				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
-				}*/
+				/*	if (mobilityMiniGrid[x][y] < 4)
+					{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
+					}
+					else if (mobilityMiniGrid[x][y] >= 4 && mobilityMiniGrid[x][y] < 7)
+					{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
+					}
+					else if (mobilityMiniGrid[x][y] >= 7 && mobilityMiniGrid[x][y] < 10)
+					{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
+					}
+					else if (mobilityMiniGrid[x][y] >= 10)
+					{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
+					}*/
 			}
 
 			if (enemyGroundStrengthMiniGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
 			}
+			if (enemyGroundDistanceGrid[x][y] > 0)
+			{
+				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
+			}
 
 			antiMobilityMiniGrid[x][y] = 0;
 			enemyGroundStrengthMiniGrid[x][y] = 0;
+			enemyGroundDistanceGrid[x][y] = 0;
 		}
 	}
 }
@@ -285,13 +289,20 @@ void GridTrackerClass::updateEnemyGrids()
 			{
 				miniRange = 20;
 			}
-			for (int i = u.second.getMiniTile().x - miniRange - 2; i <= 2 + u.second.getMiniTile().x + miniRange; i++)
+			for (int i = u.second.getMiniTile().x - 50; i <= 2 + u.second.getMiniTile().x + 50; i++)
 			{
-				for (int j = u.second.getMiniTile().y - miniRange - 2; j <= 2 + u.second.getMiniTile().y + miniRange; j++)
+				for (int j = u.second.getMiniTile().y - 50; j <= 2 + u.second.getMiniTile().y + 50; j++)
 				{
-					if (i > 0 && i < Broodwar->mapWidth() * 4 && j > 0 && j < Broodwar->mapHeight() * 4 && Position(i * 8, j * 8).getDistance(u.second.getPosition()) - u.second.getUnitType().width() / 2 < miniRange * 8)
+					if (i > 0 && i < Broodwar->mapWidth() * 4 && j > 0 && j < Broodwar->mapHeight() * 4)
 					{
-						enemyGroundStrengthMiniGrid[i][j] += u.second.getStrength();
+						if (Position(i * 8, j * 8).getDistance(u.second.getPosition()) < 320)
+						{
+							enemyGroundDistanceGrid[i][j] += u.second.getPosition().getDistance(Position(i * 8, j * 8));
+						}
+						if (Position(i * 8, j * 8).getDistance(u.second.getPosition()) - u.second.getUnitType().width() / 2 < miniRange * 8)
+						{
+							enemyGroundStrengthMiniGrid[i][j] += u.second.getStrength();
+						}
 					}
 				}
 			}
@@ -372,7 +383,7 @@ void GridTrackerClass::updateMobilityGrids()
 						}
 					}
 					// Shrink to ratio out of 10						
-					mobilityMiniGrid[x][y] = int(double(mobilityMiniGrid[x][y]) / 85);
+					mobilityMiniGrid[x][y] = int(double(mobilityMiniGrid[x][y]) / 56);
 
 					if (getNearestChokepoint(Position(x * 8, y * 8)) && getNearestChokepoint(Position(x * 8, y * 8))->getCenter().getDistance(Position(x * 8, y * 8)) < 320)
 					{
@@ -389,9 +400,9 @@ void GridTrackerClass::updateMobilityGrids()
 }
 
 void GridTrackerClass::updateObserverMovement(Unit observer)
-{	
-	int initialx = SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().x/32;
-	int initialy = SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().y/32;
+{
+	int initialx = SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().x / 32;
+	int initialy = SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().y / 32;
 
 	for (int x = initialx - 5; x <= initialx + 5; x++)
 	{

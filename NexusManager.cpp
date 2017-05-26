@@ -30,7 +30,7 @@ void NexusTrackerClass::update()
 {
 	storeNexus();
 	trainProbes();
-	updateDefenses();
+	//updateDefenses();
 }
 
 void NexusTrackerClass::storeNexus()

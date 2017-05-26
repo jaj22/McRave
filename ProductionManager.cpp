@@ -42,7 +42,7 @@ void ProductionTrackerClass::update()
 				}
 				break;
 			case UnitTypes::Enum::Protoss_Cybernetics_Core:
-				if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && idleGates.size() == 0)
+				if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && idleGates.size() == 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon) >= 3)
 				{
 					if (Broodwar->self()->minerals() >= UpgradeTypes::Singularity_Charge.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Singularity_Charge.gasPrice())
 					{

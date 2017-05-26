@@ -181,7 +181,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	// Variables for calculating local strengths	
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0, thisUnit = 0.0;
 	Position targetPosition = UnitTracker::Instance().getEnUnits()[target].getPosition();
-	int radius = min(512, 384 + UnitTracker::Instance().getSupply() * 4);	
+	int radius = min(512, 384 + UnitTracker::Instance().getSupply() * 4);
 
 	int aLarge = UnitTracker::Instance().getMySizes()[UnitSizeTypes::Large];
 	int aMedium = UnitTracker::Instance().getMySizes()[UnitSizeTypes::Medium];
@@ -211,10 +211,10 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
-		int threatRange = u.second.getRange() / 32 + u.second.getUnitType().topSpeed() + u.second.getUnitType().width() + UnitTracker::Instance().getEnUnits()[target].getUnitType().width();
+		double threatRange = (u.second.getRange() / 32.0) + u.second.getUnitType().topSpeed() + double(u.second.getUnitType().width()) + double(UnitTracker::Instance().getEnUnits()[target].getUnitType().width());
 
 		// If a unit is within range of the target, add to local strength
-		if (u.second.getPosition().getDistance(targetPosition) < threatRange)
+		if (u.second.getPosition().getDistance(targetPosition) / 32.0 < threatRange)
 		{
 			if (aLarge > 0 || aMedium > 0 || aSmall > 0)
 			{
@@ -254,7 +254,7 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 
 	// Check every ally being in range of the target
 	for (auto &u : UnitTracker::Instance().getMyUnits())
-	{		
+	{
 		// Ignore workers and buildings
 		if (u.second.getUnitType().isWorker() || u.second.getUnitType().isBuilding())
 		{
@@ -263,10 +263,10 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
-		int threatRange = u.second.getRange()/32 + u.second.getUnitType().topSpeed() + u.second.getUnitType().width() + UnitTracker::Instance().getEnUnits()[target].getUnitType().width();		
+		double threatRange = (u.second.getRange() / 32.0) + u.second.getUnitType().topSpeed() + double(u.second.getUnitType().width()) + double(UnitTracker::Instance().getEnUnits()[target].getUnitType().width());
 
 		// If a unit is within the range of the ally unit, add to local strength
-		if (u.second.getPosition().getDistance(unit->getPosition()) < threatRange)
+		if (u.second.getPosition().getDistance(unit->getPosition()) / 32.0 < threatRange)
 		{
 			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
 			{
@@ -320,16 +320,21 @@ void CommandTrackerClass::updateLocalStrategy(Unit unit, Unit target)
 	{
 		if (target && target->exists())
 		{
+			if (unit->getType() == UnitTypes::Protoss_Dragoon && unit->getDistance(target) > 64)
+			{
+				UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
+				return;
+			}
 			if (GridTracker::Instance().getResourceGrid(unit->getTilePosition().x, unit->getTilePosition().y) > 0)
 			{
 				UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 				return;
 			}
-			else
+			/*else
 			{
-				UnitTracker::Instance().getMyUnits()[unit].setStrategy(0);
-				return;
-			}
+			UnitTracker::Instance().getMyUnits()[unit].setStrategy(0);
+			return;
+			}*/
 		}
 	}
 
@@ -522,12 +527,14 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 	Position currentTargetPosition = UnitTracker::Instance().getEnUnits()[unit].getTargetPosition();
 	WalkPosition finalPosition = WalkPositions::None;
 	double highestMobility = 0.0;
-	double distanceTarget = unit->getDistance(target);
-	double distanceHome = 0.5 + unit->getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
-	double mobility = double(GridTracker::Instance().getMobilityMiniGrid(start.x, start.y));
-	double threat = 0.5 + GridTracker::Instance().getEnemyMiniGrd(start.x, start.y);
+	//double distanceTarget = unit->getDistance(target);
+	//double distanceHome = 0.5 + unit->getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
 
-	// Search a 20x20 (5 tiles) mini tile area around the unit for highest mobility	and lowest threat
+	double mobility = double(GridTracker::Instance().getMobilityMiniGrid(start.x, start.y));
+	double threat = 1.0 + GridTracker::Instance().getEnemyMiniGrd(start.x, start.y);
+	double distance = GridTracker::Instance().getEnemyDistGrid(start.x, start.y);;
+
+	// Search a 16x16 (4 tiles) mini tile area around the unit for highest mobility	and lowest threat
 	for (int x = start.x - 10; x <= start.x + 10; x++)
 	{
 		for (int y = start.y - 10; y <= start.y + 10; y++)
@@ -536,11 +543,14 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 			{
 				continue;
 			}
-			distanceTarget = max(1.0, Position(x * 8, y * 8).getDistance(currentTargetPosition));
-			distanceHome = max(1.0, Position(x * 8, y * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition()));
-			threat = 0.5 + GridTracker::Instance().getEnemyMiniGrd(x, y);
+			//distanceTarget = max(1.0, Position(x * 8, y * 8).getDistance(currentTargetPosition));
+			//distanceHome = max(1.0, Position(x * 8, y * 8).getDistance(TerrainTracker::Instance().getPlayerStartingPosition()));
+
 			mobility = double(GridTracker::Instance().getMobilityMiniGrid(x, y));
-			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && (mobility * distanceTarget) / (distanceHome * threat) > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(unit->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || (getNearestChokepoint(TilePosition(x / 4, y / 4)) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128)))
+			threat = 1.0 + GridTracker::Instance().getEnemyMiniGrd(x, y);
+			distance = GridTracker::Instance().getEnemyDistGrid(x, y);
+
+			if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && (sqrt(mobility) * distance / threat) > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(unit->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || (getNearestChokepoint(TilePosition(x / 4, y / 4)) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128)))
 			{
 				bool safeTile = true;
 				for (int i = x - unit->getType().width() / 8; i <= x + unit->getType().width() / 8; i++)
@@ -555,7 +565,7 @@ Position CommandTrackerClass::unitFlee(Unit unit, Unit target)
 				}
 				if (safeTile)
 				{
-					highestMobility = (mobility * distanceTarget) / (distanceHome * threat);
+					highestMobility = (sqrt(mobility) * distance / threat);
 					finalPosition = WalkPosition(x, y);
 				}
 			}
