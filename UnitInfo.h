@@ -50,6 +50,6 @@ public:
 	void setTarget(Unit newTarget){ target = newTarget; }
 	void setDeadFrame(int newDeadFrame) { deadFrame = newDeadFrame; }
 	void setStrategy(int newStrategy){ strategy = newStrategy; }
-	void setLastCommandFrame(int newAttackFrame) { lastAttackFrame = newAttackFrame; }
+	void setLastAttackFrame(int newAttackFrame) { lastAttackFrame = newAttackFrame; }
 	void setMiniTile(WalkPosition newMiniTile) { miniTile = newMiniTile; }
 };

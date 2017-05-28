@@ -28,9 +28,9 @@ void StrategyTrackerClass::updateAlly()
 				globalAllyStrength += u.second.getStrength();
 								
 				// Set last command frame
-				if (u.first->isStartingAttack())
+				if (u.first->isAttackFrame())
 				{					
-					u.second.setLastCommandFrame(Broodwar->getFrameCount());
+					u.second.setLastAttackFrame(Broodwar->getFrameCount());
 				}
 
 				// Drawing
