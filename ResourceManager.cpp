@@ -57,6 +57,7 @@ void ResourceTrackerClass::update()
 		}
 		if (g.second.getGathererCount() < 3)
 		{
+			gasNeeded = 3 - g.second.getGathererCount();
 			saturated = false;
 			break;
 		}

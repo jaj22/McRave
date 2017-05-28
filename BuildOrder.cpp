@@ -36,7 +36,7 @@ void BuildOrderTrackerClass::update()
 	}
 
 	// If no idle gates and we are floating minerals, add 1 more
-	if (Broodwar->self()->minerals() > 800 || (Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)))
+	if (!getEarlyBuild && (Broodwar->self()->minerals() > 800 || (Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
 	{
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
@@ -73,7 +73,7 @@ void BuildOrderTrackerClass::update()
 
 		/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
 	case Races::Enum::Terran:
-		earlyBuild = 1;
+		earlyBuild = 2;
 		if (TerrainTracker::Instance().isWalled())
 		{
 			midBuild = 3;
@@ -137,7 +137,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 		//currentStrategy.assign("Two Gate Core");
 		break;
 	case 1:
-		// -- 1 Gate Core --			
+		// -- 1 Gate 2-3 Zealot --			
 		if (supply >= 20)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
@@ -150,13 +150,32 @@ void BuildOrderTrackerClass::earlyBuilds()
 		{
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = 1;
 		}		
-		if (supply >= 44)
+		if (supply >= 38)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
 		}
 		//currentStrategy.assign("One Gate Core");
 		break;
 	case 2:
+		// -- 1 Gate no Zealot -- 
+		if (supply >= 20)
+		{
+			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
+		}
+		if (supply >= 24)
+		{
+			buildingDesired[UnitTypes::Protoss_Assimilator] = 1;
+		}
+		if (supply >= 26)
+		{
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = 1;
+		}
+		if (supply >= 36)
+		{
+			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
+		}
+		break;
+	case 3:
 		// -- 12 Nexus --
 		if (supply >= 24)
 		{

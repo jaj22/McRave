@@ -14,6 +14,7 @@ class ResourceTrackerClass
 	map <Unit, ResourceInfo> myGas;
 	map <Unit, ResourceInfo> myBoulders;
 	bool saturated;
+	int gasNeeded;
 public:
 
 	map <Unit, ResourceInfo>& getMyMinerals() { return myMinerals; }
@@ -21,13 +22,14 @@ public:
 	map <Unit, ResourceInfo>& getMyBoulders() { return myBoulders; }
 
 	bool isSaturated() { return saturated; }
-
+	void update();
 	void storeMineral(Unit);
 	void storeGas(Unit);
 	void storeBoulder(Unit);
 	void removeResource(Unit);
 
-	void update();
+	int getGasNeeded() { return gasNeeded; }
+	void setGasNeeded(int newCount) { gasNeeded = newCount; }
 };
 
 typedef Singleton<ResourceTrackerClass> ResourceTracker;

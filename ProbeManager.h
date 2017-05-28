@@ -22,6 +22,7 @@ public:
 	void storeProbe(Unit);
 	void removeProbe(Unit);
 	void assignProbe(Unit);	
+	void reAssignProbe(Unit);
 	void scoutProbe();
 	void enforceAssignments();
 };

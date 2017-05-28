@@ -46,11 +46,19 @@ void CommandTrackerClass::getDecision(Unit unit, Unit target)
 		if (UnitTracker::Instance().getMyUnits()[unit].getStrategy() == 0)
 		{
 			// If we are behind, retreat back home
-			if (globalStrategy == 0)
+			if (Broodwar->getFrameCount() < 6000)
+			{
+				for (auto nexus : NexusTracker::Instance().getMyNexus())
+				{
+					unit->move((Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2);
+					return;
+				}
+			}
+			/*else if (globalStrategy == 0)
 			{
 				unit->move(TerrainTracker::Instance().getPlayerStartingPosition());
 				return;
-			}
+			}*/
 			// Else create concave and contain
 			else
 			{
@@ -174,7 +182,7 @@ void CommandTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
-		double threatRange = (u.second.getRange() / 32.0) + u.second.getType().topSpeed() + double(u.second.getType().width()) / 32 + double(UnitTracker::Instance().getEnUnits()[target].getType().width()) / 32;
+		double threatRange = (u.second.getRange() / 32.0) + u.second.getSpeed() + double(u.second.getType().width()) / 32 + double(UnitTracker::Instance().getEnUnits()[target].getType().width()) / 32;
 
 		// If a unit is within range of the target, add to local strength
 		if (u.second.getPosition().getDistance(targetPosition) / 32.0 < threatRange)
@@ -279,33 +287,37 @@ void CommandTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	// Store the difference of strengths 
 	UnitTracker::Instance().getMyUnits()[unit].setLocal(allyLocalStrength - enemyLocalStrength);
 
-	if (Broodwar->enemy()->getRace() != Races::Terran && Broodwar->getFrameCount() < 6000)
-	{
-		if (target && target->exists())
-		{
-			if (unit->getType() == UnitTypes::Protoss_Dragoon && unit->getDistance(target) > 64)
-			{
-				UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
-				return;
-			}
-			if (GridTracker::Instance().getResourceGrid(unit->getTilePosition().x, unit->getTilePosition().y) > 0)
-			{
-				UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
-				return;
-			}
-			/*else
-			{
-			UnitTracker::Instance().getMyUnits()[unit].setStrategy(0);
-			return;
-			}*/
-		}
-	}
-
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
 	{
-		if (Broodwar->getFrameCount() > 6000 && TerrainTracker::Instance().getAllyTerritory().find(getRegion(target->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+		if (unit->getType() == UnitTypes::Protoss_Zealot && Broodwar->getFrameCount() < 6000)
 		{
+			if (GridTracker::Instance().getResourceGrid(target->getTilePosition().x, target->getTilePosition().y) > 0)
+			{
+				UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
+				return;
+			}
+			else
+			{
+				UnitTracker::Instance().getMyUnits()[unit].setStrategy(0);
+				return;
+			}
+		}
+		if (Broodwar->getFrameCount() > 10000 && TerrainTracker::Instance().getAllyTerritory().find(getRegion(target->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+		{
+			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
+			return;
+		}
+		if (Broodwar->getFrameCount() < 10000 && UnitTracker::Instance().getMyUnits()[unit].getRange() > UnitTracker::Instance().getEnUnits()[target].getRange())
+		{
+			for (auto miniTile : UnitTracker::Instance().getMiniTilesUnderUnit(unit))
+			{
+				if (miniTile.isValid() && GridTracker::Instance().getEnemyMiniGrd(miniTile.x, miniTile.y) > 0)
+				{
+					UnitTracker::Instance().getMyUnits()[unit].setStrategy(0);
+					return;
+				}
+			}
 			UnitTracker::Instance().getMyUnits()[unit].setStrategy(1);
 			return;
 		}
@@ -487,17 +499,17 @@ void CommandTrackerClass::fleeTarget(Unit unit, Unit target)
 	double distance = GridTracker::Instance().getEnemyDistGrid(start.x, start.y);;
 
 	// Search a 16x16 (4 tiles) mini tile area around the unit for highest mobility	and lowest threat
-	for (int x = start.x - 10; x <= start.x + 10; x++)
+	for (int x = start.x - 20; x <= start.x + 20; x++)
 	{
-		for (int y = start.y - 10; y <= start.y + 10; y++)
+		for (int y = start.y - 20; y <= start.y + 20; y++)
 		{
 			if (WalkPosition(x, y).isValid())
 			{
 				mobility = double(GridTracker::Instance().getMobilityMiniGrid(x, y));
-				threat = 1.0 + GridTracker::Instance().getEnemyMiniGrd(x, y);
+				threat = GridTracker::Instance().getEnemyMiniGrd(x, y);
 				distance = GridTracker::Instance().getEnemyDistGrid(x, y);
 
-				if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && (sqrt(mobility) * distance / threat) > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(unit->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || (getNearestChokepoint(TilePosition(x / 4, y / 4)) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128)))
+				if (GridTracker::Instance().getAntiMobilityMiniGrid(x, y) == 0 && (mobility / (1.0 + (distance * threat))) > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(unit->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || (getNearestChokepoint(TilePosition(x / 4, y / 4)) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 320)))
 				{
 					bool bestTile = true;
 					for (int i = x - unit->getType().width() / 16; i < x + unit->getType().width() / 16; i++)
@@ -520,7 +532,7 @@ void CommandTrackerClass::fleeTarget(Unit unit, Unit target)
 					}
 					if (bestTile)
 					{
-						highestMobility = (sqrt(mobility) * distance / threat);
+						highestMobility = (mobility / (distance * threat));
 						finalPosition = WalkPosition(x, y);
 					}
 				}
@@ -531,11 +543,13 @@ void CommandTrackerClass::fleeTarget(Unit unit, Unit target)
 	{
 		GridTracker::Instance().updateAllyMovement(unit, finalPosition);
 		unit->move(Position(finalPosition));
+		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Position(finalPosition));
 	}
 	else
 	{
 		GridTracker::Instance().updateAllyMovement(unit, WalkPosition(TerrainTracker::Instance().getPlayerStartingPosition()));
 		unit->move(TerrainTracker::Instance().getPlayerStartingPosition());
+		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(TerrainTracker::Instance().getPlayerStartingPosition());
 	}
 	return;
 }

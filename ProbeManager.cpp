@@ -84,6 +84,20 @@ void ProbeTrackerClass::assignProbe(Unit probe)
 	return;
 }
 
+void ProbeTrackerClass::reAssignProbe(Unit probe)
+{
+	if (ResourceTracker::Instance().getMyGas().find(myProbes[probe].getTarget()) != ResourceTracker::Instance().getMyGas().end())
+	{
+		ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].getGathererCount() - 1);
+	}
+	if (ResourceTracker::Instance().getMyMinerals().find(myProbes[probe].getTarget()) != ResourceTracker::Instance().getMyMinerals().end())
+	{
+		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].getGathererCount() - 1);
+	}
+
+	assignProbe(probe);
+}
+
 void ProbeTrackerClass::scoutProbe()
 {
 	for (auto &u : myProbes)
@@ -123,6 +137,11 @@ void ProbeTrackerClass::enforceAssignments()
 	// For each Probe mapped to gather minerals
 	for (auto &u : myProbes)
 	{
+		if (ResourceTracker::Instance().getGasNeeded() > 0)
+		{
+			reAssignProbe(u.first);
+			ResourceTracker::Instance().setGasNeeded(ResourceTracker::Instance().getGasNeeded() - 1);
+		}
 		// If no valid target, try to get a new one
 		if (!u.second.getTarget())
 		{

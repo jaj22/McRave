@@ -29,6 +29,11 @@ void UnitTrackerClass::storeUnits()
 	// For all ally units
 	for (auto &u : Broodwar->self()->getUnits())
 	{
+		// Add supply of this unit
+		if (u->getType().supplyRequired() > 0)
+		{
+			supply = supply + u->getType().supplyRequired();
+		}
 		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists() || !u->isCompleted())
 		{
 			continue;
@@ -47,13 +52,7 @@ void UnitTrackerClass::storeUnits()
 		else if (!u->getType().isWorker() && !u->getType().isBuilding())
 		{
 			storeAllyUnit(u);
-		}
-
-		// Add supply of this unit
-		if (u->getType().supplyRequired() > 0)
-		{
-			supply = supply + u->getType().supplyRequired();
-		}
+		}	
 	}
 
 	// For all enemy units
