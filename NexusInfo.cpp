@@ -1,10 +1,11 @@
 #include "NexusInfo.h"
 
 // Constructors
-NexusInfo::NexusInfo(int newCannonCount, TilePosition newStaticPosition)
+NexusInfo::NexusInfo(int newCannonCount, TilePosition newStaticPosition, TilePosition newTilePosition)
 {
 	cannonCount = newCannonCount;
 	cannonPosition = newStaticPosition;
+	nexusTilePosition = newTilePosition;
 }
 
 NexusInfo::NexusInfo()

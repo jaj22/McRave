@@ -69,6 +69,10 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 					return false;
 				}
 			}
+			else
+			{
+				return false;
+			}
 		}
 	}
 
@@ -205,6 +209,7 @@ void BuildingTrackerClass::queueBuildings()
 			{
 				// Queue at this building type a pair of building placement and builder
 				queuedBuildings.emplace(b.first, make_pair(here, builder));
+				GridTracker::Instance().updateReservedLocation(b.first, here);				
 			}
 		}
 	}
@@ -291,4 +296,11 @@ void BuildingTrackerClass::updateQueue(Unit building)
 	{
 		queuedBuildings.erase(building->getType());
 	}
+}
+
+void BuildingTrackerClass::storeBuilding(Unit building)
+{
+	myBuildings[building].setBuildingType(building->getType());
+	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
+	myBuildings[building].setTilePosition(building->getTilePosition());
 }

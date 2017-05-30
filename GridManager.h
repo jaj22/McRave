@@ -10,37 +10,36 @@ using namespace std;
 
 class GridTrackerClass
 {
-	// Unit grids
-	double enemyGroundStrengthGrid[256][256];
-	double enemyAirStrengthGrid[256][256];
-	int enemyGroundClusterGrid[256][256];
-	int enemyAirClusterGrid[256][256];
-	int tankClusterGrid[256][256];
-	int allyClusterGrid[256][256];
-	int distanceGridHome[1024][1024];
+	// Ally grids	
+	int aClusterGrid[1024][1024];	
 	int reserveGrid[256][256];
-	int nexusGrid[256][256]; 
+	int nexusGrid[256][256];
 
-	// Enemy mini grid testing
-	double enemyGroundStrengthMiniGrid[1024][1024];
-	double enemyGroundDistanceGrid[1024][1024];
+	// Enemy grids
+	double eGroundGrid[1024][1024];
+	double eAirGrid[1024][1024];
+	double eDistanceGrid[1024][1024];
+	int eGroundClusterGrid[256][256];
+	int eAirClusterGrid[256][256];
+	int stasisClusterGrid[256][256];
 
 	// Neutral grids	
-	int resourceGrid[256][256];
+	int resourceGrid[256][256];		
 
 	// Mobility grids
-	int mobilityMiniGrid[1024][1024];
-	int antiMobilityMiniGrid[1024][1024];
+	int mobilityGrid[1024][1024];
+	int antiMobilityGrid[1024][1024];
+	int distanceGridHome[1024][1024];
 
 	// Special Unit grids
-	int observerGrid[256][256];
+	int observerGrid[1024][1024];
 	int arbiterGrid[256][256];
 	int templarGrid[256][256];
 
 	bool distanceOnce = true;
-	Position supportPosition;
-	Position earlyDefensePosition;
 public:
+	
+	// Member functions
 	void reset();
 	void update();	
 	void updateAllyGrids();
@@ -48,33 +47,33 @@ public:
 	void updateNeutralGrids();
 	void updateMobilityGrids();
 	void updateArbiterGrids();
-
 	void updateObserverMovement(Unit);
 	void updateAllyMovement(Unit, WalkPosition);
-
+	void updateReservedLocation(UnitType, TilePosition);
 	void updateDistanceGrid();
-	int getDistanceHome(int x, int y) { return distanceGridHome[x][y]; }
 
-	int getReserveGrid(int x, int y) { return reserveGrid[x][y]; }
+	// Ally functions
+	int getACluster(int x, int y) { return aClusterGrid[x][y]; }
+	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }
 	int getNexusGrid(int x, int y) { return nexusGrid[x][y]; }
 
-	Position getSupportPosition() { return supportPosition; }
-	Position getEarlyDefensePosition() { return earlyDefensePosition; }
-	double getEnemyGrd(int x, int y) { return enemyGroundStrengthGrid[x][y]; }
-
-	double getEnemyMiniGrd(int x, int y) { return enemyGroundStrengthMiniGrid[x][y]; }
-	double getEnemyDistGrid(int x, int y) { return enemyGroundDistanceGrid[x][y]; }
-
-	double getEnemyAir(int x, int y) { return enemyAirStrengthGrid[x][y]; }	
-	int getEnemyGrdCluster(int x, int y) { return enemyGroundClusterGrid[x][y]; }
-	int getEnemyAirCluster(int x, int y) { return enemyAirClusterGrid[x][y]; }
-	int getTankCluster(int x, int y) { return tankClusterGrid[x][y]; }
-	int getAllyCluster(int x, int y) { return allyClusterGrid[x][y]; }
+	// Enemy functions
+	double getEGroundGrid(int x, int y) { return eGroundGrid[x][y]; }
+	double getEAirGrid(int x, int y) { return eAirGrid[x][y]; }
+	double getEDistanceGrid(int x, int y) { return eDistanceGrid[x][y]; }
+	int getEGroundCluster(int x, int y) { return eGroundClusterGrid[x][y]; }
+	int getEAirCluster(int x, int y) { return eAirClusterGrid[x][y]; }
+	int getStasisCluster(int x, int y) { return stasisClusterGrid[x][y]; }	
 	
-	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }
-	int getMobilityMiniGrid(int x, int y) { return mobilityMiniGrid[x][y]; }
-	int getAntiMobilityMiniGrid(int x, int y) { return antiMobilityMiniGrid[x][y]; }
+	// Neutral functions
+	int getReserveGrid(int x, int y) { return reserveGrid[x][y]; }
+	
+	// Mobility functions
+	int getMobilityGrid(int x, int y) { return mobilityGrid[x][y]; }
+	int getAntiMobilityGrid(int x, int y) { return antiMobilityGrid[x][y]; }
+	int getDistanceHome(int x, int y) { return distanceGridHome[x][y]; }	
 
+	// Special unit functions
 	int getObserverGrid(int x, int y) { return observerGrid[x][y]; }
 	int getArbiterGrid(int x, int y) { return arbiterGrid[x][y]; }
 };

@@ -39,7 +39,7 @@ void NexusTrackerClass::storeNexus()
 	{
 		if (nexus->getType() == UnitTypes::Protoss_Nexus && myNexus.find(nexus) == myNexus.end())
 		{
-			NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus));		
+			NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus), nexus->getTilePosition());
 			myNexus[nexus] = newUnit;
 		}
 	}
@@ -76,6 +76,18 @@ void NexusTrackerClass::updateDefenses()
 		{
 			continue;
 		}
+		//if (nexus.first->getUnitsInRadius(128, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 1)
+		//{
+		//	TilePosition here = BuildingTracker::Instance().getBuildLocationNear(UnitTypes::Protoss_Pylon, nexus.first->getTilePosition(), false);
+		//	Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
+		//	// Create a pylon there
+		//	if (here != TilePositions::None && builder)
+		//	{
+		//		// Queue at this building type a pair of building placement and builder
+		//		BuildingTracker::Instance().getQueuedBuildings().emplace(UnitTypes::Protoss_Pylon, make_pair(here, builder));
+		//		GridTracker::Instance().updateReservedLocation(UnitTypes::Protoss_Pylon, here);
+		//	}
+		//}
 
 		// Emplace the ally territory
 		TerrainTracker::Instance().getAllyTerritory().emplace(getRegion(nexus.first->getTilePosition()));

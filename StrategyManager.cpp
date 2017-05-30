@@ -37,6 +37,7 @@ void StrategyTrackerClass::updateAlly()
 				if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None && u.first->getDistance(u.second.getTargetPosition()) < 500)
 				{
 					Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), Broodwar->self()->getColor());
+					Broodwar->drawBoxMap(u.second.getTargetPosition() - Position(4,4), u.second.getTargetPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
 				}
 				if (u.second.getLocal() < 0)
 				{
@@ -80,7 +81,7 @@ void StrategyTrackerClass::updateEnemy()
 		{
 			if (u.second.getType() == UnitTypes::Protoss_Dark_Templar || u.second.getType() == UnitTypes::Protoss_Citadel_of_Adun || u.second.getType() == UnitTypes::Terran_Wraith || u.second.getType() == UnitTypes::Terran_Ghost || u.second.getType() == UnitTypes::Zerg_Lurker)
 			{
-					invis = true;
+				invis = true;
 			}
 
 			// If tile is visible but unit is not, remove position
@@ -142,6 +143,10 @@ void StrategyTrackerClass::updateComposition()
 			offset = offset + 10;
 		}
 
+		if (t.first == UnitTypes::Protoss_Dark_Templar)
+		{
+
+		}
 		
 
 		// Force expand based on enemy composition

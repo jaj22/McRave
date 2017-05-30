@@ -4,6 +4,7 @@
 #include "GridManager.h"
 #include "SpecialUnitManager.h"
 #include "ProbeManager.h"
+#include "BuildingManager.h"
 
 bool stimResearched;
 
@@ -48,11 +49,15 @@ void UnitTrackerClass::storeUnits()
 		{
 			SpecialUnitTracker::Instance().storeUnit(u);
 		}
+		else if (u->getType().isBuilding())
+		{
+			BuildingTracker::Instance().storeBuilding(u);
+		}
 		// Store if exists and not building or worker
 		else if (!u->getType().isWorker() && !u->getType().isBuilding())
 		{
 			storeAllyUnit(u);
-		}	
+		}
 	}
 
 	// For all enemy units
@@ -230,7 +235,7 @@ double unitGetVisibleStrength(Unit unit)
 	}
 	return hp * unitGetStrength(unit->getType());
 }
-double unitGetTrueRange(UnitType unitType, Player who)
+double unitGetTrueGroundRange(UnitType unitType, Player who)
 {
 	// Ranged upgrade check for Dragoons, Marines, Hydralisks and Bunkers
 
@@ -260,6 +265,33 @@ double unitGetTrueRange(UnitType unitType, Player who)
 		return 256.0;
 	}
 	return double(unitType.groundWeapon().maxRange());
+}
+double unitGetTrueAirRange(UnitType unitType, Player who)
+{
+	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
+	{
+		return 192.0;
+	}
+	else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
+	{
+		return 160.0;
+	}
+	else if (unitType == UnitTypes::Terran_Bunker)
+	{
+		if (who->getUpgradeLevel(UpgradeTypes::U_238_Shells))
+		{
+			return 192.0;
+		}
+		else
+		{
+			return 160.0;
+		}
+	}
+	else if (unitType == UnitTypes::Terran_Goliath && who->getUpgradeLevel(UpgradeTypes::Charon_Boosters))
+	{
+		return 256.0;
+	}
+	return double(unitType.airWeapon().maxRange());
 }
 double unitGetPriority(UnitType unitType)
 {
@@ -298,7 +330,7 @@ double unitGetTrueSpeed(UnitType unitType, Player who)
 	return speed;
 }
 
-WalkPosition getMiniTile(Unit unit)
+WalkPosition UnitTrackerClass::getMiniTile(Unit unit)
 {
 	int x = unit->getPosition().x;
 	int y = unit->getPosition().y;
@@ -344,7 +376,8 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 	enemyUnits[unit].setPosition(unit->getPosition());
 	enemyUnits[unit].setStrength(unitGetVisibleStrength(unit));
 	enemyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
-	enemyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
+	enemyUnits[unit].setGroundRange(unitGetTrueGroundRange(unit->getType(), Broodwar->self()));
+	enemyUnits[unit].setAirRange(unitGetTrueAirRange(unit->getType(), Broodwar->self()));
 	enemyUnits[unit].setSpeed(unitGetTrueSpeed(unit->getType(), Broodwar->self()));
 	enemyUnits[unit].setPriority(unitGetPriority(unit->getType()));
 	enemyUnits[unit].setCommand(unit->getLastCommand().getType());
@@ -362,7 +395,8 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 	allyUnits[unit].setPosition(unit->getPosition());
 	allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
 	allyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
-	allyUnits[unit].setRange(unitGetTrueRange(unit->getType(), Broodwar->self()));
+	allyUnits[unit].setGroundRange(unitGetTrueGroundRange(unit->getType(), Broodwar->self()));
+	allyUnits[unit].setAirRange(unitGetTrueAirRange(unit->getType(), Broodwar->self()));
 	allyUnits[unit].setSpeed(unitGetTrueSpeed(unit->getType(), Broodwar->self()));
 	allyUnits[unit].setPriority(unitGetPriority(unit->getType()));
 	allyUnits[unit].setCommand(unit->getLastCommand().getType());

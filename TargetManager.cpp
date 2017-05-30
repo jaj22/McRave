@@ -53,13 +53,6 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 			thisUnit = 0.1*u.second.getPriority() / distance;
 		}
 
-
-		// Reduce building threat
-		if (u.second.getType().isBuilding())
-		{
-			thisUnit = 0.1*thisUnit;
-		}
-
 		// If this is the strongest enemy around, target it
 		if (thisUnit > highest || highest == 0.0)
 		{
@@ -101,32 +94,32 @@ void TargetTrackerClass::unitGetClusterTarget(Unit unit)
 				// Reavers want ground clusters
 				if (unit->getType() == UnitTypes::Protoss_Reaver)
 				{
-					if (GridTracker::Instance().getEnemyGrdCluster(x,y) > highest)
+					if (GridTracker::Instance().getEGroundCluster(x,y) > highest)
 					{
-						highest = GridTracker::Instance().getEnemyGrdCluster(x, y);
+						highest = GridTracker::Instance().getEGroundCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
 				}
 				// Arbiters want Siege Tank clusters
 				else if (unit->getType() == UnitTypes::Protoss_Arbiter)
 				{
-					if (GridTracker::Instance().getTankCluster(x, y) > highest)
+					if (GridTracker::Instance().getStasisCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getTankCluster(x, y);
+						highest = GridTracker::Instance().getStasisCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
 				}
 				// High Templars can have air or ground clusters
 				else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 				{
-					if (GridTracker::Instance().getEnemyGrdCluster(x, y) > highest)
+					if (GridTracker::Instance().getEGroundCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getEnemyGrdCluster(x, y);
+						highest = GridTracker::Instance().getEGroundCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
-					if (GridTracker::Instance().getEnemyAirCluster(x, y) > highest)
+					if (GridTracker::Instance().getEAirCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getEnemyAirCluster(x, y);
+						highest = GridTracker::Instance().getEAirCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
 				}

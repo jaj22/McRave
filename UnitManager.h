@@ -26,6 +26,7 @@ public:
 	map<UnitSizeType, int>& getEnSizes() { return enemySizes; }
 	int getSupply() { return supply; }
 	set<WalkPosition> getMiniTilesUnderUnit(Unit);
+	WalkPosition getMiniTile(Unit);
 
 	// Updating
 	void update();

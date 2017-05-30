@@ -11,20 +11,14 @@ void BuildOrderTrackerClass::update()
 	// Temporary variables
 	int supply = UnitTracker::Instance().getSupply();
 	bool saturated = ResourceTracker::Instance().isSaturated();
-	int inactiveNexusCnt = 0;
 
 	// Pylon, Forge, Nexus
-	buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((supply / max(12, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
+	buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((supply / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 	buildingDesired[UnitTypes::Protoss_Forge] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) / 3);
 	buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
-	if (StrategyTracker::Instance().needDetection())
-	{
-		buildingDesired[UnitTypes::Protoss_Observatory] = 1;
-	}
-
 	// If we are saturated, expand
-	if (Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) - inactiveNexusCnt) && ProductionTracker::Instance().getIdleGates().size() == 0)
+	if (StrategyTracker::Instance().globalAlly() > StrategyTracker::Instance().globalEnemy() && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus]++;
 	}
@@ -88,7 +82,14 @@ void BuildOrderTrackerClass::update()
 		/* Protoss vs Protoss		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps */
 	case Races::Enum::Protoss:
 		earlyBuild = 1;
-		midBuild = 0;
+		if (StrategyTracker::Instance().needDetection())
+		{
+			midBuild = 1;
+		}
+		else
+		{
+			midBuild = 0;
+		}
 		lateBuild = 1;
 		break;
 	case Races::Enum::Random:
@@ -191,19 +192,19 @@ void BuildOrderTrackerClass::midBuilds()
 	int supply = UnitTracker::Instance().getSupply();
 	switch (midBuild){
 	case 0:
-		// -- Reavers --		
+		// -- Reavers First --		
 		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 2);
 		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
-		//currentStrategy.assign("Robo Tech");
+		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, buildingDesired[UnitTypes::Protoss_Observatory] + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
+		//currentStrategy.assign("Reavers First");
 		break;
-
 	case 1:
-		// -- Speedlots	--	
-		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-		//currentStrategy.assign("Speedlot Tech");
+		// -- Observers First -- 
+		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 2);
+		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer));
+		//currentStrategy.assign("Observers First");
 		break;
-
 	case 2:
 		// -- Corsairs --
 		buildingDesired[UnitTypes::Protoss_Stargate] = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 4);
@@ -217,8 +218,13 @@ void BuildOrderTrackerClass::midBuilds()
 			buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) / 2);
 		}
 		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
+		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, buildingDesired[UnitTypes::Protoss_Observatory] + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
 		//currentStrategy.assign("Range Robo Expand");
+	case 4:
+		// -- Speedlots	--	
+		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
+		//currentStrategy.assign("Speedlot Tech");
+		break;
 	}
 }
 

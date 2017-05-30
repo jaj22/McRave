@@ -225,8 +225,34 @@ void ProductionTrackerClass::updateRobo(Unit building)
 	int supply = UnitTracker::Instance().getSupply();
 	int queuedMineral = BuildingTracker::Instance().getQueuedMineral();
 	int queuedGas = BuildingTracker::Instance().getQueuedGas();
+
+	// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
+	if (StrategyTracker::Instance().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
+	{
+		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && building->isTraining())
+		{
+			for (auto unit : building->getTrainingQueue())
+			{
+				if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
+				{
+					building->cancelTrain();
+				}
+			}			
+		}
+		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
+		{
+			building->train(UnitTypes::Protoss_Observer);
+			idleBuildings.erase(building->getID());
+			return;
+		}
+		else
+		{
+			idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Observer);
+		}
+	}
+
 	// If we need an Observer
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && ((StrategyTracker::Instance().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0) || Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1)))
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1))
 	{
 		// If we can afford an Observer, train, otherwise, add to priority
 		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)
@@ -240,6 +266,7 @@ void ProductionTrackerClass::updateRobo(Unit building)
 			idleBuildings.emplace(building->getID(), UnitTypes::Protoss_Observer);
 		}
 	}
+
 	// If we need a Reaver			
 	else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) < 10)
 	{

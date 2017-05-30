@@ -39,13 +39,7 @@ void InterfaceTrackerClass::update()
 	for (auto r : ResourceTracker::Instance().getMyGas())
 	{
 		Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 32), "%c%d", Text::Green, r.second.getRemainingResources());
-	}
-
-	//// Display static defense count
-	//for (auto n : myNexus)
-	//{
-	//	Broodwar->drawTextMap(n.first->getPosition(), "Static Defenses: %d", n.second.getStaticD());
-	//}
+	}	
 
 	//// Display Goon/Zealot scoring
 	//offset = 0;
@@ -53,12 +47,6 @@ void InterfaceTrackerClass::update()
 	//{
 	//	Broodwar->drawTextScreen(500, 200 + offset, "%s : %.2f", t.first.toString().c_str(), t.second);
 	//	offset = offset + 10;
-	//}
-
-	//// Show building placements
-	//for (auto b : queuedBuildings)
-	//{
-	//	Broodwar->drawBoxMap(Position(b.second.first), Position((b.second.first.x + b.first.tileWidth()) * 32, (b.second.first.y + b.first.tileHeight()) * 32), Broodwar->self()->getColor());
 	//}	
 
 	// Show expansions

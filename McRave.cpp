@@ -11,8 +11,11 @@
 // DISABLED CURRENTLY: Shuttles, Cannons
 
 // TODOS:
-// Store all units inside one manager? myProbes, myBuildings, myUnits, mySpecialUnits
-//		So far: probes, units, special units 
+
+// Test: Grids: ALL
+// Storage: buildings, nexus
+// Observer stuff
+
 // Move stim research to strategy
 // One time supply increase instead of resetting?
 // Threatrange grid

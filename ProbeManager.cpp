@@ -10,8 +10,8 @@ using namespace std;
 
 void ProbeTrackerClass::update()
 {
+	scoutProbe();	
 	enforceAssignments();
-	scoutProbe();
 }
 
 void ProbeTrackerClass::storeProbe(Unit unit)

@@ -3,6 +3,10 @@
 #include "TerrainManager.h"
 #include "ResourceManager.h"
 #include "SpecialUnitManager.h"
+#include "BuildOrder.h"
+#include "NexusManager.h"
+#include "ProbeManager.h"
+#include "BuildingManager.h"
 
 bool doOnce = true;
 
@@ -13,30 +17,18 @@ void GridTrackerClass::reset()
 	{
 		for (int y = 0; y <= Broodwar->mapHeight(); y++)
 		{
-			// Debug drawing
-			if (enemyGroundStrengthGrid[x][y] > 0)
-			{
-				//Broodwar->drawTextMap(x * 32, y * 32, "%.2f", enemyGroundStrengthGrid[x][y]);
-			}
-			if (allyClusterGrid[x][y] > 0)
-			{
-				//Broodwar->drawTextMap(x * 32, y * 32, "%.2f", allyClusterGrid[x][y]);
-			}
-			if (enemyGroundClusterGrid[x][y] > 0)
+			// Debug drawing			
+			if (eGroundClusterGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", enemyGroundClusterGrid[x][y]);
 			}
-			if (enemyAirClusterGrid[x][y] > 0)
+			if (eAirClusterGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", enemyAirClusterGrid[x][y]);
 			}
 			if (resourceGrid[x][y] > 0)
 			{
 				//Broodwar->drawTextMap(x * 32, y * 32, "%d", resourceGrid[x][y]);
-			}
-			if (observerGrid[x][y] > 0)
-			{
-				//Broodwar->drawTextMap(x * 32, y * 32, "%d", observerGrid[x][y]);
 			}
 			if (reserveGrid[x][y] > 0)
 			{
@@ -47,17 +39,11 @@ void GridTrackerClass::reset()
 				//Broodwar->drawBoxMap(Position(x * 32, y * 32), Position(x*32 + 32, y*32 + 32), Colors::Black);
 			}
 
-			// Reset strength grids
-			enemyGroundStrengthGrid[x][y] = 0;
-			enemyAirStrengthGrid[x][y] = 0;
-
 			// Reset cluster grids
-			enemyGroundClusterGrid[x][y] = 0;
-			enemyAirClusterGrid[x][y] = 0;
-			allyClusterGrid[x][y] = 0;
+			eGroundClusterGrid[x][y] = 0;
+			eAirClusterGrid[x][y] = 0;
 
 			// Reset other grids
-			observerGrid[x][y] = 0;
 			reserveGrid[x][y] = 0;
 			nexusGrid[x][y] = 0;
 		}
@@ -67,43 +53,78 @@ void GridTrackerClass::reset()
 		for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 		{
 			// Debug drawing
-			if (antiMobilityMiniGrid[x][y] > 0)
+			if (antiMobilityGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
 			}
 
-			if (mobilityMiniGrid[x][y] >= 0 && antiMobilityMiniGrid[x][y] == 0)
+			if (mobilityGrid[x][y] >= 0 && antiMobilityGrid[x][y] == 0)
 			{
-				/*	if (mobilityMiniGrid[x][y] < 4)
-					{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
-					}
-					else if (mobilityMiniGrid[x][y] >= 4 && mobilityMiniGrid[x][y] < 7)
-					{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
-					}
-					else if (mobilityMiniGrid[x][y] >= 7 && mobilityMiniGrid[x][y] < 10)
-					{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
-					}
-					else if (mobilityMiniGrid[x][y] >= 10)
-					{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
-					}*/
+				/*if (mobilityGrid[x][y] < 4)
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
+				}
+				else if (mobilityGrid[x][y] >= 4 && mobilityGrid[x][y] < 7)
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
+				}
+				else if (mobilityGrid[x][y] >= 7 && mobilityGrid[x][y] < 10)
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
+				}
+				else if (mobilityGrid[x][y] >= 10)
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
+				}*/
 			}
 
-			if (enemyGroundStrengthMiniGrid[x][y] > 0)
+			if (eDistanceGrid[x][y] >= 0)
+			{
+				/*if (enemyGroundDistanceGrid[x][y] < 4)
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
+				}
+				else if (enemyGroundDistanceGrid[x][y] >= 4 && enemyGroundDistanceGrid[x][y] < 7)
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
+				}
+				else if (enemyGroundDistanceGrid[x][y] >= 7 && enemyGroundDistanceGrid[x][y] < 10)
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
+				}
+				else if (enemyGroundDistanceGrid[x][y] >= 10)
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
+				}*/
+			}
+
+			if (eGroundGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
 			}
-			if (enemyGroundDistanceGrid[x][y] > 1)
+			if (eAirGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
 			}
+			if (eDistanceGrid[x][y] > 1)
+			{
+				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
+			}
+			if (observerGrid[x][y] > 0)
+			{
+				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
+			}
+			if (aClusterGrid[x][y] > 0)
+			{
+				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
+			}
 
-			antiMobilityMiniGrid[x][y] = 0;
-			enemyGroundStrengthMiniGrid[x][y] = 0;
-			enemyGroundDistanceGrid[x][y] = 0;
+			aClusterGrid[x][y] = 0;
+			antiMobilityGrid[x][y] = 0;
+			eGroundGrid[x][y] = 0.0;
+			eAirGrid[x][y] = 0.0;
+			eDistanceGrid[x][y] = 0.0;
+			observerGrid[x][y] = 0;
 		}
 	}
 }
@@ -120,84 +141,96 @@ void GridTrackerClass::update()
 
 void GridTrackerClass::updateAllyGrids()
 {
-	for (auto u : Broodwar->self()->getUnits())
+	// Clusters and anti mobility from units
+	for (auto &u : UnitTracker::Instance().getMyUnits())
+	{	
+		WalkPosition start = u.second.getMiniTile();
+		int offsetX = u.second.getPosition().x % 32;
+		int offsetY = u.second.getPosition().y % 32;
+
+		// Make sure unit is alive and not an Arbiter or Observer
+		if (u.second.getDeadFrame() == 0 && u.second.getType() != UnitTypes::Protoss_Arbiter && u.second.getType() != UnitTypes::Protoss_Observer)
+		{
+			for (int x = start.x - 20; x <= start.x + 20 + u.second.getType().tileWidth() * 4; x++)
+			{
+				for (int y = start.y - 20; y <= start.y + 20 + u.second.getType().tileWidth() * 4; y++)
+				{
+					if (WalkPosition(x, y).isValid() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 8 + offsetX), (y * 8 + offsetY))) <= 160)
+					{
+						aClusterGrid[x][y] += 1;
+					}				
+				}
+			}
+			// Anti mobility doesn't apply to flying units (carriers, scouts, shuttles)
+			if (!u.second.getType().isFlyer())
+			{				
+				for (int x = start.x; x <= start.x + u.second.getType().tileWidth() * 4; x++)
+				{
+					for (int y = start.y; y <= start.y + u.second.getType().tileHeight() * 4; y++)
+					{
+						antiMobilityGrid[x][y] = 1;
+					}
+				}
+			}
+		}
+	}
+
+	// Anti mobility from buildings
+	for (auto &u : BuildingTracker::Instance().getMyBuildings())
 	{
-		if (u->exists())
+		if (u.first->exists())
 		{
 			int startX = 0;
 			int startY = 0;
 			int offset = 0;
-			if (u->getType().isBuilding())
+			startX = (u.first->getTilePosition().x * 4);
+			startY = (u.first->getTilePosition().y * 4);
+			for (int x = startX - 2; x < 2 + startX + u.second.getType().tileWidth() * 4; x++)
 			{
-				startX = (u->getTilePosition().x * 4);
-				startY = (u->getTilePosition().y * 4);
-				for (int x = startX - 2; x < 2 + startX + u->getType().tileWidth() * 4; x++)
+				for (int y = startY - 2; y < 2 + startY + u.second.getType().tileHeight() * 4; y++)
 				{
-					for (int y = startY - 2; y < 2 + startY + u->getType().tileHeight() * 4; y++)
-					{
-						antiMobilityMiniGrid[x][y] = 1;
-					}
-				}
-
-				startX = u->getTilePosition().x;
-				startY = u->getTilePosition().y;
-
-				if (u->getType() == UnitTypes::Protoss_Gateway || u->getType() == UnitTypes::Protoss_Robotics_Facility)
-				{
-					offset = 1;
-				}
-				for (int x = startX - offset; x < startX + u->getType().tileWidth() + offset; x++)
-				{
-					for (int y = startY - offset; y < startY + u->getType().tileHeight() + offset; y++)
-					{
-						reserveGrid[x][y] = 1;
-					}
-				}
-				if (u->getType().isResourceDepot())
-				{
-					offset = 10;
-					for (int x = startX - offset; x < startX + u->getType().tileWidth() + offset; x++)
-					{
-						for (int y = startY - offset; y < startY + u->getType().tileHeight() + offset; y++)
-						{
-							nexusGrid[x][y] = 1;
-						}
-					}
-				}
-			}
-			else
-			{
-				startX = (int)((u->getPosition().x - u->getPosition().x % 8 - (0.5*u->getType().width())) / 8);
-				startY = (int)((u->getPosition().y - u->getPosition().y % 8 - (0.5*u->getType().height())) / 8);
-				for (int x = startX; x <= startX + u->getType().tileWidth() * 4; x++)
-				{
-					for (int y = startY; y <= startY + u->getType().tileHeight() * 4; y++)
-					{
-						antiMobilityMiniGrid[x][y] = 1;
-					}
+					antiMobilityGrid[x][y] = 1;
 				}
 			}
 
+			startX = u.first->getTilePosition().x;
+			startY = u.first->getTilePosition().y;
+
+			if (u.second.getType() == UnitTypes::Protoss_Gateway || u.second.getType() == UnitTypes::Protoss_Robotics_Facility)
+			{
+				offset = 1;
+			}
+			for (int x = startX - offset; x < startX + u.second.getType().tileWidth() + offset; x++)
+			{
+				for (int y = startY - offset; y < startY + u.second.getType().tileHeight() + offset; y++)
+				{
+					reserveGrid[x][y] = 1;
+				}
+			}
 		}
 	}
-	for (auto &u : UnitTracker::Instance().getMyUnits())
-	{
-		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
-		int offsetX = u.second.getPosition().x % 32;
-		int offsetY = u.second.getPosition().y % 32;
 
-		// Ally cluster grid
-		if (u.second.getDeadFrame() == 0 && !u.second.getType().isWorker() && !u.second.getType().isBuilding() && u.second.getType() != UnitTypes::Protoss_Arbiter && u.second.getType() != UnitTypes::Protoss_Observer)
+	for (auto & probe : ProbeTracker::Instance().getMyProbes())
+	{
+		WalkPosition start = UnitTracker::Instance().getMiniTile(probe.first);
+		for (int x = start.x; x <= start.x + probe.first->getType().tileWidth() * 4; x++)
 		{
-			for (int x = unitTilePosition.x - 5; x <= unitTilePosition.x + 6; x++)
+			for (int y = start.y; y <= start.y + probe.first->getType().tileHeight() * 4; y++)
 			{
-				for (int y = unitTilePosition.y - 5; y <= unitTilePosition.y + 6; y++)
-				{
-					if (TilePosition(x, y).isValid() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= 160)
-					{
-						allyClusterGrid[x][y] += 1;
-					}
-				}
+				antiMobilityGrid[x][y] = 1;
+			}
+		}
+	}
+
+	// Nexus grid 
+	for (auto & nexus : NexusTracker::Instance().getMyNexus())
+	{
+		int offset = 10;
+		for (int x = nexus.second.getTilePosition().x - offset; x < nexus.second.getTilePosition().x + 4 + offset; x++)
+		{
+			for (int y = nexus.second.getTilePosition().y - offset; y < nexus.second.getTilePosition().y + 3 + offset; y++)
+			{
+				nexusGrid[x][y] = 1;
 			}
 		}
 	}
@@ -207,53 +240,10 @@ void GridTrackerClass::updateEnemyGrids()
 {
 	for (auto &u : UnitTracker::Instance().getEnUnits())
 	{
-		// For each enemy unit, add its attack value to each tile it is in range of
+		// Cluster grid for storm/stasis (96x96)
 		TilePosition unitTilePosition = TilePosition(u.second.getPosition());
-		if (u.second.getMaxStrength() > 1.0 && u.second.getDeadFrame() == 0)
-		{
-			// Store range in class
-			int offsetX = u.second.getPosition().x % 32;
-			int offsetY = u.second.getPosition().y % 32;
-			int range = (int)u.second.getRange() + 64;
-			// Making sure we properly analyze the threat of melee units without adding range to ranged units
-			if (range < 32)
-			{
-				range = (range + 64) / 32;
-			}
-			else
-			{
-				range = range / 32;
-			}
-			// The + 1 is because we need to still check an additional tile
-			for (int x = unitTilePosition.x - range; x <= unitTilePosition.x + range + 1; x++)
-			{
-				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
-				{
-					if (TilePosition(x, y).isValid() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 32 + offsetX), (y * 32 + offsetY))) <= (range * 32))
-					{
-						enemyGroundStrengthGrid[x][y] += u.second.getStrength();
-					}
-				}
-			}
-		}
-		if (u.second.getType().airWeapon().damageAmount() > 0 && u.second.getDeadFrame() == 0)
-		{
-			int range = (u.second.getType().airWeapon().maxRange()) / 32;
-			// The + 1 is because we need to still check an additional tile
-			for (int x = unitTilePosition.x - range; x <= unitTilePosition.x + range + 1; x++)
-			{
-				for (int y = unitTilePosition.y - range; y <= unitTilePosition.y + range + 1; y++)
-				{
-					if (TilePosition(x, y).isValid() && u.second.getPosition().getDistance(Position((x * 32), (y * 32))) <= (range * 32))
-					{
-						enemyAirStrengthGrid[x][y] += u.second.getStrength();
-					}
-				}
-			}
-		}
 		if (u.first && u.first->exists() && !u.second.getType().isBuilding() && !u.first->isStasised() && !u.first->isMaelstrommed())
 		{
-			// Cluster heatmap for psi/stasis (96x96)			
 			for (int x = unitTilePosition.x - 1; x <= unitTilePosition.x + 1; x++)
 			{
 				for (int y = unitTilePosition.y - 1; y <= unitTilePosition.y + 1; y++)
@@ -262,31 +252,24 @@ void GridTrackerClass::updateEnemyGrids()
 					{
 						if (!u.second.getType().isFlyer())
 						{
-							enemyGroundClusterGrid[x][y] += 1;
+							eGroundClusterGrid[x][y] += 1;
 						}
 						else
 						{
-							enemyAirClusterGrid[x][y] += 1;
+							eAirClusterGrid[x][y] += 1;
 						}
 						if (u.second.getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode || u.second.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
 						{
-							tankClusterGrid[x][y] += 1;
+							stasisClusterGrid[x][y] += 1;
 						}
 					}
 				}
 			}
 		}
-	}
 
-	for (auto &u : UnitTracker::Instance().getEnUnits())
-	{
+		// Distance threat grids and strength grids
 		if (u.second.getDeadFrame() == 0 && !u.second.getType().isBuilding())
 		{
-			int miniRange = u.second.getRange() / 8;
-			/*if (!u.second.getType().isBuilding() && miniRange < 10)
-			{
-				miniRange = 20;
-			}*/
 			for (int x = u.second.getMiniTile().x - 50; x <= 2 + u.second.getMiniTile().x + 50; x++)
 			{
 				for (int y = u.second.getMiniTile().y - 50; y <= 2 + u.second.getMiniTile().y + 50; y++)
@@ -295,20 +278,29 @@ void GridTrackerClass::updateEnemyGrids()
 					{
 						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) < 320)
 						{
-							enemyGroundDistanceGrid[x][y] += 1.0 + (320.0 / 1.0 + u.second.getPosition().getDistance(Position(x * 8, y * 8)));
+							if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) > 0)
+							{
+								eDistanceGrid[x][y] += 10.0 / (1.0 + u.second.getPosition().getDistance(Position(x * 8, y * 8)) / 32);
+							}
+							else
+							{
+								eDistanceGrid[x][y] += 10.0;
+							}
 						}
-						/*if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().width() / 2 < miniRange * 8)
+						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getGroundRange() + u.second.getSpeed() * 8)
 						{
-							
-						}*/
-						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().width() / 2 < miniRange * 8 + u.second.getSpeed() * 16)
-						{
-							enemyGroundStrengthMiniGrid[x][y] += u.second.getStrength();
+							eGroundGrid[x][y] += u.second.getMaxStrength();
 						}
-					}					
+						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getAirRange() + u.second.getSpeed() * 8)
+						{
+							eAirGrid[x][y] += u.second.getMaxStrength();
+						}
+					}
 				}
 			}
 		}
+
+		// Anti mobility grids
 		if (u.second.getType().isBuilding())
 		{
 			WalkPosition start = u.second.getMiniTile();
@@ -319,7 +311,7 @@ void GridTrackerClass::updateEnemyGrids()
 				{
 					if (WalkPosition(x, y).isValid())
 					{
-						antiMobilityMiniGrid[x][y] = 1;
+						antiMobilityGrid[x][y] = 1;
 					}
 				}
 			}
@@ -332,7 +324,7 @@ void GridTrackerClass::updateEnemyGrids()
 				{
 					if (WalkPosition(x, y).isValid())
 					{
-						antiMobilityMiniGrid[x][y] = 1;
+						antiMobilityGrid[x][y] = 1;
 					}
 				}
 			}
@@ -349,7 +341,7 @@ void GridTrackerClass::updateNeutralGrids()
 		{
 			for (int y = m.second.getTilePosition().y - 2; y <= m.second.getTilePosition().y + m.second.getType().tileHeight() + 2; y++)
 			{
-				if (TilePosition(x,y).isValid() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
+				if (TilePosition(x, y).isValid() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
 				}
@@ -369,15 +361,21 @@ void GridTrackerClass::updateNeutralGrids()
 			}
 		}
 	}
+
+	// Anti mobility around all neutral units, not just my minerals/gas
 	for (auto u : Broodwar->neutral()->getUnits())
 	{
+		if (u->getType().isFlyer())
+		{
+			continue;
+		}
 		int startX = (u->getTilePosition().x * 4);
 		int startY = (u->getTilePosition().y * 4);
-		for (int x = startX; x < startX + u->getType().tileWidth() * 4; x++)
+		for (int x = startX - 2; x < 2 + startX + u->getType().tileWidth() * 4; x++)
 		{
-			for (int y = startY; y < startY + u->getType().tileHeight() * 4; y++)
+			for (int y = startY - 2; y < 2 + startY + u->getType().tileHeight() * 4; y++)
 			{
-				antiMobilityMiniGrid[x][y] = 1;
+				antiMobilityGrid[x][y] = 1;
 			}
 		}
 	}
@@ -392,37 +390,51 @@ void GridTrackerClass::updateMobilityGrids()
 		{
 			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 			{
-				mobilityMiniGrid[x][y] += 0;
+				mobilityGrid[x][y] += 0;
 			}
 		}
 		for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
 		{
 			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 			{
-				if (WalkPosition(x,y).isValid() && theMap.GetMiniTile(WalkPosition(x, y)).Walkable())
+				if (WalkPosition(x, y).isValid() && theMap.GetMiniTile(WalkPosition(x, y)).Walkable())
 				{
 					for (int i = -12; i <= 12; i++)
 					{
 						for (int j = -12; j <= 12; j++)
 						{
 							// The more tiles around x,y that are walkable, the more mobility x,y has				
-							if (WalkPosition(x+i,y+j).isValid() && theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
+							if (WalkPosition(x + i, y + j).isValid() && theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
 							{
-								mobilityMiniGrid[x][y] += 1;
+								mobilityGrid[x][y] += 1;
 							}
 						}
 					}
-					// Shrink to ratio out of 10						
-					mobilityMiniGrid[x][y] = int(double(mobilityMiniGrid[x][y]) / 56);
+					mobilityGrid[x][y] = int(double(mobilityGrid[x][y]) / 56);
 
 					if (getNearestChokepoint(Position(x * 8, y * 8)) && getNearestChokepoint(Position(x * 8, y * 8))->getCenter().getDistance(Position(x * 8, y * 8)) < 320)
 					{
-						// Scale of 1-10 of how close the position is
-						mobilityMiniGrid[x][y] = 10;
+						bool notCorner = true;
+						int startRatio = int(pow(getNearestChokepoint(Position(x * 8, y * 8))->getCenter().getDistance(Position(x * 8, y * 8)) / 64, 2.0));
+						for (int i = 0 - startRatio; i <= startRatio; i++)
+						{
+							for (int j = 0 - startRatio; j <= 0 - startRatio; j++)
+							{
+								if (WalkPosition(x + i, y + j).isValid() && !theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
+								{
+									notCorner = false;
+								}
+							}
+						}
+
+						if (notCorner)
+						{
+							mobilityGrid[x][y] = 10;
+						}
 					}
 
 					//Max a mini grid to 10
-					mobilityMiniGrid[x][y] = min(mobilityMiniGrid[x][y], 10);
+					mobilityGrid[x][y] = min(mobilityGrid[x][y], 10);
 				}
 			}
 		}
@@ -431,21 +443,19 @@ void GridTrackerClass::updateMobilityGrids()
 
 void GridTrackerClass::updateObserverMovement(Unit observer)
 {
-	int initialx = SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().x / 32;
-	int initialy = SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().y / 32;
+	WalkPosition destination = WalkPosition(SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination());
 
-	for (int x = initialx - 5; x <= initialx + 5; x++)
+	for (int x = destination.x - 20; x <= destination.x + 20; x++)
 	{
-		for (int y = initialy - 5; y <= initialy + 5; y++)
+		for (int y = destination.y - 20; y <= destination.y + 20; y++)
 		{
 			// Create a circle of detection rather than a square
-			if (TilePosition(x,y).isValid() && Position(SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination()).getDistance(Position(x * 32, y * 32)) < 160)
+			if (WalkPosition(x, y).isValid() && SpecialUnitTracker::Instance().getMyObservers()[observer].getDestination().getDistance(Position(WalkPosition(x, y))) < 160)
 			{
 				observerGrid[x][y] = 1;
 			}
 		}
 	}
-
 }
 
 void GridTrackerClass::updateArbiterGrids()
@@ -479,8 +489,20 @@ void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
 		{
 			if (WalkPosition(x, y).isValid())
 			{
-				antiMobilityMiniGrid[x][y] = 1;
+				antiMobilityGrid[x][y] = 1;
 			}
+		}
+	}
+}
+
+void GridTrackerClass::updateReservedLocation(UnitType building, TilePosition here)
+{
+	// When placing a building, reserve the tiles so no further locations are placed there
+	for (int x = here.x; x < here.x + building.tileWidth(); x++)
+	{
+		for (int y = here.y; y < here.y + building.tileHeight(); y++)
+		{
+			reserveGrid[x][y] = 1;
 		}
 	}
 }

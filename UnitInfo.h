@@ -8,8 +8,8 @@ using namespace std;
 
 // Class for storing information about all units
 class UnitInfoClass {
-	double strength, maxStrength, local, range, priority, speed;
-	int deadFrame, strategy, lastAttackFrame;
+	double strength, maxStrength, local, groundRange, airRange, priority, speed;
+	int deadFrame, strategy, lastAttackFrame, currentGoal;
 	Position position, targetPosition;
 	WalkPosition miniTile;	
 	Unit target;
@@ -26,7 +26,8 @@ public:
 	double getStrength() { return strength; }
 	double getMaxStrength() { return maxStrength; }
 	double getLocal() { return local; }
-	double getRange() { return range; }
+	double getGroundRange() { return groundRange; }
+	double getAirRange() { return airRange; }
 	double getPriority() { return priority; }
 	double getSpeed() { return speed; }
 	UnitCommandType getCommand() { return command; }
@@ -34,6 +35,7 @@ public:
 	int getDeadFrame() { return deadFrame; }
 	int getStrategy() { return strategy; }
 	int getLastAttackFrame() { return lastAttackFrame; }
+	int getCurrentGoal() { return currentGoal; }
 	WalkPosition getMiniTile() { return miniTile; }
 
 	// Mutators
@@ -43,7 +45,8 @@ public:
 	void setStrength(double newStrength) { strength = newStrength; }
 	void setMaxStrength(double newMaxStrength){ maxStrength = newMaxStrength; }
 	void setLocal(double newLocal) { local = newLocal; }
-	void setRange(double newRange) { range = newRange; }
+	void setGroundRange(double newGroundRange) { groundRange = newGroundRange; }
+	void setAirRange(double newAirRange) { airRange = newAirRange; }
 	void setPriority(double newPriority) { priority = newPriority; }
 	void setSpeed(double newSpeed) { speed = newSpeed; }
 	void setCommand(UnitCommandType newCommand) { command = newCommand; }
@@ -51,5 +54,6 @@ public:
 	void setDeadFrame(int newDeadFrame) { deadFrame = newDeadFrame; }
 	void setStrategy(int newStrategy){ strategy = newStrategy; }
 	void setLastAttackFrame(int newAttackFrame) { lastAttackFrame = newAttackFrame; }
+	void setCurrentGoal(int newGoal){ currentGoal = newGoal; }
 	void setMiniTile(WalkPosition newMiniTile) { miniTile = newMiniTile; }
 };
