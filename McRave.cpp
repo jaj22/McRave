@@ -8,13 +8,10 @@
 #include "McRave.h"
 
 // IMPORTANT: Move to BWEM and ditch BWTA, too slow
-// DISABLED CURRENTLY: Shuttles, Cannons
+// DISABLED CURRENTLY: Shuttles, Cannons, DistanceGridHome
 
 // TODOS:
-
-// Test: Grids: ALL
-// Storage: buildings, nexus
-// Observer stuff
+// Storage: buildings
 
 // Move stim research to strategy
 // One time supply increase instead of resetting?
@@ -22,7 +19,7 @@
 
 // Nexus update TODO:
 // Store region
-// If cannon built in region, add to that Nexus
+// If cannon was built in region, add to that Nexus
 
 // Resource update TODO:
 // Store region
@@ -35,8 +32,6 @@
 // Probe manager can have a function to check if probe has a building assigned to it and move to it/build it
 
 // Testing:
-// Using threat range for local calculations - Testing
-// If scout dies, no base found - Testing
 // If being rushed, move units to mineral line - Testing
 // Spider mine removal from expansions - Testing 2.0
 
@@ -46,7 +41,7 @@ void McRave::onStart()
 	Broodwar->enableFlag(Flag::UserInput);
 
 	// Set the command optimization level so that common commands can be grouped and reduce the bot's APM (Actions Per Minute).
-	Broodwar->setCommandOptimizationLevel(2);
+	Broodwar->setCommandOptimizationLevel(0);
 
 	Broodwar->setLatCom(true);
 	Broodwar->setLocalSpeed(0);

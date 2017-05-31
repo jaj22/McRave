@@ -57,6 +57,12 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 					return false;
 				}
 
+				// If it's a pylon and overlapping too many pylons
+				if (building == UnitTypes::Protoss_Pylon && GridTracker::Instance().getPylonGrid(x, y) >= 2)
+				{
+					return false;
+				}
+
 				// If it's not a cannon and on top of the resource grid
 				if (building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0)
 				{
@@ -127,15 +133,15 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 		if (TilePosition(x, y).isValid() && canBuildHere(building, TilePosition(x, y), ignoreCond) == true)
 		{
 			return TilePosition(x, y);
-		}	
+		}
 
 		// Otherwise spiral out and find a new tile
 		x = x + dx;
-		y = y + dy;	
+		y = y + dy;
 		j++;
 		if (j == length)
-		{		
-			j = 0;			
+		{
+			j = 0;
 			if (!first)
 				length++;
 			first = !first;
@@ -178,12 +184,12 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 				{
 					return base;
 				}
-			}			
+			}
 		}
 		else
 		{
 			return getBuildLocationNear(building, tile, false);
-		}		
+		}
 	}
 	return TilePositions::None;
 }
@@ -209,7 +215,7 @@ void BuildingTrackerClass::queueBuildings()
 			{
 				// Queue at this building type a pair of building placement and builder
 				queuedBuildings.emplace(b.first, make_pair(here, builder));
-				GridTracker::Instance().updateReservedLocation(b.first, here);				
+				GridTracker::Instance().updateReservedLocation(b.first, here);
 			}
 		}
 	}
@@ -220,7 +226,7 @@ void BuildingTrackerClass::constructBuildings()
 	// Queued minerals for buildings needed
 	queuedMineral = 0, queuedGas = 0;
 	for (auto &b : queuedBuildings)
-	{
+	{		
 		queuedMineral += b.first.mineralPrice();
 		queuedGas += b.first.gasPrice();
 
@@ -231,13 +237,13 @@ void BuildingTrackerClass::constructBuildings()
 			continue;
 		}
 
-		// If probe is stuck, replace probe and tell probe to go back to mining
-		if (b.second.second->isStuck())
-		{
-			b.second.second->stop();
-			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
-			continue;
-		}
+		//// If probe is stuck, replace probe and tell probe to go back to mining
+		//if (b.second.second->isStuck())
+		//{
+		//	b.second.second->stop();
+		//	b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
+		//	continue;
+		//}
 
 		// If the Probe has a target
 		if (b.second.second->getTarget())
@@ -253,7 +259,6 @@ void BuildingTrackerClass::constructBuildings()
 		Broodwar->drawLineMap(Position(b.second.first), b.second.second->getPosition(), Broodwar->self()->getColor());
 		Broodwar->drawBoxMap(Position(b.second.first), Position(TilePosition(b.second.first.x + b.first.tileWidth(), b.second.first.y + b.first.tileHeight())), Broodwar->self()->getColor());
 
-
 		// If we issued a command to this Probe already, skip
 		if (b.second.second->isConstructing() || b.second.second->getLastCommandFrame() >= Broodwar->getFrameCount() && (b.second.second->getLastCommand().getType() == UnitCommandTypes::Move || b.second.second->getLastCommand().getType() == UnitCommandTypes::Build))
 		{
@@ -263,7 +268,10 @@ void BuildingTrackerClass::constructBuildings()
 		// If we almost have enough resources, move the Probe to the build position
 		if (Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() <= b.first.mineralPrice() && Broodwar->self()->gas() >= 0.8*b.first.gasPrice() && Broodwar->self()->gas() <= b.first.gasPrice() || (b.second.second->getDistance(Position(b.second.first)) > 160 && Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && 0.8*Broodwar->self()->gas() >= b.first.gasPrice()))
 		{
-			b.second.second->move(Position(b.second.first));
+			if (b.second.second->getOrderTargetPosition() != Position(b.second.first))
+			{			
+				b.second.second->move(Position(b.second.first));
+			}
 			continue;
 		}
 
@@ -282,7 +290,7 @@ void BuildingTrackerClass::constructBuildings()
 
 		// If Probe is not currently returning minerals or constructing, the build position is valid and can afford the building, then proceed with build
 		if (b.second.first != TilePositions::None && Broodwar->self()->minerals() >= b.first.mineralPrice() && Broodwar->self()->gas() >= b.first.gasPrice())
-		{
+		{			
 			b.second.second->build(b.first, b.second.first);
 			continue;
 		}

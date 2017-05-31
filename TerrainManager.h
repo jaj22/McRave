@@ -20,12 +20,14 @@ class TerrainTrackerClass
 	BWEM::CPPath path;
 	set <BWTA::Region*> territory;
 	set <BWTA::Region*> allyTerritory;
+	set <BWTA::Region*> islandRegions;
 	vector<Position> defendHere;
 	set<Position> enemyBasePositions;
 	vector<TilePosition> nextExpansion;
 	vector<TilePosition> activeExpansion;
 	Position enemyStartingPosition, playerStartingPosition;
 	TilePosition enemyStartingTilePosition, playerStartingTilePosition;
+
 public:
 	void update();
 	void setAnalyzed();
@@ -45,6 +47,7 @@ public:
 	Position getPlayerStartingPosition() { return playerStartingPosition; }
 	TilePosition getEnemyStartingTilePosition() { return enemyStartingTilePosition; }
 	TilePosition getPlayerStartingTilePosition() { return playerStartingTilePosition; }	
+	set <BWTA::Region*>& getIslandRegions() { return islandRegions; }
 };
 
 typedef Singleton<TerrainTrackerClass> TerrainTracker;

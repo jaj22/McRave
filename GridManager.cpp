@@ -7,6 +7,7 @@
 #include "NexusManager.h"
 #include "ProbeManager.h"
 #include "BuildingManager.h"
+#include <ctime>
 
 bool doOnce = true;
 
@@ -38,6 +39,10 @@ void GridTrackerClass::reset()
 			{
 				//Broodwar->drawBoxMap(Position(x * 32, y * 32), Position(x*32 + 32, y*32 + 32), Colors::Black);
 			}
+			if (pylonGrid[x][y] > 0)
+			{
+				//Broodwar->drawBoxMap(Position(x * 32, y * 32), Position(x * 32 + 32, y * 32 + 32), Colors::Black);
+			}
 
 			// Reset cluster grids
 			eGroundClusterGrid[x][y] = 0;
@@ -46,6 +51,7 @@ void GridTrackerClass::reset()
 			// Reset other grids
 			reserveGrid[x][y] = 0;
 			nexusGrid[x][y] = 0;
+			pylonGrid[x][y] = 0;
 		}
 	}
 	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
@@ -161,7 +167,7 @@ void GridTrackerClass::update()
 	updateAllyGrids();
 	updateEnemyGrids();
 	updateNeutralGrids();
-	//updateDistanceGrid();
+	updateDistanceGrid();
 	return;
 }
 
@@ -231,6 +237,16 @@ void GridTrackerClass::updateAllyGrids()
 				for (int y = startY - offset; y < startY + u.second.getType().tileHeight() + offset; y++)
 				{
 					reserveGrid[x][y] = 1;
+				}
+			}
+			if (u.second.getType() == UnitTypes::Protoss_Pylon)
+			{
+				for (int x = u.second.getTilePosition().x - 4; x < u.second.getTilePosition().x + u.second.getType().tileWidth() + 4; x++)
+				{
+					for (int y = u.second.getTilePosition().y - 4; y < u.second.getTilePosition().y + +u.second.getType().tileHeight() + 4; y++)
+					{
+						pylonGrid[x][y] += 1;
+					}
 				}
 			}
 		}
@@ -467,14 +483,18 @@ void GridTrackerClass::updateMobilityGrids()
 				}
 
 				// Setup what is possible to check ground distances on
-				if (mobilityGrid[x][y] == 0)
+				if (mobilityGrid[x][y] <= 0)
 				{
 					distanceGridHome[x][y] = -1;
 				}
-				else
+				else if (mobilityGrid[x][y] > 0)
 				{
 					distanceGridHome[x][y] = 0;
 				}
+				/*if (!getRegion(TilePosition(WalkPosition(x, y))) || TerrainTracker::Instance().getIslandRegions().find(getRegion(TilePosition(WalkPosition(x, y)))) != TerrainTracker::Instance().getIslandRegions().end())
+				{
+					distanceGridHome[x][y] = -1;
+				}*/
 			}
 		}
 	}
@@ -561,10 +581,21 @@ void GridTrackerClass::updateDistanceGrid()
 		distanceOnce = false;
 		bool done = false;
 		int cnt = 0;
+		int segment = 0;
+		clock_t myClock;
+		double duration;
+		myClock = clock();
+
 		while (!done)
 		{
+			duration = (clock() - myClock) / (double)CLOCKS_PER_SEC;
+			if (duration > 2)
+			{
+				break;
+			}
 			done = true;
 			cnt++;
+			segment += 8;
 			for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
 			{
 				for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
@@ -576,7 +607,18 @@ void GridTrackerClass::updateDistanceGrid()
 					}
 					if (distanceGridHome[x][y] == cnt)
 					{
-						if (distanceGridHome[x][y - 1] == 0)
+						for (int i = x - 1; i <= x + 1; i++)
+						{
+							for (int j = y - 1; j <= y + 1; j++)
+							{
+								if (distanceGridHome[i][j] == 0 && Position(WalkPosition(i, j)).getDistance(Position(start)) <= segment)
+								{
+									distanceGridHome[i][j] = cnt + 1;
+								}
+							}
+						}
+
+						/*if (distanceGridHome[x][y - 1] == 0)
 						{
 							distanceGridHome[x][y - 1] = cnt + 1;
 						}
@@ -591,10 +633,15 @@ void GridTrackerClass::updateDistanceGrid()
 						if (distanceGridHome[x + 1][y] == 0)
 						{
 							distanceGridHome[x + 1][y] = cnt + 1;
-						}
+						}*/
 					}
 				}
 			}
+		}
+		Broodwar << "Distance Grid Analysis time: " << duration << endl;
+		if (duration > 2)
+		{
+			Broodwar << "Hit maximum, check for islands." << endl;
 		}
 	}
 }

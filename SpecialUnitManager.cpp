@@ -71,9 +71,9 @@ void SpecialUnitTrackerClass::updateObservers()
 		WalkPosition start = u.second.getMiniTile();
 		Position newDestination = u.second.getPosition();
 		double closestD = u.second.getPosition().getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
-		for (int x = start.x - 20; x <= start.x + 20; x++)
+		for (int x = start.x - 50; x <= start.x + 50; x++)
 		{
-			for (int y = start.y - 20; y <= start.y + 20; y++)
+			for (int y = start.y - 50; y <= start.y + 50; y++)
 			{
 				if (WalkPosition(x, y).isValid() && GridTracker::Instance().getACluster(x,y) > 0 && GridTracker::Instance().getObserverGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD)
 				{

@@ -48,7 +48,7 @@ void ProductionTrackerClass::update()
 					{
 						building->upgrade(UpgradeTypes::Singularity_Charge);
 						idleUpgrade.erase(building->getID());
-						return;
+						break;
 					}
 					else
 					{
@@ -79,7 +79,7 @@ void ProductionTrackerClass::update()
 				{
 					building->upgrade(UpgradeTypes::Leg_Enhancements);
 					idleUpgrade.erase(building->getID());
-					return;
+					break;
 				}
 				else
 				{
@@ -106,7 +106,7 @@ void ProductionTrackerClass::update()
 					{
 						building->research(TechTypes::Psionic_Storm);
 						idleTech.erase(building->getID());
-						return;
+						break;
 					}
 					else
 					{
@@ -119,7 +119,7 @@ void ProductionTrackerClass::update()
 					{
 						building->upgrade(UpgradeTypes::Khaydarin_Amulet);
 						idleUpgrade.erase(building->getID());
-						return;
+						break;
 					}
 					else
 					{
@@ -134,7 +134,7 @@ void ProductionTrackerClass::update()
 					{
 						building->research(TechTypes::Stasis_Field);
 						idleTech.erase(building->getID());
-						return;
+						break;
 					}
 					else
 					{

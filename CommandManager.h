@@ -15,6 +15,7 @@ public:
 	void getDecision(Unit, Unit);
 	void getLocalCalculation(Unit, Unit);
 	void getGlobalCalculation(Unit, Unit);
+	void defend(Unit, Unit);
 
 	void unitGetLocalStrategy(Unit, Unit);
 	int unitGetGlobalStrategy();

@@ -119,7 +119,10 @@ void ProbeTrackerClass::scoutProbe()
 				{
 					if (Broodwar->isExplored(start->getTilePosition()) == false)
 					{
-						u.first->move(start->getPosition());
+						if (u.first->getOrderTargetPosition() != start->getPosition())
+						{
+							u.first->move(start->getPosition());
+						}
 						break;
 					}
 				}

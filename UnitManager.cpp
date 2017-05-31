@@ -35,6 +35,7 @@ void UnitTrackerClass::storeUnits()
 		{
 			supply = supply + u->getType().supplyRequired();
 		}
+		// Don't want to store scarabs or units that don't exist or aren't completed
 		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists() || !u->isCompleted())
 		{
 			continue;
@@ -53,8 +54,8 @@ void UnitTrackerClass::storeUnits()
 		{
 			BuildingTracker::Instance().storeBuilding(u);
 		}
-		// Store if exists and not building or worker
-		else if (!u->getType().isWorker() && !u->getType().isBuilding())
+		// Store the rest
+		else
 		{
 			storeAllyUnit(u);
 		}

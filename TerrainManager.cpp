@@ -36,6 +36,16 @@ void TerrainTrackerClass::update()
 			playerStartingTilePosition = playerStartingLocation->getTilePosition();
 			nextExpansion.push_back(playerStartingTilePosition);
 			activeExpansion.push_back(playerStartingTilePosition);
+
+			// Create island regions
+			for (auto base : getBaseLocations())
+			{
+				if (base->isIsland())
+				{
+					islandRegions.emplace(base->getRegion());
+				}				
+			}
+
 		}
 		if (analyzeMap)
 		{

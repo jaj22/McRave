@@ -14,6 +14,7 @@ class GridTrackerClass
 	int aClusterGrid[1024][1024];	
 	int reserveGrid[256][256];
 	int nexusGrid[256][256];
+	int pylonGrid[256][256];
 
 	// Enemy grids
 	double eGroundGrid[1024][1024];
@@ -56,6 +57,7 @@ public:
 	int getACluster(int x, int y) { return aClusterGrid[x][y]; }
 	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }
 	int getNexusGrid(int x, int y) { return nexusGrid[x][y]; }
+	int getPylonGrid(int x, int y) { return pylonGrid[x][y]; }
 
 	// Enemy functions
 	double getEGroundGrid(int x, int y) { return eGroundGrid[x][y]; }
