@@ -201,7 +201,7 @@ void CommandTrackerClass::getLocalCalculation(Unit unit, Unit target)
 				// If unit is cloaked or burrowed and not detected, drastically increase strength
 				if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
 				{
-					thisUnit = 20 * u.second.getStrength();
+					thisUnit = 20 * u.second.getMaxStrength();
 				}
 				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
 				{
@@ -299,7 +299,7 @@ void CommandTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
 	{
-		if (unit->getType() == UnitTypes::Protoss_Zealot && Broodwar->getFrameCount() < 6000)
+		if (unit->getType() == UnitTypes::Protoss_Zealot && Broodwar->getFrameCount() < 10000)
 		{
 			if (GridTracker::Instance().getResourceGrid(target->getTilePosition().x, target->getTilePosition().y) > 0)
 			{

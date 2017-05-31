@@ -23,7 +23,8 @@ void InterfaceTrackerClass::update()
 	// Display some information about our queued resources required for structure building			
 	//Broodwar->drawTextScreen(200, 0, "Current Strategy: %s", currentStrategy.c_str());
 
-	// Display frame count
+	// Display frame count and APM
+	Broodwar->drawTextScreen(200, 0, "%d", Broodwar->getAPM());
 	Broodwar->drawTextScreen(200, 10, "%d", Broodwar->getFrameCount());
 
 	// Display global strength calculations	

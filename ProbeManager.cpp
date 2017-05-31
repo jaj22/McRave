@@ -183,11 +183,15 @@ void ProbeTrackerClass::enforceAssignments()
 			// If idle and carrying gas or minerals, return cargo			
 			if (u.first->isIdle() && (u.first->isCarryingGas() || u.first->isCarryingMinerals()))
 			{
+				if (u.first->getLastCommand().getType() == UnitCommandTypes::Return_Cargo)
+				{
+					continue;
+				}
 				u.first->returnCargo();
 				continue;
 			}
 
-			// If not scouting and there's boulders to remove
+			// If not scouting and there's boulders to remove	
 			if (!scouting && ResourceTracker::Instance().getMyBoulders().size() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
 			{
 				for (auto b : ResourceTracker::Instance().getMyBoulders())
@@ -221,7 +225,7 @@ void ProbeTrackerClass::enforceAssignments()
 				}
 				// If the mineral field is in vision and no target, force to gather from the assigned mineral field
 				if (u.second.getTarget() && u.second.getTarget()->exists())
-				{
+				{					
 					u.first->gather(u.second.getTarget());
 					continue;
 				}

@@ -68,20 +68,20 @@ void SpecialUnitTrackerClass::updateObservers()
 		// Then find an optimal location to move to within a 25x25 tile area
 		// Optimal defined as: no ally observer around, no enemy air, at least 1 ally around and as close to the enemy as possible
 		// TODO: Add enemy detection to optimal
-		WalkPosition start = u.second.getMiniTile();		
+		WalkPosition start = u.second.getMiniTile();
 		Position newDestination = u.second.getPosition();
 		double closestD = u.second.getPosition().getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
-		for (int x = start.x - 100; x <= start.x + 100; x++)
+		for (int x = start.x - 20; x <= start.x + 20; x++)
 		{
-			for (int y = start.y - 100; y <= start.y + 100; y++)
-			{				
-				if (WalkPosition(x,y).isValid() && GridTracker::Instance().getObserverGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD)
-				{					
+			for (int y = start.y - 20; y <= start.y + 20; y++)
+			{
+				if (WalkPosition(x, y).isValid() && GridTracker::Instance().getACluster(x,y) > 0 && GridTracker::Instance().getObserverGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD)
+				{
 					newDestination = Position(WalkPosition(x, y));
-					closestD = Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getPlayerStartingPosition());
+					closestD = Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
 				}
 			}
-		}		
+		}
 		u.second.setDestination(newDestination);
 		u.first->move(newDestination);
 		GridTracker::Instance().updateObserverMovement(u.first);
@@ -118,7 +118,7 @@ void SpecialUnitTrackerClass::updateTemplars()
 }
 
 void SpecialUnitTrackerClass::storeUnit(Unit unit)
-{	
+{
 	if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
 		myArbiters[unit].setPosition(unit->getPosition());

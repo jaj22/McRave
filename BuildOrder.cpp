@@ -18,7 +18,7 @@ void BuildOrderTrackerClass::update()
 	buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
 
 	// If we are saturated, expand
-	if (StrategyTracker::Instance().globalAlly() > StrategyTracker::Instance().globalEnemy() && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0 && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus]++;
 	}

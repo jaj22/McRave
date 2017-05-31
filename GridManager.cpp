@@ -98,6 +98,30 @@ void GridTrackerClass::reset()
 				}*/
 			}
 
+			/*if (distanceGridHome[x][y] > 0)
+			{
+				if (distanceGridHome[x][y] < 50)
+				{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
+				}
+				else if (distanceGridHome[x][y] >= 50 && distanceGridHome[x][y] < 100)
+				{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
+				}
+				else if (distanceGridHome[x][y] >= 100 && distanceGridHome[x][y] < 150)
+				{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
+				}
+				else if (distanceGridHome[x][y] >= 150)
+				{
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
+				}
+			}
+			else if (distanceGridHome[x][y] < 0)
+			{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::White);
+			}*/
+
 			if (eGroundGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
@@ -127,6 +151,7 @@ void GridTrackerClass::reset()
 			observerGrid[x][y] = 0;
 		}
 	}
+	return;
 }
 
 void GridTrackerClass::update()
@@ -137,13 +162,14 @@ void GridTrackerClass::update()
 	updateEnemyGrids();
 	updateNeutralGrids();
 	//updateDistanceGrid();
+	return;
 }
 
 void GridTrackerClass::updateAllyGrids()
 {
 	// Clusters and anti mobility from units
 	for (auto &u : UnitTracker::Instance().getMyUnits())
-	{	
+	{
 		WalkPosition start = u.second.getMiniTile();
 		int offsetX = u.second.getPosition().x % 32;
 		int offsetY = u.second.getPosition().y % 32;
@@ -158,12 +184,12 @@ void GridTrackerClass::updateAllyGrids()
 					if (WalkPosition(x, y).isValid() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 8 + offsetX), (y * 8 + offsetY))) <= 160)
 					{
 						aClusterGrid[x][y] += 1;
-					}				
+					}
 				}
 			}
 			// Anti mobility doesn't apply to flying units (carriers, scouts, shuttles)
 			if (!u.second.getType().isFlyer())
-			{				
+			{
 				for (int x = start.x; x <= start.x + u.second.getType().tileWidth() * 4; x++)
 				{
 					for (int y = start.y; y <= start.y + u.second.getType().tileHeight() * 4; y++)
@@ -234,6 +260,7 @@ void GridTrackerClass::updateAllyGrids()
 			}
 		}
 	}
+	return;
 }
 
 void GridTrackerClass::updateEnemyGrids()
@@ -330,6 +357,7 @@ void GridTrackerClass::updateEnemyGrids()
 			}
 		}
 	}
+	return;
 }
 
 void GridTrackerClass::updateNeutralGrids()
@@ -379,6 +407,7 @@ void GridTrackerClass::updateNeutralGrids()
 			}
 		}
 	}
+	return;
 }
 
 void GridTrackerClass::updateMobilityGrids()
@@ -390,7 +419,7 @@ void GridTrackerClass::updateMobilityGrids()
 		{
 			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 			{
-				mobilityGrid[x][y] += 0;
+				mobilityGrid[x][y] = 0;
 			}
 		}
 		for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
@@ -433,12 +462,23 @@ void GridTrackerClass::updateMobilityGrids()
 						}
 					}
 
-					//Max a mini grid to 10
+					// Max a mini grid to 10
 					mobilityGrid[x][y] = min(mobilityGrid[x][y], 10);
+				}
+
+				// Setup what is possible to check ground distances on
+				if (mobilityGrid[x][y] == 0)
+				{
+					distanceGridHome[x][y] = -1;
+				}
+				else
+				{
+					distanceGridHome[x][y] = 0;
 				}
 			}
 		}
 	}
+	return;
 }
 
 void GridTrackerClass::updateObserverMovement(Unit observer)
@@ -456,11 +496,12 @@ void GridTrackerClass::updateObserverMovement(Unit observer)
 			}
 		}
 	}
+	return;
 }
 
 void GridTrackerClass::updateArbiterGrids()
 {
-	for (auto u : SpecialUnitTracker::Instance().getMyArbiters())
+	for (auto &u : SpecialUnitTracker::Instance().getMyArbiters())
 	{
 		int initialx = TilePosition(u.second.getDestination()).x;
 		int initialy = TilePosition(u.second.getDestination()).y;
@@ -479,6 +520,7 @@ void GridTrackerClass::updateArbiterGrids()
 			}
 		}
 	}
+	return;
 }
 
 void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
@@ -493,6 +535,7 @@ void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
 			}
 		}
 	}
+	return;
 }
 
 void GridTrackerClass::updateReservedLocation(UnitType building, TilePosition here)
@@ -503,6 +546,55 @@ void GridTrackerClass::updateReservedLocation(UnitType building, TilePosition he
 		for (int y = here.y; y < here.y + building.tileHeight(); y++)
 		{
 			reserveGrid[x][y] = 1;
+		}
+	}
+	return;
+}
+
+void GridTrackerClass::updateDistanceGrid()
+{
+	// TODO: Goal with this grid is to create a ground distance grid from home for unit micro
+	if (TerrainTracker::Instance().getAnalyzed() && distanceOnce && Broodwar->getFrameCount() > 500)
+	{
+		WalkPosition start = WalkPosition(TerrainTracker::Instance().getPlayerStartingPosition());
+		distanceGridHome[start.x][start.y] = 1;
+		distanceOnce = false;
+		bool done = false;
+		int cnt = 0;
+		while (!done)
+		{
+			done = true;
+			cnt++;
+			for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
+			{
+				for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
+				{
+					// If any of the grid is 0, we're not done yet
+					if (distanceGridHome[x][y] == 0 && theMap.GetMiniTile(WalkPosition(x, y)).AreaId() > 0)
+					{
+						done = false;
+					}
+					if (distanceGridHome[x][y] == cnt)
+					{
+						if (distanceGridHome[x][y - 1] == 0)
+						{
+							distanceGridHome[x][y - 1] = cnt + 1;
+						}
+						if (distanceGridHome[x][y + 1] == 0)
+						{
+							distanceGridHome[x][y + 1] = cnt + 1;
+						}
+						if (distanceGridHome[x - 1][y] == 0)
+						{
+							distanceGridHome[x - 1][y] = cnt + 1;
+						}
+						if (distanceGridHome[x + 1][y] == 0)
+						{
+							distanceGridHome[x + 1][y] = cnt + 1;
+						}
+					}
+				}
+			}
 		}
 	}
 }
