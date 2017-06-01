@@ -4,24 +4,9 @@
 ProbeInfo::ProbeInfo()
 {
 	target = nullptr;
+	miniTile = WalkPositions::None;
 }
 ProbeInfo::~ProbeInfo()
 {
 
-}
-ProbeInfo::ProbeInfo(Unit newTarget)
-{
-	target = newTarget;
-}
-
-// Accessors
-Unit ProbeInfo::getTarget() const
-{
-	return target;
-}
-
-// Mutators
-void ProbeInfo::setTarget(Unit newTarget)
-{
-	target = newTarget;
 }

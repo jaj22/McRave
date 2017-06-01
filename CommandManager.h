@@ -9,16 +9,12 @@ using namespace std;
 
 class CommandTrackerClass
 {
-	int globalStrategy;
 public:
 	void update();
 	void getDecision(Unit, Unit);
-	void getLocalCalculation(Unit, Unit);
-	void getGlobalCalculation(Unit, Unit);
 	void defend(Unit, Unit);
 
 	void unitGetLocalStrategy(Unit, Unit);
-	int unitGetGlobalStrategy();
 	void microTarget(Unit, Unit);
 	void exploreArea(Unit);
 	void fleeTarget(Unit, Unit);

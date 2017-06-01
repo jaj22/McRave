@@ -41,6 +41,12 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 		{
 			continue;
 		}
+		
+		// If the unit is invis and undetected, ignore it
+		if (u.first->exists() && (u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
+		{
+			continue;
+		}
 
 		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
 

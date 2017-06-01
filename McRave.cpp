@@ -12,19 +12,16 @@
 
 // TODOS:
 // Storage: buildings
-
+// Dijkstras theory for distance grid
 // Move stim research to strategy
 // One time supply increase instead of resetting?
 // Threatrange grid
-
 // Nexus update TODO:
 // Store region
 // If cannon was built in region, add to that Nexus
-
 // Resource update TODO:
 // Store region
 // If region is not ally territory, remove
-
 // Building update TODO:
 // Limit building number by region
 // Store the closest probe when ready to move to it
@@ -32,7 +29,6 @@
 // Probe manager can have a function to check if probe has a building assigned to it and move to it/build it
 
 // Testing:
-// If being rushed, move units to mineral line - Testing
 // Spider mine removal from expansions - Testing 2.0
 
 void McRave::onStart()
@@ -132,13 +128,11 @@ void McRave::onUnitCreate(BWAPI::Unit unit)
 void McRave::onUnitDestroy(BWAPI::Unit unit)
 {
 	UnitTracker::Instance().decayUnit(unit);
+	BuildingTracker::Instance().removeBuilding(unit);
 	SpecialUnitTracker::Instance().removeUnit(unit);
 	ProbeTracker::Instance().removeProbe(unit);
 	ResourceTracker::Instance().removeResource(unit);
-	TerrainTracker::Instance().removeTerritory(unit);
-	
-	// Ally territory removal
-	// Mineral field removal, active expansion removal, inactive count increase	
+	TerrainTracker::Instance().removeTerritory(unit);	
 }
 
 void McRave::onUnitMorph(BWAPI::Unit unit)

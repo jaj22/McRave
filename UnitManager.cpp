@@ -1,12 +1,11 @@
 #include "UnitManager.h"
 #include "TerrainManager.h"
-#include "BWTA.h"
 #include "GridManager.h"
 #include "SpecialUnitManager.h"
 #include "ProbeManager.h"
 #include "BuildingManager.h"
-
-bool stimResearched;
+#include "UnitUtil.h"
+#include "StrategyManager.h"
 
 void UnitTrackerClass::update()
 {
@@ -103,286 +102,19 @@ void UnitTrackerClass::removeUnits()
 	}
 }
 
-double unitGetStrength(UnitType unitType)
-{
-	// Some hardcoded values that don't have attacks but should still be considered for strength
-	if (unitType == UnitTypes::Terran_Bunker)
-	{
-		return 50.0;
-	}
-	if (unitType == UnitTypes::Terran_Medic)
-	{
-		return 5.0;
-	}
-	if (unitType == UnitTypes::Zerg_Lurker)
-	{
-		return 20.0;
-	}
-	if (unitType == UnitTypes::Protoss_Reaver || unitType == UnitTypes::Protoss_Carrier)
-	{
-		return 50.0;
-	}
-	if (unitType == UnitTypes::Protoss_High_Templar)
-	{
-		return 20.0;
-	}
-	if (unitType == UnitTypes::Protoss_Scarab || unitType == UnitTypes::Terran_Vulture_Spider_Mine || unitType == UnitTypes::Zerg_Egg || unitType == UnitTypes::Zerg_Larva || unitType == UnitTypes::Protoss_Interceptor)
-	{
-		return 0.0;
-	}
-
-	if (!unitType.isWorker() && unitType != UnitTypes::Protoss_Scarab && unitType != UnitTypes::Terran_Vulture_Spider_Mine && unitType.groundWeapon().damageAmount() > 0 || (unitType.isBuilding() && unitType.groundWeapon().damageAmount() > 0))
-	{
-		double range, damage, hp, speed;
-		// Range upgrade check (applies to enemy Dragoons, not a big issue currently)
-		if (unitType == UnitTypes::Protoss_Dragoon && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
-		{
-			range = 192.0;
-		}
-
-		// Enemy ranged upgrade check
-		else if ((unitType == UnitTypes::Terran_Marine && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
-		{
-			range = 160.0;
-		}
-		else
-		{
-			range = double(unitType.groundWeapon().maxRange());
-		}
-
-		// Damage
-		damage = double(unitType.groundWeapon().damageAmount()) / double(unitType.groundWeapon().damageCooldown());
-
-		// Speed
-		speed = 1.0 + double(unitType.topSpeed());
-
-		// Zealot and Firebat has to be doubled for two attacks
-		if (unitType == UnitTypes::Protoss_Zealot || unitType == UnitTypes::Terran_Firebat)
-		{
-			damage = damage * 2.0;
-		}
-
-		// Check for Zergling attack speed upgrade
-		if (unitType == UnitTypes::Zerg_Zergling && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Adrenal_Glands))
-		{
-			damage = damage * 1.33;
-		}
-
-		// Hp, assume half strength for shields, they're not very strong in most matchups
-		hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
-
-		// Assume strength doubled for units that can use Stim to prevent poking into armies frequently
-		if (stimResearched && (unitType == UnitTypes::Terran_Marine || unitType == UnitTypes::Terran_Firebat))
-		{
-			return 20.0 * (1.0 + (range / 320.0)) * damage * (hp / 100.0);
-		}
-
-		return 10.0 * (1.0 + (range / 320.0)) * damage * (hp / 100.0);
-	}
-	if (unitType.isWorker())
-	{
-		return 5.0;
-	}
-	return 1.0;
-}
-double unitGetAirStrength(UnitType unitType)
-{
-	double range, damage, hp;
-	range = double(unitType.airWeapon().maxRange());
-
-	// Enemy ranged upgrade check
-	if (unitType == UnitTypes::Terran_Goliath && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Charon_Boosters))
-	{
-		range = 256.0;
-	}
-	else if (unitType == UnitTypes::Protoss_Dragoon && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
-	{
-		range = 192.0;
-	}
-	else if ((unitType == UnitTypes::Terran_Marine && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
-	{
-		range = 160.0;
-	}
-	else
-	{
-		range = double(unitType.airWeapon().maxRange());
-	}
-
-	// Damage
-	damage = double(unitType.airWeapon().damageAmount()) / double(unitType.airWeapon().damageCooldown());
-
-	// Hp		
-	hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
-
-	return sqrt(1 + (range / 320.0)) * damage * (hp / 100);
-}
-double unitGetVisibleStrength(Unit unit)
-{
-	if (unit->isMaelstrommed() || unit->isStasised())
-	{
-		return 0;
-	}
-
-	double hp = double(unit->getHitPoints() + (unit->getShields() / 2)) / double(unit->getType().maxHitPoints() + (unit->getType().maxShields() / 2));
-	if (unit->isStimmed())
-	{
-		stimResearched = true;
-	}
-
-	// Make units under an Arbiter feel stronger
-	if (unit->getPlayer() == Broodwar->self() && unit->isCloaked() && !unit->isDetected())
-	{
-		return 4.0 * hp * unitGetStrength(unit->getType());
-	}
-	return hp * unitGetStrength(unit->getType());
-}
-double unitGetTrueGroundRange(UnitType unitType, Player who)
-{
-	// Ranged upgrade check for Dragoons, Marines, Hydralisks and Bunkers
-
-	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
-	{
-		return 192.0;
-	}
-	else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
-	{
-		return 160.0;
-	}
-	else if (unitType == UnitTypes::Terran_Bunker)
-	{
-		if (who->getUpgradeLevel(UpgradeTypes::U_238_Shells))
-		{
-			return 192.0;
-		}
-		else
-		{
-			return 160.0;
-		}
-	}
-
-	// Correct range of Reavers
-	else if (unitType == UnitTypes::Protoss_Reaver)
-	{
-		return 256.0;
-	}
-	return double(unitType.groundWeapon().maxRange());
-}
-double unitGetTrueAirRange(UnitType unitType, Player who)
-{
-	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
-	{
-		return 192.0;
-	}
-	else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
-	{
-		return 160.0;
-	}
-	else if (unitType == UnitTypes::Terran_Bunker)
-	{
-		if (who->getUpgradeLevel(UpgradeTypes::U_238_Shells))
-		{
-			return 192.0;
-		}
-		else
-		{
-			return 160.0;
-		}
-	}
-	else if (unitType == UnitTypes::Terran_Goliath && who->getUpgradeLevel(UpgradeTypes::Charon_Boosters))
-	{
-		return 256.0;
-	}
-	return double(unitType.airWeapon().maxRange());
-}
-double unitGetPriority(UnitType unitType)
-{
-	// Low strength units with high threat	
-	if (unitType == UnitTypes::Protoss_Arbiter || unitType == UnitTypes::Protoss_Observer || unitType == UnitTypes::Protoss_Shuttle || unitType == UnitTypes::Terran_Science_Vessel || unitType == UnitTypes::Terran_Dropship || unitType == UnitTypes::Terran_Vulture_Spider_Mine)
-	{
-		return 50.0;
-	}
-	// Reduce the value of a bunker so units don't only target bunkers, since they can be repaired easily
-	if (unitType == UnitTypes::Terran_Bunker)
-	{
-		return 2.5;
-	}
-	else
-	{
-		return unitGetStrength(unitType);
-	}
-}
-double unitGetTrueSpeed(UnitType unitType, Player who)
-{
-	double speed = unitType.topSpeed();
-
-	// Adjust based on speed upgrades for Zerglings, Hydralisks, Ultralisks, Shuttle, Observer, Zealot, Vulture of 50%
-	if ((unitType == UnitTypes::Zerg_Zergling && who->getUpgradeLevel(UpgradeTypes::Metabolic_Boost)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Muscular_Augments)) || (unitType == UnitTypes::Zerg_Ultralisk && who->getUpgradeLevel(UpgradeTypes::Anabolic_Synthesis)) || (unitType == UnitTypes::Protoss_Shuttle && who->getUpgradeLevel(UpgradeTypes::Gravitic_Drive)) || (unitType == UnitTypes::Protoss_Observer && who->getUpgradeLevel(UpgradeTypes::Gravitic_Boosters)) || (unitType == UnitTypes::Protoss_Zealot && who->getUpgradeLevel(UpgradeTypes::Leg_Enhancements)) || (unitType == UnitTypes::Terran_Vulture && who->getUpgradeLevel(UpgradeTypes::Ion_Thrusters)))
-	{
-		speed = speed * 1.5;
-	}
-	else if (unitType == UnitTypes::Zerg_Overlord && who->getUpgradeLevel(UpgradeTypes::Pneumatized_Carapace))
-	{
-		speed = speed * 4.0;
-	}
-	else if (unitType == UnitTypes::Protoss_Scout && who->getUpgradeLevel(UpgradeTypes::Muscular_Augments))
-	{
-		speed = speed * 1.33;
-	}
-	return speed;
-}
-
-WalkPosition UnitTrackerClass::getMiniTile(Unit unit)
-{
-	int x = unit->getPosition().x;
-	int y = unit->getPosition().y;
-
-	// If it's a unit, we want to find the closest mini tile with the highest resolution (actual pixel width/height)
-	if (!unit->getType().isBuilding())
-	{
-		int mini_x = int((x - x % 8 - (0.5*unit->getType().width())) / 8);
-		int mini_y = int((y - y % 8 - (0.5*unit->getType().height())) / 8);
-		return WalkPosition(mini_x, mini_y);
-	}
-	// For buildings, we want the actual tile size resolution (convert half the tile size to pixels by 0.5*tile*32 = 16.0)
-	else
-	{
-		int mini_x = int((x - (16.0*unit->getType().tileWidth())) / 8);
-		int mini_y = int((y - (16.0*unit->getType().tileHeight())) / 8);
-		return WalkPosition(mini_x, mini_y);
-	}
-	return WalkPositions::None;
-}
-set<WalkPosition> UnitTrackerClass::getMiniTilesUnderUnit(Unit unit)
-{
-	int x = allyUnits[unit].getMiniTile().x;
-	int y = allyUnits[unit].getMiniTile().y;
-	int width = allyUnits[unit].getType().tileWidth() * 4;
-	int height = allyUnits[unit].getType().tileHeight() * 4;
-	set<WalkPosition> returnValues;
-
-	for (int i = x; i <= x + width; i++)
-	{
-		for (int j = y; j <= y + height; j++)
-		{
-			returnValues.emplace(WalkPosition(i, j));
-		}
-	}
-	return returnValues;
-}
-
 void UnitTrackerClass::storeEnemyUnit(Unit unit)
 {
 	// Update units
 	enemyUnits[unit].setUnitType(unit->getType());
 	enemyUnits[unit].setPosition(unit->getPosition());
-	enemyUnits[unit].setStrength(unitGetVisibleStrength(unit));
-	enemyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
-	enemyUnits[unit].setGroundRange(unitGetTrueGroundRange(unit->getType(), Broodwar->self()));
-	enemyUnits[unit].setAirRange(unitGetTrueAirRange(unit->getType(), Broodwar->self()));
-	enemyUnits[unit].setSpeed(unitGetTrueSpeed(unit->getType(), Broodwar->self()));
-	enemyUnits[unit].setPriority(unitGetPriority(unit->getType()));
+	enemyUnits[unit].setStrength(UnitUtil::Instance().getVisibleStrength(unit));
+	enemyUnits[unit].setMaxStrength(UnitUtil::Instance().getStrength(unit->getType()));
+	enemyUnits[unit].setGroundRange(UnitUtil::Instance().getTrueRange(unit->getType(), Broodwar->self()));
+	enemyUnits[unit].setAirRange(UnitUtil::Instance().getTrueAirRange(unit->getType(), Broodwar->self()));
+	enemyUnits[unit].setSpeed(UnitUtil::Instance().getTrueSpeed(unit->getType(), Broodwar->self()));
+	enemyUnits[unit].setPriority(UnitUtil::Instance().getPriority(unit->getType()));
 	enemyUnits[unit].setCommand(unit->getLastCommand().getType());
-	enemyUnits[unit].setMiniTile(getMiniTile(unit));
+	enemyUnits[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
 
 	// Update sizes
 	enemySizes[unit->getType().size()] += 1;
@@ -394,16 +126,18 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 	// Update units
 	allyUnits[unit].setUnitType(unit->getType());
 	allyUnits[unit].setPosition(unit->getPosition());
-	allyUnits[unit].setStrength(unitGetVisibleStrength(unit));
-	allyUnits[unit].setMaxStrength(unitGetStrength(unit->getType()));
-	allyUnits[unit].setGroundRange(unitGetTrueGroundRange(unit->getType(), Broodwar->self()));
-	allyUnits[unit].setAirRange(unitGetTrueAirRange(unit->getType(), Broodwar->self()));
-	allyUnits[unit].setSpeed(unitGetTrueSpeed(unit->getType(), Broodwar->self()));
-	allyUnits[unit].setPriority(unitGetPriority(unit->getType()));
+	allyUnits[unit].setStrength(UnitUtil::Instance().getVisibleStrength(unit));
+	allyUnits[unit].setMaxStrength(UnitUtil::Instance().getStrength(unit->getType()));
+	allyUnits[unit].setGroundRange(UnitUtil::Instance().getTrueRange(unit->getType(), Broodwar->self()));
+	allyUnits[unit].setAirRange(UnitUtil::Instance().getTrueAirRange(unit->getType(), Broodwar->self()));
+	allyUnits[unit].setSpeed(UnitUtil::Instance().getTrueSpeed(unit->getType(), Broodwar->self()));
+	allyUnits[unit].setPriority(UnitUtil::Instance().getPriority(unit->getType()));
 	allyUnits[unit].setCommand(unit->getLastCommand().getType());
-	allyUnits[unit].setMiniTile(getMiniTile(unit));
+	allyUnits[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
 
 	allySizes[unit->getType().size()] += 1;
+	getGlobalCalculation(unit, allyUnits[unit].getTarget());
+	getLocalCalculation(unit, allyUnits[unit].getTarget());
 	return;
 }
 
@@ -419,71 +153,259 @@ void UnitTrackerClass::decayUnit(Unit unit)
 	}
 }
 
-//#pragma region SpecialUnits
-//
-//void shuttleManager(Unit unit)
-//{
-//	// Reaver target
-//	Unit target = allyUnits[unit].getTarget();
-//	UnitInfoClass targetInfo = allyUnits[unit];
-//
-//	// Check for valid target
-//	if (!target)
-//	{
-//		return;
-//	}
-//
-//	// To implement:
-//	// If no targets and within a certain distance of an enemy base, go harass
-//	// If Reaver is attacking, patrol
-//	// If no units nearby, move to a strong position (based on heatmap strength? ally clusters?)
-//
-//	// Get local strategy
-//	unitGetLocalStrategy(unit, target);
-//	// If Reaver has cooldown on attack or strategy is retreat, pickup
-//	if (target->isLoaded())
-//	{
-//		// If Reaver has no cooldown and strategy is attack, drop
-//		if (target->getGroundWeaponCooldown() == 0 && targetInfo.getStrategy() == 1 && target->getUnitsInRadius(256, Filter::IsEnemy).size() > 0)
-//		{
-//			unit->unload(target);
-//		}
-//		
-//		else
-//		{
-//			unit->move(supportPosition);
-//		}
-//		
-//	}
-//
-//	else
-//	{
-//		if (target->getGroundWeaponCooldown() > 0 || targetInfo.getStrategy() == 0 || target->getUnitsInRadius(256, Filter::IsEnemy).size() == 0)
-//		{
-//			unit->load(target);
-//		}
-//	}
-//	
-//
-//	// Check tile for air threat
-//	// Check enemies around that Reaver can hit
-//	// If no air threat, higher Local and Reaver cooldown ready, drop Reaver
-//}
-//
-//void shuttleHarass(Unit unit)
-//{
-//	if (unit->getLoadedUnits().size() > 0 && (shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] > 2 || shuttleHeatmap[unit->getTilePosition().x][unit->getTilePosition().y] == 0))
-//	{
-//		unit->move(unitGetPath(unit, TilePosition(playerStartingPosition)));
-//	}
-//	else
-//	{
-//		shuttleManager(unit);
-//	}
-//}
-//
+void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
+{
+	// Variables for calculating local strengths
+	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0, thisUnit = 0.0;
+	Position targetPosition = enemyUnits[target].getPosition();
+	int radius = min(512, 384 + supply * 4);
 
+	int aLarge = getMySizes()[UnitSizeTypes::Large];
+	int aMedium = getMySizes()[UnitSizeTypes::Medium];
+	int aSmall = getMySizes()[UnitSizeTypes::Small];
 
+	int eLarge = getEnSizes()[UnitSizeTypes::Large];
+	int eMedium = getEnSizes()[UnitSizeTypes::Medium];
+	int eSmall = getEnSizes()[UnitSizeTypes::Small];
 
+	// Reset local
+	allyUnits[unit].setLocal(0);
 
+	if (unit->getDistance(targetPosition) > 512)
+	{
+		allyUnits[unit].setStrategy(3);
+		return;
+	}
 
+	// Check every enemy unit being in range of the target
+	for (auto &u : enemyUnits)
+	{
+		// Ignore workers, keep buildings (reinforcements and static defenses)
+		if (u.second.getType().isWorker() || (u.first && u.first->exists() && u.first->isStasised()))
+		{
+			continue;
+		}
+
+		// Reset unit strength
+		thisUnit = 0.0;
+		double threatRange = (u.second.getGroundRange() / 32.0) + u.second.getSpeed() + double(u.second.getType().width()) / 32 + double(allyUnits[target].getType().width()) / 32;
+
+		// If a unit is within range of the target, add to local strength
+		if (u.second.getPosition().getDistance(targetPosition) / 32.0 < threatRange)
+		{
+			if (aLarge > 0 || aMedium > 0 || aSmall > 0)
+			{
+				// If unit is cloaked or burrowed and not detected, drastically increase strength
+				if ((u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
+				{
+					thisUnit = 20 * u.second.getMaxStrength();
+				}
+				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+				{
+					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
+				}
+				else if (u.first->getType().groundWeapon().damageType() == DamageTypes::Concussive)
+				{
+					thisUnit = u.second.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
+				}
+				else
+				{
+					thisUnit = u.second.getStrength();
+				}
+			}
+			else
+			{
+				thisUnit = u.second.getStrength();
+			}
+			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
+			if (u.second.getDeadFrame() == 0)
+			{
+				enemyLocalStrength += thisUnit;
+			}
+			else
+			{
+				allyLocalStrength += u.second.getMaxStrength() * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			}
+		}
+	}
+
+	// Check every ally being in range of the target
+	for (auto &u : allyUnits)
+	{
+		// Ignore workers and buildings
+		if (u.second.getType().isWorker() || u.second.getType().isBuilding())
+		{
+			continue;
+		}
+
+		// Reset unit strength
+		thisUnit = 0.0;
+		double threatRange = (u.second.getGroundRange() / 32.0) + u.second.getSpeed() + double(u.second.getType().width()) / 32.0 + double(enemyUnits[target].getType().width()) / 32;
+
+		// If a unit is within the range of the ally unit, add to local strength
+		if (u.second.getPosition().getDistance(unit->getPosition()) / 32.0 < threatRange)
+		{
+			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
+			{
+				// If shuttle, add units inside
+				if (u.second.getType() == UnitTypes::Protoss_Shuttle && u.first->getLoadedUnits().size() > 0)
+				{
+					// Assume reaver for damage type calculations
+					for (Unit uL : u.first->getLoadedUnits())
+					{
+						thisUnit = allyUnits[uL].getStrength();
+					}
+				}
+				else
+				{
+					// Damage type calculations
+					if (u.second.getType().groundWeapon().damageType() == DamageTypes::Explosive)
+					{
+						thisUnit = u.second.getStrength() * ((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / (eLarge + eMedium + eSmall);
+					}
+					else if (u.second.getType().groundWeapon().damageType() == DamageTypes::Concussive)
+					{
+						thisUnit = u.second.getStrength() * ((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / (eLarge + eMedium + eSmall);
+					}
+					else
+					{
+						thisUnit = u.second.getStrength();
+					}
+				}
+			}
+			else
+			{
+				thisUnit = u.second.getStrength();
+			}
+
+			// If ally hasn't died, add to ally. Otherwise, partially add to enemy local
+			if (u.second.getDeadFrame() == 0)
+			{
+				allyLocalStrength += thisUnit;
+			}
+			else
+			{
+				enemyLocalStrength += u.second.getMaxStrength() * 1.0 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			}
+		}
+	}
+
+	// Store the difference of strengths 
+	allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
+
+	// If we are in ally territory and have a target, force to fight	
+	if (target && target->exists())
+	{
+		if (unit->getType() == UnitTypes::Protoss_Zealot && Broodwar->getFrameCount() < 3000)
+		{
+			if (GridTracker::Instance().getResourceGrid(target->getTilePosition().x, target->getTilePosition().y) > 0)
+			{
+				allyUnits[unit].setStrategy(1);
+				return;
+			}
+			else
+			{
+				allyUnits[unit].setStrategy(0);
+				return;
+			}
+		}
+		if (Broodwar->getFrameCount() > 8000 && TerrainTracker::Instance().getAllyTerritory().find(getRegion(unit->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+		{
+			allyUnits[unit].setStrategy(1);
+			return;
+		}
+		if (allyUnits[unit].getGroundRange() > enemyUnits[target].getGroundRange())
+		{
+			bool safeTile = true;
+			for (auto miniTile : UnitUtil::Instance().getMiniTilesUnderUnit(unit))
+			{
+				if (miniTile.isValid() && GridTracker::Instance().getEDistanceGrid(miniTile.x, miniTile.y) > 0)
+				{
+					safeTile = false;
+				}
+			}
+			if (safeTile)
+			{
+				allyUnits[unit].setStrategy(1);
+				return;
+			}
+		}
+	}
+
+	// Force Zealots to stay on Tanks and Reavers to shoot if units are near it
+	if (unit->getType() == UnitTypes::Protoss_Zealot && target->exists() && (enemyUnits[target].getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemyUnits[target].getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
+	{
+		allyUnits[unit].setStrategy(1);
+		return;
+	}
+
+	if (unit->getType() == UnitTypes::Protoss_Reaver && target->exists() && allyUnits[unit].getGroundRange() > unit->getDistance(targetPosition))
+	{
+		allyUnits[unit].setStrategy(1);
+		return;
+	}
+
+	// If last command was engage
+	if (allyUnits[unit].getStrategy() == 1)
+	{
+		// Latch based system for at least 80% disadvantage to disengage
+		if (allyLocalStrength < enemyLocalStrength*0.8)
+		{
+			allyUnits[unit].setStrategy(0);
+			return;
+		}
+		allyUnits[unit].setStrategy(1);
+		return;
+	}
+	// If last command was disengage/no command
+	else
+	{
+		// Latch based system for at least 120% advantage to engage
+		if (allyLocalStrength >= enemyLocalStrength*1.2)
+		{
+			allyUnits[unit].setStrategy(1);
+			return;
+		}
+		// Otherwise return 3 or 0, whichever was previous
+		allyUnits[unit].setStrategy(0);
+		return;
+	}
+	// Disregard local if no target, no recent local calculation and not within ally region
+	allyUnits[unit].setStrategy(3);
+	return;
+}
+
+void UnitTrackerClass::getGlobalCalculation(Unit unit, Unit target)
+{
+	if (StrategyTracker::Instance().isFastExpand())
+	{
+		globalStrategy = 0;
+		return;
+	}
+
+	// If Zerg or Toss, wait for a larger army before moving out
+	if (Broodwar->enemy()->getRace() != Races::Terran && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) < 1)
+	{
+		globalStrategy = 0;
+		return;
+	}
+
+	if (StrategyTracker::Instance().globalAlly() > StrategyTracker::Instance().globalEnemy())
+	{
+		globalStrategy = 1;
+		return;
+	}
+	else
+	{
+		// If Terran, contain
+		if (Broodwar->enemy()->getRace() == Races::Terran)
+		{
+			globalStrategy = 1;
+			return;
+		}
+		globalStrategy = 0;
+		return;
+	}
+	globalStrategy = 1;
+	return;
+}

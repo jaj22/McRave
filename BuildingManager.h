@@ -27,6 +27,7 @@ public:
 	void constructBuildings();
 	void updateQueue(Unit);
 	void storeBuilding(Unit);
+	void removeBuilding(Unit);
 };
 
 typedef Singleton<BuildingTrackerClass> BuildingTracker;

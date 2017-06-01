@@ -4,6 +4,7 @@
 #include "GridManager.h"
 #include "UnitManager.h"
 #include "StrategyManager.h"
+#include "UnitUtil.h"
 
 using namespace BWAPI;
 using namespace std;
@@ -16,10 +17,9 @@ void ProbeTrackerClass::update()
 
 void ProbeTrackerClass::storeProbe(Unit unit)
 {
-	if (unit->exists() && unit->isCompleted() && unit->getType() == UnitTypes::Protoss_Probe && myProbes.find(unit) == myProbes.end())
-	{
-		ProbeInfo newProbe;
-		myProbes[unit] = newProbe;
+	if (unit->exists() && unit->isCompleted())
+	{		
+		myProbes[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
 	}
 	return;
 }

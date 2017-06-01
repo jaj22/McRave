@@ -17,7 +17,7 @@ class UnitTrackerClass
 	map <UnitSizeType, int> allySizes;
 	map <UnitSizeType, int> enemySizes;
 	int supply; 
-
+	int globalStrategy;
 public:
 	// Accessors
 	map<Unit, UnitInfoClass>& getMyUnits() { return allyUnits; }
@@ -25,8 +25,6 @@ public:
 	map<UnitSizeType, int>& getMySizes() { return allySizes; }
 	map<UnitSizeType, int>& getEnSizes() { return enemySizes; }
 	int getSupply() { return supply; }
-	set<WalkPosition> getMiniTilesUnderUnit(Unit);
-	WalkPosition getMiniTile(Unit);
 
 	// Updating
 	void update();
@@ -35,6 +33,10 @@ public:
 	void storeEnemyUnit(Unit);
 	void storeAllyUnit(Unit);
 	void decayUnit(Unit);
+
+	void getLocalCalculation(Unit, Unit);
+	void getGlobalCalculation(Unit, Unit);
+	int getGlobalStrategy() { return globalStrategy; }
 };
 
 typedef Singleton<UnitTrackerClass> UnitTracker;

@@ -23,6 +23,12 @@ void BuildOrderTrackerClass::update()
 		buildingDesired[UnitTypes::Protoss_Nexus]++;
 	}
 
+	// If we need a shield battery to defend
+	if (StrategyTracker::Instance().needBattery())
+	{
+		buildingDesired[UnitTypes::Protoss_Shield_Battery] = 1;
+	}
+
 	// If forcing an early natural expansion
 	if (StrategyTracker::Instance().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{

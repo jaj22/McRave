@@ -3,6 +3,7 @@
 #include "GridManager.h"
 #include "UnitManager.h"
 #include "BuildOrder.h"
+#include "UnitUtil.h"
 
 void SpecialUnitTrackerClass::update()
 {
@@ -123,19 +124,19 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 	{
 		myArbiters[unit].setPosition(unit->getPosition());
 		myArbiters[unit].setDestination(unit->getPosition());
-		myArbiters[unit].setMiniTile(UnitTracker::Instance().getMiniTile(unit));
+		myArbiters[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Observer)
 	{
 		myObservers[unit].setPosition(unit->getPosition());
 		myObservers[unit].setDestination(unit->getPosition());
-		myObservers[unit].setMiniTile(UnitTracker::Instance().getMiniTile(unit));
+		myObservers[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
 		myTemplars[unit].setPosition(unit->getPosition());
 		myTemplars[unit].setDestination(unit->getPosition());
-		myTemplars[unit].setMiniTile(UnitTracker::Instance().getMiniTile(unit));
+		myTemplars[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
 	}
 	return;
 }

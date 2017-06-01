@@ -312,3 +312,8 @@ void BuildingTrackerClass::storeBuilding(Unit building)
 	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBuildings[building].setTilePosition(building->getTilePosition());
 }
+
+void BuildingTrackerClass::removeBuilding(Unit building)
+{
+	myBuildings.erase(building);
+}

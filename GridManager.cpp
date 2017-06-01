@@ -29,7 +29,7 @@ void GridTrackerClass::reset()
 			}
 			if (resourceGrid[x][y] > 0)
 			{
-				//Broodwar->drawTextMap(x * 32, y * 32, "%d", resourceGrid[x][y]);
+				//Broodwar->drawBoxMap(Position(x * 32, y * 32), Position(x * 32 + 32, y * 32 + 32), Colors::White);
 			}
 			if (reserveGrid[x][y] > 0)
 			{
@@ -200,7 +200,10 @@ void GridTrackerClass::updateAllyGrids()
 				{
 					for (int y = start.y; y <= start.y + u.second.getType().tileHeight() * 4; y++)
 					{
-						antiMobilityGrid[x][y] = 1;
+						if (WalkPosition(x, y).isValid())
+						{
+							antiMobilityGrid[x][y] = 1;
+						}
 					}
 				}
 			}
@@ -254,7 +257,7 @@ void GridTrackerClass::updateAllyGrids()
 
 	for (auto & probe : ProbeTracker::Instance().getMyProbes())
 	{
-		WalkPosition start = UnitTracker::Instance().getMiniTile(probe.first);
+		WalkPosition start = probe.second.getMiniTile();
 		for (int x = start.x; x <= start.x + probe.first->getType().tileWidth() * 4; x++)
 		{
 			for (int y = start.y; y <= start.y + probe.first->getType().tileHeight() * 4; y++)
@@ -378,27 +381,26 @@ void GridTrackerClass::updateEnemyGrids()
 
 void GridTrackerClass::updateNeutralGrids()
 {
-	double distanceTo = 0.0;
 	for (auto m : ResourceTracker::Instance().getMyMinerals())
 		// Update resource grid
-		for (int x = m.second.getTilePosition().x - 2; x <= m.second.getTilePosition().x + m.second.getType().tileWidth() + 2; x++)
+		for (int x = m.second.getTilePosition().x - 5; x < m.second.getTilePosition().x + m.second.getType().tileWidth() + 5; x++)
 		{
-			for (int y = m.second.getTilePosition().y - 2; y <= m.second.getTilePosition().y + m.second.getType().tileHeight() + 2; y++)
+			for (int y = m.second.getTilePosition().y - 5; y < m.second.getTilePosition().y + m.second.getType().tileHeight() + 5; y++)
 			{
-				if (TilePosition(x, y).isValid() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
+				if (Position(NexusTracker::Instance().getMyNexus()[m.second.getClosestNexus()].getCannonPosition()).getDistance(Position(TilePosition(x, y))) <= 192 && TilePosition(x, y).isValid() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
-				}
+				}				
 			}
 		}
 	for (auto g : ResourceTracker::Instance().getMyGas())
 	{
 		// Update resource grid
-		for (int x = g.second.getTilePosition().x - 1; x <= g.second.getTilePosition().x + g.second.getType().tileWidth() + 1; x++)
+		for (int x = g.second.getTilePosition().x - 5; x < g.second.getTilePosition().x + g.second.getType().tileWidth() + 5; x++)
 		{
-			for (int y = g.second.getTilePosition().y - 1; y <= g.second.getTilePosition().y + g.second.getType().tileHeight() + 1; y++)
+			for (int y = g.second.getTilePosition().y - 5; y < g.second.getTilePosition().y + g.second.getType().tileHeight() + 5; y++)
 			{
-				if (TilePosition(x, y).isValid() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
+				if (Position(NexusTracker::Instance().getMyNexus()[g.second.getClosestNexus()].getCannonPosition()).getDistance(Position(TilePosition(x, y))) <= 256 && TilePosition(x, y).isValid() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()) && Position(TilePosition(x, y)).getDistance(g.second.getPosition()) < 200 && Position(TilePosition(x, y)).getDistance(g.second.getClosestNexus()->getPosition()) < 200)
 				{
 					resourceGrid[x][y] = 1;
 				}

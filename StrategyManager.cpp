@@ -2,6 +2,7 @@
 #include "TerrainManager.h"
 #include "UnitManager.h"
 #include "GridManager.h"
+#include "ProbeManager.h"
 
 void StrategyTrackerClass::update()
 {
@@ -148,6 +149,11 @@ void StrategyTrackerClass::updateComposition()
 
 		}
 		
+		// If we are being 2 gate rushed, make a shield battery
+		if (ProbeTracker::Instance().isScouting() && t.first == UnitTypes::Protoss_Gateway && t.second >= 2 && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end())
+		{
+			battery = true;
+		}
 
 		// Force expand based on enemy composition
 		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)

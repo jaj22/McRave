@@ -9,15 +9,17 @@ using namespace std;
 class ProbeInfo{
 private:
 	Unit target;
+	WalkPosition miniTile;
 public:
 	// Constructors
 	ProbeInfo();
 	~ProbeInfo();
-	ProbeInfo(Unit target);
 
 	// Accessors
-	Unit getTarget() const;
+	Unit getTarget() {	return target;	}
+	WalkPosition getMiniTile() { return miniTile; }
 
 	// Mutators
-	void setTarget(Unit newTarget);
+	void setTarget(Unit newTarget) { target = newTarget; }
+	void setMiniTile(WalkPosition newTile) { miniTile = newTile; }
 };

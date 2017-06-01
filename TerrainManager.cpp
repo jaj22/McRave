@@ -11,14 +11,14 @@ void TerrainTrackerClass::update()
 	// 1) Wait for BWTA to analyze or load map cache
 	// 2) Analyze starting position
 	// 3) Analye map when enemy found	
-	
+
 	// BWEM Transfering
 	/*for (auto & area : theMap.Instance().Areas())
 	{
-		for (auto & base : area.Bases())
-		{
-			
-		}
+	for (auto & base : area.Bases())
+	{
+
+	}
 	}*/
 
 	// Only do this loop once if map analysis done
@@ -43,7 +43,7 @@ void TerrainTrackerClass::update()
 				if (base->isIsland())
 				{
 					islandRegions.emplace(base->getRegion());
-				}				
+				}
 			}
 
 		}
@@ -173,9 +173,12 @@ void TerrainTrackerClass::update()
 		{
 			if (u->getType().isBuilding())
 			{
-				if (ProbeTracker::Instance().isScouting() && Broodwar->enemy()->getRace() == Races::Terran && u->getDistance(getNearestChokepoint(u->getPosition())->getCenter()) < 256)
+				if (ProbeTracker::Instance().isScouting())
 				{
-					wallin = true;
+					if (Broodwar->enemy()->getRace() == Races::Terran && u->getDistance(getNearestChokepoint(u->getPosition())->getCenter()) < 256)
+					{
+						wallin = true;
+					}					
 				}
 				if (enemyBasePositions.size() == 0)
 				{
