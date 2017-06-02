@@ -85,6 +85,8 @@ void StrategyTrackerClass::updateEnemy()
 				invis = true;
 			}
 
+			enemyComposition[u.second.getType()] += 1;
+
 			// If tile is visible but unit is not, remove position
 			if (!u.first->exists() && u.second.getPosition() != Positions::None && Broodwar->isVisible(TilePosition(u.second.getPosition())))
 			{
@@ -92,10 +94,9 @@ void StrategyTrackerClass::updateEnemy()
 			}
 
 			// Strength based calculations ignore workers and buildings
-			if ((u.second.getType().isBuilding() && u.second.getStrength() > 1.0) || (!u.second.getType().isBuilding() && !u.second.getType().isWorker()) || u.first->exists() && TerrainTracker::Instance().getAllyTerritory().find(getRegion(u.first->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+			if ((u.second.getType().isBuilding() && u.second.getMaxStrength() > 1.0) || (!u.second.getType().isBuilding() && !u.second.getType().isWorker()) || u.first->exists() && TerrainTracker::Instance().getAllyTerritory().find(getRegion(u.first->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
 			{
-				// Add composition and strength
-				enemyComposition[u.second.getType()] += 1;
+				// Add strength				
 				globalEnemyStrength += u.second.getStrength();
 			}
 
@@ -148,10 +149,10 @@ void StrategyTrackerClass::updateComposition()
 		{
 
 		}
-		
+
 		// If we are being 2 gate rushed, make a shield battery
 		if (ProbeTracker::Instance().isScouting() && t.first == UnitTypes::Protoss_Gateway && t.second >= 2 && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end())
-		{
+		{			
 			battery = true;
 		}
 

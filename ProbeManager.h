@@ -11,13 +11,15 @@ using namespace std;
 class ProbeTrackerClass
 {
 	map <Unit, ProbeInfo> myProbes;
+	map <WalkPosition, int> recentExplorations;
 	Unit scout;
 	bool scouting = true;
 public:
 
 	bool isScouting() { return scouting; }
 	map <Unit, ProbeInfo>& getMyProbes() { return myProbes; }
-
+	Unit getScout() { return scout; }
+	
 	void update();
 	void storeProbe(Unit);
 	void removeProbe(Unit);
@@ -25,6 +27,7 @@ public:
 	void reAssignProbe(Unit);
 	void scoutProbe();
 	void enforceAssignments();
+	void exploreArea(Unit);
 };
 
 typedef Singleton<ProbeTrackerClass> ProbeTracker;

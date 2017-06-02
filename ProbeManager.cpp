@@ -5,20 +5,21 @@
 #include "UnitManager.h"
 #include "StrategyManager.h"
 #include "UnitUtil.h"
+#include "CommandManager.h"
 
 using namespace BWAPI;
 using namespace std;
 
 void ProbeTrackerClass::update()
 {
-	scoutProbe();	
+	scoutProbe();
 	enforceAssignments();
 }
 
 void ProbeTrackerClass::storeProbe(Unit unit)
 {
 	if (unit->exists() && unit->isCompleted())
-	{		
+	{
 		myProbes[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
 	}
 	return;
@@ -37,18 +38,22 @@ void ProbeTrackerClass::removeProbe(Unit probe)
 	myProbes.erase(probe);
 
 	// If scouting probe died, assume where enemy is based on death location
-	if (probe == scout && isScouting() && TerrainTracker::Instance().getEnemyBasePositions().size() == 0)
+	if (probe == scout && isScouting())
 	{
-		double closestD = 0.0;
-		BaseLocation* closestB = getNearestBaseLocation(probe->getTilePosition());
-		for (auto base : getStartLocations())
+		scouting = false;
+		if (TerrainTracker::Instance().getEnemyBasePositions().size() == 0)
 		{
-			if (probe->getDistance(base->getPosition()) < closestD || closestD == 0.0)
+			double closestD = 0.0;
+			BaseLocation* closestB = getNearestBaseLocation(probe->getTilePosition());
+			for (auto base : getStartLocations())
 			{
-				closestB = base;
+				if (probe->getDistance(base->getPosition()) < closestD || closestD == 0.0)
+				{
+					closestB = base;
+				}
 			}
+			TerrainTracker::Instance().getEnemyBasePositions().emplace(closestB->getPosition());
 		}
-		TerrainTracker::Instance().getEnemyBasePositions().emplace(closestB->getPosition());
 	}
 }
 
@@ -107,13 +112,9 @@ void ProbeTrackerClass::scoutProbe()
 		{
 			scout = u.first;
 		}
-		if (TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
-		{
-			scouting = false;
-		}
 		if (u.first == scout)
 		{
-			if (UnitTracker::Instance().getSupply() >= 18 && scouting)
+			if (TerrainTracker::Instance().getEnemyBasePositions().size() == 0 && UnitTracker::Instance().getSupply() >= 18 && scouting)
 			{
 				for (auto start : getStartLocations())
 				{
@@ -127,11 +128,48 @@ void ProbeTrackerClass::scoutProbe()
 					}
 				}
 			}
-			else if (u.first->getUnitsInRadius(256, Filter::IsEnemy && !Filter::IsWorker && Filter::CanAttack).size() > 0)
+			if (TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
 			{
-				u.first->stop();
+				WalkPosition start = u.second.getMiniTile();
+				if (GridTracker::Instance().getEGroundGrid(start.x, start.y) > 0.0 || GridTracker::Instance().getEDistanceGrid(start.x, start.y) > 0.0)
+				{
+					CommandTracker::Instance().fleeTarget(u.first, u.first->getClosestUnit(Filter::IsEnemy));
+				}
+				else
+				{
+					exploreArea(u.first);
+				}
 			}
 		}
+	}
+}
+
+void ProbeTrackerClass::exploreArea(Unit probe)
+{
+	WalkPosition start = myProbes[probe].getMiniTile();
+	vector<WalkPosition> possibilites;
+	double closestD = 1000;
+	recentExplorations[start] = Broodwar->getFrameCount();
+
+	for (int x = start.x - 20; x < start.x + 20 + probe->getType().tileWidth(); x++)
+	{
+		for (int y = start.y - 20; y < start.y + 20 + probe->getType().tileHeight(); y++)
+		{
+			if (GridTracker::Instance().getAntiMobilityGrid(x, y) == 0 && GridTracker::Instance().getMobilityGrid(x, y) > 0 && GridTracker::Instance().getEGroundGrid(x, y) == 0.0 && GridTracker::Instance().getEDistanceGrid(x, y) == 0.0 && WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 10 && Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < 320)
+			{
+				possibilites.push_back(WalkPosition(x, y));
+			}
+		}
+	}
+
+	if (possibilites.size() > 0)
+	{
+		int i = rand() % possibilites.size();
+		probe->move(Position(possibilites.at(i)));
+	}
+	else
+	{
+		probe->move(TerrainTracker::Instance().getEnemyStartingPosition());
 	}
 }
 
@@ -228,7 +266,7 @@ void ProbeTrackerClass::enforceAssignments()
 				}
 				// If the mineral field is in vision and no target, force to gather from the assigned mineral field
 				if (u.second.getTarget() && u.second.getTarget()->exists())
-				{					
+				{
 					u.first->gather(u.second.getTarget());
 					continue;
 				}

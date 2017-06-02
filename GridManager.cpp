@@ -262,7 +262,10 @@ void GridTrackerClass::updateAllyGrids()
 		{
 			for (int y = start.y; y <= start.y + probe.first->getType().tileHeight() * 4; y++)
 			{
-				antiMobilityGrid[x][y] = 1;
+				if (WalkPosition(x, y).isValid())
+				{
+					antiMobilityGrid[x][y] = 1;
+				}
 			}
 		}
 	}

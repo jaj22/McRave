@@ -4,8 +4,7 @@
 #include "TerrainManager.h"
 #include "PylonManager.h"
 #include "ResourceManager.h"
-#include <BWAPI.h>
-#include <BWTA.h>
+#include "ProbeManager.h"
 
 
 using namespace BWAPI;
@@ -209,7 +208,17 @@ void BuildingTrackerClass::queueBuildings()
 		if (b.second > Broodwar->self()->visibleUnitCount(b.first) && queuedBuildings.find(b.first) == queuedBuildings.end())
 		{
 			TilePosition here = BuildingTracker::Instance().getBuildLocation(b.first);
-			Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
+			double closestD = 0;
+			Unit builder;
+			for (auto u : ProbeTracker::Instance().getMyProbes())
+			{
+				if (u.first && u.first != ProbeTracker::Instance().getScout() && u.first->exists() && u.first->getDistance(Position(here)) < closestD || closestD == 0)
+				{
+					builder = u.first;
+				}
+			}
+
+			//Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
 			// If the Tile Position and Builder are valid
 			if (here != TilePositions::None && builder)
 			{
@@ -233,7 +242,15 @@ void BuildingTrackerClass::constructBuildings()
 		// If probe died, replace the probe
 		if (!b.second.second || !b.second.second->exists())
 		{
-			b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
+			double closestD = 0;
+			Unit builder;
+			for (auto u : ProbeTracker::Instance().getMyProbes())
+			{
+				if (u.first && u.first != ProbeTracker::Instance().getScout() && u.first->exists() && u.first->getDistance(Position(b.second.first)) < closestD || closestD == 0)
+				{
+					builder = u.first;
+				}
+			}
 			continue;
 		}
 

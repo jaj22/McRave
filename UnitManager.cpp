@@ -298,7 +298,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	{
 		if (unit->getType() == UnitTypes::Protoss_Zealot && Broodwar->getFrameCount() < 3000)
 		{
-			if (GridTracker::Instance().getResourceGrid(target->getTilePosition().x, target->getTilePosition().y) > 0)
+			if (GridTracker::Instance().getResourceGrid(unit->getTilePosition().x, unit->getTilePosition().y) > 0)
 			{
 				allyUnits[unit].setStrategy(1);
 				return;
