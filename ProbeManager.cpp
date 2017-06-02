@@ -133,7 +133,7 @@ void ProbeTrackerClass::scoutProbe()
 				WalkPosition start = u.second.getMiniTile();
 				if (u.first->getUnitsInRadius(320, Filter::IsEnemy && !Filter::IsBuilding).size() > 0)
 				{
-					avoidEnemy(u.first, u.first->getClosestUnit(Filter::IsEnemy));
+					avoidEnemy(u.first);
 				}
 				else
 				{
@@ -178,10 +178,10 @@ void ProbeTrackerClass::enforceAssignments()
 	// For each Probe mapped to gather minerals
 	for (auto &u : myProbes)
 	{
-		/*if (u.first->exists() && u.first->getPlayer() != Broodwar->self())
+		if (u.first->exists() && u.first->getPlayer() != Broodwar->self())
 		{
 			Broodwar << "Test" << endl;
-		}*/
+		}
 		if (ResourceTracker::Instance().getGasNeeded() > 0)
 		{
 			reAssignProbe(u.first);
@@ -277,10 +277,10 @@ void ProbeTrackerClass::enforceAssignments()
 	}
 }
 
-void ProbeTrackerClass::avoidEnemy(Unit probe, Unit target)
+void ProbeTrackerClass::avoidEnemy(Unit probe)
 {
 	// If either the unit or current target are invalid, return
-	if (!probe || !target)
+	if (!probe)
 	{
 		return;
 	}
