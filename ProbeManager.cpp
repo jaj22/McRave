@@ -178,6 +178,10 @@ void ProbeTrackerClass::enforceAssignments()
 	// For each Probe mapped to gather minerals
 	for (auto &u : myProbes)
 	{
+		/*if (u.first->exists() && u.first->getPlayer() != Broodwar->self())
+		{
+			Broodwar << "Test" << endl;
+		}*/
 		if (ResourceTracker::Instance().getGasNeeded() > 0)
 		{
 			reAssignProbe(u.first);
@@ -199,7 +203,7 @@ void ProbeTrackerClass::enforceAssignments()
 		// Attack units in mineral line
 		if (GridTracker::Instance().getResourceGrid(u.first->getTilePosition().x, u.first->getTilePosition().y) > 0 && u.first->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && (u.first->getHitPoints() + u.first->getShields()) > 20)
 		{
-			if (u.first->getLastCommand().getType() == UnitCommandTypes::Attack_Unit)
+			if (u.first->getLastCommand().getType() != UnitCommandTypes::Attack_Unit)
 			{
 				u.first->attack(u.first->getClosestUnit(Filter::IsEnemy, 320));
 			}			

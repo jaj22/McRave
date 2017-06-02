@@ -55,7 +55,7 @@ void UnitTrackerClass::storeUnits()
 		
 		// Store Probes
 		if (u->getType() == UnitTypes::Protoss_Probe)
-		{
+		{			
 			ProbeTracker::Instance().storeProbe(u);
 		}
 		// Store Special Units
@@ -153,11 +153,11 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 
 void UnitTrackerClass::decayUnit(Unit unit)
 {
-	if (unit->getPlayer() == Broodwar->self())
+	if (allyUnits.find(unit) != allyUnits.end() && unit->getPlayer() == Broodwar->self())
 	{
 		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
 	}
-	else
+	else if (enemyUnits.find(unit) != enemyUnits.end())
 	{
 		enemyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
 	}

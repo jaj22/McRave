@@ -210,7 +210,7 @@ void BuildingTrackerClass::queueBuildings()
 			TilePosition here = BuildingTracker::Instance().getBuildLocation(b.first);
 			double closestD = 0;
 			Unit builder;
-			for (auto u : ProbeTracker::Instance().getMyProbes())
+			for (auto & u : ProbeTracker::Instance().getMyProbes())
 			{
 				if (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build)
 				{
@@ -219,6 +219,7 @@ void BuildingTrackerClass::queueBuildings()
 				if (u.first && u.first != ProbeTracker::Instance().getScout() && u.first->exists() && u.first->getDistance(Position(here)) < closestD || closestD == 0)
 				{
 					builder = u.first;
+					closestD = u.first->getDistance(Position(here));
 				}
 			}
 
@@ -247,8 +248,8 @@ void BuildingTrackerClass::constructBuildings()
 		if (!b.second.second || !b.second.second->exists())
 		{
 			double closestD = 0;
-			Unit builder;
-			for (auto u : ProbeTracker::Instance().getMyProbes())
+			Unit builder = b.second.second;
+			for (auto & u : ProbeTracker::Instance().getMyProbes())
 			{
 				if (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build)
 				{
@@ -257,6 +258,7 @@ void BuildingTrackerClass::constructBuildings()
 				if (u.first && u.first != ProbeTracker::Instance().getScout() && u.first->exists() && u.first->getDistance(Position(b.second.first)) < closestD || closestD == 0)
 				{
 					builder = u.first;
+					closestD = u.first->getDistance(Position(b.second.first));
 				}
 			}
 			continue;

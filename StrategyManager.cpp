@@ -80,11 +80,6 @@ void StrategyTrackerClass::updateEnemy()
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
 		{
-			if (u.second.getType() == UnitTypes::Protoss_Dark_Templar || u.second.getType() == UnitTypes::Protoss_Citadel_of_Adun || u.second.getType() == UnitTypes::Terran_Wraith || u.second.getType() == UnitTypes::Terran_Ghost || u.second.getType() == UnitTypes::Zerg_Lurker)
-			{
-				invis = true;
-			}
-
 			enemyComposition[u.second.getType()] += 1;
 
 			// If tile is visible but unit is not, remove position
@@ -145,9 +140,10 @@ void StrategyTrackerClass::updateComposition()
 			offset = offset + 10;
 		}
 
-		if (t.first == UnitTypes::Protoss_Dark_Templar)
+		// If a possible invis unit exists, we can get Observers first
+		if (t.first == UnitTypes::Protoss_Dark_Templar || t.first == UnitTypes::Protoss_Citadel_of_Adun || t.first == UnitTypes::Terran_Wraith || t.first == UnitTypes::Terran_Ghost || t.first == UnitTypes::Zerg_Lurker)
 		{
-
+			invis = true;
 		}
 
 		// If we are being 2 gate rushed, make a shield battery
