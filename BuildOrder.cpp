@@ -15,36 +15,41 @@ void BuildOrderTrackerClass::update()
 	// Pylon, Forge, Nexus
 	buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((supply / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
 	buildingDesired[UnitTypes::Protoss_Forge] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) / 3);
-	buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus);
+	buildingDesired[UnitTypes::Protoss_Nexus] = max(buildingDesired[UnitTypes::Protoss_Nexus], Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus));
 
 	// If we are saturated, expand
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0 && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
 	{
-		buildingDesired[UnitTypes::Protoss_Nexus]++;
+		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
 	}
 
 	// If we need a shield battery to defend
-	if (StrategyTracker::Instance().needBattery())
+	if (StrategyTracker::Instance().isRush())
 	{
-		buildingDesired[UnitTypes::Protoss_Shield_Battery] = 1;
+		buildingDesired[UnitTypes::Protoss_Shield_Battery] = min(1,Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
 	}
 
 	// If forcing an early natural expansion
 	if (StrategyTracker::Instance().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{
-		buildingDesired[UnitTypes::Protoss_Nexus]++;
+		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
 	}
 
 	// If no idle gates and we are floating minerals, add 1 more
-	if (!getEarlyBuild && (Broodwar->self()->minerals() > 800 || (Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
+	if ((Broodwar->self()->minerals() > 800 || (Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
 	{
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
 
-	// If we have stabilized and have 4 dragoons, time to tech to mid game
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 2 && ProductionTracker::Instance().getIdleGates().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2)
+	// Done opening book
+	if (buildingDesired[UnitTypes::Protoss_Cybernetics_Core] >= 1 && getEarlyBuild)
 	{
 		getEarlyBuild = false;
+	}
+
+	// If we have stabilized and have 4 dragoons, time to tech to mid game
+	if ((StrategyTracker::Instance().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 6) || (!StrategyTracker::Instance().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 2 && ProductionTracker::Instance().getIdleGates().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2))
+	{		
 		getMidBuild = true;		
 	}
 

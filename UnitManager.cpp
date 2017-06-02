@@ -34,11 +34,25 @@ void UnitTrackerClass::storeUnits()
 		{
 			supply = supply + u->getType().supplyRequired();
 		}
-		// Don't want to store scarabs or units that don't exist or aren't completed
-		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists() || !u->isCompleted())
+		
+		// Don't want to store scarabs or units that don't exist
+		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists())
 		{
 			continue;
 		}
+
+		// Store buildings even if they're not completed
+		if (u->getType().isBuilding())
+		{
+			BuildingTracker::Instance().storeBuilding(u);
+		}		
+
+		// Don't want to store units that aren't completed
+		if (!u->isCompleted())
+		{
+			continue;
+		}
+		
 		// Store Probes
 		if (u->getType() == UnitTypes::Protoss_Probe)
 		{
@@ -48,13 +62,9 @@ void UnitTrackerClass::storeUnits()
 		else if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter)
 		{
 			SpecialUnitTracker::Instance().storeUnit(u);
-		}
-		else if (u->getType().isBuilding())
-		{
-			BuildingTracker::Instance().storeBuilding(u);
-		}
+		}		
 		// Store the rest
-		else
+		else if (!u->getType().isBuilding())
 		{
 			storeAllyUnit(u);
 		}
@@ -296,7 +306,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	// If we are in ally territory and have a target, force to fight	
 	if (target && target->exists())
 	{
-		if (unit->getType() == UnitTypes::Protoss_Zealot && Broodwar->getFrameCount() < 3000)
+		if (unit->getType() == UnitTypes::Protoss_Zealot && Broodwar->getFrameCount() < 10000)
 		{
 			if (GridTracker::Instance().getResourceGrid(unit->getTilePosition().x, unit->getTilePosition().y) > 0)
 			{
@@ -309,7 +319,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 				return;
 			}
 		}
-		if (Broodwar->getFrameCount() > 8000 && TerrainTracker::Instance().getAllyTerritory().find(getRegion(unit->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+		if (Broodwar->getFrameCount() > 10000 && TerrainTracker::Instance().getAllyTerritory().find(getRegion(unit->getPosition())) != TerrainTracker::Instance().getAllyTerritory().end())
 		{
 			allyUnits[unit].setStrategy(1);
 			return;
@@ -328,7 +338,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			{
 				allyUnits[unit].setStrategy(1);
 				return;
-			}
+			}			
 		}
 	}
 

@@ -153,7 +153,7 @@ void StrategyTrackerClass::updateComposition()
 		// If we are being 2 gate rushed, make a shield battery
 		if (ProbeTracker::Instance().isScouting() && t.first == UnitTypes::Protoss_Gateway && t.second >= 2 && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end())
 		{			
-			battery = true;
+			rush = true;
 		}
 
 		// Force expand based on enemy composition

@@ -131,9 +131,9 @@ void ProbeTrackerClass::scoutProbe()
 			if (TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
 			{
 				WalkPosition start = u.second.getMiniTile();
-				if (GridTracker::Instance().getEGroundGrid(start.x, start.y) > 0.0 || GridTracker::Instance().getEDistanceGrid(start.x, start.y) > 0.0)
+				if (u.first->getUnitsInRadius(320, Filter::IsEnemy && !Filter::IsBuilding).size() > 0)
 				{
-					CommandTracker::Instance().fleeTarget(u.first, u.first->getClosestUnit(Filter::IsEnemy));
+					avoidEnemy(u.first, u.first->getClosestUnit(Filter::IsEnemy));
 				}
 				else
 				{
@@ -151,11 +151,11 @@ void ProbeTrackerClass::exploreArea(Unit probe)
 	double closestD = 1000;
 	recentExplorations[start] = Broodwar->getFrameCount();
 
-	for (int x = start.x - 20; x < start.x + 20 + probe->getType().tileWidth(); x++)
+	for (int x = start.x - 50; x < start.x + 50 + probe->getType().tileWidth(); x++)
 	{
-		for (int y = start.y - 20; y < start.y + 20 + probe->getType().tileHeight(); y++)
+		for (int y = start.y - 50; y < start.y + 50 + probe->getType().tileHeight(); y++)
 		{
-			if (GridTracker::Instance().getAntiMobilityGrid(x, y) == 0 && GridTracker::Instance().getMobilityGrid(x, y) > 0 && GridTracker::Instance().getEGroundGrid(x, y) == 0.0 && GridTracker::Instance().getEDistanceGrid(x, y) == 0.0 && WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 10 && Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < 320)
+			if (GridTracker::Instance().getAntiMobilityGrid(x, y) == 0 && GridTracker::Instance().getMobilityGrid(x, y) > 0 && GridTracker::Instance().getEGroundGrid(x, y) == 0.0 && GridTracker::Instance().getEDistanceGrid(x, y) == 0.0 && WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 200 && Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < 320)
 			{
 				possibilites.push_back(WalkPosition(x, y));
 			}
@@ -199,12 +199,12 @@ void ProbeTrackerClass::enforceAssignments()
 		// Attack units in mineral line
 		if (GridTracker::Instance().getResourceGrid(u.first->getTilePosition().x, u.first->getTilePosition().y) > 0 && u.first->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && (u.first->getHitPoints() + u.first->getShields()) > 20)
 		{
-			u.first->attack(u.first->getClosestUnit(Filter::IsEnemy, 320));
-		}
-		else if (u.first->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && (GridTracker::Instance().getResourceGrid(u.first->getTilePosition().x, u.first->getTilePosition().y) == 0 || (u.first->getHitPoints() + u.first->getShields()) <= 20))
-		{
-			u.first->stop();
-		}
+			if (u.first->getLastCommand().getType() == UnitCommandTypes::Attack_Unit)
+			{
+				u.first->attack(u.first->getClosestUnit(Filter::IsEnemy, 320));
+			}			
+			continue;
+		}		
 
 		// Else command probe
 		if (u.first && u.first->exists())
@@ -214,15 +214,9 @@ void ProbeTrackerClass::enforceAssignments()
 			{
 				Broodwar->drawLineMap(u.first->getPosition(), u.second.getTarget()->getPosition(), Broodwar->self()->getColor());
 			}
-
-			// Return if not latency frame
-			if (Broodwar->getFrameCount() % Broodwar->getLatencyFrames() != 0)
-			{
-				continue;
-			}
-
+			
 			// If idle and carrying gas or minerals, return cargo			
-			if (u.first->isIdle() && (u.first->isCarryingGas() || u.first->isCarryingMinerals()))
+			if (u.first->isCarryingGas() || u.first->isCarryingMinerals())
 			{
 				if (u.first->getLastCommand().getType() == UnitCommandTypes::Return_Cargo)
 				{
@@ -252,9 +246,13 @@ void ProbeTrackerClass::enforceAssignments()
 			}
 
 
-			// If idle and not targeting the mineral field the Probe is mapped to
-			if (u.first->isIdle() || (u.first->isGatheringMinerals() && !u.first->isCarryingMinerals() && u.first->getTarget() != u.second.getTarget()))
+			// If not targeting the mineral field the Probe is mapped to
+			if (!u.first->isCarryingGas() && !u.first->isCarryingMinerals())
 			{
+				if ((u.first->isGatheringMinerals() || u.first->isGatheringGas()) && u.first->getTarget() == u.second.getTarget())
+				{
+					continue;
+				}
 				// If the Probe has a target
 				if (u.first->getTarget())
 				{
@@ -273,4 +271,92 @@ void ProbeTrackerClass::enforceAssignments()
 			}
 		}
 	}
+}
+
+void ProbeTrackerClass::avoidEnemy(Unit probe, Unit target)
+{
+	// If either the unit or current target are invalid, return
+	if (!probe || !target)
+	{
+		return;
+	}
+
+	WalkPosition start = ProbeTracker::Instance().getMyProbes()[probe].getMiniTile();
+	WalkPosition finalPosition = start;
+	double highestMobility = 0.0;
+	Position destination;
+
+	// Destination is enemy starting position, need to get as close to it as possible
+	if (TerrainTracker::Instance().getEnemyStartingPosition().isValid())
+	{
+		destination = TerrainTracker::Instance().getEnemyStartingPosition();
+	}
+	// If it's not valid, check each starting position for where we were moving towards
+	else
+	{
+		for (auto start : getStartLocations())
+		{
+			if (Broodwar->isExplored(start->getTilePosition()) == false)
+			{
+				destination = start->getPosition();
+				break;
+			}
+		}
+		// If still no destination, return
+		if (!destination.isValid())
+		{
+			return;
+		}
+	}
+
+	// Search a 16x16 (4 tiles) mini tile area around the unit for highest mobility	and lowest threat
+	for (int x = start.x - 4; x <= start.x + 4 + (probe->getType().tileWidth() * 4); x++)
+	{
+		for (int y = start.y - 4; y <= start.y + 4 + (probe->getType().tileHeight() * 4); y++)
+		{
+			if (WalkPosition(x, y).isValid())
+			{
+				double mobility = double(GridTracker::Instance().getMobilityGrid(x, y));
+				double threat = GridTracker::Instance().getEGroundGrid(x, y);
+				double distance = GridTracker::Instance().getEDistanceGrid(x, y);
+				double distanceEnemy = 1.0 + Position(start).getDistance(destination);
+
+				if (GridTracker::Instance().getAntiMobilityGrid(x, y) == 0 && (mobility / (1.0 + (distance * threat))) / distanceEnemy > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(probe->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(probe->getTilePosition()) || (getNearestChokepoint(TilePosition(x / 4, y / 4)) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128)))
+				{
+					bool bestTile = true;
+					for (int i = x - probe->getType().width() / 16; i < x + probe->getType().width() / 16; i++)
+					{
+						for (int j = y - probe->getType().height() / 16; j < y + probe->getType().height() / 16; j++)
+						{
+							if (WalkPosition(i, j).isValid())
+							{
+								// If mini tile exists on top of unit, ignore it
+								if (i >= start.x && i < start.x + probe->getType().tileWidth() * 4 && j >= start.y && j < start.y + probe->getType().tileHeight() * 4)
+								{
+									continue;
+								}
+								if (GridTracker::Instance().getMobilityGrid(i, j) == 0 || GridTracker::Instance().getAntiMobilityGrid(i, j) == 1)
+								{
+									bestTile = false;
+								}
+							}
+						}
+					}
+					if (bestTile)
+					{
+						highestMobility = (mobility / (1.0 + (distance * threat))) / distanceEnemy;
+						finalPosition = WalkPosition(x, y);
+					}
+				}
+			}
+		}
+	}
+	if (finalPosition.isValid() && finalPosition != start)
+	{
+		if (probe->getOrderTargetPosition() != Position(finalPosition))
+		{
+			probe->move(Position(finalPosition));
+		}
+	}
+	return;
 }

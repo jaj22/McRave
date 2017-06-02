@@ -212,6 +212,10 @@ void BuildingTrackerClass::queueBuildings()
 			Unit builder;
 			for (auto u : ProbeTracker::Instance().getMyProbes())
 			{
+				if (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build)
+				{
+					continue;
+				}
 				if (u.first && u.first != ProbeTracker::Instance().getScout() && u.first->exists() && u.first->getDistance(Position(here)) < closestD || closestD == 0)
 				{
 					builder = u.first;
@@ -246,6 +250,10 @@ void BuildingTrackerClass::constructBuildings()
 			Unit builder;
 			for (auto u : ProbeTracker::Instance().getMyProbes())
 			{
+				if (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build)
+				{
+					continue;
+				}
 				if (u.first && u.first != ProbeTracker::Instance().getScout() && u.first->exists() && u.first->getDistance(Position(b.second.first)) < closestD || closestD == 0)
 				{
 					builder = u.first;
@@ -277,7 +285,7 @@ void BuildingTrackerClass::constructBuildings()
 		Broodwar->drawBoxMap(Position(b.second.first), Position(TilePosition(b.second.first.x + b.first.tileWidth(), b.second.first.y + b.first.tileHeight())), Broodwar->self()->getColor());
 
 		// If we issued a command to this Probe already, skip
-		if (b.second.second->isConstructing() || b.second.second->getLastCommandFrame() >= Broodwar->getFrameCount() && (b.second.second->getLastCommand().getType() == UnitCommandTypes::Move || b.second.second->getLastCommand().getType() == UnitCommandTypes::Build))
+		if (b.second.second->isConstructing() || b.second.second->getLastCommandFrame() >= Broodwar->getFrameCount())
 		{
 			continue;
 		}

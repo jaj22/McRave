@@ -45,7 +45,7 @@ void CommandTrackerClass::getDecision(Unit unit, Unit target)
 	{
 		if ((unit->getLastCommand().getType() == UnitCommandTypes::Right_Click_Unit && unit->getShields() < 40) || unit->getShields() < 10 && unit->getUnitsInRadius(320, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Shield_Battery).size() > 0)
 		{
-			if (unit->getLastCommand().getType() != UnitCommandTypes::Right_Click_Unit)
+			if (unit->getLastCommand().getType() != UnitCommandTypes::Right_Click_Unit && unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Shield_Battery && Filter::Energy > 10))
 			{
 				unit->rightClick(unit->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Shield_Battery));
 			}
@@ -280,21 +280,19 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 		{
 			closestP = Position(TerrainTracker::Instance().getPath().at(2)->Center());
 		}
-		if (unit->getOrderTargetPosition() != closestP)
+		if (unit->getOrderTargetPosition() != closestP && unit->getDistance(closestP) > 64)
 		{
 			unit->move(closestP);
 		}
 		return;
 	}
 
-	// Move from choke if enemies nearby
-
 	// Early on, defend mineral line
-	if (Broodwar->getFrameCount() < 6000)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) == 0)
 	{
 		for (auto nexus : NexusTracker::Instance().getMyNexus())
 		{
-			if (unit->getOrderTargetPosition() != (Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2)
+			if (unit->getOrderTargetPosition() != (Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2 && unit->getDistance((Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2) > 64)
 			{
 				unit->move((Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2);
 			}
@@ -316,7 +314,7 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 			closestP = position;
 		}
 	}
-	if (unit->getOrderTargetPosition() != closestP)
+	if (unit->getOrderTargetPosition() != closestP && unit->getDistance(closestP) > 64)
 	{
 		unit->move(closestP);
 	}

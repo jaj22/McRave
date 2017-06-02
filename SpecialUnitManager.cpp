@@ -17,26 +17,26 @@ void SpecialUnitTrackerClass::updateArbiters()
 {
 	for (auto & u : myArbiters)
 	{
-		int initial_x = TilePosition(u.second.getPosition()).x;
-		int initial_y = TilePosition(u.second.getPosition()).y;
-		Position newDestination = u.second.getDestination();
-		double closestD = u.second.getDestination().getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
-		for (int x = initial_x - 12; x <= initial_x + 12; x++)
+		WalkPosition start = u.second.getMiniTile();
+		Position newDestination = u.second.getPosition();
+		double closestD = 0;
+		for (int x = start.x - 100; x <= start.x + 100; x++)
 		{
-			for (int y = initial_y - 12; y <= initial_y + 12; y++)
+			for (int y = start.y - 100; y <= start.y + 100; y++)
 			{
-				if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight() && GridTracker::Instance().getArbiterGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0 && GridTracker::Instance().getACluster(x, y) > 0 && Position(TilePosition(x, y)).getDistance(TerrainTracker::Instance().getPlayerStartingPosition()) < closestD)
+				if (WalkPosition(x, y).isValid() && GridTracker::Instance().getACluster(x, y) > 0 && GridTracker::Instance().getArbiterGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && (Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD || closestD == 0))
 				{
-					newDestination = Position(TilePosition(x, y));
+					newDestination = Position(WalkPosition(x, y));
+					closestD = Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
 				}
 			}
 		}
-
-		// Move and update grids
+		// Move and update grids	
 		u.second.setDestination(newDestination);
-		u.first->move(newDestination);
+		u.first->move(newDestination);	
 		GridTracker::Instance().updateArbiterGrids();
 
+		// If there's a stasis target, cast stasis on it
 		Unit target = UnitTracker::Instance().getMyUnits()[u.first].getTarget();
 		if (target)
 		{
@@ -71,12 +71,12 @@ void SpecialUnitTrackerClass::updateObservers()
 		// TODO: Add enemy detection to optimal
 		WalkPosition start = u.second.getMiniTile();
 		Position newDestination = u.second.getPosition();
-		double closestD = u.second.getPosition().getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
-		for (int x = start.x - 50; x <= start.x + 50; x++)
+		double closestD = 0;
+		for (int x = start.x - 100; x <= start.x + 100; x++)
 		{
-			for (int y = start.y - 50; y <= start.y + 50; y++)
+			for (int y = start.y - 100; y <= start.y + 100; y++)
 			{
-				if (WalkPosition(x, y).isValid() && GridTracker::Instance().getACluster(x,y) > 0 && GridTracker::Instance().getObserverGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD)
+				if (WalkPosition(x, y).isValid() && GridTracker::Instance().getACluster(x,y) > 0 && GridTracker::Instance().getObserverGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && (Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD || closestD == 0))
 				{
 					newDestination = Position(WalkPosition(x, y));
 					closestD = Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition());

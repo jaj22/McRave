@@ -185,7 +185,7 @@ void GridTrackerClass::updateAllyGrids()
 		{
 			for (int x = start.x - 20; x <= start.x + 20 + u.second.getType().tileWidth() * 4; x++)
 			{
-				for (int y = start.y - 20; y <= start.y + 20 + u.second.getType().tileWidth() * 4; y++)
+				for (int y = start.y - 20; y <= start.y + 20 + u.second.getType().tileHeight() * 4; y++)
 				{
 					if (WalkPosition(x, y).isValid() && (u.second.getPosition() + Position(offsetX, offsetY)).getDistance(Position((x * 8 + offsetX), (y * 8 + offsetY))) <= 160)
 					{
@@ -385,17 +385,19 @@ void GridTrackerClass::updateEnemyGrids()
 void GridTrackerClass::updateNeutralGrids()
 {
 	for (auto m : ResourceTracker::Instance().getMyMinerals())
+	{
 		// Update resource grid
 		for (int x = m.second.getTilePosition().x - 5; x < m.second.getTilePosition().x + m.second.getType().tileWidth() + 5; x++)
 		{
 			for (int y = m.second.getTilePosition().y - 5; y < m.second.getTilePosition().y + m.second.getType().tileHeight() + 5; y++)
 			{
-				if (Position(NexusTracker::Instance().getMyNexus()[m.second.getClosestNexus()].getCannonPosition()).getDistance(Position(TilePosition(x, y))) <= 192 && TilePosition(x, y).isValid() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
+				if (Position(NexusTracker::Instance().getMyNexus()[m.second.getClosestNexus()].getCannonPosition()).getDistance(Position(TilePosition(x, y))) <= 192 && TilePosition(x, y).isValid() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
-				}				
+				}
 			}
 		}
+	}
 	for (auto g : ResourceTracker::Instance().getMyGas())
 	{
 		// Update resource grid
@@ -403,7 +405,7 @@ void GridTrackerClass::updateNeutralGrids()
 		{
 			for (int y = g.second.getTilePosition().y - 5; y < g.second.getTilePosition().y + g.second.getType().tileHeight() + 5; y++)
 			{
-				if (Position(NexusTracker::Instance().getMyNexus()[g.second.getClosestNexus()].getCannonPosition()).getDistance(Position(TilePosition(x, y))) <= 256 && TilePosition(x, y).isValid() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()) && Position(TilePosition(x, y)).getDistance(g.second.getPosition()) < 200 && Position(TilePosition(x, y)).getDistance(g.second.getClosestNexus()->getPosition()) < 200)
+				if (Position(NexusTracker::Instance().getMyNexus()[g.second.getClosestNexus()].getCannonPosition()).getDistance(Position(TilePosition(x, y))) <= 256 && TilePosition(x, y).isValid() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
 				}

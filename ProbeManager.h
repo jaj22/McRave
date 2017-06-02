@@ -28,6 +28,7 @@ public:
 	void scoutProbe();
 	void enforceAssignments();
 	void exploreArea(Unit);
+	void avoidEnemy(Unit, Unit);
 };
 
 typedef Singleton<ProbeTrackerClass> ProbeTracker;
