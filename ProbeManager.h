@@ -7,6 +7,7 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
+using namespace UnitTypes;
 
 class ProbeTrackerClass
 {
@@ -29,6 +30,8 @@ public:
 	void enforceAssignments();
 	void exploreArea(Unit);
 	void avoidEnemy(Unit);
+
+	Unit getClosestProbe(Position);
 };
 
 typedef Singleton<ProbeTrackerClass> ProbeTracker;

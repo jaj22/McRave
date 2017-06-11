@@ -5,13 +5,14 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
+using namespace UnitTypes;
 
 // Class for storing information about all units
 class UnitInfoClass {
-	double strength, maxStrength, local, groundRange, airRange, priority, speed;
+	double strength, maxStrength, local, groundRange, airRange, priority, groundDamage, airDamage, speed;
 	int deadFrame, strategy, lastAttackFrame, currentGoal;
 	Position position, targetPosition;
-	WalkPosition miniTile;	
+	WalkPosition miniTile;
 	Unit target;
 	UnitType type;
 	UnitCommandType command;
@@ -29,6 +30,8 @@ public:
 	double getGroundRange() { return groundRange; }
 	double getAirRange() { return airRange; }
 	double getPriority() { return priority; }
+	double getGroundDamage(){ return groundDamage; }
+	double getAirDamage() { return airDamage; }
 	double getSpeed() { return speed; }
 	UnitCommandType getCommand() { return command; }
 	Unit getTarget() { return target; }
@@ -48,6 +51,8 @@ public:
 	void setGroundRange(double newGroundRange) { groundRange = newGroundRange; }
 	void setAirRange(double newAirRange) { airRange = newAirRange; }
 	void setPriority(double newPriority) { priority = newPriority; }
+	void setGroundDamage(double newGroundDamage) { groundDamage = newGroundDamage; }
+	void setAirDamage(double newAirDamage) { airDamage = newAirDamage; }
 	void setSpeed(double newSpeed) { speed = newSpeed; }
 	void setCommand(UnitCommandType newCommand) { command = newCommand; }
 	void setTarget(Unit newTarget){ target = newTarget; }

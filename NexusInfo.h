@@ -5,25 +5,28 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
+using namespace UnitTypes;
 
 class NexusInfo{
 	int cannonCount;
 	TilePosition cannonPosition, nexusTilePosition;
+	Position nexusPosition;
 	BWTA::Region* region;
 public:
 	// Constructors
 	NexusInfo();
-	NexusInfo(int, TilePosition, TilePosition);
 
 	// Accessors
-	int getCannonCount();
-	TilePosition getCannonPosition();
-	BWTA::Region* getRegion();
+	int getCannonCount() { return cannonCount; }
+	TilePosition getCannonPosition() { return cannonPosition; }
 	TilePosition getTilePosition() { return nexusTilePosition; }
+	Position getPosition() { return nexusPosition; }
+	BWTA::Region* getRegion() { return region; }
 
 	// Mutators
-	void setCannonCount(int newCount);
-	void setCannonPosition(TilePosition newTile);
-	void setRegion(BWTA::Region* newRegion);
+	void setCannonCount(int newCount) { cannonCount = newCount; }
+	void setCannonPosition(TilePosition newCannonPosition) { cannonPosition = newCannonPosition; }
 	void setNexusTilePosition(TilePosition newTilePosition) { nexusTilePosition = newTilePosition; }
+	void setPosition(Position newPosition) { nexusPosition = newPosition; }
+	void setRegion(BWTA::Region* newRegion) { region = newRegion; }
 };

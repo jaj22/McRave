@@ -18,19 +18,19 @@ void StrategyTrackerClass::updateAlly()
 
 	// Check through all alive units or units dead within 500 frames
 	for (auto &u : UnitTracker::Instance().getMyUnits())
-	{	
+	{
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
-		{			
+		{
 			// Strength based calculations ignore workers and buildings
 			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
 				// Add strength				
 				globalAllyStrength += u.second.getStrength();
-								
+
 				// Set last command frame
 				if (u.first->isAttackFrame())
-				{					
+				{
 					u.second.setLastAttackFrame(Broodwar->getFrameCount());
 				}
 
@@ -38,7 +38,7 @@ void StrategyTrackerClass::updateAlly()
 				if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None && u.first->getDistance(u.second.getTargetPosition()) < 500)
 				{
 					Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), Broodwar->self()->getColor());
-					Broodwar->drawBoxMap(u.second.getTargetPosition() - Position(4,4), u.second.getTargetPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
+					Broodwar->drawBoxMap(u.second.getTargetPosition() - Position(4, 4), u.second.getTargetPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
 				}
 				if (u.second.getLocal() < 0)
 				{
@@ -51,7 +51,7 @@ void StrategyTrackerClass::updateAlly()
 				else
 				{
 					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Text::Default, u.second.getLocal());
-				}				
+				}
 			}
 		}
 		else
@@ -105,7 +105,7 @@ void StrategyTrackerClass::updateEnemy()
 				Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getType().height() / 2), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
 			}
 
-			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());				
+			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());
 		}
 
 		// If unit is dead
@@ -130,6 +130,16 @@ void StrategyTrackerClass::updateComposition()
 		unit.second = 0;
 	}
 
+	// Check if our supply is high enough to hold the ramp or the minerals
+	if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3 || Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1)
+	{
+		zealotWall = true;
+	}
+	else
+	{
+		zealotWall = false;
+	}
+
 	for (auto &t : enemyComposition)
 	{
 		// For each type, add a score to production based on the unit count divided by our current unit count
@@ -146,14 +156,28 @@ void StrategyTrackerClass::updateComposition()
 			invis = true;
 		}
 
-		// If we are being 2 gate rushed, make a shield battery
-		if (ProbeTracker::Instance().isScouting() && t.first == UnitTypes::Protoss_Gateway && t.second >= 2 && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end())
-		{			
-			rush = true;
+		// Check for early rushes before we get goon range
+		if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
+		{
+			// If we are being 2 gate rushed or proxy rushed, make a shield battery
+			if (ProbeTracker::Instance().isScouting() && t.first == UnitTypes::Protoss_Gateway && (t.second >= 2 || t.second == 0) && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end() && TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
+			{
+				rush = true;
+			}
+
+			// If we are being 4/5 pooled, make a shield battery
+			if (ProbeTracker::Instance().isScouting() && t.first == UnitTypes::Zerg_Zergling && t.second >= 4 && enemyComposition[Zerg_Drone] <= 6)
+			{
+				rush = true;
+			}
+		}
+		else
+		{
+			rush = false;
 		}
 
 		// Force expand based on enemy composition
-		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2)
+		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2 && Broodwar->getFrameCount() < 10000)
 		{
 			if (t.first == UnitTypes::Terran_Bunker || (t.first == UnitTypes::Zerg_Sunken_Colony && t.second >= 2) || (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2))
 			{

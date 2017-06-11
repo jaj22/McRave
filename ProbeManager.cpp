@@ -27,19 +27,20 @@ void ProbeTrackerClass::storeProbe(Unit unit)
 
 void ProbeTrackerClass::removeProbe(Unit probe)
 {
-	if (ResourceTracker::Instance().getMyGas().find(myProbes[probe].getTarget()) != ResourceTracker::Instance().getMyGas().end())
+	if (ResourceTracker::Instance().getMyGas().find(myProbes[probe].getResource()) != ResourceTracker::Instance().getMyGas().end())
 	{
-		ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].getGathererCount() - 1);
+		ResourceTracker::Instance().getMyGas()[myProbes[probe].getResource()].setGathererCount(ResourceTracker::Instance().getMyGas()[myProbes[probe].getResource()].getGathererCount() - 1);
 	}
-	if (ResourceTracker::Instance().getMyMinerals().find(myProbes[probe].getTarget()) != ResourceTracker::Instance().getMyMinerals().end())
+	if (ResourceTracker::Instance().getMyMinerals().find(myProbes[probe].getResource()) != ResourceTracker::Instance().getMyMinerals().end())
 	{
-		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].getGathererCount() - 1);
+		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getResource()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getResource()].getGathererCount() - 1);
 	}
 	myProbes.erase(probe);
 
 	// If scouting probe died, assume where enemy is based on death location
 	if (probe == scout && isScouting())
 	{
+		scout = nullptr;
 		scouting = false;
 		if (TerrainTracker::Instance().getEnemyBasePositions().size() == 0)
 		{
@@ -67,7 +68,7 @@ void ProbeTrackerClass::assignProbe(Unit probe)
 		if (gas.second.getType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
 		{
 			gas.second.setGathererCount(gas.second.getGathererCount() + 1);
-			myProbes[probe].setTarget(gas.first);
+			myProbes[probe].setResource(gas.first);
 			return;
 		}
 	}
@@ -80,7 +81,7 @@ void ProbeTrackerClass::assignProbe(Unit probe)
 			if (mineral.second.getGathererCount() < cnt)
 			{
 				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
-				myProbes[probe].setTarget(mineral.first);
+				myProbes[probe].setResource(mineral.first);
 				return;
 			}
 		}
@@ -91,20 +92,23 @@ void ProbeTrackerClass::assignProbe(Unit probe)
 
 void ProbeTrackerClass::reAssignProbe(Unit probe)
 {
-	if (ResourceTracker::Instance().getMyGas().find(myProbes[probe].getTarget()) != ResourceTracker::Instance().getMyGas().end())
+	if (ResourceTracker::Instance().getMyGas().find(myProbes[probe].getResource()) != ResourceTracker::Instance().getMyGas().end())
 	{
-		ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyGas()[myProbes[probe].getTarget()].getGathererCount() - 1);
+		ResourceTracker::Instance().getMyGas()[myProbes[probe].getResource()].setGathererCount(ResourceTracker::Instance().getMyGas()[myProbes[probe].getResource()].getGathererCount() - 1);
 	}
-	if (ResourceTracker::Instance().getMyMinerals().find(myProbes[probe].getTarget()) != ResourceTracker::Instance().getMyMinerals().end())
+	if (ResourceTracker::Instance().getMyMinerals().find(myProbes[probe].getResource()) != ResourceTracker::Instance().getMyMinerals().end())
 	{
-		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getTarget()].getGathererCount() - 1);
+		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getResource()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getResource()].getGathererCount() - 1);
 	}
-
 	assignProbe(probe);
 }
 
 void ProbeTrackerClass::scoutProbe()
 {
+	if (!scouting)
+	{
+		return;
+	}
 	for (auto &u : myProbes)
 	{
 		// Crappy scouting method
@@ -178,17 +182,13 @@ void ProbeTrackerClass::enforceAssignments()
 	// For each Probe mapped to gather minerals
 	for (auto &u : myProbes)
 	{
-		if (u.first->exists() && u.first->getPlayer() != Broodwar->self())
-		{
-			Broodwar << "Test" << endl;
-		}
-		if (ResourceTracker::Instance().getGasNeeded() > 0)
+		if (ResourceTracker::Instance().getGasNeeded() > 0 && !StrategyTracker::Instance().isRush())
 		{
 			reAssignProbe(u.first);
 			ResourceTracker::Instance().setGasNeeded(ResourceTracker::Instance().getGasNeeded() - 1);
 		}
 		// If no valid target, try to get a new one
-		if (!u.second.getTarget())
+		if (!u.second.getResource())
 		{
 			assignProbe(u.first);
 			// Any idle Probes can gather closest mineral field until they are assigned again
@@ -201,32 +201,44 @@ void ProbeTrackerClass::enforceAssignments()
 		}
 
 		// Attack units in mineral line
-		if (GridTracker::Instance().getResourceGrid(u.first->getTilePosition().x, u.first->getTilePosition().y) > 0 && u.first->getUnitsInRadius(64, Filter::IsEnemy).size() > 0 && (u.first->getHitPoints() + u.first->getShields()) > 20)
+		if (Broodwar->getFrameCount() - u.second.getLastGatherFrame() <= 25 && GridTracker::Instance().getEGroundGrid(u.second.getMiniTile().x, u.second.getMiniTile().y) > 0)
 		{
-			if (u.first->getLastCommand().getType() != UnitCommandTypes::Attack_Unit)
+			if (u.second.getTarget() == nullptr)
 			{
-				u.first->attack(u.first->getClosestUnit(Filter::IsEnemy, 320));
-			}			
-			continue;
-		}		
+				u.second.setTarget(u.first->getClosestUnit(Filter::IsEnemy && !Filter::IsFlying, 320));
+			}
+			else if (u.second.getTarget()->exists() && (GridTracker::Instance().getResourceGrid(u.second.getTarget()->getTilePosition().x, u.second.getTarget()->getTilePosition().y) > 0/* || (!u.second.getTarget()->getType().isWorker() && GridTracker::Instance().getNexusGrid(u.second.getTarget()->getTilePosition().x, u.second.getTarget()->getTilePosition().y) > 0)*/))
+			{
+				if ((u.first->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && u.first->getLastCommand().getTarget() && !u.first->getLastCommand().getTarget()->exists()) || (u.first->getLastCommand().getType() != UnitCommandTypes::Attack_Unit))
+				{
+					u.first->attack(u.second.getTarget());
+				}
+				continue;
+			}
+		}
 
 		// Else command probe
 		if (u.first && u.first->exists())
 		{
 			// Draw on every frame
-			if (u.first && u.second.getTarget())
+			if (u.first && u.second.getResource())
 			{
-				Broodwar->drawLineMap(u.first->getPosition(), u.second.getTarget()->getPosition(), Broodwar->self()->getColor());
+				Broodwar->drawLineMap(u.first->getPosition(), u.second.getResource()->getPosition(), Broodwar->self()->getColor());
 			}
-			
+
+			// If we have been given a command this frame already, continue
+			if (!u.first->isIdle() && (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build))
+			{
+				continue;
+			}
+
 			// If idle and carrying gas or minerals, return cargo			
 			if (u.first->isCarryingGas() || u.first->isCarryingMinerals())
 			{
-				if (u.first->getLastCommand().getType() == UnitCommandTypes::Return_Cargo)
+				if (u.first->getLastCommand().getType() != UnitCommandTypes::Return_Cargo)
 				{
-					continue;
+					u.first->returnCargo();
 				}
-				u.first->returnCargo();
 				continue;
 			}
 
@@ -243,34 +255,32 @@ void ProbeTrackerClass::enforceAssignments()
 				}
 			}
 
-			// If we have been given a command this frame already, continue
-			if (!u.first->isIdle() && (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build))
-			{
-				continue;
-			}
-
-
 			// If not targeting the mineral field the Probe is mapped to
 			if (!u.first->isCarryingGas() && !u.first->isCarryingMinerals())
 			{
-				if ((u.first->isGatheringMinerals() || u.first->isGatheringGas()) && u.first->getTarget() == u.second.getTarget())
+				if ((u.first->isGatheringMinerals() || u.first->isGatheringGas()) && u.first->getTarget() == u.second.getResource())
 				{
+					u.second.setLastGatherFrame(Broodwar->getFrameCount());
 					continue;
 				}
-				// If the Probe has a target
-				if (u.first->getTarget())
+				// If the probes current target has a resource count of 0 (mineral blocking a ramp), let Probe continue mining it
+				if (u.first->getTarget() && u.first->getTarget()->getType().isMineralField() && u.first->getTarget()->getResources() == 0)
 				{
-					// If the target has a resource count of 0 (mineral blocking a ramp), let Probe continue mining it
-					if (u.first->getTarget()->getResources() == 0)
-					{
-						continue;
-					}
+					continue;
 				}
 				// If the mineral field is in vision and no target, force to gather from the assigned mineral field
-				if (u.second.getTarget() && u.second.getTarget()->exists())
+				if (u.second.getResource())
 				{
-					u.first->gather(u.second.getTarget());
-					continue;
+					if (u.second.getResource()->exists())
+					{
+						u.first->gather(u.second.getResource());
+						u.second.setLastGatherFrame(Broodwar->getFrameCount());
+						continue;
+					}
+					else
+					{
+						// Move to the mineral field
+					}
 				}
 			}
 		}
@@ -363,4 +373,27 @@ void ProbeTrackerClass::avoidEnemy(Unit probe)
 		}
 	}
 	return;
+}
+
+Unit ProbeTrackerClass::getClosestProbe(Position here)
+{
+	Unit closestProbe = nullptr;
+	double closestD = 0.0;
+	for (auto probe : myProbes)
+	{
+		if (probe.first->getLastCommand().getType() == UnitCommandTypes::Move || probe.first->getLastCommand().getType() == UnitCommandTypes::Build)
+		{
+			continue;
+		}
+		if (probe.first->getLastCommand().getType() == UnitCommandTypes::Gather && probe.first->getLastCommand().getTarget()->exists() && probe.first->getLastCommand().getTarget()->getInitialResources() == 0)
+		{
+			continue;
+		}
+		if (probe.first->getDistance(here) < closestD || closestD == 0.0)
+		{
+			closestProbe = probe.first;
+			closestD = probe.first->getDistance(here);
+		}
+	}
+	return closestProbe;
 }

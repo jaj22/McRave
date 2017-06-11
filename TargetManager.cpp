@@ -2,26 +2,26 @@
 #include "UnitManager.h"
 #include "GridManager.h"
 
-void TargetTrackerClass::update()
+Unit TargetTrackerClass::getTarget(Unit unit)
 {
-	// Update all unit targets
-	for (auto &u : UnitTracker::Instance().getMyUnits())
+	if (unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_High_Templar || unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
-		if (u.second.getType() == UnitTypes::Protoss_Reaver || u.second.getType() == UnitTypes::Protoss_High_Templar || u.second.getType() == UnitTypes::Protoss_Arbiter)
-		{
-			unitGetClusterTarget(u.first);
-		}
-		else
-		{
-			unitGetTarget(u.first);
-		}
+		return clusterTarget(unit);
+	}
+	else if (unit->getType() == UnitTypes::Protoss_Observer || unit->getType() == UnitTypes::Protoss_Shuttle)
+	{
+		return nullptr;
+	}
+	else
+	{
+		return singleTarget(unit);
 	}
 }
 
-void TargetTrackerClass::unitGetTarget(Unit unit)
+Unit TargetTrackerClass::singleTarget(Unit unit)
 {
 	double highest = 0.0, thisUnit = 0.0;
-	Unit target = nullptr;	
+	Unit target = nullptr;
 
 	for (auto &u : UnitTracker::Instance().getEnUnits())
 	{
@@ -41,7 +41,7 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 		{
 			continue;
 		}
-		
+
 		// If the unit is invis and undetected, ignore it
 		if (u.first->exists() && (u.first->isCloaked() || u.first->isBurrowed()) && !u.first->isDetected())
 		{
@@ -59,24 +59,23 @@ void TargetTrackerClass::unitGetTarget(Unit unit)
 			thisUnit = 0.1*u.second.getPriority() / distance;
 		}
 
+		if (u.second.getType().isBuilding())
+		{
+			thisUnit = thisUnit * 0.25;
+		}
+
 		// If this is the strongest enemy around, target it
 		if (thisUnit > highest || highest == 0.0)
 		{
 			target = u.first;
 			highest = thisUnit;
 		}
-	}
-
-	// If the target is not nullptr, store
-	if (target)
-	{
-		UnitTracker::Instance().getMyUnits()[unit].setTarget(target);
-		UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(UnitTracker::Instance().getEnUnits()[target].getPosition());
-	}
-	return;
+	}	
+	return target;
 }
 
-void TargetTrackerClass::unitGetClusterTarget(Unit unit)
+
+Unit TargetTrackerClass::clusterTarget(Unit unit)
 {
 	// Cluster variables, range of spells is 10
 	int highest = 0, range = 10;
@@ -91,16 +90,16 @@ void TargetTrackerClass::unitGetClusterTarget(Unit unit)
 	}
 
 	// Iterate through every tile in range to see what clusters are in range
-	for (int x = unit->getTilePosition().x - range; x <= unit->getTargetPosition().x + range; x++)
+	for (int x = unit->getTilePosition().x - range; x <= unit->getTilePosition().x + range; x++)
 	{
 		for (int y = unit->getTilePosition().y - range; y <= unit->getTilePosition().y + range; y++)
 		{
-			if (x >= 0 && x <= Broodwar->mapWidth() && y >= 0 && y <= Broodwar->mapHeight())
+			if (TilePosition(x, y).isValid())
 			{
 				// Reavers want ground clusters
 				if (unit->getType() == UnitTypes::Protoss_Reaver)
 				{
-					if (GridTracker::Instance().getEGroundCluster(x,y) > highest)
+					if (GridTracker::Instance().getEGroundCluster(x, y) > highest)
 					{
 						highest = GridTracker::Instance().getEGroundCluster(x, y);
 						clusterTile = TilePosition(x, y);
@@ -132,32 +131,32 @@ void TargetTrackerClass::unitGetClusterTarget(Unit unit)
 			}
 		}
 	}
-	// If there is no cluster, return a getTarget unit
+	// If there is no cluster, return a single target for Reavers
 	if (highest < 2)
 	{
 		if (unit->getType() == UnitTypes::Protoss_Reaver)
 		{
-			return TargetTrackerClass::unitGetTarget(unit);
+			return singleTarget(unit);
 		}
 		else
 		{
-			return;
+			return nullptr;
 		}
 	}
 	// Return ground cluster for Reavers
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
-		UnitTracker::Instance().getMyUnits()[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 128));
+		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 256);
 	}
 	// Return tank cluster for Arbiters
 	else if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
-		UnitTracker::Instance().getMyUnits()[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128));
+		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128);
 	}
 	// Return unit cluster for High Templars
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
-		UnitTracker::Instance().getMyUnits()[unit].setTarget(Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding, 128));
+		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && !Filter::IsUnderStorm, 128);
 	}
-	return;
+	return nullptr;
 }

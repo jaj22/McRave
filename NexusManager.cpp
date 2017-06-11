@@ -28,20 +28,18 @@ TilePosition staticDefensePosition(Unit nexus)
 
 void NexusTrackerClass::update()
 {
-	storeNexus();
 	trainProbes();
 	updateDefenses();
 }
 
-void NexusTrackerClass::storeNexus()
+void NexusTrackerClass::storeNexus(Unit nexus)
 {
-	for (auto nexus : Broodwar->self()->getUnits())
+	if (myNexus.find(nexus) == myNexus.end())
 	{
-		if (nexus->getType() == UnitTypes::Protoss_Nexus && myNexus.find(nexus) == myNexus.end())
-		{
-			NexusInfo newUnit(nexus->getUnitsInRadius(320, Filter::GetType == UnitTypes::Protoss_Photon_Cannon).size(), staticDefensePosition(nexus), nexus->getTilePosition());
-			myNexus[nexus] = newUnit;
-		}
+		myNexus[nexus].setCannonPosition(staticDefensePosition(nexus));
+		myNexus[nexus].setNexusTilePosition(nexus->getTilePosition());
+		myNexus[nexus].setRegion(getRegion(nexus->getTilePosition()));
+		myNexus[nexus].setPosition(nexus->getPosition());
 	}
 }
 
@@ -122,5 +120,3 @@ void NexusTrackerClass::updateDefenses()
 	//	}
 	//}
 }
-
-

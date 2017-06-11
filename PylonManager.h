@@ -6,16 +6,14 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
-
-// Credits to Andrew Smith, the author of Skynet, for this pylon power checker
-// Broodwar has serious issues with figuring out if a building can be powered at a location
-// This pylon tracker helps by hardcoding positions around a pylon that are suitable locations
+using namespace UnitTypes;
 
 class PylonTrackerClass
 {
-	map<TilePosition, int> smallPowerSites;
-	map<TilePosition, int> mediumPowerSites;
-	map<TilePosition, int> largePowerSites;
+	map<TilePosition, int> smallLocations;
+	map<TilePosition, int> mediumLocations;
+	map<TilePosition, int> largeLocations;
+	set<Unit> myPylons;
 public:
 	void update();
 	void addToGrid(Unit);

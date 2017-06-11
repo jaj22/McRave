@@ -7,6 +7,7 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
+using namespace UnitTypes;
 
 class NexusTrackerClass
 {
@@ -17,7 +18,7 @@ public:
 	map <Unit, NexusInfo>& getMyNexus() { return myNexus; }
 
 	void update();
-	void storeNexus();
+	void storeNexus(Unit);
 	void removeNexus(Unit);
 	void trainProbes();
 	void updateDefenses();

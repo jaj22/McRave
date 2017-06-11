@@ -6,16 +6,11 @@
 #include "ResourceManager.h"
 #include "ProbeManager.h"
 
-
-using namespace BWAPI;
-using namespace std;
-using namespace BWTA;
-
 bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
 	int offset = 0;
-	// Offset for first 2 pylons
-	if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) == 0)
+	// Offset for first pylon
+	if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
 	{
 		if (TerrainTracker::Instance().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 640)
 		{
@@ -208,24 +203,10 @@ void BuildingTrackerClass::queueBuildings()
 		if (b.second > Broodwar->self()->visibleUnitCount(b.first) && queuedBuildings.find(b.first) == queuedBuildings.end())
 		{
 			TilePosition here = BuildingTracker::Instance().getBuildLocation(b.first);
-			double closestD = 0;
-			Unit builder;
-			for (auto & u : ProbeTracker::Instance().getMyProbes())
-			{
-				if (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build)
-				{
-					continue;
-				}
-				if (u.first && u.first != ProbeTracker::Instance().getScout() && u.first->exists() && u.first->getDistance(Position(here)) < closestD || closestD == 0)
-				{
-					builder = u.first;
-					closestD = u.first->getDistance(Position(here));
-				}
-			}
-
-			//Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
+			Unit builder = ProbeTracker::Instance().getClosestProbe(Position(here));			
+		
 			// If the Tile Position and Builder are valid
-			if (here != TilePositions::None && builder)
+			if (here.isValid() && builder)
 			{
 				// Queue at this building type a pair of building placement and builder
 				queuedBuildings.emplace(b.first, make_pair(here, builder));
@@ -247,39 +228,21 @@ void BuildingTrackerClass::constructBuildings()
 		// If probe died, replace the probe
 		if (!b.second.second || !b.second.second->exists())
 		{
-			double closestD = 0;
-			Unit builder = b.second.second;
-			for (auto & u : ProbeTracker::Instance().getMyProbes())
-			{
-				if (u.first->getLastCommand().getType() == UnitCommandTypes::Move || u.first->getLastCommand().getType() == UnitCommandTypes::Build)
-				{
-					continue;
-				}
-				if (u.first && u.first != ProbeTracker::Instance().getScout() && u.first->exists() && u.first->getDistance(Position(b.second.first)) < closestD || closestD == 0)
-				{
-					builder = u.first;
-					closestD = u.first->getDistance(Position(b.second.first));
-				}
-			}
+			b.second.second = ProbeTracker::Instance().getClosestProbe(Position(b.second.first));
 			continue;
 		}
 
-		//// If probe is stuck, replace probe and tell probe to go back to mining
-		//if (b.second.second->isStuck())
-		//{
-		//	b.second.second->stop();
-		//	b.second.second = Broodwar->getClosestUnit(Position(b.second.first), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
-		//	continue;
-		//}
-
-		// If the Probe has a target
-		if (b.second.second->getTarget())
+		// If placement is invalid, replace
+		if (!b.second.first.isValid())
 		{
-			// If the target has a resource count of 0 (mineral blocking a ramp), let Probe continue mining it
-			if (b.second.second->getTarget()->getResources() == 0)
-			{
-				continue;
-			}
+			b.second.first = BuildingTracker::Instance().getBuildLocation(b.first);
+			continue;
+		}		
+
+		// If the Probe is mining a boulder, replace
+		if (b.second.second->getTarget() && b.second.second->getTarget()->getType().isMineralField() && b.second.second->getTarget()->getResources() == 0)
+		{
+			continue;
 		}
 
 		// If drawing is on, draw a box around the build position			

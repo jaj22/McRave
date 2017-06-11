@@ -8,6 +8,8 @@ UnitInfoClass::UnitInfoClass()
 	groundRange = 0.0;
 	airRange = 0.0;
 	priority = 0.0;
+	groundDamage = 0.0;
+	airDamage = 0.0;
 	speed = 0.0;
 	deadFrame = 0;
 	strategy = 0;

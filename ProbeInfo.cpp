@@ -1,12 +1,9 @@
 #include "ProbeInfo.h"
 
-// Constructors
 ProbeInfo::ProbeInfo()
 {
 	target = nullptr;
+	resource = nullptr;
 	miniTile = WalkPositions::None;
-}
-ProbeInfo::~ProbeInfo()
-{
-
+	lastGatherFrame = 0;
 }

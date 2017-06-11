@@ -197,6 +197,30 @@ double UnitUtilClass::getTrueAirRange(UnitType unitType, Player who)
 	return double(unitType.airWeapon().maxRange());
 }
 
+double UnitUtilClass::getTrueGroundDamage(UnitType unitType, Player who)
+{
+	if (unitType == UnitTypes::Protoss_Reaver)
+	{
+		if (who->getUpgradeLevel(UpgradeTypes::Scarab_Damage))
+		{
+			return 125.00;
+		}
+		else
+		{
+			return 100.00;
+		}
+	}
+	else
+	{
+		return unitType.groundWeapon().damageAmount();
+	}
+}
+
+double UnitUtilClass::getTrueAirDamage(UnitType unitType, Player who)
+{
+	return unitType.airWeapon().damageAmount();
+}
+
 double UnitUtilClass::getPriority(UnitType unitType)
 {
 	// Low strength units with high threat	
@@ -205,7 +229,12 @@ double UnitUtilClass::getPriority(UnitType unitType)
 		return 50.0;
 	}
 	// Reduce the value of a bunker so units don't only target bunkers, since they can be repaired easily
-	if (unitType == UnitTypes::Terran_Bunker)
+	else if (unitType == UnitTypes::Terran_Bunker)
+	{
+		return 2.5;
+	}
+	// Reduce the value of carriers so interceptors are killed instead
+	else if (unitType == UnitTypes::Protoss_Carrier)
 	{
 		return 2.5;
 	}

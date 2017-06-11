@@ -16,6 +16,7 @@ class StrategyTrackerClass
 	bool fastExpand = false;
 	bool invis = false;
 	bool rush = false;
+	bool zealotWall = false;
 public:
 	double globalAlly() { return globalAllyStrength; }
 	double globalEnemy() {	return globalEnemyStrength;	}
@@ -24,6 +25,7 @@ public:
 	bool setFastExpand(bool FE) { fastExpand = FE; }
 	bool needDetection() { return invis; }	
 	bool isRush() { return rush; }
+	bool needZealotWall() { return zealotWall; }
 	
 	// Updating
 	void update();

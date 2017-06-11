@@ -18,7 +18,7 @@ void BuildOrderTrackerClass::update()
 	buildingDesired[UnitTypes::Protoss_Nexus] = max(buildingDesired[UnitTypes::Protoss_Nexus], Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus));
 
 	// If we are saturated, expand
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0 && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
+	if (Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
 	}
@@ -36,7 +36,7 @@ void BuildOrderTrackerClass::update()
 	}
 
 	// If no idle gates and we are floating minerals, add 1 more
-	if ((Broodwar->self()->minerals() > 800 || (Broodwar->self()->minerals() > 300 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
+	if ((Broodwar->self()->minerals() > 800 || (Broodwar->self()->minerals() > 200 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
 	{
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
@@ -72,7 +72,14 @@ void BuildOrderTrackerClass::update()
 		// IMPLEMENTING -- If Muta, mid build 2 (corsairs)
 	case Races::Enum::Zerg:
 		earlyBuild = 0;
-		midBuild = 0;
+		if (StrategyTracker::Instance().needDetection())
+		{
+			midBuild = 1;
+		}
+		else
+		{
+			midBuild = 0;
+		}
 		lateBuild = 1;		
 		break;
 
@@ -136,8 +143,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 	{
 	case 0:
 		// -- 2 Gate Core --
-		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 3);
-		buildingDesired[UnitTypes::Protoss_Assimilator] = supply >= 30;
+		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4);		
 		if (supply >= 20 && supply < 24)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
@@ -155,7 +161,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
 		}
 		if (supply >= 24)
-		{
+		{			
 			buildingDesired[UnitTypes::Protoss_Assimilator] = 1;
 		}		
 		if (supply >= 36)
@@ -165,7 +171,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 		if (supply >= 38)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
-		}
+		}	
 		//currentStrategy.assign("One Gate Core");
 		break;
 	case 2:
@@ -230,6 +236,7 @@ void BuildOrderTrackerClass::midBuilds()
 		}
 		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
 		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, buildingDesired[UnitTypes::Protoss_Observatory] + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
+		break;
 		//currentStrategy.assign("Range Robo Expand");
 	case 4:
 		// -- Speedlots	--	
@@ -267,8 +274,3 @@ void BuildOrderTrackerClass::lateBuilds()
 	}
 
 }
-
-// PvT range expand:
-//8 pylon, 10 gateway, 12 gas, 13 cyber, 15 pylon, 17 dragoon range, 18 gateway, 20 nexus, 20 2 dragoons, 24 pylon, 25 2 dragoons, 31 robo
-
-//  https://pastebin.com/Kq0GDyfi

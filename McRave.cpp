@@ -8,14 +8,15 @@
 #include "McRave.h"
 
 // IMPORTANT: Move to BWEM and ditch BWTA, too slow
-// DISABLED CURRENTLY: Shuttles, Cannons, DistanceGridHome
+// DISABLED CURRENTLY: Cannons
+
+// Take angles into account for micro?
+// Strict engage/disengage (local 2,3)?
 
 // TODOS:
-// Storage: buildings
 // Dijkstras theory for distance grid
 // Move stim research to strategy
 // One time supply increase instead of resetting?
-// Threatrange grid
 // Nexus update TODO:
 // Store region
 // If cannon was built in region, add to that Nexus
@@ -74,7 +75,6 @@ void McRave::onFrame()
 	StrategyTracker::Instance().update();
 	ProbeTracker::Instance().update();
 	UnitTracker::Instance().update();
-	TargetTracker::Instance().update();
 	SpecialUnitTracker::Instance().update();
 	CommandTracker::Instance().update();	
 	BuildOrderTracker::Instance().update();

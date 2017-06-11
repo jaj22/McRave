@@ -8,6 +8,7 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
+using namespace UnitTypes;
 using namespace BWEM;
 
 class UnitTrackerClass

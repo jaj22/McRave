@@ -5,6 +5,7 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
+using namespace UnitTypes;
 
 class ResourceInfo
 {

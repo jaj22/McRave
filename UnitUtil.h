@@ -6,6 +6,7 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
+using namespace UnitTypes;
 
 class UnitUtilClass
 {
@@ -16,6 +17,8 @@ public:
 	double getVisibleStrength(Unit);
 	double getTrueRange(UnitType, Player);
 	double getTrueAirRange(UnitType, Player);
+	double getTrueGroundDamage(UnitType, Player);
+	double getTrueAirDamage(UnitType, Player);
 	double getPriority(UnitType);
 	double getTrueSpeed(UnitType, Player);
 	WalkPosition getMiniTile(Unit);

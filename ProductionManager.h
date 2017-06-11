@@ -6,20 +6,21 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
+using namespace UnitTypes;
 
 class ProductionTrackerClass
 {
-	map <int, UnitType> idleBuildings;
-	map <int, UnitType> idleGates;
-	map <int, TechType> idleTech;
-	map <int, UpgradeType> idleUpgrade;
+	map <Unit, UnitType> idleBuildings;
+	map <Unit, UnitType> idleGates;
+	map <Unit, TechType> idleTech;
+	map <Unit, UpgradeType> idleUpgrade;
 	int reservedMineral, reservedGas;
 	bool noZealots = false;
 public:
-	map <int, UnitType>& getIdleBuildings() { return idleBuildings; }
-	map <int, UnitType>& getIdleGates() { return idleGates; }
-	map <int, TechType>& getIdleTech() { return idleTech; }
-	map <int, UpgradeType>& getIdleUpgrade() { return idleUpgrade; }
+	map <Unit, UnitType>& getIdleBuildings() { return idleBuildings; }
+	map <Unit, UnitType>& getIdleGates() { return idleGates; }
+	map <Unit, TechType>& getIdleTech() { return idleTech; }
+	map <Unit, UpgradeType>& getIdleUpgrade() { return idleUpgrade; }
 
 	int getReservedMineral() { return reservedMineral; }
 	int getReservedGas() { return reservedGas; }

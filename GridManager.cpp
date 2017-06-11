@@ -14,6 +14,7 @@ bool doOnce = true;
 void GridTrackerClass::reset()
 {
 	// For each tile, draw the current threat onto the tile
+	int center = 0;
 	for (int x = 0; x <= Broodwar->mapWidth(); x++)
 	{
 		for (int y = 0; y <= Broodwar->mapHeight(); y++)
@@ -52,6 +53,7 @@ void GridTrackerClass::reset()
 			reserveGrid[x][y] = 0;
 			nexusGrid[x][y] = 0;
 			pylonGrid[x][y] = 0;
+			batteryGrid[x][y] = 0;
 		}
 	}
 	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
@@ -106,26 +108,26 @@ void GridTrackerClass::reset()
 
 			/*if (distanceGridHome[x][y] > 0)
 			{
-				if (distanceGridHome[x][y] < 50)
-				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
-				}
-				else if (distanceGridHome[x][y] >= 50 && distanceGridHome[x][y] < 100)
-				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
-				}
-				else if (distanceGridHome[x][y] >= 100 && distanceGridHome[x][y] < 150)
-				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
-				}
-				else if (distanceGridHome[x][y] >= 150)
-				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
-				}
+			if (distanceGridHome[x][y] < 50)
+			{
+			Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Black);
+			}
+			else if (distanceGridHome[x][y] >= 50 && distanceGridHome[x][y] < 100)
+			{
+			Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Red);
+			}
+			else if (distanceGridHome[x][y] >= 100 && distanceGridHome[x][y] < 150)
+			{
+			Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Blue);
+			}
+			else if (distanceGridHome[x][y] >= 150)
+			{
+			Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::Green);
+			}
 			}
 			else if (distanceGridHome[x][y] < 0)
 			{
-				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::White);
+			Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Colors::White);
 			}*/
 
 			if (eGroundGrid[x][y] > 0)
@@ -140,6 +142,11 @@ void GridTrackerClass::reset()
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
 			}
+			if (eDetectorGrid[x][y] > 0)
+			{
+				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->enemy()->getColor());
+			}
+
 			if (observerGrid[x][y] > 0)
 			{
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
@@ -149,12 +156,20 @@ void GridTrackerClass::reset()
 				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
 			}
 
+			if (aClusterGrid[x][y] > center)
+			{
+				center = aClusterGrid[x][y];
+				armyCenter = Position(WalkPosition(x, y));
+			}
+
 			aClusterGrid[x][y] = 0;
 			antiMobilityGrid[x][y] = 0;
 			eGroundGrid[x][y] = 0.0;
 			eAirGrid[x][y] = 0.0;
 			eDistanceGrid[x][y] = 0.0;
 			observerGrid[x][y] = 0;
+			arbiterGrid[x][y] = 0;
+			eDetectorGrid[x][y] = 0;
 		}
 	}
 	return;
@@ -224,7 +239,10 @@ void GridTrackerClass::updateAllyGrids()
 			{
 				for (int y = startY - 2; y < 2 + startY + u.second.getType().tileHeight() * 4; y++)
 				{
-					antiMobilityGrid[x][y] = 1;
+					if (WalkPosition(x, y).isValid())
+					{
+						antiMobilityGrid[x][y] = 1;
+					}
 				}
 			}
 
@@ -239,16 +257,35 @@ void GridTrackerClass::updateAllyGrids()
 			{
 				for (int y = startY - offset; y < startY + u.second.getType().tileHeight() + offset; y++)
 				{
-					reserveGrid[x][y] = 1;
+					if (TilePosition(x, y).isValid())
+					{
+						reserveGrid[x][y] = 1;
+					}
 				}
 			}
 			if (u.second.getType() == UnitTypes::Protoss_Pylon)
 			{
 				for (int x = u.second.getTilePosition().x - 4; x < u.second.getTilePosition().x + u.second.getType().tileWidth() + 4; x++)
 				{
-					for (int y = u.second.getTilePosition().y - 4; y < u.second.getTilePosition().y + +u.second.getType().tileHeight() + 4; y++)
+					for (int y = u.second.getTilePosition().y - 4; y < u.second.getTilePosition().y + u.second.getType().tileHeight() + 4; y++)
 					{
-						pylonGrid[x][y] += 1;
+						if (TilePosition(x, y).isValid())
+						{
+							pylonGrid[x][y] += 1;
+						}
+					}
+				}
+			}
+			if (u.second.getType() == Protoss_Shield_Battery)
+			{
+				for (int x = u.second.getTilePosition().x - 10; x < u.second.getTilePosition().x + u.second.getType().tileWidth() + 10; x++)
+				{
+					for (int y = u.second.getTilePosition().y - 10; y < u.second.getTilePosition().y + u.second.getType().tileHeight() + 10; y++)
+					{
+						if (TilePosition(x, y).isValid() && u.first->getDistance(Position(TilePosition(x, y))) < 320)
+						{
+							batteryGrid[x][y] = 1;
+						}
 					}
 				}
 			}
@@ -273,7 +310,7 @@ void GridTrackerClass::updateAllyGrids()
 	// Nexus grid 
 	for (auto & nexus : NexusTracker::Instance().getMyNexus())
 	{
-		int offset = 10;
+		int offset = 8;
 		for (int x = nexus.second.getTilePosition().x - offset; x < nexus.second.getTilePosition().x + 4 + offset; x++)
 		{
 			for (int y = nexus.second.getTilePosition().y - offset; y < nexus.second.getTilePosition().y + 3 + offset; y++)
@@ -316,8 +353,23 @@ void GridTrackerClass::updateEnemyGrids()
 			}
 		}
 
+		// Detector grid
+		if (u.second.getType() == UnitTypes::Protoss_Observer || u.second.getType() == UnitTypes::Protoss_Photon_Cannon || u.second.getType() == UnitTypes::Zerg_Overlord || u.second.getType() == UnitTypes::Zerg_Spore_Colony || u.second.getType() == UnitTypes::Terran_Science_Vessel || u.second.getType() == UnitTypes::Terran_Missile_Turret)
+		{
+			for (int x = u.second.getMiniTile().x - 40; x <= 2 + u.second.getMiniTile().x + 40; x++)
+			{
+				for (int y = u.second.getMiniTile().y - 40; y <= 2 + u.second.getMiniTile().y + 40; y++)
+				{
+					if (WalkPosition(x, y).isValid() && Position(WalkPosition(x, y)).getDistance(u.second.getPosition()) < u.second.getType().sightRange())
+					{
+						eDetectorGrid[x][y] = 1;
+					}
+				}
+			}
+		}
+
 		// Distance threat grids and strength grids
-		if (u.second.getDeadFrame() == 0 && !u.second.getType().isBuilding())
+		if (u.second.getDeadFrame() == 0)
 		{
 			for (int x = u.second.getMiniTile().x - 50; x <= 2 + u.second.getMiniTile().x + 50; x++)
 			{
@@ -325,7 +377,7 @@ void GridTrackerClass::updateEnemyGrids()
 				{
 					if (WalkPosition(x, y).isValid())
 					{
-						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) < 320)
+						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) < 320 && u.second.getGroundDamage() > 0.0)
 						{
 							if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) > 0)
 							{
@@ -336,11 +388,11 @@ void GridTrackerClass::updateEnemyGrids()
 								eDistanceGrid[x][y] += 10.0;
 							}
 						}
-						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getGroundRange() + u.second.getSpeed() * 8)
+						if (u.second.getGroundDamage() > 0.0 && Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getGroundRange() + u.second.getSpeed() * 8)
 						{
 							eGroundGrid[x][y] += u.second.getMaxStrength();
 						}
-						if (Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getAirRange() + u.second.getSpeed() * 8)
+						if (u.second.getAirDamage() > 0.0 && Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getAirRange() + u.second.getSpeed() * 8)
 						{
 							eAirGrid[x][y] += u.second.getMaxStrength();
 						}
@@ -500,7 +552,7 @@ void GridTrackerClass::updateMobilityGrids()
 				}
 				/*if (!getRegion(TilePosition(WalkPosition(x, y))) || TerrainTracker::Instance().getIslandRegions().find(getRegion(TilePosition(WalkPosition(x, y)))) != TerrainTracker::Instance().getIslandRegions().end())
 				{
-					distanceGridHome[x][y] = -1;
+				distanceGridHome[x][y] = -1;
 				}*/
 			}
 		}
@@ -526,24 +578,18 @@ void GridTrackerClass::updateObserverMovement(Unit observer)
 	return;
 }
 
-void GridTrackerClass::updateArbiterGrids()
+void GridTrackerClass::updateArbiterMovement(Unit arbiter)
 {
-	for (auto &u : SpecialUnitTracker::Instance().getMyArbiters())
-	{
-		int initialx = TilePosition(u.second.getDestination()).x;
-		int initialy = TilePosition(u.second.getDestination()).y;
-		int offsetX = u.second.getPosition().x % 32;
-		int offsetY = u.second.getPosition().y % 32;
+	WalkPosition destination = WalkPosition(SpecialUnitTracker::Instance().getMyArbiters()[arbiter].getDestination());
 
-		for (int x = initialx - 9; x <= initialx + 9; x++)
+	for (int x = destination.x - 20; x <= destination.x + 20; x++)
+	{
+		for (int y = destination.y - 20; y <= destination.y + 20; y++)
 		{
-			for (int y = initialy - 9; y <= initialy + 9; y++)
+			// Create a circle of detection rather than a square
+			if (WalkPosition(x, y).isValid() && SpecialUnitTracker::Instance().getMyArbiters()[arbiter].getDestination().getDistance(Position(WalkPosition(x, y))) < 160)
 			{
-				// Create a circle of detection rather than a square
-				if (TilePosition(x, y).isValid() && (Position(offsetX, offsetY) + u.second.getPosition()).getDistance(Position(x * 32, y * 32)) < 288)
-				{
-					arbiterGrid[x][y] += 1;
-				}
+				arbiterGrid[x][y] = 1;
 			}
 		}
 	}
@@ -627,19 +673,19 @@ void GridTrackerClass::updateDistanceGrid()
 
 						/*if (distanceGridHome[x][y - 1] == 0)
 						{
-							distanceGridHome[x][y - 1] = cnt + 1;
+						distanceGridHome[x][y - 1] = cnt + 1;
 						}
 						if (distanceGridHome[x][y + 1] == 0)
 						{
-							distanceGridHome[x][y + 1] = cnt + 1;
+						distanceGridHome[x][y + 1] = cnt + 1;
 						}
 						if (distanceGridHome[x - 1][y] == 0)
 						{
-							distanceGridHome[x - 1][y] = cnt + 1;
+						distanceGridHome[x - 1][y] = cnt + 1;
 						}
 						if (distanceGridHome[x + 1][y] == 0)
 						{
-							distanceGridHome[x + 1][y] = cnt + 1;
+						distanceGridHome[x + 1][y] = cnt + 1;
 						}*/
 					}
 				}
