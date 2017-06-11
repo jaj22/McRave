@@ -8,6 +8,7 @@
 #include "StrategyManager.h"
 #include "NexusManager.h"
 #include "TargetManager.h"
+#include "PylonManager.h"
 
 void UnitTrackerClass::update()
 {
@@ -46,21 +47,25 @@ void UnitTrackerClass::storeUnits()
 		// Store buildings even if they're not completed
 		if (u->getType().isBuilding())
 		{
-			BuildingTracker::Instance().storeBuilding(u);			
-		}
-		if (u->getType() == Protoss_Nexus)
-		{
-			NexusTracker::Instance().storeNexus(u);
-		}	
+			BuildingTracker::Instance().storeBuilding(u);
+			if (u->getType() == Protoss_Nexus)
+			{
+				NexusTracker::Instance().storeNexus(u);
+			}
+			else if (u->getType() == Protoss_Pylon)
+			{
+				PylonTracker::Instance().storePylon(u);
+			}
+		}		
 
 		// Don't want to store units that aren't completed
-		if (!u->isCompleted())
+		else if (!u->isCompleted())
 		{
 			continue;
 		}
 
 		// Store Probes
-		if (u->getType() == UnitTypes::Protoss_Probe)
+		else if (u->getType() == UnitTypes::Protoss_Probe)
 		{
 			ProbeTracker::Instance().storeProbe(u);
 		}
@@ -71,7 +76,7 @@ void UnitTrackerClass::storeUnits()
 			SpecialUnitTracker::Instance().storeUnit(u);
 		}
 		// Store the rest
-		else if (!u->getType().isBuilding())
+		else
 		{
 			storeAllyUnit(u);
 		}
@@ -181,7 +186,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 {
 	// Variables for calculating local strengths
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0, thisUnit = 0.0;
-	Position targetPosition = allyUnits[unit].getTargetPosition();	
+	Position targetPosition = allyUnits[unit].getTargetPosition();
 
 	int aLarge = getMySizes()[UnitSizeTypes::Large];
 	int aMedium = getMySizes()[UnitSizeTypes::Medium];

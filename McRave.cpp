@@ -17,16 +17,9 @@
 // Dijkstras theory for distance grid
 // Move stim research to strategy
 // One time supply increase instead of resetting?
-// Nexus update TODO:
-// Store region
 // If cannon was built in region, add to that Nexus
-// Resource update TODO:
-// Store region
-// If region is not ally territory, remove
-// Building update TODO:
-// Limit building number by region
-// Store the closest probe when ready to move to it
-// Assign probe to building position
+// Limit building number by region? Make pylons next to expansions for cannons/gateways
+// Store the closest probe when ready to move to build position
 // Probe manager can have a function to check if probe has a building assigned to it and move to it/build it
 
 // Testing:
@@ -42,7 +35,7 @@ void McRave::onStart()
 
 	Broodwar->setLatCom(true);
 	Broodwar->setLocalSpeed(0);
-	
+
 	theMap.Initialize();
 	theMap.EnableAutomaticPathAnalysis();
 	bool startingLocationsOK = theMap.FindBasesForStartingLocations();
@@ -68,7 +61,7 @@ void McRave::onEnd(bool isWinner)
 }
 
 void McRave::onFrame()
-{	
+{
 	TerrainTracker::Instance().update();
 	GridTracker::Instance().update();
 	ResourceTracker::Instance().update();
@@ -76,17 +69,16 @@ void McRave::onFrame()
 	ProbeTracker::Instance().update();
 	UnitTracker::Instance().update();
 	SpecialUnitTracker::Instance().update();
-	CommandTracker::Instance().update();	
+	CommandTracker::Instance().update();
 	BuildOrderTracker::Instance().update();
 	BuildingTracker::Instance().update();
 	ProductionTracker::Instance().update();
-	NexusTracker::Instance().update();		
-	PylonTracker::Instance().update();
-	InterfaceTracker::Instance().update();	
+	NexusTracker::Instance().update();
+	InterfaceTracker::Instance().update();
 }
 
 void McRave::onSendText(std::string text)
-{	
+{
 	// Else send the text to the game if it is not being processed
 	Broodwar->sendText("%s", text.c_str());
 }
@@ -105,7 +97,7 @@ void McRave::onNukeDetect(BWAPI::Position target)
 }
 
 void McRave::onUnitDiscover(BWAPI::Unit unit)
-{	
+{
 }
 
 void McRave::onUnitEvade(BWAPI::Unit unit)
@@ -132,11 +124,11 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	SpecialUnitTracker::Instance().removeUnit(unit);
 	ProbeTracker::Instance().removeProbe(unit);
 	ResourceTracker::Instance().removeResource(unit);
-	TerrainTracker::Instance().removeTerritory(unit);	
+	TerrainTracker::Instance().removeTerritory(unit);
 }
 
 void McRave::onUnitMorph(BWAPI::Unit unit)
-{	
+{
 	BuildingTracker::Instance().updateQueue(unit);
 }
 
@@ -155,7 +147,7 @@ void McRave::onUnitComplete(BWAPI::Unit unit)
 DWORD WINAPI AnalyzeThread()
 {
 	BWTA::analyze();
-	TerrainTracker::Instance().setAnalyzed();	
+	TerrainTracker::Instance().setAnalyzed();
 	return 0;
 }
 

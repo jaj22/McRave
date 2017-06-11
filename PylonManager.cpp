@@ -1,19 +1,18 @@
 #include "PylonManager.h"
 
-void PylonTrackerClass::update()
+void PylonTrackerClass::storePylon(Unit unit)
 {
-	// TODO: Make a separate add to function from UnitManager
-	for (auto & u : Broodwar->self()->getUnits())
-	{
-		if (u->isCompleted() && u->getType() == UnitTypes::Protoss_Pylon)
-		{
-			addToGrid(u);
-		}
-	}
+	myPylons.emplace(unit);
+	storePower(unit);
+	return;
 }
 
-void PylonTrackerClass::addToGrid(Unit unit)
+void PylonTrackerClass::storePower(Unit unit)
 {
+	if (!unit || !unit->exists() || !unit->isCompleted())
+	{
+		return;
+	}
 	TilePosition pylonTile = unit->getTilePosition();
 	for (int x = 0; x <= 15; x++)
 	{
@@ -63,7 +62,7 @@ void PylonTrackerClass::addToGrid(Unit unit)
 				{
 					inRangeLarge = true;
 				}
-				
+
 			}
 			if (y == 9)
 			{
@@ -76,7 +75,7 @@ void PylonTrackerClass::addToGrid(Unit unit)
 				{
 					inRangeLarge = true;
 				}
-			
+
 			}
 
 			TilePosition tile = TilePosition(pylonTile.x + x - 8, pylonTile.y + y - 5);
@@ -101,6 +100,7 @@ void PylonTrackerClass::addToGrid(Unit unit)
 	{
 	Broodwar->drawBoxMap(Position(tile.first), Position(tile.first) + Position(32, 32), Colors::Black);
 	}*/
+	return;
 }
 
 bool PylonTrackerClass::hasPower(TilePosition here, UnitType building)

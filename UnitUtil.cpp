@@ -210,6 +210,10 @@ double UnitUtilClass::getTrueGroundDamage(UnitType unitType, Player who)
 			return 100.00;
 		}
 	}
+	else if (unitType == Terran_Bunker)
+	{
+		return 25;
+	}
 	else
 	{
 		return unitType.groundWeapon().damageAmount();
@@ -218,6 +222,10 @@ double UnitUtilClass::getTrueGroundDamage(UnitType unitType, Player who)
 
 double UnitUtilClass::getTrueAirDamage(UnitType unitType, Player who)
 {
+	if (unitType == Terran_Bunker)
+	{
+		return 25;
+	}
 	return unitType.airWeapon().damageAmount();
 }
 

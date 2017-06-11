@@ -377,10 +377,15 @@ void ProbeTrackerClass::avoidEnemy(Unit probe)
 
 Unit ProbeTrackerClass::getClosestProbe(Position here)
 {
+	// Currently gets the closest probe that doesn't mine gas
 	Unit closestProbe = nullptr;
 	double closestD = 0.0;
 	for (auto probe : myProbes)
 	{
+		if (probe.second.getResource() && probe.second.getResource()->exists() && !probe.second.getResource()->getType().isMineralField())
+		{
+			continue;
+		}
 		if (probe.first->getLastCommand().getType() == UnitCommandTypes::Move || probe.first->getLastCommand().getType() == UnitCommandTypes::Build)
 		{
 			continue;

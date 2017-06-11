@@ -44,7 +44,7 @@ void SpecialUnitTrackerClass::updateArbiters()
 		// Move and update grids	
 		u.second.setDestination(bestPosition);
 		u.first->move(bestPosition);
-		GridTracker::Instance().updateArbiterMovement(u.first);		
+		GridTracker::Instance().updateArbiterMovement(u.first);
 
 		// If there's a stasis target, cast stasis on it
 		Unit target = UnitTracker::Instance().getMyUnits()[u.first].getTarget();
@@ -93,12 +93,12 @@ void SpecialUnitTrackerClass::updateObservers()
 		for (int x = start.x - 20; x <= start.x + 20; x++)
 		{
 			for (int y = start.y - 20; y <= start.y + 20; y++)
-			{			
+			{
 				if (WalkPosition(x, y).isValid() && GridTracker::Instance().getEDetectorGrid(x, y) == 0 && Position(WalkPosition(x, y)).getDistance(Position(start)) > 64 && GridTracker::Instance().getACluster(x, y) > 0 && GridTracker::Instance().getObserverGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && (Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD || closestD == 0))
 				{
 					newDestination = Position(WalkPosition(x, y));
 					closestD = Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
-				}				
+				}
 			}
 		}
 		u.second.setDestination(newDestination);
@@ -131,6 +131,7 @@ void SpecialUnitTrackerClass::updateShuttles()
 {
 	for (auto & u : myShuttles)
 	{
+		Position targetDrop;
 		// Check size of potential cargo, if less than 2 see if there's any more to add
 		if (u.second.getReavers().size() < 2)
 		{
@@ -149,6 +150,7 @@ void SpecialUnitTrackerClass::updateShuttles()
 		bool loading = false;
 		for (auto & reaver : u.second.getReavers())
 		{
+			targetDrop = UnitTracker::Instance().getMyUnits()[reaver].getTargetPosition();
 			Broodwar->drawLineMap(UnitTracker::Instance().getMyUnits()[reaver].getPosition(), UnitTracker::Instance().getMyUnits()[reaver].getTargetPosition(), Colors::Blue);
 			if (!reaver->isLoaded() && (UnitTracker::Instance().getMyUnits()[reaver].getStrategy() != 1 || reaver->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()))
 			{
@@ -169,16 +171,15 @@ void SpecialUnitTrackerClass::updateShuttles()
 					else
 					{
 						WalkPosition start = u.second.getMiniTile();
-						Position bestPosition = u.second.getPosition();
-						int distance = max(50, u.first->getDistance(GridTracker::Instance().getArmyCenter()) / 8);
+						Position bestPosition = GridTracker::Instance().getArmyCenter();
 						double closestD = 0.0;
-						for (int x = start.x - distance; x <= start.x + distance; x++)
+						for (int x = start.x - 20; x <= start.x + 20; x++)
 						{
-							for (int y = start.y - distance; y <= start.y + distance; y++)
+							for (int y = start.y - 20; y <= start.y + 20; y++)
 							{
-								if (WalkPosition(x, y).isValid() && GridTracker::Instance().getMobilityGrid(start.x, start.y) && GridTracker::Instance().getEAirGrid(x, y) == 0 && (closestD == 0.0 || TerrainTracker::Instance().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD))
+								if (WalkPosition(x, y).isValid() && GridTracker::Instance().getMobilityGrid(start.x, start.y) > 0 && GridTracker::Instance().getEAirGrid(x, y) == 0 && (closestD == 0.0 || targetDrop.getDistance(Position(WalkPosition(x, y))) < closestD))
 								{
-									closestD = TerrainTracker::Instance().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y)));
+									closestD = targetDrop.getDistance(Position(WalkPosition(x, y)));
 									bestPosition = Position(WalkPosition(x, y));
 								}
 							}
@@ -198,18 +199,18 @@ void SpecialUnitTrackerClass::updateShuttles()
 		}
 
 		// Move towards high cluster counts and closest to ally starting position
+		Position bestPosition = GridTracker::Instance().getArmyCenter();
 		WalkPosition start = u.second.getMiniTile();
-		double bestCluster = 0.0;
-		double closestD = 0.0;
-		Position bestPosition = u.second.getPosition();
-		int distance = max(50, u.first->getDistance(GridTracker::Instance().getArmyCenter()) / 8);
-		for (int x = start.x - distance; x <= start.x + distance; x++)
+		double bestCluster = 0;
+		double closestD = targetDrop.getDistance(Position(start));
+		
+		for (int x = start.x - 50; x <= start.x + 50; x++)
 		{
-			for (int y = start.y - distance; y <= start.y + distance; y++)
+			for (int y = start.y - 50; y <= start.y + 50; y++)
 			{
-				if (WalkPosition(x, y).isValid() && Position(WalkPosition(x, y)).getDistance(Position(start)) > 128 && GridTracker::Instance().getEAirGrid(x, y) == 0 && (closestD == 0.0 || GridTracker::Instance().getACluster(x, y) > bestCluster || (GridTracker::Instance().getACluster(x, y) == bestCluster && TerrainTracker::Instance().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
+				if (WalkPosition(x, y).isValid() && Position(WalkPosition(x, y)).getDistance(Position(start)) > 128 && GridTracker::Instance().getEAirGrid(x, y) == 0 && (GridTracker::Instance().getACluster(x, y) > bestCluster || (GridTracker::Instance().getACluster(x, y) == bestCluster && bestCluster != 0 && targetDrop.getDistance(Position(WalkPosition(x, y))) < closestD)))
 				{
-					closestD = TerrainTracker::Instance().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y)));
+					closestD = targetDrop.getDistance(Position(WalkPosition(x, y)));
 					bestCluster = GridTracker::Instance().getACluster(x, y);
 					bestPosition = Position(WalkPosition(x, y));
 				}
@@ -230,7 +231,7 @@ void SpecialUnitTrackerClass::updateReavers()
 		if (u.first->getScarabCount() < 5)
 		{
 			u.first->train(UnitTypes::Protoss_Scarab);
-		}	
+		}
 	}
 }
 

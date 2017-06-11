@@ -9,7 +9,6 @@ void ResourceTrackerClass::update()
 	{
 		if (r && r->exists())
 		{
-			// Need better solution than GUIR - BWEM?
 			if (GridTracker::Instance().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 1)
 			{
 				if (r->getType().isMineralField() && r->getInitialResources() > 0 && myMinerals.find(r) == myMinerals.end())
@@ -45,7 +44,7 @@ void ResourceTrackerClass::update()
 		{
 			saturated = false;
 		}
-		Broodwar->drawTextMap(m.second.getPosition(), "%d", m.second.getGathererCount());
+		//Broodwar->drawTextMap(m.second.getPosition(), "%d", m.second.getGathererCount());
 	}
 
 	for (auto &g : myGas)

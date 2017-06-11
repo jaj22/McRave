@@ -15,8 +15,8 @@ class PylonTrackerClass
 	map<TilePosition, int> largeLocations;
 	set<Unit> myPylons;
 public:
-	void update();
-	void addToGrid(Unit);
+	void storePylon(Unit);
+	void storePower(Unit);
 	bool hasPower(TilePosition, UnitType);
 };
 
