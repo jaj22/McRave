@@ -1,9 +1,4 @@
-#include "ProductionManager.h"
-#include "GridManager.h"
-#include "UnitManager.h"
-#include "StrategyManager.h"
-#include "BuildingManager.h"
-#include "BuildOrder.h"
+#include "McRave.h"
 
 void ProductionTrackerClass::update()
 {

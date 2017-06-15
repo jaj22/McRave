@@ -1,10 +1,4 @@
-#include "BuildOrder.h"
-#include "BuildingManager.h"
-#include "GridManager.h"
-#include "TerrainManager.h"
-#include "PylonManager.h"
-#include "ResourceManager.h"
-#include "ProbeManager.h"
+#include "McRave.h"
 
 bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {

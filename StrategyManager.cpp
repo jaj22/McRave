@@ -1,8 +1,4 @@
-#include "StrategyManager.h"
-#include "TerrainManager.h"
-#include "UnitManager.h"
-#include "GridManager.h"
-#include "ProbeManager.h"
+#include "McRave.h"
 
 void StrategyTrackerClass::update()
 {
@@ -151,7 +147,7 @@ void StrategyTrackerClass::updateComposition()
 		}
 
 		// If a possible invis unit exists, we can get Observers first
-		if (t.first == UnitTypes::Protoss_Dark_Templar || t.first == UnitTypes::Protoss_Citadel_of_Adun || t.first == UnitTypes::Terran_Wraith || t.first == UnitTypes::Terran_Ghost || t.first == UnitTypes::Zerg_Lurker)
+		if (t.first == Protoss_Dark_Templar || t.first == Protoss_Citadel_of_Adun || t.first == Protoss_Templar_Archives || t.first == Terran_Wraith || t.first == Terran_Ghost || t.first == Zerg_Lurker)
 		{
 			invis = true;
 		}

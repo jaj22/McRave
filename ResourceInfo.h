@@ -5,7 +5,6 @@
 using namespace BWAPI;
 using namespace BWTA;
 using namespace std;
-using namespace UnitTypes;
 
 class ResourceInfo
 {
@@ -15,6 +14,7 @@ private:
 	TilePosition resourceTilePosition;
 	UnitType unitType;
 	Unit nexus;
+	BWTA::Region* resourceRegion;
 public:
 	// Constructors
 	ResourceInfo();
@@ -22,18 +22,19 @@ public:
 	ResourceInfo(int, int, Unit, Position, TilePosition, UnitType);
 
 	// Accessors
-	int getGathererCount() const;
-	int getRemainingResources() const;
-	Unit getClosestNexus() const;
-	Position getPosition() const;
-	TilePosition getTilePosition() const;
-	UnitType getType() const;
+	int getGathererCount() { return gathererCount; };
+	int getRemainingResources() { return remainingResources; }
+	Unit getClosestNexus() { return nexus; }
+	Position getPosition() { return resourcePosition; }
+	TilePosition getTilePosition() { return resourceTilePosition; }
+	UnitType getType() { return unitType; }
+	BWTA::Region* getRegion() { return resourceRegion; }
 
 	// Mutators
-	void setGathererCount(int newGathererCount);
-	void setRemainingResources(int newRemainingResources);
-	void setClosestNexus(Unit nexus);
-	void setPosition(Position newPosition);
-	void setTilePosition(TilePosition newTilePosition);
-	void setUnitType(UnitType newUnitType);
+	void setGathererCount(int newGathererCount) { gathererCount = newGathererCount; }
+	void setRemainingResources(int newRemainingResources) { remainingResources = newRemainingResources; }
+	void setClosestNexus(Unit newNexus) { nexus = newNexus; }
+	void setPosition(Position newPosition) { resourcePosition = newPosition; }
+	void setTilePosition(TilePosition newTilePosition) { resourceTilePosition = newTilePosition; }
+	void setUnitType(UnitType newUnitType) { unitType = newUnitType; }
 };

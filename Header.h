@@ -4,7 +4,7 @@
 DWORD WINAPI AnalyzeThread();
 // Remember not to use "Broodwar" in any global class constructor!
 
-class McRave : public BWAPI::AIModule
+class McRaveModule : public BWAPI::AIModule
 {
 public:
 	// Virtual functions for callbacks, leave these as they are.

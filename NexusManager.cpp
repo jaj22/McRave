@@ -1,9 +1,4 @@
-#include "NexusManager.h"
-#include "GridManager.h"
-#include "ProductionManager.h"
-#include "BuildingManager.h"
-#include "ResourceManager.h"
-#include "TerrainManager.h"
+#include "McRave.h"
 
 TilePosition staticDefensePosition(Unit nexus)
 {

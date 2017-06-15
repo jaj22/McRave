@@ -1,13 +1,4 @@
-#include "GridManager.h"
-#include "UnitManager.h"
-#include "TerrainManager.h"
-#include "ResourceManager.h"
-#include "SpecialUnitManager.h"
-#include "BuildOrder.h"
-#include "NexusManager.h"
-#include "ProbeManager.h"
-#include "BuildingManager.h"
-#include <ctime>
+#include "McRave.h"
 
 bool doOnce = true;
 

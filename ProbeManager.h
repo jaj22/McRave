@@ -1,13 +1,10 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 #include "Singleton.h"
 #include "ProbeInfo.h"
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
-using namespace UnitTypes;
 
 class ProbeTrackerClass
 {

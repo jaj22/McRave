@@ -1,8 +1,4 @@
-#include "TerrainManager.h"
-#include "ProbeManager.h"
-#include "src\bwem.h"
-
-// TODO:
+#include "McRave.h"
 // nextExpansion doesn't need to be a vector, can be a map indexed by distance, useful to expand to an area that is currently not under threat (won't need testbases map either)
 
 void TerrainTrackerClass::update()

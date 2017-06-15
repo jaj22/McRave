@@ -1,10 +1,4 @@
-#include "Interface.h"
-#include "ResourceManager.h"
-#include "UnitManager.h"
-#include "StrategyManager.h"
-#include "TerrainManager.h"
-#include "BuildingManager.h"
-#include "BuildOrder.h"
+#include "McRave.h"
 
 void InterfaceTrackerClass::update()
 {
@@ -61,3 +55,4 @@ void InterfaceTrackerClass::update()
 	}
 	return;
 }
+

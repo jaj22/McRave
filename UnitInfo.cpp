@@ -1,6 +1,6 @@
 #include "UnitInfo.h"
 
-UnitInfoClass::UnitInfoClass()
+UnitInfo::UnitInfo()
 {
 	strength = 0.0;
 	maxStrength = 0.0;
@@ -20,7 +20,8 @@ UnitInfoClass::UnitInfoClass()
 	target = nullptr;
 	type = UnitTypes::Enum::None;
 	command = UnitCommandTypes::None;	
+	transport = false;
 }
-UnitInfoClass::~UnitInfoClass()
+UnitInfo::~UnitInfo()
 {
 }

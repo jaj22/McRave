@@ -1,5 +1,4 @@
-#include "UnitUtil.h"
-#include "UnitManager.h"
+#include "McRave.h"
 
 double UnitUtilClass::getStrength(UnitType unitType)
 {

@@ -1,6 +1,6 @@
 #include "BuildingInfo.h"
 
-BuildingInfoClass::BuildingInfoClass()
+BuildingInfo::BuildingInfo()
 {
 	idleStatus = true;
 	buildingType = UnitTypes::None;
@@ -8,6 +8,6 @@ BuildingInfoClass::BuildingInfoClass()
 	buildingTilePosition = TilePositions::None;
 }
 
-BuildingInfoClass::~BuildingInfoClass()
+BuildingInfo::~BuildingInfo()
 {
 }

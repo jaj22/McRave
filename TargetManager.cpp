@@ -1,6 +1,4 @@
-#include "TargetManager.h"
-#include "UnitManager.h"
-#include "GridManager.h"
+#include "McRave.h"
 
 Unit TargetTrackerClass::getTarget(Unit unit)
 {

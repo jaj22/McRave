@@ -1,17 +1,16 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 #include "Singleton.h"
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
-using namespace UnitTypes;
 
 class InterfaceTrackerClass
 {
 public:
 	void update();
+	void drawAllyInfo(Unit);
+	void drawEnemyInfo(Unit);
 };
 
 typedef Singleton<InterfaceTrackerClass> InterfaceTracker;

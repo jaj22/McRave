@@ -1,19 +1,12 @@
-#include "SpecialUnitManager.h"
-#include "TerrainManager.h"
-#include "GridManager.h"
-#include "UnitManager.h"
-#include "BuildOrder.h"
-#include "UnitUtil.h"
-#include "CommandManager.h"
+#include "McRave.h"
 
 void SpecialUnitTrackerClass::update()
 {
 	updateArbiters();
 	updateObservers();
 	updateTemplars();
-	updateShuttles();
 	updateReavers();
-	return;
+	return;	
 }
 
 void SpecialUnitTrackerClass::updateArbiters()
@@ -127,107 +120,10 @@ void SpecialUnitTrackerClass::updateTemplars()
 	return;
 }
 
-void SpecialUnitTrackerClass::updateShuttles()
-{
-	for (auto & u : myShuttles)
-	{
-		Position targetDrop;
-		// Check size of potential cargo, if less than 2 see if there's any more to add
-		if (u.second.getReavers().size() < 2)
-		{
-			// For each Reaver, see if it has a designated shuttle
-			for (auto & reaver : myReavers)
-			{
-				if (!reaver.second.getShuttle())
-				{
-					reaver.second.setShuttle(u.first);
-					u.second.addReaver(reaver.first);
-				}
-			}
-		}
-
-		// Check if we should be loading/unloading any Reavers
-		bool loading = false;
-		for (auto & reaver : u.second.getReavers())
-		{
-			targetDrop = UnitTracker::Instance().getMyUnits()[reaver].getTargetPosition();
-			Broodwar->drawLineMap(UnitTracker::Instance().getMyUnits()[reaver].getPosition(), UnitTracker::Instance().getMyUnits()[reaver].getTargetPosition(), Colors::Blue);
-			if (!reaver->isLoaded() && (UnitTracker::Instance().getMyUnits()[reaver].getStrategy() != 1 || reaver->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()))
-			{
-				u.first->load(reaver);
-				u.second.setDestination(reaver->getPosition());
-				loading = true;
-				continue;
-			}
-			if (reaver->isLoaded())
-			{
-				if (UnitTracker::Instance().getMyUnits()[reaver].getStrategy() == 1 && reaver->getGroundWeaponCooldown() <= Broodwar->getLatencyFrames() && (UnitTracker::Instance().getMyUnits()[reaver].getPosition().getDistance(UnitTracker::Instance().getMyUnits()[reaver].getTargetPosition()) < 320 || !UnitTracker::Instance().getMyUnits()[reaver].getTargetPosition().isValid()))
-				{
-					if (GridTracker::Instance().getMobilityGrid(u.second.getMiniTile().x, u.second.getMiniTile().y) > 0)
-					{
-						u.first->unload(reaver);
-						continue;
-					}
-					else
-					{
-						WalkPosition start = u.second.getMiniTile();
-						Position bestPosition = GridTracker::Instance().getArmyCenter();
-						double closestD = 0.0;
-						for (int x = start.x - 20; x <= start.x + 20; x++)
-						{
-							for (int y = start.y - 20; y <= start.y + 20; y++)
-							{
-								if (WalkPosition(x, y).isValid() && GridTracker::Instance().getMobilityGrid(start.x, start.y) > 0 && GridTracker::Instance().getEAirGrid(x, y) == 0 && (closestD == 0.0 || targetDrop.getDistance(Position(WalkPosition(x, y))) < closestD))
-								{
-									closestD = targetDrop.getDistance(Position(WalkPosition(x, y)));
-									bestPosition = Position(WalkPosition(x, y));
-								}
-							}
-						}
-						u.first->move(bestPosition);
-						u.second.setDestination(bestPosition);
-						Broodwar->drawLineMap(u.first->getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
-						continue;
-					}
-				}
-			}
-		}
-		if (loading)
-		{
-			Broodwar->drawLineMap(u.first->getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
-			continue;
-		}
-
-		// Move towards high cluster counts and closest to ally starting position
-		Position bestPosition = GridTracker::Instance().getArmyCenter();
-		WalkPosition start = u.second.getMiniTile();
-		double bestCluster = 0;
-		double closestD = targetDrop.getDistance(Position(start));
-		
-		for (int x = start.x - 50; x <= start.x + 50; x++)
-		{
-			for (int y = start.y - 50; y <= start.y + 50; y++)
-			{
-				if (WalkPosition(x, y).isValid() && Position(WalkPosition(x, y)).getDistance(Position(start)) > 128 && GridTracker::Instance().getEAirGrid(x, y) == 0 && (GridTracker::Instance().getACluster(x, y) > bestCluster || (GridTracker::Instance().getACluster(x, y) == bestCluster && bestCluster != 0 && targetDrop.getDistance(Position(WalkPosition(x, y))) < closestD)))
-				{
-					closestD = targetDrop.getDistance(Position(WalkPosition(x, y)));
-					bestCluster = GridTracker::Instance().getACluster(x, y);
-					bestPosition = Position(WalkPosition(x, y));
-				}
-			}
-		}
-		u.first->move(bestPosition);
-		u.second.setDestination(bestPosition);
-		Broodwar->drawLineMap(u.first->getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
-	}
-	return;
-}
-
 void SpecialUnitTrackerClass::updateReavers()
 {
 	for (auto & u : myReavers)
 	{
-		// If Reaver, train scarabs
 		if (u.first->getScarabCount() < 5)
 		{
 			u.first->train(UnitTypes::Protoss_Scarab);
@@ -260,13 +156,7 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 		myReavers[unit].setPosition(unit->getPosition());
 		myReavers[unit].setDestination(unit->getPosition());
 		myReavers[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
-	}
-	else if (unit->getType() == UnitTypes::Protoss_Shuttle)
-	{
-		myShuttles[unit].setPosition(unit->getPosition());
-		myShuttles[unit].setDestination(unit->getPosition());
-		myShuttles[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
-	}
+	}	
 	return;
 }
 
@@ -287,18 +177,7 @@ void SpecialUnitTrackerClass::removeUnit(Unit unit)
 	else if (myReavers.find(unit) != myReavers.end())
 	{
 		myReavers.erase(unit);
-		for (auto shuttle : myShuttles)
-		{
-			if (shuttle.second.getReavers().find(unit) != shuttle.second.getReavers().end())
-			{
-				shuttle.second.getReavers().erase(unit);
-				return;
-			}
-		}
-	}
-	else if (myShuttles.find(unit) != myShuttles.end())
-	{
-		myShuttles.erase(unit);
-	}
+	}	
 	return;
 }
+

@@ -1,14 +1,10 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
-using namespace UnitTypes;
 
 class ProbeInfo{
-private:
 	Unit resource, target;
 	WalkPosition miniTile;
 	int lastGatherFrame;
@@ -17,7 +13,7 @@ public:
 	ProbeInfo();
 
 	// Accessors
-	Unit getTarget() {	return target;	}
+	Unit getTarget() { return target; }
 	Unit getResource() { return resource; }
 	WalkPosition getMiniTile() { return miniTile; }
 	int getLastGatherFrame() { return lastGatherFrame; }

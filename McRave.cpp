@@ -25,7 +25,7 @@
 // Testing:
 // Spider mine removal from expansions - Testing 2.0
 
-void McRave::onStart()
+void McRaveModule::onStart()
 {
 	// Enable the UserInput flag, which allows us to control the bot and type messages.
 	Broodwar->enableFlag(Flag::UserInput);
@@ -51,7 +51,7 @@ void McRave::onStart()
 	readMap();
 }
 
-void McRave::onEnd(bool isWinner)
+void McRaveModule::onEnd(bool isWinner)
 {
 	// Called when the game ends
 	if (isWinner)
@@ -60,7 +60,7 @@ void McRave::onEnd(bool isWinner)
 	}
 }
 
-void McRave::onFrame()
+void McRaveModule::onFrame()
 {
 	TerrainTracker::Instance().update();
 	GridTracker::Instance().update();
@@ -69,6 +69,7 @@ void McRave::onFrame()
 	ProbeTracker::Instance().update();
 	UnitTracker::Instance().update();
 	SpecialUnitTracker::Instance().update();
+	TransportTracker::Instance().update();
 	CommandTracker::Instance().update();
 	BuildOrderTracker::Instance().update();
 	BuildingTracker::Instance().update();
@@ -77,47 +78,47 @@ void McRave::onFrame()
 	InterfaceTracker::Instance().update();
 }
 
-void McRave::onSendText(std::string text)
+void McRaveModule::onSendText(std::string text)
 {
 	// Else send the text to the game if it is not being processed
 	Broodwar->sendText("%s", text.c_str());
 }
 
-void McRave::onReceiveText(BWAPI::Player player, std::string text)
+void McRaveModule::onReceiveText(BWAPI::Player player, std::string text)
 {
 }
 
-void McRave::onPlayerLeft(BWAPI::Player player)
+void McRaveModule::onPlayerLeft(BWAPI::Player player)
 {
 	Broodwar->sendText("GG %s!", player->getName().c_str());
 }
 
-void McRave::onNukeDetect(BWAPI::Position target)
+void McRaveModule::onNukeDetect(BWAPI::Position target)
 {
 }
 
-void McRave::onUnitDiscover(BWAPI::Unit unit)
+void McRaveModule::onUnitDiscover(BWAPI::Unit unit)
 {
 }
 
-void McRave::onUnitEvade(BWAPI::Unit unit)
+void McRaveModule::onUnitEvade(BWAPI::Unit unit)
 {
 }
 
-void McRave::onUnitShow(BWAPI::Unit unit)
+void McRaveModule::onUnitShow(BWAPI::Unit unit)
 {
 }
 
-void McRave::onUnitHide(BWAPI::Unit unit)
+void McRaveModule::onUnitHide(BWAPI::Unit unit)
 {
 }
 
-void McRave::onUnitCreate(BWAPI::Unit unit)
+void McRaveModule::onUnitCreate(BWAPI::Unit unit)
 {
 	BuildingTracker::Instance().updateQueue(unit);
 }
 
-void McRave::onUnitDestroy(BWAPI::Unit unit)
+void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 {
 	UnitTracker::Instance().decayUnit(unit);
 	BuildingTracker::Instance().removeBuilding(unit);
@@ -127,20 +128,20 @@ void McRave::onUnitDestroy(BWAPI::Unit unit)
 	TerrainTracker::Instance().removeTerritory(unit);
 }
 
-void McRave::onUnitMorph(BWAPI::Unit unit)
+void McRaveModule::onUnitMorph(BWAPI::Unit unit)
 {
 	BuildingTracker::Instance().updateQueue(unit);
 }
 
-void McRave::onUnitRenegade(BWAPI::Unit unit)
+void McRaveModule::onUnitRenegade(BWAPI::Unit unit)
 {
 }
 
-void McRave::onSaveGame(std::string gameName)
+void McRaveModule::onSaveGame(std::string gameName)
 {
 }
 
-void McRave::onUnitComplete(BWAPI::Unit unit)
+void McRaveModule::onUnitComplete(BWAPI::Unit unit)
 {
 }
 
@@ -151,7 +152,7 @@ DWORD WINAPI AnalyzeThread()
 	return 0;
 }
 
-void McRave::drawTerrainData()
+void McRaveModule::drawTerrainData()
 {
 	//we will iterate through all the base locations, and draw their outlines.
 	for (const auto& baseLocation : BWTA::getBaseLocations()) {

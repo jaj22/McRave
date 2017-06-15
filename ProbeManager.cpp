@@ -1,14 +1,4 @@
-#include "ProbeManager.h"
-#include "ResourceManager.h"
-#include "TerrainManager.h"
-#include "GridManager.h"
-#include "UnitManager.h"
-#include "StrategyManager.h"
-#include "UnitUtil.h"
-#include "CommandManager.h"
-
-using namespace BWAPI;
-using namespace std;
+#include "McRave.h"
 
 void ProbeTrackerClass::update()
 {

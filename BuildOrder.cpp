@@ -1,10 +1,4 @@
-#include "BuildOrder.h"
-#include "GridManager.h"
-#include "UnitManager.h"
-#include "ResourceManager.h"
-#include "ProductionManager.h"
-#include "StrategyManager.h"
-#include "TerrainManager.h"
+#include "McRave.h"
 
 void BuildOrderTrackerClass::update()
 {
@@ -18,7 +12,7 @@ void BuildOrderTrackerClass::update()
 	buildingDesired[UnitTypes::Protoss_Nexus] = max(buildingDesired[UnitTypes::Protoss_Nexus], Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus));
 
 	// If we are saturated, expand
-	if (Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
+	if (StrategyTracker::Instance().isRush() && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
 	}

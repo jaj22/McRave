@@ -1,12 +1,4 @@
-#include "CommandManager.h"
-#include "GridManager.h"
-#include "StrategyManager.h"
-#include "TerrainManager.h"
-#include "UnitManager.h"
-#include "NexusManager.h"
-#include "BuildOrder.h"
-#include "UnitUtil.h"
-#include "ProbeManager.h"
+#include "McRave.h"
 
 void CommandTrackerClass::update()
 {

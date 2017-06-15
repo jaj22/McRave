@@ -5,6 +5,7 @@
 #include "src\bwem.h"
 
 using namespace BWAPI;
+using namespace BWEM;
 using namespace BWTA;
 using namespace std;
 using namespace UnitTypes;

@@ -1,19 +1,16 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 #include "Singleton.h"
 #include "BuildingInfo.h"
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
-using namespace UnitTypes;
 
 class BuildingTrackerClass
 {
 	int queuedMineral, queuedGas;
 	map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
-	map <Unit, BuildingInfoClass> myBuildings;
+	map <Unit, BuildingInfo> myBuildings;
 public:
 	TilePosition getBuildLocation(UnitType);
 	TilePosition getCannonLocation();
@@ -21,7 +18,7 @@ public:
 	int getQueuedMineral() { return queuedMineral; }
 	int getQueuedGas() { return queuedGas; }
 	map <UnitType, pair<TilePosition, Unit>>& getQueuedBuildings() { return queuedBuildings; }
-	map <Unit, BuildingInfoClass> getMyBuildings() { return myBuildings; }
+	map <Unit, BuildingInfo> getMyBuildings() { return myBuildings; }
 
 	void update();
 	void queueBuildings();

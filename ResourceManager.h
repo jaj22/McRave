@@ -1,11 +1,9 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 #include "Singleton.h"
 #include "ResourceInfo.h"
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
 using namespace UnitTypes;
 

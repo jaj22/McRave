@@ -1,17 +1,13 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 #include "Singleton.h"
-#include "src\bwem.h"
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
-using namespace UnitTypes;
 
 class GridTrackerClass
 {
-	// Ally grids	
+	// Ally grids
 	int aClusterGrid[1024][1024];
 	int reserveGrid[256][256];
 	int nexusGrid[256][256];
@@ -22,10 +18,10 @@ class GridTrackerClass
 	double eGroundGrid[1024][1024];
 	double eAirGrid[1024][1024];
 	double eDistanceGrid[1024][1024];
+	int eDetectorGrid[1024][1024];
 	int eGroundClusterGrid[256][256];
 	int eAirClusterGrid[256][256];
 	int stasisClusterGrid[256][256];
-	int eDetectorGrid[1024][1024];
 
 	// Neutral grids	
 	int resourceGrid[256][256];
@@ -40,6 +36,7 @@ class GridTrackerClass
 	int arbiterGrid[1024][1024];
 	int templarGrid[256][256];
 
+	// Other
 	bool distanceOnce = true;
 	Position armyCenter;
 public:
@@ -57,36 +54,59 @@ public:
 	void updateReservedLocation(UnitType, TilePosition);
 	void updateDistanceGrid();
 
-	// Ally functions
+	// Ally mini tile grid functions
 	int getACluster(int x, int y) { return aClusterGrid[x][y]; }
-	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }
-	int getNexusGrid(int x, int y) { return nexusGrid[x][y]; }
-	int getPylonGrid(int x, int y) { return pylonGrid[x][y]; }
-	int getBatteryGrid(int x, int y) { return batteryGrid[x][y]; }
+	int getACluster(WalkPosition here) { return aClusterGrid[here.x][here.y]; }
 
-	// Enemy functions
+	// Ally tile grid functions
+	int getReserveGrid(int x, int y) { return reserveGrid[x][y]; }
+	int getReserveGrid(TilePosition here) { return reserveGrid[here.x][here.y]; }
+	int getNexusGrid(int x, int y) { return nexusGrid[x][y]; }
+	int getNexusGrid(TilePosition here) { return nexusGrid[here.x][here.y]; }
+	int getPylonGrid(int x, int y) { return pylonGrid[x][y]; }
+	int getPylonGrid(TilePosition here) { return pylonGrid[here.x][here.y]; }
+	int getBatteryGrid(int x, int y) { return batteryGrid[x][y]; }
+	int getBatteryGrid(TilePosition here) { return batteryGrid[here.x][here.y]; }
+
+	// Enemy mini tile grid functions
 	double getEGroundGrid(int x, int y) { return eGroundGrid[x][y]; }
+	double getEGroundGrid(WalkPosition here) { return eGroundGrid[here.x][here.y]; }
 	double getEAirGrid(int x, int y) { return eAirGrid[x][y]; }
+	double getEAirGrid(WalkPosition here) { return eAirGrid[here.x][here.y]; }
 	double getEDistanceGrid(int x, int y) { return eDistanceGrid[x][y]; }
-	int getEGroundCluster(int x, int y) { return eGroundClusterGrid[x][y]; }
-	int getEAirCluster(int x, int y) { return eAirClusterGrid[x][y]; }
-	int getStasisCluster(int x, int y) { return stasisClusterGrid[x][y]; }
+	double getEDistanceGrid(WalkPosition here) { return eDistanceGrid[here.x][here.y]; }
 	int getEDetectorGrid(int x, int y) { return eDetectorGrid[x][y]; }
+	int getEDetectorGrid(WalkPosition here) { return eDetectorGrid[here.x][here.y]; }
+
+	// Enemy tile grid functions
+	int getEGroundCluster(int x, int y) { return eGroundClusterGrid[x][y]; }
+	int getEGroundCluster(TilePosition here) { return eGroundClusterGrid[here.x][here.y]; }
+	int getEAirCluster(int x, int y) { return eAirClusterGrid[x][y]; }
+	int getEAirCluster(TilePosition here) { return eAirClusterGrid[here.x][here.y]; }
+	int getStasisCluster(int x, int y) { return stasisClusterGrid[x][y]; }
+	int getStasisCluster(TilePosition here) { return stasisClusterGrid[here.x][here.y]; }
 
 	// Neutral functions
-	int getReserveGrid(int x, int y) { return reserveGrid[x][y]; }
+	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }
+	int getResourceGrid(TilePosition here) { return resourceGrid[here.x][here.y]; }
 
 	// Mobility functions
 	int getMobilityGrid(int x, int y) { return mobilityGrid[x][y]; }
+	int getMobilityGrid(WalkPosition here) { return mobilityGrid[here.x][here.y]; }
 	int getAntiMobilityGrid(int x, int y) { return antiMobilityGrid[x][y]; }
+	int getAntiMobilityGrid(WalkPosition here) { return antiMobilityGrid[here.x][here.y]; }
 	int getDistanceHome(int x, int y) { return distanceGridHome[x][y]; }
+	int getDistanceHome(WalkPosition here) { return distanceGridHome[here.x][here.y]; }
 
 	// Special unit functions
 	int getObserverGrid(int x, int y) { return observerGrid[x][y]; }
+	int getObserverGrid(WalkPosition here) { return observerGrid[here.x][here.y]; }
 	int getArbiterGrid(int x, int y) { return arbiterGrid[x][y]; }
+	int getArbiterGrid(WalkPosition here) { return arbiterGrid[here.x][here.y]; }
 
-	//
+	// Other functions
 	Position getArmyCenter(){ return armyCenter; }
 };
-
 typedef Singleton<GridTrackerClass> GridTracker;
+
+

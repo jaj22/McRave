@@ -1,14 +1,4 @@
-#include "UnitManager.h"
-#include "TerrainManager.h"
-#include "GridManager.h"
-#include "SpecialUnitManager.h"
-#include "ProbeManager.h"
-#include "BuildingManager.h"
-#include "UnitUtil.h"
-#include "StrategyManager.h"
-#include "NexusManager.h"
-#include "TargetManager.h"
-#include "PylonManager.h"
+#include "McRave.h"
 
 void UnitTrackerClass::update()
 {
@@ -70,10 +60,14 @@ void UnitTrackerClass::storeUnits()
 			ProbeTracker::Instance().storeProbe(u);
 		}
 		// Store Special Units in both
-		else if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Protoss_Shuttle)
+		else if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter)
 		{
 			storeAllyUnit(u);
 			SpecialUnitTracker::Instance().storeUnit(u);
+		}
+		else if (u->getType() == UnitTypes::Protoss_Shuttle)
+		{
+			TransportTracker::Instance().storeUnit(u);
 		}
 		// Store the rest
 		else
@@ -83,14 +77,17 @@ void UnitTrackerClass::storeUnits()
 	}
 
 	// For all enemy units
-	for (auto player : Broodwar->enemies())
+	for (auto player : Broodwar->getPlayers())
 	{
-		for (auto &u : player->getUnits())
+		if (player->isEnemy(Broodwar->self()))
 		{
-			// Store if exists
-			if (u && u->exists())
+			for (auto &u : player->getUnits())
 			{
-				storeEnemyUnit(u);
+				// Store if exists
+				if (u && u->exists())
+				{
+					storeEnemyUnit(u);
+				}
 			}
 		}
 	}
@@ -99,7 +96,7 @@ void UnitTrackerClass::storeUnits()
 void UnitTrackerClass::removeUnits()
 {
 	// Check for decayed ally units
-	for (map<Unit, UnitInfoClass>::iterator itr = allyUnits.begin(); itr != allyUnits.end();)
+	for (map<Unit, UnitInfo>::iterator itr = allyUnits.begin(); itr != allyUnits.end();)
 	{
 		if (itr->second.getDeadFrame() != 0 && itr->second.getDeadFrame() + 500 < Broodwar->getFrameCount())
 		{
@@ -111,7 +108,7 @@ void UnitTrackerClass::removeUnits()
 		}
 	}
 	// Check for decayed enemy units
-	for (map<Unit, UnitInfoClass>::iterator itr = enemyUnits.begin(); itr != enemyUnits.end();)
+	for (map<Unit, UnitInfo>::iterator itr = enemyUnits.begin(); itr != enemyUnits.end();)
 	{
 		if ((*itr).second.getDeadFrame() != 0 && (*itr).second.getDeadFrame() + 500 < Broodwar->getFrameCount() || itr->first && itr->first->exists() && itr->first->getPlayer() != Broodwar->enemy())
 		{
@@ -472,8 +469,8 @@ void UnitTrackerClass::getGlobalCalculation(Unit unit, Unit target)
 		globalStrategy = 2;
 		return;
 	}
-	// If Toss, wait for Dragoon range upgrade
-	if (Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
+	// If Toss, wait for Dragoon range upgrade against rushes
+	if (Broodwar->enemy()->getRace() == Races::Protoss && StrategyTracker::Instance().isRush() && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 	{
 		globalStrategy = 2;
 		return;

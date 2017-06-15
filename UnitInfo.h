@@ -1,14 +1,12 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
 using namespace UnitTypes;
 
 // Class for storing information about all units
-class UnitInfoClass {
+class UnitInfo {
 	double strength, maxStrength, local, groundRange, airRange, priority, groundDamage, airDamage, speed;
 	int deadFrame, strategy, lastAttackFrame, currentGoal;
 	Position position, targetPosition;
@@ -16,9 +14,10 @@ class UnitInfoClass {
 	Unit target;
 	UnitType type;
 	UnitCommandType command;
+	bool transport;
 public:
-	UnitInfoClass();
-	~UnitInfoClass();
+	UnitInfo();
+	~UnitInfo();
 
 	// Accessors
 	UnitType getType(){ return type; }
@@ -40,6 +39,7 @@ public:
 	int getLastAttackFrame() { return lastAttackFrame; }
 	int getCurrentGoal() { return currentGoal; }
 	WalkPosition getMiniTile() { return miniTile; }
+	bool hasTransport() { return transport; }
 
 	// Mutators
 	void setUnitType(UnitType newType) { type = newType; }
@@ -61,4 +61,5 @@ public:
 	void setLastAttackFrame(int newAttackFrame) { lastAttackFrame = newAttackFrame; }
 	void setCurrentGoal(int newGoal){ currentGoal = newGoal; }
 	void setMiniTile(WalkPosition newMiniTile) { miniTile = newMiniTile; }
+	void setTransport(bool newState) { transport = newState; }
 };
