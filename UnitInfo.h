@@ -3,7 +3,6 @@
 
 using namespace BWAPI;
 using namespace std;
-using namespace UnitTypes;
 
 // Class for storing information about all units
 class UnitInfo {

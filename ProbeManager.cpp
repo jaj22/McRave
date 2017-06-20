@@ -10,20 +10,20 @@ void ProbeTrackerClass::storeProbe(Unit unit)
 {
 	if (unit->exists() && unit->isCompleted())
 	{
-		myProbes[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
+		myProbes[unit].setMiniTile(Util().getMiniTile(unit));
 	}
 	return;
 }
 
 void ProbeTrackerClass::removeProbe(Unit probe)
 {
-	if (ResourceTracker::Instance().getMyGas().find(myProbes[probe].getResource()) != ResourceTracker::Instance().getMyGas().end())
+	if (Resources().getMyGas().find(myProbes[probe].getResource()) != Resources().getMyGas().end())
 	{
-		ResourceTracker::Instance().getMyGas()[myProbes[probe].getResource()].setGathererCount(ResourceTracker::Instance().getMyGas()[myProbes[probe].getResource()].getGathererCount() - 1);
+		Resources().getMyGas()[myProbes[probe].getResource()].setGathererCount(Resources().getMyGas()[myProbes[probe].getResource()].getGathererCount() - 1);
 	}
-	if (ResourceTracker::Instance().getMyMinerals().find(myProbes[probe].getResource()) != ResourceTracker::Instance().getMyMinerals().end())
+	if (Resources().getMyMinerals().find(myProbes[probe].getResource()) != Resources().getMyMinerals().end())
 	{
-		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getResource()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getResource()].getGathererCount() - 1);
+		Resources().getMyMinerals()[myProbes[probe].getResource()].setGathererCount(Resources().getMyMinerals()[myProbes[probe].getResource()].getGathererCount() - 1);
 	}
 	myProbes.erase(probe);
 
@@ -32,18 +32,22 @@ void ProbeTrackerClass::removeProbe(Unit probe)
 	{
 		scout = nullptr;
 		scouting = false;
-		if (TerrainTracker::Instance().getEnemyBasePositions().size() == 0)
+		if (Terrain().getEnemyBasePositions().size() == 0)
 		{
 			double closestD = 0.0;
 			BaseLocation* closestB = getNearestBaseLocation(probe->getTilePosition());
 			for (auto base : getStartLocations())
 			{
+				if (base == getStartLocation(Broodwar->self()))
+				{
+					continue;
+				}
 				if (probe->getDistance(base->getPosition()) < closestD || closestD == 0.0)
 				{
 					closestB = base;
 				}
 			}
-			TerrainTracker::Instance().getEnemyBasePositions().emplace(closestB->getPosition());
+			Terrain().getEnemyBasePositions().emplace(closestB->getPosition());
 		}
 	}
 }
@@ -53,12 +57,13 @@ void ProbeTrackerClass::assignProbe(Unit probe)
 	// Assign a task if none
 	int cnt = 1;
 
-	for (auto &gas : ResourceTracker::Instance().getMyGas())
+	for (auto &gas : Resources().getMyGas())
 	{
 		if (gas.second.getType() == UnitTypes::Protoss_Assimilator && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
 		{
 			gas.second.setGathererCount(gas.second.getGathererCount() + 1);
 			myProbes[probe].setResource(gas.first);
+			myProbes[probe].setResourcePosition(Resources().getMyGas()[gas.first].getPosition());
 			return;
 		}
 	}
@@ -66,12 +71,13 @@ void ProbeTrackerClass::assignProbe(Unit probe)
 	// First checks if a mineral field has 0 Probes mining, if none, checks if a mineral field has 1 Probe mining. Assigns to 0 first, then 1. Spreads saturation.
 	while (cnt <= 2)
 	{
-		for (auto &mineral : ResourceTracker::Instance().getMyMinerals())
+		for (auto &mineral : Resources().getMyMinerals())
 		{
 			if (mineral.second.getGathererCount() < cnt)
 			{
 				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
 				myProbes[probe].setResource(mineral.first);
+				myProbes[probe].setResourcePosition(Resources().getMyMinerals()[mineral.first].getPosition());
 				return;
 			}
 		}
@@ -82,13 +88,13 @@ void ProbeTrackerClass::assignProbe(Unit probe)
 
 void ProbeTrackerClass::reAssignProbe(Unit probe)
 {
-	if (ResourceTracker::Instance().getMyGas().find(myProbes[probe].getResource()) != ResourceTracker::Instance().getMyGas().end())
+	if (Resources().getMyGas().find(myProbes[probe].getResource()) != Resources().getMyGas().end())
 	{
-		ResourceTracker::Instance().getMyGas()[myProbes[probe].getResource()].setGathererCount(ResourceTracker::Instance().getMyGas()[myProbes[probe].getResource()].getGathererCount() - 1);
+		Resources().getMyGas()[myProbes[probe].getResource()].setGathererCount(Resources().getMyGas()[myProbes[probe].getResource()].getGathererCount() - 1);
 	}
-	if (ResourceTracker::Instance().getMyMinerals().find(myProbes[probe].getResource()) != ResourceTracker::Instance().getMyMinerals().end())
+	if (Resources().getMyMinerals().find(myProbes[probe].getResource()) != Resources().getMyMinerals().end())
 	{
-		ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getResource()].setGathererCount(ResourceTracker::Instance().getMyMinerals()[myProbes[probe].getResource()].getGathererCount() - 1);
+		Resources().getMyMinerals()[myProbes[probe].getResource()].setGathererCount(Resources().getMyMinerals()[myProbes[probe].getResource()].getGathererCount() - 1);
 	}
 	assignProbe(probe);
 }
@@ -108,7 +114,7 @@ void ProbeTrackerClass::scoutProbe()
 		}
 		if (u.first == scout)
 		{
-			if (TerrainTracker::Instance().getEnemyBasePositions().size() == 0 && UnitTracker::Instance().getSupply() >= 18 && scouting)
+			if (Terrain().getEnemyBasePositions().size() == 0 && Units().getSupply() >= 18 && scouting)
 			{
 				for (auto start : getStartLocations())
 				{
@@ -122,17 +128,9 @@ void ProbeTrackerClass::scoutProbe()
 					}
 				}
 			}
-			if (TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
+			if (Terrain().getEnemyBasePositions().size() > 0)
 			{
-				WalkPosition start = u.second.getMiniTile();
-				if (u.first->getUnitsInRadius(320, Filter::IsEnemy && !Filter::IsBuilding).size() > 0)
-				{
-					avoidEnemy(u.first);
-				}
-				else
-				{
-					exploreArea(u.first);
-				}
+				exploreArea(u.first);
 			}
 		}
 	}
@@ -141,30 +139,30 @@ void ProbeTrackerClass::scoutProbe()
 void ProbeTrackerClass::exploreArea(Unit probe)
 {
 	WalkPosition start = myProbes[probe].getMiniTile();
-	vector<WalkPosition> possibilites;
+	Position bestPosition = Terrain().getEnemyStartingPosition();
 	double closestD = 1000;
 	recentExplorations[start] = Broodwar->getFrameCount();
 
-	for (int x = start.x - 50; x < start.x + 50 + probe->getType().tileWidth(); x++)
+	for (int x = start.x - 10; x < start.x + 10 + probe->getType().tileWidth(); x++)
 	{
-		for (int y = start.y - 50; y < start.y + 50 + probe->getType().tileHeight(); y++)
+		for (int y = start.y - 10; y < start.y + 10 + probe->getType().tileHeight(); y++)
 		{
-			if (GridTracker::Instance().getAntiMobilityGrid(x, y) == 0 && GridTracker::Instance().getMobilityGrid(x, y) > 0 && GridTracker::Instance().getEGroundGrid(x, y) == 0.0 && GridTracker::Instance().getEDistanceGrid(x, y) == 0.0 && WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 200 && Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < 320)
+			if (Grids().getAntiMobilityGrid(x, y) == 0 && Grids().getMobilityGrid(x, y) > 0 && Grids().getEGroundDistanceGrid(x, y) == 0.0 && WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 500 && Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < 320)
 			{
-				possibilites.push_back(WalkPosition(x, y));
+				if (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD)
+				{
+					bestPosition = Position(WalkPosition(x, y));
+					closestD = Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition());
+				}
 			}
 		}
 	}
-
-	if (possibilites.size() > 0)
+	if (bestPosition.isValid())
 	{
-		int i = rand() % possibilites.size();
-		probe->move(Position(possibilites.at(i)));
+		probe->move(bestPosition);
+		Broodwar->drawLineMap(probe->getPosition(), bestPosition, Colors::Red);
 	}
-	else
-	{
-		probe->move(TerrainTracker::Instance().getEnemyStartingPosition());
-	}
+	return;
 }
 
 void ProbeTrackerClass::enforceAssignments()
@@ -172,10 +170,10 @@ void ProbeTrackerClass::enforceAssignments()
 	// For each Probe mapped to gather minerals
 	for (auto &u : myProbes)
 	{
-		if (ResourceTracker::Instance().getGasNeeded() > 0 && !StrategyTracker::Instance().isRush())
+		if (Resources().getGasNeeded() > 0 && !Strategy().isRush())
 		{
 			reAssignProbe(u.first);
-			ResourceTracker::Instance().setGasNeeded(ResourceTracker::Instance().getGasNeeded() - 1);
+			Resources().setGasNeeded(Resources().getGasNeeded() - 1);
 		}
 		// If no valid target, try to get a new one
 		if (!u.second.getResource())
@@ -191,13 +189,13 @@ void ProbeTrackerClass::enforceAssignments()
 		}
 
 		// Attack units in mineral line
-		if (Broodwar->getFrameCount() - u.second.getLastGatherFrame() <= 25 && GridTracker::Instance().getEGroundGrid(u.second.getMiniTile().x, u.second.getMiniTile().y) > 0)
+		if (Broodwar->getFrameCount() - u.second.getLastGatherFrame() <= 25 && Grids().getEGroundGrid(u.second.getMiniTile().x, u.second.getMiniTile().y) > 0)
 		{
 			if (u.second.getTarget() == nullptr)
 			{
 				u.second.setTarget(u.first->getClosestUnit(Filter::IsEnemy && !Filter::IsFlying, 320));
 			}
-			else if (u.second.getTarget()->exists() && (GridTracker::Instance().getResourceGrid(u.second.getTarget()->getTilePosition().x, u.second.getTarget()->getTilePosition().y) > 0/* || (!u.second.getTarget()->getType().isWorker() && GridTracker::Instance().getNexusGrid(u.second.getTarget()->getTilePosition().x, u.second.getTarget()->getTilePosition().y) > 0)*/))
+			else if (u.second.getTarget()->exists() && (Grids().getResourceGrid(u.second.getTarget()->getTilePosition().x, u.second.getTarget()->getTilePosition().y) > 0/* || (!u.second.getTarget()->getType().isWorker() && Grids().getNexusGrid(u.second.getTarget()->getTilePosition().x, u.second.getTarget()->getTilePosition().y) > 0)*/))
 			{
 				if ((u.first->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && u.first->getLastCommand().getTarget() && !u.first->getLastCommand().getTarget()->exists()) || (u.first->getLastCommand().getType() != UnitCommandTypes::Attack_Unit))
 				{
@@ -213,7 +211,7 @@ void ProbeTrackerClass::enforceAssignments()
 			// Draw on every frame
 			if (u.first && u.second.getResource())
 			{
-				Broodwar->drawLineMap(u.first->getPosition(), u.second.getResource()->getPosition(), Broodwar->self()->getColor());
+				Broodwar->drawLineMap(u.first->getPosition(), u.second.getResourcePosition(), Broodwar->self()->getColor());
 			}
 
 			// If we have been given a command this frame already, continue
@@ -233,9 +231,9 @@ void ProbeTrackerClass::enforceAssignments()
 			}
 
 			// If not scouting and there's boulders to remove	
-			if (!scouting && ResourceTracker::Instance().getMyBoulders().size() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
+			if (!scouting && Resources().getMyBoulders().size() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
 			{
-				for (auto b : ResourceTracker::Instance().getMyBoulders())
+				for (auto b : Resources().getMyBoulders())
 				{
 					if (b.first && b.first->exists() && !u.first->isGatheringMinerals() && u.first->getDistance(b.second.getPosition()) < 512)
 					{
@@ -269,100 +267,13 @@ void ProbeTrackerClass::enforceAssignments()
 					}
 					else
 					{
-						// Move to the mineral field
+						u.first->move(u.second.getResourcePosition());
+						continue;
 					}
 				}
 			}
 		}
 	}
-}
-
-void ProbeTrackerClass::avoidEnemy(Unit probe)
-{
-	// If either the unit or current target are invalid, return
-	if (!probe)
-	{
-		return;
-	}
-
-	WalkPosition start = ProbeTracker::Instance().getMyProbes()[probe].getMiniTile();
-	WalkPosition finalPosition = start;
-	double highestMobility = 0.0;
-	Position destination;
-
-	// Destination is enemy starting position, need to get as close to it as possible
-	if (TerrainTracker::Instance().getEnemyStartingPosition().isValid())
-	{
-		destination = TerrainTracker::Instance().getEnemyStartingPosition();
-	}
-	// If it's not valid, check each starting position for where we were moving towards
-	else
-	{
-		for (auto start : getStartLocations())
-		{
-			if (Broodwar->isExplored(start->getTilePosition()) == false)
-			{
-				destination = start->getPosition();
-				break;
-			}
-		}
-		// If still no destination, return
-		if (!destination.isValid())
-		{
-			return;
-		}
-	}
-
-	// Search a 16x16 (4 tiles) mini tile area around the unit for highest mobility	and lowest threat
-	for (int x = start.x - 4; x <= start.x + 4 + (probe->getType().tileWidth() * 4); x++)
-	{
-		for (int y = start.y - 4; y <= start.y + 4 + (probe->getType().tileHeight() * 4); y++)
-		{
-			if (WalkPosition(x, y).isValid())
-			{
-				double mobility = double(GridTracker::Instance().getMobilityGrid(x, y));
-				double threat = GridTracker::Instance().getEGroundGrid(x, y);
-				double distance = GridTracker::Instance().getEDistanceGrid(x, y);
-				double distanceEnemy = 1.0 + Position(start).getDistance(destination);
-
-				if (GridTracker::Instance().getAntiMobilityGrid(x, y) == 0 && (mobility / (1.0 + (distance * threat))) / distanceEnemy > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(probe->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(probe->getTilePosition()) || (getNearestChokepoint(TilePosition(x / 4, y / 4)) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128)))
-				{
-					bool bestTile = true;
-					for (int i = x - probe->getType().width() / 16; i < x + probe->getType().width() / 16; i++)
-					{
-						for (int j = y - probe->getType().height() / 16; j < y + probe->getType().height() / 16; j++)
-						{
-							if (WalkPosition(i, j).isValid())
-							{
-								// If mini tile exists on top of unit, ignore it
-								if (i >= start.x && i < start.x + probe->getType().tileWidth() * 4 && j >= start.y && j < start.y + probe->getType().tileHeight() * 4)
-								{
-									continue;
-								}
-								if (GridTracker::Instance().getMobilityGrid(i, j) == 0 || GridTracker::Instance().getAntiMobilityGrid(i, j) == 1)
-								{
-									bestTile = false;
-								}
-							}
-						}
-					}
-					if (bestTile)
-					{
-						highestMobility = (mobility / (1.0 + (distance * threat))) / distanceEnemy;
-						finalPosition = WalkPosition(x, y);
-					}
-				}
-			}
-		}
-	}
-	if (finalPosition.isValid() && finalPosition != start)
-	{
-		if (probe->getOrderTargetPosition() != Position(finalPosition))
-		{
-			probe->move(Position(finalPosition));
-		}
-	}
-	return;
 }
 
 Unit ProbeTrackerClass::getClosestProbe(Position here)

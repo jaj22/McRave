@@ -209,7 +209,7 @@ double UnitUtilClass::getTrueGroundDamage(UnitType unitType, Player who)
 			return 100.00;
 		}
 	}
-	else if (unitType == Terran_Bunker)
+	else if (unitType == UnitTypes::Terran_Bunker)
 	{
 		return 25;
 	}
@@ -221,7 +221,7 @@ double UnitUtilClass::getTrueGroundDamage(UnitType unitType, Player who)
 
 double UnitUtilClass::getTrueAirDamage(UnitType unitType, Player who)
 {
-	if (unitType == Terran_Bunker)
+	if (unitType == UnitTypes::Terran_Bunker)
 	{
 		return 25;
 	}
@@ -279,8 +279,8 @@ WalkPosition UnitUtilClass::getMiniTile(Unit unit)
 	// If it's a unit, we want to find the closest mini tile with the highest resolution (actual pixel width/height)
 	if (!unit->getType().isBuilding())
 	{
-		int mini_x = int((x - x % 8 - (0.5*unit->getType().width())) / 8);
-		int mini_y = int((y - y % 8 - (0.5*unit->getType().height())) / 8);
+		int mini_x = int((x - (0.5*unit->getType().width())) / 8);
+		int mini_y = int((y - (0.5*unit->getType().height())) / 8);
 		return WalkPosition(mini_x, mini_y);
 	}
 	// For buildings, we want the actual tile size resolution (convert half the tile size to pixels by 0.5*tile*32 = 16.0)
@@ -295,7 +295,7 @@ WalkPosition UnitUtilClass::getMiniTile(Unit unit)
 
 set<WalkPosition> UnitUtilClass::getMiniTilesUnderUnit(Unit unit)
 {
-	WalkPosition start = UnitTracker::Instance().getMyUnits()[unit].getMiniTile();		
+	WalkPosition start = Units().getMyUnits()[unit].getMiniTile();		
 	set<WalkPosition> returnValues;
 
 	for (int i = start.x; i <= start.x + unit->getType().tileWidth(); i++)

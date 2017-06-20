@@ -4,7 +4,6 @@
 
 using namespace BWAPI;
 using namespace std;
-using namespace UnitTypes;
 
 class StrategyTrackerClass
 {

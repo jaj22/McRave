@@ -16,16 +16,16 @@ void SpecialUnitTrackerClass::updateArbiters()
 		// Move towards high cluster counts and closest to ally starting position
 		int bestCluster = 0;
 		double closestD = 0.0;
-		Position bestPosition = GridTracker::Instance().getArmyCenter();
+		Position bestPosition = Grids().getArmyCenter();
 		WalkPosition start = u.second.getMiniTile();
 		for (int x = start.x - 20; x <= start.x + 20; x++)
 		{
 			for (int y = start.y - 20; y <= start.y + 20; y++)
 			{
-				if (WalkPosition(x, y).isValid() && GridTracker::Instance().getArbiterGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && (closestD == 0.0 || GridTracker::Instance().getACluster(x, y) > bestCluster || (GridTracker::Instance().getACluster(x, y) == bestCluster && TerrainTracker::Instance().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
+				if (WalkPosition(x, y).isValid() && Grids().getArbiterGrid(x, y) == 0 && Grids().getEAirGrid(x, y) == 0.0 && (closestD == 0.0 || Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
 				{
-					closestD = TerrainTracker::Instance().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y)));
-					bestCluster = GridTracker::Instance().getACluster(x, y);
+					closestD = Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y)));
+					bestCluster = Grids().getACluster(x, y);
 					bestPosition = Position(WalkPosition(x, y));
 				}
 				if (WalkPosition(x, y).isValid())
@@ -37,10 +37,10 @@ void SpecialUnitTrackerClass::updateArbiters()
 		// Move and update grids	
 		u.second.setDestination(bestPosition);
 		u.first->move(bestPosition);
-		GridTracker::Instance().updateArbiterMovement(u.first);
+		Grids().updateArbiterMovement(u.first);
 
 		// If there's a stasis target, cast stasis on it
-		Unit target = UnitTracker::Instance().getMyUnits()[u.first].getTarget();
+		Unit target = Units().getMyUnits()[u.first].getTarget();
 		if (target && target->exists() && u.first->getEnergy() >= 100)
 		{
 			u.first->useTech(TechTypes::Stasis_Field, target);
@@ -59,17 +59,17 @@ void SpecialUnitTrackerClass::updateObservers()
 	for (auto & u : myObservers)
 	{
 		// First check if any expansions need detection on them
-		if (BuildOrderTracker::Instance().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
+		if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
 		{
 			bool baseScout = false;
-			for (auto base : TerrainTracker::Instance().getNextExpansion())
+			for (auto base : Terrain().getNextExpansion())
 			{
 				// If an expansion is unbuildable and we've scouted it already, move there to detect burrowed units
-				if (!Broodwar->canBuildHere(base, UnitTypes::Protoss_Nexus, nullptr) && GridTracker::Instance().getNexusGrid(base.x, base.y) == 0)
+				if (!Broodwar->canBuildHere(base, UnitTypes::Protoss_Nexus, nullptr) && Grids().getNexusGrid(base.x, base.y) == 0)
 				{
 					u.second.setDestination(Position(base));
 					u.first->move(Position(base));
-					GridTracker::Instance().updateObserverMovement(u.first);
+					Grids().updateObserverMovement(u.first);
 					baseScout = true;
 				}
 			}
@@ -81,22 +81,22 @@ void SpecialUnitTrackerClass::updateObservers()
 
 		// Move towards lowest enemy air threat, no enemy detection and closest to enemy starting position	
 		double closestD = 0.0;
-		Position newDestination = GridTracker::Instance().getArmyCenter();
+		Position newDestination = Grids().getArmyCenter();
 		WalkPosition start = u.second.getMiniTile();
 		for (int x = start.x - 20; x <= start.x + 20; x++)
 		{
 			for (int y = start.y - 20; y <= start.y + 20; y++)
 			{
-				if (WalkPosition(x, y).isValid() && GridTracker::Instance().getEDetectorGrid(x, y) == 0 && Position(WalkPosition(x, y)).getDistance(Position(start)) > 64 && GridTracker::Instance().getACluster(x, y) > 0 && GridTracker::Instance().getObserverGrid(x, y) == 0 && GridTracker::Instance().getEAirGrid(x, y) == 0.0 && (Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition()) < closestD || closestD == 0))
+				if (WalkPosition(x, y).isValid() && Grids().getEDetectorGrid(x, y) == 0 && Position(WalkPosition(x, y)).getDistance(Position(start)) > 64 && Grids().getACluster(x, y) > 0 && Grids().getObserverGrid(x, y) == 0 && Grids().getEAirGrid(x, y) == 0.0 && (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0))
 				{
 					newDestination = Position(WalkPosition(x, y));
-					closestD = Position(WalkPosition(x, y)).getDistance(TerrainTracker::Instance().getEnemyStartingPosition());
+					closestD = Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition());
 				}
 			}
 		}
 		u.second.setDestination(newDestination);
 		u.first->move(newDestination);
-		GridTracker::Instance().updateObserverMovement(u.first);
+		Grids().updateObserverMovement(u.first);
 		Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
 		continue;
 	}
@@ -137,25 +137,25 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 	{
 		myArbiters[unit].setPosition(unit->getPosition());
 		myArbiters[unit].setDestination(unit->getPosition());
-		myArbiters[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
+		myArbiters[unit].setMiniTile(Util().getMiniTile(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Observer)
 	{
 		myObservers[unit].setPosition(unit->getPosition());
 		myObservers[unit].setDestination(unit->getPosition());
-		myObservers[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
+		myObservers[unit].setMiniTile(Util().getMiniTile(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
 		myTemplars[unit].setPosition(unit->getPosition());
 		myTemplars[unit].setDestination(unit->getPosition());
-		myTemplars[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
+		myTemplars[unit].setMiniTile(Util().getMiniTile(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
 		myReavers[unit].setPosition(unit->getPosition());
 		myReavers[unit].setDestination(unit->getPosition());
-		myReavers[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
+		myReavers[unit].setMiniTile(Util().getMiniTile(unit));
 	}	
 	return;
 }

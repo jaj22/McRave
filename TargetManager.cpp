@@ -21,7 +21,7 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 	double highest = 0.0, thisUnit = 0.0;
 	Unit target = nullptr;
 
-	for (auto &u : UnitTracker::Instance().getEnUnits())
+	for (auto &u : Units().getEnUnits())
 	{
 		if (!u.first)
 		{
@@ -78,8 +78,8 @@ Unit TargetTrackerClass::clusterTarget(Unit unit)
 	// Cluster variables, range of spells is 10
 	int highest = 0, range = 10;
 	TilePosition clusterTile;
-	UnitTracker::Instance().getMyUnits()[unit].setTargetPosition(Positions::None);
-	UnitTracker::Instance().getMyUnits()[unit].setTarget(nullptr);
+	Units().getMyUnits()[unit].setTargetPosition(Positions::None);
+	Units().getMyUnits()[unit].setTarget(nullptr);
 
 	// Reaver range is 8
 	if (unit->getType() == UnitTypes::Protoss_Reaver)
@@ -97,32 +97,32 @@ Unit TargetTrackerClass::clusterTarget(Unit unit)
 				// Reavers want ground clusters
 				if (unit->getType() == UnitTypes::Protoss_Reaver)
 				{
-					if (GridTracker::Instance().getEGroundCluster(x, y) > highest)
+					if (Grids().getEGroundCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getEGroundCluster(x, y);
+						highest = Grids().getEGroundCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
 				}
 				// Arbiters want Siege Tank clusters
 				else if (unit->getType() == UnitTypes::Protoss_Arbiter)
 				{
-					if (GridTracker::Instance().getStasisCluster(x, y) > highest)
+					if (Grids().getStasisCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getStasisCluster(x, y);
+						highest = Grids().getStasisCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
 				}
 				// High Templars can have air or ground clusters
 				else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 				{
-					if (GridTracker::Instance().getEGroundCluster(x, y) > highest)
+					if (Grids().getEGroundCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getEGroundCluster(x, y);
+						highest = Grids().getEGroundCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
-					if (GridTracker::Instance().getEAirCluster(x, y) > highest)
+					if (Grids().getEAirCluster(x, y) > highest)
 					{
-						highest = GridTracker::Instance().getEAirCluster(x, y);
+						highest = Grids().getEAirCluster(x, y);
 						clusterTile = TilePosition(x, y);
 					}
 				}

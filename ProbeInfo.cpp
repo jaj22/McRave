@@ -6,4 +6,5 @@ ProbeInfo::ProbeInfo()
 	resource = nullptr;
 	miniTile = WalkPositions::None;
 	lastGatherFrame = 0;
+	resourcePosition = Positions::None;
 }

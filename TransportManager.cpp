@@ -17,20 +17,20 @@ void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
 	if (shuttle.getCargoSize() < 4)
 	{
 		// See if any Reavers need a shuttle
-		for (auto & reaver : SpecialUnitTracker::Instance().getMyReavers())
+		for (auto & reaver : SpecialUnits().getMyReavers())
 		{
-			if (!UnitTracker::Instance().getMyUnits()[reaver.first].hasTransport() && shuttle.getCargoSize() + 2 < 4)
+			if (!Units().getMyUnits()[reaver.first].hasTransport() && shuttle.getCargoSize() + 2 < 4)
 			{
-				UnitTracker::Instance().getMyUnits()[reaver.first].setTransport(true);
+				Units().getMyUnits()[reaver.first].setTransport(true);
 				shuttle.assignCargo(reaver.first);
 			}
 		}
 		// See if any High Templars need a shuttle
-		for (auto & templar : SpecialUnitTracker::Instance().getMyTemplars())
+		for (auto & templar : SpecialUnits().getMyTemplars())
 		{
-			if (!UnitTracker::Instance().getMyUnits()[templar.first].hasTransport() && shuttle.getCargoSize() + 1 < 4)
+			if (!Units().getMyUnits()[templar.first].hasTransport() && shuttle.getCargoSize() + 1 < 4)
 			{
-				UnitTracker::Instance().getMyUnits()[templar.first].setTransport(true);
+				Units().getMyUnits()[templar.first].setTransport(true);
 				shuttle.assignCargo(templar.first);
 			}
 		}
@@ -40,29 +40,44 @@ void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
 
 void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 {
-	// Check if we should harass or fight with main army
-	if (StrategyTracker::Instance().globalAlly() > StrategyTracker::Instance().globalEnemy())
+	// Update what tiles have been used recently
+	for (auto & tile : Util().getMiniTilesUnderUnit(shuttle.unit()))
 	{
-		shuttle.setDrop(TerrainTracker::Instance().getEnemyStartingPosition());
-		shuttle.setHarassing(true);
+		recentExplorations[tile] = Broodwar->getFrameCount();
 	}
-	else
+
+	for (auto & tile : recentExplorations)
 	{
-		shuttle.setDrop(GridTracker::Instance().getArmyCenter());
+		if (tile.second > 100)
+		{
+
+		}
+	}
+
+
+	// Reset load state
+	shuttle.setLoadState(0);
+
+	//// Check if we should harass or fight with main army
+	//if (Strategy().globalAlly() > Strategy().globalEnemy())
+	//{
+	//	shuttle.setDrop(Terrain().getEnemyStartingPosition());
+	//	shuttle.setHarassing(true);
+	//}
+	//else
+	//{
+		shuttle.setDrop(Grids().getArmyCenter());
 		shuttle.setHarassing(false);
-	}
+	//}
 
 	// Check if we should be loading/unloading any cargo
 	for (auto & cargo : shuttle.getAssignedCargo())
 	{
-		// Reset load state
-		shuttle.setLoadState(0);
-
 		// If the cargo is not loaded
 		if (!cargo->isLoaded())
 		{
 			// If it's requesting a pickup
-			if ((UnitTracker::Instance().getMyUnits()[cargo].getStrategy() != 1 || (cargo->getType() == Protoss_Reaver && cargo->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()) || (cargo->getType() == Protoss_High_Templar && cargo->getEnergy() < 75)))
+			if ((Units().getMyUnits()[cargo].getTargetPosition().getDistance(Units().getMyUnits()[cargo].getPosition()) > 256) || (cargo->getType() == UnitTypes::Protoss_Reaver && cargo->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()) || (cargo->getType() == UnitTypes::Protoss_High_Templar && cargo->getEnergy() < 75))
 			{
 				shuttle.unit()->load(cargo);
 				shuttle.setLoadState(1);
@@ -74,13 +89,13 @@ void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 		else if (cargo->isLoaded())
 		{
 			// If we are harassing, check if we are close to drop point
-			if (shuttle.isHarassing() && shuttle.getPosition().getDistance(shuttle.getDrop()) < 160 && GridTracker::Instance().getEGroundGrid(shuttle.getMiniTile()) <= 0.0 && GridTracker::Instance().getEAirGrid(shuttle.getMiniTile().x, shuttle.getMiniTile().y) <= 0.0)
+			if (shuttle.isHarassing() && shuttle.getPosition().getDistance(shuttle.getDrop()) < 160)
 			{
 				shuttle.unit()->unload(cargo);
 				shuttle.setLoadState(2);
 			}
 			// Else check if we are in a position to help the main army
-			else if (!shuttle.isHarassing() && UnitTracker::Instance().getMyUnits()[cargo].getStrategy() == 1 && UnitTracker::Instance().getMyUnits()[cargo].getPosition().getDistance(UnitTracker::Instance().getMyUnits()[cargo].getTargetPosition()) < 320 && (cargo->getGroundWeaponCooldown() <= Broodwar->getLatencyFrames() || cargo->getEnergy() >= 75))
+			else if (!shuttle.isHarassing() && Units().getMyUnits()[cargo].getStrategy() == 1 && Units().getMyUnits()[cargo].getPosition().getDistance(Units().getMyUnits()[cargo].getTargetPosition()) < 320 && (cargo->getGroundWeaponCooldown() <= Broodwar->getLatencyFrames() || cargo->getEnergy() >= 75))
 			{
 				shuttle.unit()->unload(cargo);
 				shuttle.setLoadState(2);
@@ -93,69 +108,91 @@ void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 void TransportTrackerClass::updateMovement(TransportInfo& shuttle)
 {
 	// If performing a loading action, don't update movement
-	if (shuttle.getLoadState() != 0)
+	if (shuttle.getLoadState() == 1)
 	{
 		return;
 	}
 
-	// Initial setup
 	Position bestPosition = shuttle.getDrop();
 	WalkPosition start = shuttle.getMiniTile();
 	double bestCluster = 0;
-	double closestD = 0.0;
-	for (int itr = 1; itr <= 50; itr++)
+	int radius = 10;
+	double closestD = ((32 * Grids().getMobilityGrid(start)) + Position(start).getDistance(shuttle.getDrop()));
+
+	for (auto tile : Util().getMiniTilesUnderUnit(shuttle.unit()))
 	{
-		for (int x = start.x - itr; x <= start.x + itr; x++)
+		if (Grids().getEGroundGrid(tile) > 0 || Grids().getEAirGrid(tile) > 0 || Grids().getEGroundDistanceGrid(tile) > 0 || Grids().getEAirDistanceGrid(tile) > 0)
 		{
-			for (int y = start.y - itr; y <= start.y + itr; y++)
-			{
-				if (!WalkPosition(x, y).isValid())
-				{
-					continue;
-				}
-
-				if (WalkPosition(x, y) == start)
-				{
-					continue;
-				}
-
-				// If position is too close to maintain movement speed or has an air threat, don't move there
-				if (GridTracker::Instance().getEAirGrid(x, y) > 0)
-				{
-					continue;
-				}
-
-				// If trying to unload, must find a walkable tile
-				if (shuttle.getLoadState() == 1 && GridTracker::Instance().getMobilityGrid(x, y) == 0)
-				{
-					continue;
-				}
-
-				// If shuttle is harassing, move along low mobility low threat tiles
-				if (shuttle.isHarassing())
-				{
-					if ((1 + GridTracker::Instance().getEGroundGrid(x, y)) * (1 + shuttle.getDrop().getDistance(Position(WalkPosition(x, y)))) * (1 + GridTracker::Instance().getMobilityGrid(x, y)) < closestD || closestD == 0.0)
-					{
-						closestD = (1 + GridTracker::Instance().getEGroundGrid(x, y)) * (1 + shuttle.getDrop().getDistance(Position(WalkPosition(x, y)))) * (1 + GridTracker::Instance().getMobilityGrid(x, y));
-						bestPosition = Position(WalkPosition(x, y));
-					}
-				}
-				// Else, move to high ally cluster areas
-				else if (WalkPosition(x, y).getDistance(start) > 5 && (GridTracker::Instance().getACluster(x, y) > bestCluster || (GridTracker::Instance().getACluster(x, y) == bestCluster && bestCluster != 0 && shuttle.getDrop().getDistance(Position(WalkPosition(x, y))) < closestD)))
-				{
-					closestD = shuttle.getDrop().getDistance(Position(WalkPosition(x, y)));
-					bestCluster = GridTracker::Instance().getACluster(x, y);
-					bestPosition = Position(WalkPosition(x, y));
-				}
-			}
+			radius = 25;
+			closestD = 0.0;
+			continue;
 		}
 	}
 
-	shuttle.unit()->move(bestPosition);
+
+	// First look for mini tiles with no threat that are closest to the enemy and on low mobility
+	for (int x = start.x - radius; x <= start.x + radius; x++)
+	{
+		for (int y = start.y - radius; y <= start.y + radius; y++)
+		{
+			if (!WalkPosition(x, y).isValid())
+			{
+				continue;
+			}
+
+			// If trying to unload, must find a walkable tile
+			if (shuttle.getLoadState() == 2 && Grids().getMobilityGrid(x, y) == 0)
+			{
+				continue;
+			}			
+
+			// Else, move to high ally cluster areas
+			if (WalkPosition(x, y).getDistance(start) > 5 && (Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && bestCluster != 0 && shuttle.getDrop().getDistance(Position(WalkPosition(x, y))) < closestD)))
+			{
+				closestD = shuttle.getDrop().getDistance(Position(WalkPosition(x, y)));
+				bestCluster = Grids().getACluster(x, y);
+				bestPosition = Position(WalkPosition(x, y));
+			}
+
+			//// If low mobility, no threat and closest to the drop point
+			//if ((32 * Grids().getMobilityGrid(x, y)) + Position(WalkPosition(x, y)).getDistance(shuttle.getDrop()) < closestD || closestD == 0.0)
+			//{
+			//	bool bestTile = true;
+			//	for (int i = x - shuttle.getType().width() / 16; i < x + shuttle.getType().width() / 16; i++)
+			//	{
+			//		for (int j = y - shuttle.getType().height() / 16; j < y + shuttle.getType().height() / 16; j++)
+			//		{
+			//			if (WalkPosition(i, j).isValid())
+			//			{								
+			//				// If position has a threat, don't move there
+			//				if (Grids().getEGroundDistanceGrid(i, j) > 0.0 || Grids().getEAirDistanceGrid(i, j) > 0.0)
+			//				{
+			//					bestTile = false;
+			//					//Broodwar->drawCircleMap(Position(WalkPosition(i, j)), 2, Colors::Blue, true);
+			//				}
+			//			}
+			//			else
+			//			{
+			//				bestTile = false;
+			//			}
+			//		}
+			//	}
+			//	if (bestTile)
+			//	{
+			//		closestD = (32 * Grids().getMobilityGrid(x, y)) + Position(WalkPosition(x, y)).getDistance(Position(shuttle.getDrop()));
+			//		bestPosition = Position(WalkPosition(x, y));
+			//	}				
+			//}
+		}
+	}
 	shuttle.setDestination(bestPosition);
 	Broodwar->drawLineMap(shuttle.getPosition(), shuttle.getDestination(), Broodwar->self()->getColor());
+	shuttle.unit()->move(shuttle.getDestination());
 	return;
 }
+
+
+
 
 void TransportTrackerClass::removeUnit(Unit unit)
 {
@@ -178,6 +215,7 @@ void TransportTrackerClass::removeUnit(Unit unit)
 void TransportTrackerClass::storeUnit(Unit unit)
 {
 	myShuttles[unit].setUnit(unit);
+	myShuttles[unit].setType(unit->getType());
 	myShuttles[unit].setPosition(unit->getPosition());
-	myShuttles[unit].setMiniTile(UnitUtil::Instance().getMiniTile(unit));
+	myShuttles[unit].setMiniTile(Util().getMiniTile(unit));
 }

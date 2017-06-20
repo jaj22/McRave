@@ -3,7 +3,6 @@
 
 using namespace BWAPI;
 using namespace std;
-using namespace UnitTypes;
 
 class SupportUnitInfo
 {
@@ -29,6 +28,7 @@ class TransportInfo
 {
 	Position position, destination, drop;
 	Unit transport, target;
+	UnitType transportType;
 	WalkPosition miniTile;
 	set <Unit> assignedCargo;
 	int loadState; // Tristate: Loading, unloading, nothing (0,1,2)
@@ -48,6 +48,7 @@ public:
 	Position getPosition() { return position; }
 	Position getDestination() { return destination; }
 	Unit getTarget() { return target; }
+	UnitType getType() { return transportType; }
 	WalkPosition getMiniTile() { return miniTile; }
 	set <Unit>& getAssignedCargo() { return assignedCargo; }
 	int getCargoSize() { return cargoSize; }
@@ -59,6 +60,7 @@ public:
 	void setPosition(Position newPosition) { position = newPosition; }
 	void setDestination(Position newDestination) { destination = newDestination; }
 	void setTarget(Unit newTarget) { target = newTarget; }
+	void setType(UnitType newType) { transportType = newType; }
 	void setMiniTile(WalkPosition newMiniTile) { miniTile = newMiniTile; }
 	void setCargoSize(int newSize) { cargoSize = newSize; }
 	void setLoadState(int newState) { loadState = newState; }

@@ -8,7 +8,6 @@ using namespace BWAPI;
 using namespace BWEM;
 using namespace BWTA;
 using namespace std;
-using namespace UnitTypes;
 
 namespace { auto & theMap = BWEM::Map::Instance(); }
 

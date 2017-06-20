@@ -6,7 +6,7 @@ void ResourceTrackerClass::update()
 	{
 		if (r && r->exists())
 		{
-			if (GridTracker::Instance().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 1)
+			if (Grids().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 1)
 			{
 				if (r->getType().isMineralField() && r->getInitialResources() > 0 && myMinerals.find(r) == myMinerals.end())
 				{
@@ -18,11 +18,11 @@ void ResourceTrackerClass::update()
 					storeGas(r);
 				}				
 			}	
-			else if (GridTracker::Instance().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 0)
+			else if (Grids().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 0)
 			{
 				removeResource(r);
 			}
-			if (r->getInitialResources() == 0 && r->getDistance(TerrainTracker::Instance().getPlayerStartingPosition()) < 2560)
+			if (r->getInitialResources() == 0 && r->getDistance(Terrain().getPlayerStartingPosition()) < 2560)
 			{
 				storeBoulder(r);
 			}
@@ -98,7 +98,7 @@ void ResourceTrackerClass::removeResource(Unit resource)
 		myBoulders.erase(resource);
 	}
 
-	for (auto & probe : ProbeTracker::Instance().getMyProbes())
+	for (auto & probe : Probes().getMyProbes())
 	{
 		if (probe.second.getTarget() == resource)
 		{

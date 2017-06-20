@@ -5,11 +5,11 @@
 
 using namespace BWAPI;
 using namespace std;
-using namespace UnitTypes;
 
 class TransportTrackerClass
 {
 	map <Unit, TransportInfo> myShuttles;
+	map <WalkPosition, int> recentExplorations;
 public:
 	void update();
 	void updateCargo(TransportInfo&);

@@ -6,7 +6,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	// Offset for first pylon
 	if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
 	{
-		if (TerrainTracker::Instance().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 640)
+		if (Terrain().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 640)
 		{
 			return false;
 		}
@@ -20,7 +20,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	}
 
 	// Check if it's not a pylon and in a preset buildable position based on power grid
-	if (building != UnitTypes::Protoss_Pylon && !PylonTracker::Instance().hasPower(buildTilePosition, building))
+	if (building != UnitTypes::Protoss_Pylon && !Pylons().hasPower(buildTilePosition, building))
 	{
 		return false;
 	}
@@ -40,19 +40,19 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 			if (TilePosition(x, y).isValid())
 			{
 				// If it's reserved
-				if (GridTracker::Instance().getReserveGrid(x, y) > 0)
+				if (Grids().getReserveGrid(x, y) > 0)
 				{
 					return false;
 				}
 
 				// If it's a pylon and overlapping too many pylons
-				if (building == UnitTypes::Protoss_Pylon && GridTracker::Instance().getPylonGrid(x, y) >= 2)
+				if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 2)
 				{
 					return false;
 				}
 
 				// If it's not a cannon and on top of the resource grid
-				if (building != UnitTypes::Protoss_Photon_Cannon && GridTracker::Instance().getResourceGrid(x, y) > 0)
+				if (building != UnitTypes::Protoss_Photon_Cannon && Grids().getResourceGrid(x, y) > 0)
 				{
 					return false;
 				}
@@ -77,7 +77,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 		{
 			for (int y = buildTilePosition.y - offset; y < buildTilePosition.y + building.tileHeight() + offset; y++)
 			{
-				if (GridTracker::Instance().getReserveGrid(x, y) > 0 && !Broodwar->isBuildable(TilePosition(x, y), true))
+				if (Grids().getReserveGrid(x, y) > 0 && !Broodwar->isBuildable(TilePosition(x, y), true))
 				{
 					return false;
 				}
@@ -86,7 +86,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	}
 
 	// For every tile of an expansion
-	for (auto base : TerrainTracker::Instance().getNextExpansion())
+	for (auto base : Terrain().getNextExpansion())
 	{
 		for (int i = 0; i < building.tileWidth(); i++)
 		{
@@ -152,11 +152,11 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 {
 	// For each expansion, check if you can build near it, starting at the main
-	for (TilePosition tile : TerrainTracker::Instance().getActiveExpansion())
+	for (TilePosition tile : Terrain().getActiveExpansion())
 	{
 		if (building == UnitTypes::Protoss_Assimilator)
 		{
-			for (auto gas : ResourceTracker::Instance().getMyGas())
+			for (auto gas : Resources().getMyGas())
 			{
 				if (gas.second.getType() == UnitTypes::Resource_Vespene_Geyser)
 				{
@@ -166,7 +166,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 		else if (building == UnitTypes::Protoss_Nexus)
 		{
-			for (auto base : TerrainTracker::Instance().getNextExpansion())
+			for (auto base : Terrain().getNextExpansion())
 			{
 				if (Broodwar->getUnitsInRadius(Position(base), 128, Filter::IsResourceDepot).size() <= 0)
 				{
@@ -191,20 +191,20 @@ void BuildingTrackerClass::update()
 void BuildingTrackerClass::queueBuildings()
 {
 	// For each building in the protoss race
-	for (auto &b : BuildOrderTracker::Instance().getBuildingDesired())
+	for (auto &b : BuildOrder().getBuildingDesired())
 	{
 		// If our visible count is lower than our desired count
 		if (b.second > Broodwar->self()->visibleUnitCount(b.first) && queuedBuildings.find(b.first) == queuedBuildings.end())
 		{
-			TilePosition here = BuildingTracker::Instance().getBuildLocation(b.first);
-			Unit builder = ProbeTracker::Instance().getClosestProbe(Position(here));			
+			TilePosition here = Buildings().getBuildLocation(b.first);
+			Unit builder = Probes().getClosestProbe(Position(here));			
 		
 			// If the Tile Position and Builder are valid
 			if (here.isValid() && builder)
 			{
 				// Queue at this building type a pair of building placement and builder
 				queuedBuildings.emplace(b.first, make_pair(here, builder));
-				GridTracker::Instance().updateReservedLocation(b.first, here);
+				Grids().updateReservedLocation(b.first, here);
 			}
 		}
 	}
@@ -222,14 +222,14 @@ void BuildingTrackerClass::constructBuildings()
 		// If probe died, replace the probe
 		if (!b.second.second || !b.second.second->exists())
 		{
-			b.second.second = ProbeTracker::Instance().getClosestProbe(Position(b.second.first));
+			b.second.second = Probes().getClosestProbe(Position(b.second.first));
 			continue;
 		}
 
 		// If placement is invalid, replace
 		if (!b.second.first.isValid())
 		{
-			b.second.first = BuildingTracker::Instance().getBuildLocation(b.first);
+			b.second.first = Buildings().getBuildLocation(b.first);
 			continue;
 		}		
 
@@ -264,9 +264,9 @@ void BuildingTrackerClass::constructBuildings()
 		{
 			for (int y = b.second.first.y; y <= b.second.first.y + b.first.tileHeight(); y++)
 			{
-				if (Broodwar->isVisible(TilePosition(x, y)) && (GridTracker::Instance().getReserveGrid(x, y) > 0 || !Broodwar->isBuildable(TilePosition(x, y))))
+				if (Broodwar->isVisible(TilePosition(x, y)) && (Grids().getReserveGrid(x, y) > 0 || !Broodwar->isBuildable(TilePosition(x, y))))
 				{
-					b.second.first = BuildingTracker::Instance().getBuildLocation(b.first);
+					b.second.first = Buildings().getBuildLocation(b.first);
 					continue;
 				}
 			}

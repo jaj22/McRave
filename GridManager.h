@@ -17,7 +17,8 @@ class GridTrackerClass
 	// Enemy grids
 	double eGroundGrid[1024][1024];
 	double eAirGrid[1024][1024];
-	double eDistanceGrid[1024][1024];
+	double eGroundDistanceGrid[1024][1024];
+	double eAirDistanceGrid[1024][1024];
 	int eDetectorGrid[1024][1024];
 	int eGroundClusterGrid[256][256];
 	int eAirClusterGrid[256][256];
@@ -52,7 +53,7 @@ public:
 	void updateObserverMovement(Unit);
 	void updateAllyMovement(Unit, WalkPosition);
 	void updateReservedLocation(UnitType, TilePosition);
-	void updateDistanceGrid();
+	void updateGroundDistanceGrid();
 
 	// Ally mini tile grid functions
 	int getACluster(int x, int y) { return aClusterGrid[x][y]; }
@@ -73,8 +74,10 @@ public:
 	double getEGroundGrid(WalkPosition here) { return eGroundGrid[here.x][here.y]; }
 	double getEAirGrid(int x, int y) { return eAirGrid[x][y]; }
 	double getEAirGrid(WalkPosition here) { return eAirGrid[here.x][here.y]; }
-	double getEDistanceGrid(int x, int y) { return eDistanceGrid[x][y]; }
-	double getEDistanceGrid(WalkPosition here) { return eDistanceGrid[here.x][here.y]; }
+	double getEGroundDistanceGrid(int x, int y) { return eGroundDistanceGrid[x][y]; }
+	double getEGroundDistanceGrid(WalkPosition here) { return eGroundDistanceGrid[here.x][here.y]; }
+	double getEAirDistanceGrid(int x, int y) { return eAirDistanceGrid[x][y]; }
+	double getEAirDistanceGrid(WalkPosition here) { return eAirDistanceGrid[here.x][here.y]; }	
 	int getEDetectorGrid(int x, int y) { return eDetectorGrid[x][y]; }
 	int getEDetectorGrid(WalkPosition here) { return eDetectorGrid[here.x][here.y]; }
 

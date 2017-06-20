@@ -5,7 +5,7 @@ void InterfaceTrackerClass::update()
 	int offset = 0;
 
 	// Show what buildings we want
-	for (auto b : BuildOrderTracker::Instance().getBuildingDesired())
+	for (auto b : BuildOrder().getBuildingDesired())
 	{
 		if (b.second > 0)
 		{
@@ -22,16 +22,16 @@ void InterfaceTrackerClass::update()
 	Broodwar->drawTextScreen(200, 10, "%d", Broodwar->getFrameCount());
 
 	// Display global strength calculations	
-	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", StrategyTracker::Instance().globalAlly(), StrategyTracker::Instance().globalEnemy());
+	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Strategy().globalAlly(), Strategy().globalEnemy());
 
 	// Display remaining minerals on each mineral patch that is near our Nexus
-	for (auto r : ResourceTracker::Instance().getMyMinerals())
+	for (auto r : Resources().getMyMinerals())
 	{
 		Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 8), "%c%d", Text::White, r.second.getRemainingResources());
 	}
 
 	// Display remaining gas on each geyser that is near our Nexus
-	for (auto r : ResourceTracker::Instance().getMyGas())
+	for (auto r : Resources().getMyGas())
 	{
 		Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 32), "%c%d", Text::Green, r.second.getRemainingResources());
 	}	
@@ -45,11 +45,11 @@ void InterfaceTrackerClass::update()
 	//}	
 
 	// Show expansions
-	if (TerrainTracker::Instance().getAnalyzed())
+	if (Terrain().getAnalyzed())
 	{
-		for (int i = 0; i <= (int)TerrainTracker::Instance().getActiveExpansion().size() - 1; i++)
+		for (int i = 0; i <= (int)Terrain().getActiveExpansion().size() - 1; i++)
 		{
-			Broodwar->drawTextMap(48 + TerrainTracker::Instance().getActiveExpansion().at(i).x * 32, 104 + TerrainTracker::Instance().getActiveExpansion().at(i).y * 32, "%cBase %d", Broodwar->self()->getTextColor(), i, Colors::White);
+			Broodwar->drawTextMap(48 + Terrain().getActiveExpansion().at(i).x * 32, 104 + Terrain().getActiveExpansion().at(i).y * 32, "%cBase %d", Broodwar->self()->getTextColor(), i, Colors::White);
 		}
 
 	}

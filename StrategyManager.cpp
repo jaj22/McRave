@@ -13,7 +13,7 @@ void StrategyTrackerClass::updateAlly()
 	globalAllyStrength = 0.0;
 
 	// Check through all alive units or units dead within 500 frames
-	for (auto &u : UnitTracker::Instance().getMyUnits())
+	for (auto &u : Units().getMyUnits())
 	{
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
@@ -66,7 +66,7 @@ void StrategyTrackerClass::updateEnemy()
 	globalEnemyStrength = 0.0;
 
 	// Stored enemy units iterator
-	for (auto &u : UnitTracker::Instance().getEnUnits())
+	for (auto &u : Units().getEnUnits())
 	{
 		// If nullptr, continue
 		if (!u.first)
@@ -85,7 +85,7 @@ void StrategyTrackerClass::updateEnemy()
 			}
 
 			// Strength based calculations ignore workers and buildings
-			if ((u.second.getType().isBuilding() && u.second.getMaxStrength() > 1.0) || (!u.second.getType().isBuilding() && !u.second.getType().isWorker()) || u.first->exists() && TerrainTracker::Instance().getAllyTerritory().find(getRegion(u.first->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+			if ((u.second.getType().isBuilding() && u.second.getMaxStrength() > 1.0) || (!u.second.getType().isBuilding() && !u.second.getType().isWorker()) || u.first->exists() && Terrain().getAllyTerritory().find(getRegion(u.first->getTilePosition())) != Terrain().getAllyTerritory().end())
 			{
 				// Add strength				
 				globalEnemyStrength += u.second.getStrength();
@@ -147,7 +147,7 @@ void StrategyTrackerClass::updateComposition()
 		}
 
 		// If a possible invis unit exists, we can get Observers first
-		if (t.first == Protoss_Dark_Templar || t.first == Protoss_Citadel_of_Adun || t.first == Protoss_Templar_Archives || t.first == Terran_Wraith || t.first == Terran_Ghost || t.first == Zerg_Lurker)
+		if (t.first == UnitTypes::Protoss_Dark_Templar || t.first == UnitTypes::Protoss_Citadel_of_Adun || t.first == UnitTypes::Protoss_Templar_Archives || t.first == UnitTypes::Terran_Wraith || t.first == UnitTypes::Terran_Ghost || t.first == UnitTypes::Zerg_Lurker)
 		{
 			invis = true;
 		}
@@ -156,13 +156,13 @@ void StrategyTrackerClass::updateComposition()
 		if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 		{
 			// If we are being 2 gate rushed or proxy rushed, make a shield battery
-			if (ProbeTracker::Instance().isScouting() && t.first == UnitTypes::Protoss_Gateway && (t.second >= 2 || t.second == 0) && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end() && TerrainTracker::Instance().getEnemyBasePositions().size() > 0)
+			if (Probes().isScouting() && t.first == UnitTypes::Protoss_Gateway && (t.second >= 2 || t.second == 0) && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end() && Terrain().getEnemyBasePositions().size() > 0)
 			{
 				rush = true;
 			}
 
 			// If we are being 4/5 pooled, make a shield battery
-			if (ProbeTracker::Instance().isScouting() && t.first == UnitTypes::Zerg_Zergling && t.second >= 4 && enemyComposition[Zerg_Drone] <= 6)
+			if (Probes().isScouting() && t.first == UnitTypes::Zerg_Zergling && t.second >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
 			{
 				rush = true;
 			}
@@ -194,71 +194,71 @@ void StrategyTrackerClass::updateUnitScore(UnitType unit, int count)
 	{
 		if (Broodwar->enemy()->getRace() == Races::Terran)
 		{
-	case Enum::Terran_Marine:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Marine:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Medic:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Medic:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Firebat:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Firebat:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Vulture:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Vulture:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Goliath:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Goliath:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Wraith:
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Wraith:
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Science_Vessel:
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Science_Vessel:
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Battlecruiser:
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (1.00*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Battlecruiser:
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (1.00*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Siege_Tank_Siege_Mode:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.85*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.15*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Siege_Tank_Siege_Mode:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.85*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.15*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Terran_Siege_Tank_Tank_Mode:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.85*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.15*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Terran_Siege_Tank_Tank_Mode:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.85*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.15*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
 		}
 		if (Broodwar->enemy()->getRace() == Races::Zerg)
 		{
-	case Enum::Zerg_Zergling:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Zerg_Zergling:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.50*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Zerg_Hydralisk:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Zerg_Hydralisk:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Zerg_Lurker:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Zerg_Lurker:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Zerg_Ultralisk:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Zerg_Ultralisk:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Zerg_Mutalisk:
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Zerg_Mutalisk:
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Zerg_Guardian:
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Zerg_Guardian:
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
-	case Enum::Zerg_Defiler:
-		unitScore[Protoss_Zealot] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Zealot))))));
-		unitScore[Protoss_Dragoon] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(Protoss_Dragoon))))));
+	case UnitTypes::Enum::Zerg_Defiler:
+		unitScore[UnitTypes::Protoss_Zealot] += max(0.0, log(1 + (0.75*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot))))));
+		unitScore[UnitTypes::Protoss_Dragoon] += max(0.0, log(1 + (0.25*double(count) / (1.0 + double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon))))));
 		break;
 		}
 		if (Broodwar->enemy()->getRace() == Races::Protoss)

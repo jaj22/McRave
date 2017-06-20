@@ -3,8 +3,8 @@
 void BuildOrderTrackerClass::update()
 {
 	// Temporary variables
-	int supply = UnitTracker::Instance().getSupply();
-	bool saturated = ResourceTracker::Instance().isSaturated();
+	int supply = Units().getSupply();
+	bool saturated = Resources().isSaturated();
 
 	// Pylon, Forge, Nexus
 	buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((supply / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
@@ -12,25 +12,25 @@ void BuildOrderTrackerClass::update()
 	buildingDesired[UnitTypes::Protoss_Nexus] = max(buildingDesired[UnitTypes::Protoss_Nexus], Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus));
 
 	// If we are saturated, expand
-	if (StrategyTracker::Instance().isRush() && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && ProductionTracker::Instance().getIdleGates().size() == 0)
+	if (!Strategy().isRush() && Broodwar->self()->minerals() > 300 && saturated && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)) && Production().getIdleGates().size() == 0)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
 	}
 
 	// If we need a shield battery to defend
-	if (StrategyTracker::Instance().isRush())
+	if (Strategy().isRush())
 	{
-		buildingDesired[UnitTypes::Protoss_Shield_Battery] = min(1,Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
+		buildingDesired[UnitTypes::Protoss_Shield_Battery] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
 	}
 
 	// If forcing an early natural expansion
-	if (StrategyTracker::Instance().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
+	if (Strategy().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
 	}
 
 	// If no idle gates and we are floating minerals, add 1 more
-	if ((Broodwar->self()->minerals() > 800 || (Broodwar->self()->minerals() > 200 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && ProductionTracker::Instance().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
+	if ((Broodwar->self()->minerals() > 800 || (Broodwar->self()->minerals() > 200 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) >= 1 && Production().getIdleGates().size() == 0 && buildingDesired[UnitTypes::Protoss_Nexus] == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
 	{
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
@@ -42,9 +42,9 @@ void BuildOrderTrackerClass::update()
 	}
 
 	// If we have stabilized and have 4 dragoons, time to tech to mid game
-	if ((StrategyTracker::Instance().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 6) || (!StrategyTracker::Instance().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 2 && ProductionTracker::Instance().getIdleGates().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2))
-	{		
-		getMidBuild = true;		
+	if ((Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 6) || (!Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 2 && Production().getIdleGates().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2))
+	{
+		getMidBuild = true;
 	}
 
 	// If we are in mid game builds and we hit at least 4 gates, chances are we need to tech again
@@ -55,7 +55,7 @@ void BuildOrderTrackerClass::update()
 	}
 
 	// If not early build, gas is now based on whether we need more or not rather than a supply amount	
-	if (!getEarlyBuild && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == buildingDesired[UnitTypes::Protoss_Nexus])
+	if (!getEarlyBuild && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == buildingDesired[UnitTypes::Protoss_Nexus] && Broodwar->self()->gas() - Production().getReservedGas() - Buildings().getQueuedGas() < 50 && Broodwar->self()->minerals() - Production().getReservedMineral() - Buildings().getQueuedMineral() > 50)
 	{
 		buildingDesired[UnitTypes::Protoss_Assimilator] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
 	}
@@ -66,7 +66,7 @@ void BuildOrderTrackerClass::update()
 		// IMPLEMENTING -- If Muta, mid build 2 (corsairs)
 	case Races::Enum::Zerg:
 		earlyBuild = 0;
-		if (StrategyTracker::Instance().needDetection())
+		if (Strategy().needDetection())
 		{
 			midBuild = 1;
 		}
@@ -74,13 +74,13 @@ void BuildOrderTrackerClass::update()
 		{
 			midBuild = 0;
 		}
-		lateBuild = 1;		
+		lateBuild = 1;
 		break;
 
 		/* Protoss vs Terran		Early Game: 1 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps and Arbiters	*/
 	case Races::Enum::Terran:
 		earlyBuild = 2;
-		if (TerrainTracker::Instance().isWalled())
+		if (Terrain().isWalled())
 		{
 			midBuild = 3;
 		}
@@ -94,7 +94,7 @@ void BuildOrderTrackerClass::update()
 		/* Protoss vs Protoss		Early Game: 2 Gate Core		Mid Game Tech: Reavers		Late Game Tech: High Temps */
 	case Races::Enum::Protoss:
 		earlyBuild = 1;
-		if (StrategyTracker::Instance().needDetection())
+		if (Strategy().needDetection())
 		{
 			midBuild = 1;
 		}
@@ -132,12 +132,12 @@ void BuildOrderTrackerClass::update()
 
 void BuildOrderTrackerClass::earlyBuilds()
 {
-	int supply = UnitTracker::Instance().getSupply();
+	int supply = Units().getSupply();
 	switch (earlyBuild)
 	{
 	case 0:
 		// -- 2 Gate Core --
-		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4);		
+		buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) / 4);
 		if (supply >= 20 && supply < 24)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
@@ -145,7 +145,11 @@ void BuildOrderTrackerClass::earlyBuilds()
 		else if (supply >= 24)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
-		}		
+		}
+		else if (supply >= 48)
+		{
+			buildingDesired[UnitTypes::Protoss_Assimilator] = 1;
+		}
 		//currentStrategy.assign("Two Gate Core");
 		break;
 	case 1:
@@ -155,17 +159,17 @@ void BuildOrderTrackerClass::earlyBuilds()
 			buildingDesired[UnitTypes::Protoss_Gateway] = 1;
 		}
 		if (supply >= 24)
-		{			
+		{
 			buildingDesired[UnitTypes::Protoss_Assimilator] = 1;
-		}		
+		}
 		if (supply >= 36)
 		{
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = 1;
-		}		
+		}
 		if (supply >= 38)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = 2;
-		}	
+		}
 		//currentStrategy.assign("One Gate Core");
 		break;
 	case 2:
@@ -200,7 +204,7 @@ void BuildOrderTrackerClass::earlyBuilds()
 
 void BuildOrderTrackerClass::midBuilds()
 {
-	int supply = UnitTracker::Instance().getSupply();
+	int supply = Units().getSupply();
 	switch (midBuild){
 	case 0:
 		// -- Reavers First --		
@@ -242,7 +246,7 @@ void BuildOrderTrackerClass::midBuilds()
 
 void BuildOrderTrackerClass::lateBuilds()
 {
-	int supply = UnitTracker::Instance().getSupply();
+	int supply = Units().getSupply();
 	switch (lateBuild)
 	{
 	case 0:

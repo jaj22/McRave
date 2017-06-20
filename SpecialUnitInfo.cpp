@@ -15,6 +15,7 @@ TransportInfo::TransportInfo()
 {
 	position = Positions::None;
 	destination = Positions::None;
+	drop = Positions::None;
 	miniTile = WalkPositions::None;
 	transport = nullptr;
 	target = nullptr;

@@ -51,7 +51,7 @@ void TerrainTrackerClass::update()
 				analyzeMap = false;
 				for (auto base : getBaseLocations())
 				{
-					int distances = getGroundDistance2(base->getTilePosition(), playerStartingTilePosition) - getGroundDistance2(base->getTilePosition(), enemyStartingTilePosition) - base->getTilePosition().getDistance(TilePosition(Broodwar->mapWidth(), Broodwar->mapHeight()));
+					int distances = int(getGroundDistance2(base->getTilePosition(), playerStartingTilePosition) - getGroundDistance2(base->getTilePosition(), enemyStartingTilePosition) - base->getTilePosition().getDistance(TilePosition(Broodwar->mapWidth(), Broodwar->mapHeight())));
 					if (base->isMineralOnly() && base->getPosition().getDistance(playerStartingPosition) < 2560)
 					{
 						distances += 1280;
@@ -169,7 +169,7 @@ void TerrainTrackerClass::update()
 		{
 			if (u->getType().isBuilding())
 			{
-				if (ProbeTracker::Instance().isScouting())
+				if (Probes().isScouting())
 				{
 					if (Broodwar->enemy()->getRace() == Races::Terran && u->getDistance(getNearestChokepoint(u->getPosition())->getCenter()) < 256)
 					{

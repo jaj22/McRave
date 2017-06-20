@@ -11,9 +11,10 @@
 // DISABLED CURRENTLY: Cannons
 
 // Take angles into account for micro?
-// Strict engage/disengage (local 2,3)?
 
 // TODOS:
+// Reavers flee into shuttles
+// Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
 // One time supply increase instead of resetting?
@@ -24,6 +25,9 @@
 
 // Testing:
 // Spider mine removal from expansions - Testing 2.0
+
+// Possibility:
+// 3 base carrier against iron?
 
 void McRaveModule::onStart()
 {
@@ -45,7 +49,7 @@ void McRaveModule::onStart()
 	BWEM::utils::printMap(theMap);      // will print the map into the file <StarCraftFolder>bwapi-data/map.bmp
 	BWEM::utils::pathExample(theMap);   // add to the printed map a path between two starting locations
 
-	if (TerrainTracker::Instance().getAnalyzed() == false) {
+	if (Terrain().getAnalyzed() == false) {
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AnalyzeThread, NULL, 0, NULL);
 	}
 	readMap();
@@ -62,20 +66,20 @@ void McRaveModule::onEnd(bool isWinner)
 
 void McRaveModule::onFrame()
 {
-	TerrainTracker::Instance().update();
-	GridTracker::Instance().update();
-	ResourceTracker::Instance().update();
-	StrategyTracker::Instance().update();
-	ProbeTracker::Instance().update();
-	UnitTracker::Instance().update();
-	SpecialUnitTracker::Instance().update();
-	TransportTracker::Instance().update();
-	CommandTracker::Instance().update();
-	BuildOrderTracker::Instance().update();
-	BuildingTracker::Instance().update();
-	ProductionTracker::Instance().update();
-	NexusTracker::Instance().update();
-	InterfaceTracker::Instance().update();
+	Terrain().update();
+	Grids().update();
+	Resources().update();
+	Strategy().update();
+	Probes().update();
+	Units().update();
+	SpecialUnits().update();
+	Transport().update();
+	Commands().update();
+	BuildOrder().update();
+	Buildings().update();
+	Production().update();
+	Nexuses().update();
+	Display().update();
 }
 
 void McRaveModule::onSendText(std::string text)
@@ -115,22 +119,22 @@ void McRaveModule::onUnitHide(BWAPI::Unit unit)
 
 void McRaveModule::onUnitCreate(BWAPI::Unit unit)
 {
-	BuildingTracker::Instance().updateQueue(unit);
+	Buildings().updateQueue(unit);
 }
 
 void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 {
-	UnitTracker::Instance().decayUnit(unit);
-	BuildingTracker::Instance().removeBuilding(unit);
-	SpecialUnitTracker::Instance().removeUnit(unit);
-	ProbeTracker::Instance().removeProbe(unit);
-	ResourceTracker::Instance().removeResource(unit);
-	TerrainTracker::Instance().removeTerritory(unit);
+	Units().decayUnit(unit);
+	Buildings().removeBuilding(unit);
+	SpecialUnits().removeUnit(unit);
+	Probes().removeProbe(unit);
+	Resources().removeResource(unit);
+	Terrain().removeTerritory(unit);
 }
 
 void McRaveModule::onUnitMorph(BWAPI::Unit unit)
 {
-	BuildingTracker::Instance().updateQueue(unit);
+	Buildings().updateQueue(unit);
 }
 
 void McRaveModule::onUnitRenegade(BWAPI::Unit unit)
@@ -148,7 +152,7 @@ void McRaveModule::onUnitComplete(BWAPI::Unit unit)
 DWORD WINAPI AnalyzeThread()
 {
 	BWTA::analyze();
-	TerrainTracker::Instance().setAnalyzed();
+	Terrain().setAnalyzed();
 	return 0;
 }
 

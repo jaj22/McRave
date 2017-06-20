@@ -43,9 +43,9 @@ void NexusTrackerClass::removeNexus(Unit nexus)
 	if (myNexus.find(nexus) != myNexus.end())
 	{
 		myNexus.erase(nexus);
-		if (TerrainTracker::Instance().getAllyTerritory().find(getRegion(nexus->getTilePosition())) != TerrainTracker::Instance().getAllyTerritory().end())
+		if (Terrain().getAllyTerritory().find(getRegion(nexus->getTilePosition())) != Terrain().getAllyTerritory().end())
 		{
-			TerrainTracker::Instance().getAllyTerritory().erase(getRegion(nexus->getTilePosition()));
+			Terrain().getAllyTerritory().erase(getRegion(nexus->getTilePosition()));
 		}
 	}
 }
@@ -54,7 +54,7 @@ void NexusTrackerClass::trainProbes()
 {
 	for (auto nexus : myNexus)
 	{
-		if (!ResourceTracker::Instance().isSaturated() && nexus.first->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + ProductionTracker::Instance().getReservedMineral() + BuildingTracker::Instance().getQueuedMineral()))
+		if (!Resources().isSaturated() && nexus.first->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
 		{
 			nexus.first->train(UnitTypes::Protoss_Probe);
 		}
@@ -65,25 +65,25 @@ void NexusTrackerClass::updateDefenses()
 {
 	for (auto &nexus : myNexus)
 	{
-		if (!TerrainTracker::Instance().getAnalyzed())
+		if (!Terrain().getAnalyzed())
 		{
 			continue;
 		}
 		//if (nexus.first->getUnitsInRadius(128, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) > 1)
 		//{
-		//	TilePosition here = BuildingTracker::Instance().getBuildLocationNear(UnitTypes::Protoss_Pylon, nexus.first->getTilePosition(), false);
+		//	TilePosition here = Buildings().getBuildLocationNear(UnitTypes::Protoss_Pylon, nexus.first->getTilePosition(), false);
 		//	Unit builder = Broodwar->getClosestUnit(Position(here), Filter::IsAlly && Filter::IsWorker && !Filter::IsGatheringGas && !Filter::IsCarryingGas && !Filter::IsStuck);
 		//	// Create a pylon there
 		//	if (here != TilePositions::None && builder)
 		//	{
 		//		// Queue at this building type a pair of building placement and builder
-		//		BuildingTracker::Instance().getQueuedBuildings().emplace(UnitTypes::Protoss_Pylon, make_pair(here, builder));
-		//		GridTracker::Instance().updateReservedLocation(UnitTypes::Protoss_Pylon, here);
+		//		Buildings().getQueuedBuildings().emplace(UnitTypes::Protoss_Pylon, make_pair(here, builder));
+		//		Grids().updateReservedLocation(UnitTypes::Protoss_Pylon, here);
 		//	}
 		//}
 
 		// Emplace the ally territory
-		TerrainTracker::Instance().getAllyTerritory().emplace(getRegion(nexus.first->getTilePosition()));
+		Terrain().getAllyTerritory().emplace(getRegion(nexus.first->getTilePosition()));
 	}
 
 	//	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge) == 0 || !nexus.first->isCompleted())
@@ -96,21 +96,21 @@ void NexusTrackerClass::updateDefenses()
 	//	if (!Broodwar->hasPower(nexus.second.getCannonPosition()) && Broodwar->getUnitsInRadius(Position(nexus.second.getCannonPosition()), 256, Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Pylon).size() == 0)
 	//	{
 	//		Unit builder = Broodwar->getClosestUnit(Position(nexus.second.getCannonPosition()), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
-	//		TilePosition here = BuildingTracker::Instance().getBuildLocationNear(UnitTypes::Protoss_Pylon, nexus.second.getCannonPosition(), true);
+	//		TilePosition here = Buildings().getBuildLocationNear(UnitTypes::Protoss_Pylon, nexus.second.getCannonPosition(), true);
 	//		if (here != TilePositions::None && builder)
 	//		{
 	//			// Queue at this building type a pair of building placement and builder
-	//			BuildingTracker::Instance().getQueuedBuildings().emplace(UnitTypes::Protoss_Pylon, make_pair(here, builder));
+	//			Buildings().getQueuedBuildings().emplace(UnitTypes::Protoss_Pylon, make_pair(here, builder));
 	//		}
 	//	}
 	//	else if (nexus.second.getCannonCount() < 2 && Broodwar->hasPower(nexus.second.getCannonPosition()))
 	//	{
 	//		Unit builder = Broodwar->getClosestUnit(Position(nexus.second.getCannonPosition()), Filter::IsAlly && Filter::IsWorker && !Filter::IsCarryingSomething && !Filter::IsGatheringGas);
-	//		TilePosition here = BuildingTracker::Instance().getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, nexus.second.getCannonPosition(), true);
+	//		TilePosition here = Buildings().getBuildLocationNear(UnitTypes::Protoss_Photon_Cannon, nexus.second.getCannonPosition(), true);
 	//		if (here != TilePositions::None && builder)
 	//		{
 	//			// Queue at this building type a pair of building placement and builder
-	//			BuildingTracker::Instance().getQueuedBuildings().emplace(UnitTypes::Protoss_Photon_Cannon, make_pair(here, builder));
+	//			Buildings().getQueuedBuildings().emplace(UnitTypes::Protoss_Photon_Cannon, make_pair(here, builder));
 	//		}
 	//	}
 	//}
