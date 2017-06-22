@@ -22,17 +22,17 @@ void UnitTrackerClass::storeUnits()
 	// For all ally units
 	for (auto &u : Broodwar->self()->getUnits())
 	{
-		// Add supply of this unit
-		if (u->getType().supplyRequired() > 0)
-		{
-			supply = supply + u->getType().supplyRequired();
-		}
-
 		// Don't want to store scarabs or units that don't exist
 		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists())
 		{
 			continue;
 		}
+
+		// Add supply of this unit
+		if (u->getType().supplyRequired() > 0)
+		{
+			supply = supply + u->getType().supplyRequired();
+		}		
 
 		// Store buildings even if they're not completed
 		if (u->getType().isBuilding())
@@ -40,7 +40,7 @@ void UnitTrackerClass::storeUnits()
 			Buildings().storeBuilding(u);
 			if (u->getType() == UnitTypes::Protoss_Nexus)
 			{
-				Nexuses().storeNexus(u);
+				Bases().storeBase(u);
 			}
 			else if (u->getType() == UnitTypes::Protoss_Pylon)
 			{
@@ -54,10 +54,10 @@ void UnitTrackerClass::storeUnits()
 			continue;
 		}
 
-		// Store Probes
-		else if (u->getType() == UnitTypes::Protoss_Probe)
+		// Store workers
+		else if (u->getType().isWorker())
 		{
-			Probes().storeProbe(u);
+			Workers().storeWorker(u);
 		}
 		// Store Special Units in both
 		else if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter)
@@ -136,7 +136,7 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 	enemyUnits[unit].setGroundDamage(Util().getTrueGroundDamage(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setAirDamage(Util().getTrueAirDamage(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setCommand(unit->getLastCommand().getType());
-	enemyUnits[unit].setMiniTile(Util().getMiniTile(unit));
+	enemyUnits[unit].setWalkPosition(Util().getWalkPosition(unit));
 
 	// Update sizes
 	enemySizes[unit->getType().size()] += 1;
@@ -157,7 +157,7 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 	allyUnits[unit].setGroundDamage(Util().getTrueGroundDamage(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setAirDamage(Util().getTrueAirDamage(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setCommand(unit->getLastCommand().getType());
-	allyUnits[unit].setMiniTile(Util().getMiniTile(unit));
+	allyUnits[unit].setWalkPosition(Util().getWalkPosition(unit));
 	allyUnits[unit].setTarget(Targets().getTarget(unit));
 	allyUnits[unit].setTargetPosition(enemyUnits[allyUnits[unit].getTarget()].getPosition());
 
@@ -348,7 +348,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 		if (globalStrategy == 2)
 		{
 			// If against rush and not ready to wall up, fight in mineral line
-			if (Strategy().isRush() && !Strategy().needZealotWall())
+			if (Strategy().isRush() && !Strategy().isHoldRamp())
 			{
 				if (target && target->exists() && Grids().getResourceGrid(target->getTilePosition().x, target->getTilePosition().y) > 0)
 				{
@@ -363,7 +363,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			}
 
 			// Else hold ramp and attack anything within range
-			else if (Strategy().needZealotWall())
+			else if (Strategy().isHoldRamp())
 			{
 				if (target && target->exists() && unit->getDistance(target) < 16 && Terrain().getAllyTerritory().find(getRegion(unit->getTilePosition())) != Terrain().getAllyTerritory().end() && Terrain().getAllyTerritory().find(getRegion(target->getTilePosition())) != Terrain().getAllyTerritory().end() && !target->getType().isWorker())
 				{
@@ -405,7 +405,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	if (allyUnits[unit].getGroundRange() > enemyUnits[target].getGroundRange())
 	{
 		bool safeTile = true;
-		for (auto miniTile : Util().getMiniTilesUnderUnit(unit))
+		for (auto miniTile : Util().getWalkPositionsUnderUnit(unit))
 		{
 			if (miniTile.isValid() && Grids().getEGroundDistanceGrid(miniTile.x, miniTile.y) > 0)
 			{

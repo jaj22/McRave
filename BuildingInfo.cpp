@@ -2,13 +2,12 @@
 
 BuildingInfo::BuildingInfo()
 {
+	energy = 0;
 	idleStatus = true;
-	storedUnit = nullptr;
-	buildingType = UnitTypes::None;
+	thisUnit = nullptr;
+	unitType = UnitTypes::None;
 	nextUnit = UnitTypes::None;
-	buildingTilePosition = TilePositions::None;
-}
-
-BuildingInfo::~BuildingInfo()
-{
+	position = Positions::None;
+	walkPosition = WalkPositions::None;
+	tilePosition = TilePositions::None;
 }

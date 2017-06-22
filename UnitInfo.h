@@ -7,25 +7,19 @@ using namespace std;
 // Class for storing information about all units
 class UnitInfo {
 	double strength, maxStrength, local, groundRange, airRange, priority, groundDamage, airDamage, speed;
-	int deadFrame, strategy, lastAttackFrame, currentGoal;
-	Position position, targetPosition;
-	WalkPosition miniTile;
-	Unit target, storedUnit;
-	UnitType type;
+	int deadFrame, strategy, lastAttackFrame, currentGoal;	
+
+	Unit target, thisUnit, transport;
+	UnitType unitType;
 	UnitCommandType command;
-	bool transport;
+
+	Position position, targetPosition;
+	WalkPosition walkPosition, targetWalkPosition;
+	TilePosition tilePosition, targetTilePosition;
 public:
 	UnitInfo();
 	~UnitInfo();
 
-	// Unit access
-	Unit unit() { return storedUnit; }
-	void setUnit(Unit newUnit) { storedUnit = newUnit; }
-
-	// Accessors
-	UnitType getType(){ return type; }
-	Position getPosition(){ return position; }
-	Position getTargetPosition() { return targetPosition; }
 	double getStrength() { return strength; }
 	double getMaxStrength() { return maxStrength; }
 	double getLocal() { return local; }
@@ -35,19 +29,24 @@ public:
 	double getGroundDamage(){ return groundDamage; }
 	double getAirDamage() { return airDamage; }
 	double getSpeed() { return speed; }
-	UnitCommandType getCommand() { return command; }
-	Unit getTarget() { return target; }
 	int getDeadFrame() { return deadFrame; }
 	int getStrategy() { return strategy; }
 	int getLastAttackFrame() { return lastAttackFrame; }
 	int getCurrentGoal() { return currentGoal; }
-	WalkPosition getMiniTile() { return miniTile; }
-	bool hasTransport() { return transport; }
 
-	// Mutators
-	void setUnitType(UnitType newType) { type = newType; }
-	void setPosition(Position newPosition){ position = newPosition; }
-	void setTargetPosition(Position newTargetPosition) { targetPosition = newTargetPosition; }
+	Unit unit() { return thisUnit; }
+	Unit getTarget() { return target; }
+	Unit getTransport() { return transport; }	
+	UnitType getType(){ return unitType; }
+	UnitCommandType getCommand() { return command; }
+
+	Position getPosition(){ return position; }
+	Position getTargetPosition() { return targetPosition; }	
+	WalkPosition getWalkPosition() { return walkPosition; }
+	WalkPosition getTargetWalkPosition() { return targetWalkPosition; }
+	TilePosition getTilePosition() { return tilePosition; }
+	TilePosition getTargetTilePosition() { return targetTilePosition; }
+	
 	void setStrength(double newStrength) { strength = newStrength; }
 	void setMaxStrength(double newMaxStrength){ maxStrength = newMaxStrength; }
 	void setLocal(double newLocal) { local = newLocal; }
@@ -57,12 +56,21 @@ public:
 	void setGroundDamage(double newGroundDamage) { groundDamage = newGroundDamage; }
 	void setAirDamage(double newAirDamage) { airDamage = newAirDamage; }
 	void setSpeed(double newSpeed) { speed = newSpeed; }
-	void setCommand(UnitCommandType newCommand) { command = newCommand; }
-	void setTarget(Unit newTarget){ target = newTarget; }
 	void setDeadFrame(int newDeadFrame) { deadFrame = newDeadFrame; }
 	void setStrategy(int newStrategy){ strategy = newStrategy; }
 	void setLastAttackFrame(int newAttackFrame) { lastAttackFrame = newAttackFrame; }
 	void setCurrentGoal(int newGoal){ currentGoal = newGoal; }
-	void setMiniTile(WalkPosition newMiniTile) { miniTile = newMiniTile; }
-	void setTransport(bool newState) { transport = newState; }
+
+	void setUnit(Unit newUnit) { thisUnit = newUnit; }
+	void setTarget(Unit newTarget){ target = newTarget; }
+	void setTransport(Unit newTransport) { transport = newTransport; }
+	void setUnitType(UnitType newType) { unitType = newType; }
+	void setCommand(UnitCommandType newCommand) { command = newCommand; }
+
+	void setPosition(Position newPosition){ position = newPosition; }
+	void setTargetPosition(Position newPosition) { targetPosition = newPosition; }	
+	void setWalkPosition(WalkPosition newWalkPosition) { walkPosition = newWalkPosition; }
+	void setTargetWalkPosition(WalkPosition newWalkPosition) { targetWalkPosition = newWalkPosition; }
+	void setTilePosition(TilePosition newTilePosition) { tilePosition = newTilePosition; }
+	void setTargetTilePosition(TilePosition newTilePosition) { targetTilePosition = newTilePosition; }	
 };

@@ -21,11 +21,11 @@ void ProductionTrackerClass::update()
 		gateSat = true;
 	}
 
-	for (auto building : Buildings().getMyBuildings())
+	for (auto &building : Buildings().getMyBuildings())
 	{
 		if (building.first->isIdle())
 		{
-			if (building.second.getType() == UnitTypes::Protoss_Forge)
+			if (building.second.getUnitType() == UnitTypes::Protoss_Forge)
 			{
 				if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Ground_Weapons.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Ground_Weapons.gasPrice() + queuedGas + reservedGas)
 				{
@@ -40,7 +40,7 @@ void ProductionTrackerClass::update()
 					building.first->upgrade(UpgradeTypes::Protoss_Plasma_Shields);
 				}
 			}
-			else if (building.second.getType() == UnitTypes::Protoss_Cybernetics_Core)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Cybernetics_Core)
 			{
 				if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && idleGates.size() == 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon) >= 3)
 				{
@@ -55,7 +55,7 @@ void ProductionTrackerClass::update()
 					}
 				}
 			}
-			else if (building.second.getType() == UnitTypes::Protoss_Robotics_Support_Bay)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Robotics_Support_Bay)
 			{
 				if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) > 2)
 				{
@@ -66,10 +66,13 @@ void ProductionTrackerClass::update()
 				}
 				if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Shuttle) >= 2)
 				{
-					// Shuttle speed
+					if (Broodwar->self()->minerals() >= UpgradeTypes::Gravitic_Drive.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Gravitic_Drive.gasPrice() + queuedGas + reservedGas)
+					{
+						building.first->upgrade(UpgradeTypes::Gravitic_Drive);
+					}
 				}
 			}
-			else if (building.second.getType() == UnitTypes::Protoss_Fleet_Beacon)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Fleet_Beacon)
 			{
 				if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Carrier) > 2)
 				{
@@ -79,7 +82,7 @@ void ProductionTrackerClass::update()
 					}
 				}
 			}
-			else if (building.second.getType() == UnitTypes::Protoss_Citadel_of_Adun)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Citadel_of_Adun)
 			{
 				if (Broodwar->self()->minerals() >= UpgradeTypes::Leg_Enhancements.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Leg_Enhancements.gasPrice())
 				{
@@ -93,21 +96,21 @@ void ProductionTrackerClass::update()
 			}
 
 			// Production Buildings
-			else if (building.second.getType() == UnitTypes::Protoss_Gateway)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Gateway)
 			{
 				updateGateway(building.first);
 			}
-			else if (building.second.getType() == UnitTypes::Protoss_Stargate)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Stargate)
 			{
 				updateStargate(building.first);
 			}
-			else if (building.second.getType() == UnitTypes::Protoss_Robotics_Facility)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Robotics_Facility)
 			{
 				updateRobo(building.first);
 			}
 
 			// Tech Research
-			else if (building.second.getType() == UnitTypes::Protoss_Templar_Archives)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Templar_Archives)
 			{
 				if (!Broodwar->self()->hasResearched(TechTypes::Psionic_Storm))
 				{
@@ -134,7 +137,7 @@ void ProductionTrackerClass::update()
 					}
 				}
 			}
-			else if (building.second.getType() == UnitTypes::Protoss_Arbiter_Tribunal)
+			else if (building.second.getUnitType() == UnitTypes::Protoss_Arbiter_Tribunal)
 			{
 				if (!Broodwar->self()->hasResearched(TechTypes::Stasis_Field))
 				{

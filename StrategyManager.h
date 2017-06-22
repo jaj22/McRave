@@ -14,7 +14,7 @@ class StrategyTrackerClass
 	bool fastExpand = false;
 	bool invis = false;
 	bool rush = false;
-	bool zealotWall = false;
+	bool holdRamp = false;
 public:
 	double globalAlly() { return globalAllyStrength; }
 	double globalEnemy() {	return globalEnemyStrength;	}
@@ -23,7 +23,7 @@ public:
 	bool setFastExpand(bool FE) { fastExpand = FE; }
 	bool needDetection() { return invis; }	
 	bool isRush() { return rush; }
-	bool needZealotWall() { return zealotWall; }
+	bool isHoldRamp() { return holdRamp; }
 	int getNumberZerg() { return eZerg; }
 	int getNumberProtoss() { return eProtoss; }
 	int getNumberTerran() { return eTerran; }

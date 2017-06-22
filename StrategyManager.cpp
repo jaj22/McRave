@@ -149,11 +149,11 @@ void StrategyTrackerClass::updateComposition()
 	// Check if our supply is high enough to hold the ramp or the minerals
 	if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3 || Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1)
 	{
-		zealotWall = true;
+		holdRamp = true;
 	}
 	else
 	{
-		zealotWall = false;
+		holdRamp = false;
 	}
 
 	for (auto &t : enemyComposition)
@@ -176,13 +176,13 @@ void StrategyTrackerClass::updateComposition()
 		if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 		{
 			// If we are being 2 gate rushed or proxy rushed, make a shield battery
-			if (Probes().isScouting() && t.first == UnitTypes::Protoss_Gateway && (t.second >= 2 || t.second == 0) && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end() && Terrain().getEnemyBasePositions().size() > 0)
+			if (Workers().isScouting() && t.first == UnitTypes::Protoss_Gateway && (t.second >= 2 || t.second == 0) && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end() && Terrain().getEnemyBasePositions().size() > 0)
 			{
 				rush = true;
 			}
 
 			// If we are being 4/5 pooled, make a shield battery
-			if (Probes().isScouting() && t.first == UnitTypes::Zerg_Zergling && t.second >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
+			if (Workers().isScouting() && t.first == UnitTypes::Zerg_Zergling && t.second >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
 			{
 				rush = true;
 			}

@@ -10,35 +10,36 @@ class ResourceInfo
 {
 private:
 	int gathererCount, remainingResources;
-	Position resourcePosition;
-	TilePosition resourceTilePosition;
+	Unit storedUnit, nexus;
 	UnitType unitType;
-	Unit nexus, storedUnit;
+	Position position;
+	TilePosition tilePosition;
+	WalkPosition walkPosition;	
 	BWTA::Region* resourceRegion;
 public:
-	// Constructors
 	ResourceInfo();
 	~ResourceInfo();
-	ResourceInfo(int, int, Unit, Position, TilePosition, UnitType);
 
-	// Unit access
-	Unit unit() { return storedUnit; }
-	void setUnit(Unit newUnit) { storedUnit = newUnit; }
-
-	// Accessors
 	int getGathererCount() { return gathererCount; };
 	int getRemainingResources() { return remainingResources; }
+
+	Unit unit() { return storedUnit; }
 	Unit getClosestNexus() { return nexus; }
-	Position getPosition() { return resourcePosition; }
-	TilePosition getTilePosition() { return resourceTilePosition; }
-	UnitType getType() { return unitType; }
+	UnitType getUnitType() { return unitType; }
+
+	Position getPosition() { return position; }
+	WalkPosition getWalkPosition() { return walkPosition; }
+	TilePosition getTilePosition() { return tilePosition; }
 	BWTA::Region* getRegion() { return resourceRegion; }
 
-	// Mutators
 	void setGathererCount(int newGathererCount) { gathererCount = newGathererCount; }
 	void setRemainingResources(int newRemainingResources) { remainingResources = newRemainingResources; }
+
+	void setUnit(Unit newUnit) { storedUnit = newUnit; }
 	void setClosestNexus(Unit newNexus) { nexus = newNexus; }
-	void setPosition(Position newPosition) { resourcePosition = newPosition; }
-	void setTilePosition(TilePosition newTilePosition) { resourceTilePosition = newTilePosition; }
-	void setUnitType(UnitType newUnitType) { unitType = newUnitType; }
+	void setUnitType(UnitType newType) { unitType = newType; }
+
+	void setPosition(Position newPosition) { position = newPosition; }
+	void setWalkPosition(WalkPosition newPosition) { walkPosition = newPosition; }
+	void setTilePosition(TilePosition newTilePosition) { tilePosition = newTilePosition; }
 };

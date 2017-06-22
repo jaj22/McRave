@@ -62,48 +62,66 @@ void ResourceTrackerClass::update()
 }
 
 void ResourceTrackerClass::storeMineral(Unit resource)
-{
-	// If this is a new unit, initialize at 0 workers, initial resources and find position
-	ResourceInfo newResource(0, resource->getInitialResources(), resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus), resource->getPosition(), resource->getTilePosition(), resource->getType());
-	myMinerals[resource] = newResource;
+{	
+	myMinerals[resource].setGathererCount(0);
+	myMinerals[resource].setRemainingResources(resource->getResources());
+	myMinerals[resource].setUnit(resource);
+	myMinerals[resource].setClosestNexus(resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus));
+	myMinerals[resource].setUnitType(resource->getType());
+	myMinerals[resource].setPosition(resource->getPosition());
+	myMinerals[resource].setWalkPosition(Util().getWalkPosition(resource));
+	myMinerals[resource].setTilePosition(resource->getTilePosition());
 	return;
 }
 
 void ResourceTrackerClass::storeGas(Unit resource)
 {
-	// If this is a new unit, initialize at 0 workers, initial resources and find position
-	ResourceInfo newResource(0, resource->getInitialResources(), resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus), resource->getPosition(), resource->getTilePosition(), resource->getType());
-	myGas[resource] = newResource;
+	myGas[resource].setGathererCount(0);
+	myGas[resource].setRemainingResources(resource->getResources());
+	myGas[resource].setUnit(resource);
+	myGas[resource].setClosestNexus(resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus));
+	myGas[resource].setUnitType(resource->getType());
+	myGas[resource].setPosition(resource->getPosition());
+	myGas[resource].setWalkPosition(Util().getWalkPosition(resource));
+	myGas[resource].setTilePosition(resource->getTilePosition());
 	return;
 }
 
 void ResourceTrackerClass::storeBoulder(Unit resource)
 {
-	ResourceInfo newResource(0, 0, resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus), resource->getPosition(), resource->getTilePosition(), resource->getType());
-	myBoulders[resource] = newResource;
+	myBoulders[resource].setGathererCount(0);
+	myBoulders[resource].setRemainingResources(resource->getResources());
+	myBoulders[resource].setUnit(resource);
+	myBoulders[resource].setClosestNexus(resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus));
+	myBoulders[resource].setUnitType(resource->getType());
+	myBoulders[resource].setPosition(resource->getPosition());
+	myBoulders[resource].setWalkPosition(Util().getWalkPosition(resource));
+	myBoulders[resource].setTilePosition(resource->getTilePosition());
 	return;
 }
 
 void ResourceTrackerClass::removeResource(Unit resource)
 {
+	// Remove dead resources
 	if (myMinerals.find(resource) != myMinerals.end())
 	{
 		myMinerals.erase(resource);		
 	}
-	if (myGas.find(resource) != myGas.end())
+	else if (myGas.find(resource) != myGas.end())
 	{
 		myGas.erase(resource);
 	}
-	if (myBoulders.find(resource) != myBoulders.end())
+	else if (myBoulders.find(resource) != myBoulders.end())
 	{
 		myBoulders.erase(resource);
 	}
 
-	for (auto & probe : Probes().getMyProbes())
+	// Any workers that targeted that resource now have no target
+	for (auto & worker : Workers().getMyWorkers())
 	{
-		if (probe.second.getTarget() == resource)
+		if (worker.second.getTarget() == resource)
 		{
-			probe.second.setTarget(nullptr);
+			worker.second.setTarget(nullptr);
 		}
 	}
 }

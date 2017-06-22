@@ -21,7 +21,7 @@ using namespace std;
 // Declare info classes first
 class BuildingInfo;
 class NexusInfo;
-class ProbeInfo;
+class WorkerInfo;
 class ResourceInfo;
 class SupportUnitInfo;
 class TransportInfo;
@@ -33,8 +33,8 @@ class UnitInfo;
 #include "CommandManager.h"
 #include "GridManager.h"
 #include "Interface.h"
-#include "NexusManager.h"
-#include "ProbeManager.h"
+#include "BaseManager.h"
+#include "WorkerManager.h"
 #include "ProductionManager.h"
 #include "PylonManager.h"
 #include "ResourceManager.h"
@@ -44,7 +44,7 @@ class UnitInfo;
 #include "TerrainManager.h"
 #include "TransportManager.h"
 #include "UnitManager.h"
-#include "UnitUtil.h"
+#include "Util.h"
 
 namespace McRave
 {	
@@ -53,8 +53,7 @@ namespace McRave
 	inline CommandTrackerClass& Commands() { return CommandTracker::Instance(); }
 	inline GridTrackerClass& Grids() { return GridTracker::Instance(); }
 	inline InterfaceTrackerClass& Display() { return InterfaceTracker::Instance(); }
-	inline NexusTrackerClass& Nexuses() { return NexusTracker::Instance(); }
-	inline ProbeTrackerClass& Probes() { return ProbeTracker::Instance(); }
+	inline BaseTrackerClass& Bases() { return BaseTracker::Instance(); }
 	inline ProductionTrackerClass& Production() { return ProductionTracker::Instance(); }
 	inline PylonTrackerClass& Pylons() { return PylonTracker::Instance(); }
 	inline ResourceTrackerClass& Resources() { return ResourceTracker::Instance(); }
@@ -64,6 +63,7 @@ namespace McRave
 	inline TerrainTrackerClass& Terrain() { return TerrainTracker::Instance(); }
 	inline TransportTrackerClass& Transport() { return TransportTracker::Instance(); }
 	inline UnitTrackerClass& Units() { return UnitTracker::Instance(); }
-	inline UnitUtilClass& Util() { return UnitUtil::Instance(); }
+	inline UtilTrackerClass& Util() { return UtilTracker::Instance(); }
+	inline WorkerTrackerClass& Workers() { return WorkerTracker::Instance(); }
 }
 using namespace McRave;

@@ -6,7 +6,7 @@ void SpecialUnitTrackerClass::update()
 	updateObservers();
 	updateTemplars();
 	updateReavers();
-	return;	
+	return;
 }
 
 void SpecialUnitTrackerClass::updateArbiters()
@@ -140,25 +140,25 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 	{
 		myArbiters[unit].setPosition(unit->getPosition());
 		myArbiters[unit].setDestination(unit->getPosition());
-		myArbiters[unit].setMiniTile(Util().getMiniTile(unit));
+		myArbiters[unit].setMiniTile(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Observer)
 	{
 		myObservers[unit].setPosition(unit->getPosition());
 		myObservers[unit].setDestination(unit->getPosition());
-		myObservers[unit].setMiniTile(Util().getMiniTile(unit));
+		myObservers[unit].setMiniTile(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
 		myTemplars[unit].setPosition(unit->getPosition());
 		myTemplars[unit].setDestination(unit->getPosition());
-		myTemplars[unit].setMiniTile(Util().getMiniTile(unit));
+		myTemplars[unit].setMiniTile(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
 		myReavers[unit].setPosition(unit->getPosition());
 		myReavers[unit].setDestination(unit->getPosition());
-		myReavers[unit].setMiniTile(Util().getMiniTile(unit));
+		myReavers[unit].setMiniTile(Util().getWalkPosition(unit));
 	}	
 	return;
 }

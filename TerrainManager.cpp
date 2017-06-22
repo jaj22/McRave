@@ -169,7 +169,7 @@ void TerrainTrackerClass::update()
 		{
 			if (u->getType().isBuilding())
 			{
-				if (Probes().isScouting())
+				if (Workers().isScouting())
 				{
 					if (Broodwar->enemy()->getRace() == Races::Terran && u->getDistance(getNearestChokepoint(u->getPosition())->getCenter()) < 256)
 					{

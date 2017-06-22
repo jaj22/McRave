@@ -14,18 +14,18 @@
 
 // TODOS:
 // Player class to track upgrades/race/supply/strength?
-// Reavers flee into shuttles
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
 // One time supply increase instead of resetting?
 // If cannon was built in region, add to that Nexus
 // Limit building number by region? Make pylons next to expansions for cannons/gateways
-// Store the closest probe when ready to move to build position
-// Probe manager can have a function to check if probe has a building assigned to it and move to it/build it
+// Store the closest worker when ready to move to build position
+// Worker manager can have a function to check if worker has a building assigned to it and move to it/build it
 
 // Testing:
 // Spider mine removal from expansions - Testing 2.0
+// Reavers flee into shuttles
 
 // Possibility:
 // 3 base carrier against iron?
@@ -71,7 +71,7 @@ void McRaveModule::onFrame()
 	Grids().update();
 	Resources().update();
 	Strategy().update();
-	Probes().update();
+	Workers().update();
 	Units().update();
 	SpecialUnits().update();
 	Transport().update();
@@ -79,7 +79,7 @@ void McRaveModule::onFrame()
 	BuildOrder().update();
 	Buildings().update();
 	Production().update();
-	Nexuses().update();
+	Bases().update();
 	Display().update();
 }
 
@@ -128,7 +128,7 @@ void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 	Units().decayUnit(unit);
 	Buildings().removeBuilding(unit);
 	SpecialUnits().removeUnit(unit);
-	Probes().removeProbe(unit);
+	Workers().removeWorker(unit);
 	Resources().removeResource(unit);
 	Terrain().removeTerritory(unit);
 }

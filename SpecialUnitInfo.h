@@ -8,7 +8,7 @@ class SupportUnitInfo
 {
 	Position position, destination;
 	WalkPosition miniTile;
-	Unit storedUnit;
+	Unit storedUnit, target;
 
 public:
 	SupportUnitInfo();

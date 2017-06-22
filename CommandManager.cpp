@@ -132,7 +132,7 @@ void CommandTrackerClass::attackMove(Unit unit, Unit target)
 	}
 	else
 	{
-		if (!Probes().isScouting() && Terrain().getNextExpansion().size() > 0)
+		if (!Workers().isScouting() && Terrain().getNextExpansion().size() > 0)
 		{
 			unit->attack(Position(Terrain().getNextExpansion().at(rand() % Terrain().getNextExpansion().size())));
 		}
@@ -213,17 +213,14 @@ void CommandTrackerClass::fleeTarget(Unit unit, Unit target)
 	{
 		return;
 	}
-
-	WalkPosition start;
-	if (unit->getType().isWorker())
+	
+	// If the unit has a transport nearby, load into it
+	if (Units().getMyUnits()[unit].getTransport() && unit->getDistance(Units().getMyUnits()[unit].getTransport()) < 160)
 	{
-		start = Probes().getMyProbes()[unit].getMiniTile();
-	}
-	else
-	{
-		start = Units().getMyUnits()[unit].getMiniTile();
+		unit->rightClick(Units().getMyUnits()[unit].getTransport());
 	}
 
+	WalkPosition start = Units().getMyUnits()[unit].getWalkPosition();
 	WalkPosition finalPosition = start;
 	double highestMobility = 0.0;
 
@@ -307,13 +304,13 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 	}
 
 	// Early on, defend mineral line
-	if (Terrain().getEnemyBasePositions().size() == 0 || !Strategy().needZealotWall())
+	if (Terrain().getEnemyBasePositions().size() == 0 || !Strategy().isHoldRamp())
 	{
-		for (auto nexus : Nexuses().getMyNexus())
+		for (auto base : Bases().getMyBases())
 		{
-			if (unit->getLastCommand().getTargetPosition() != (Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2 || unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->isStuck())
+			if (unit->getLastCommand().getTargetPosition() != (Position(base.second.getDefensePosition()) + Position(base.second.getPosition())) / 2 || unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->isStuck())
 			{
-				unit->move((Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2);
+				unit->move((Position(base.second.getDefensePosition()) + Position(base.second.getPosition())) / 2);
 			}
 			return;
 		}
@@ -323,7 +320,7 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 	int min = 128;
 	int max = 256;
 	closestD = 0.0;
-	WalkPosition start = Units().getMyUnits()[unit].getMiniTile();
+	WalkPosition start = Units().getMyUnits()[unit].getWalkPosition();
 	WalkPosition bestPosition = start;
 	if (unit->getType() == UnitTypes::Protoss_Zealot)
 	{

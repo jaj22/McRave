@@ -16,9 +16,9 @@ UnitInfo::UnitInfo()
 	lastAttackFrame = 0;
 	position = Positions::None;
 	targetPosition = Positions::None;
-	miniTile = WalkPositions::None;
+	walkPosition = WalkPositions::None;
 	target = nullptr;
-	type = UnitTypes::Enum::None;
+	unitType = UnitTypes::Enum::None;
 	command = UnitCommandTypes::None;	
 	transport = false;
 }

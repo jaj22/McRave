@@ -19,18 +19,18 @@ void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
 		// See if any Reavers need a shuttle
 		for (auto & reaver : SpecialUnits().getMyReavers())
 		{
-			if (!Units().getMyUnits()[reaver.first].hasTransport() && shuttle.getCargoSize() + 2 < 4)
+			if (!Units().getMyUnits()[reaver.first].getTransport() && shuttle.getCargoSize() + 2 < 4)
 			{
-				Units().getMyUnits()[reaver.first].setTransport(true);
+				Units().getMyUnits()[reaver.first].setTransport(shuttle.unit());
 				shuttle.assignCargo(reaver.first);
 			}
 		}
 		// See if any High Templars need a shuttle
 		for (auto & templar : SpecialUnits().getMyTemplars())
 		{
-			if (!Units().getMyUnits()[templar.first].hasTransport() && shuttle.getCargoSize() + 1 < 4)
+			if (!Units().getMyUnits()[templar.first].getTransport() && shuttle.getCargoSize() + 1 < 4)
 			{
-				Units().getMyUnits()[templar.first].setTransport(true);
+				Units().getMyUnits()[templar.first].setTransport(shuttle.unit());
 				shuttle.assignCargo(templar.first);
 			}
 		}
@@ -41,7 +41,7 @@ void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
 void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 {
 	// Update what tiles have been used recently
-	for (auto & tile : Util().getMiniTilesUnderUnit(shuttle.unit()))
+	for (auto & tile : Util().getWalkPositionsUnderUnit(shuttle.unit()))
 	{
 		recentExplorations[tile] = Broodwar->getFrameCount();
 	}
@@ -119,7 +119,7 @@ void TransportTrackerClass::updateMovement(TransportInfo& shuttle)
 	int radius = 10;
 	double closestD = ((32 * Grids().getMobilityGrid(start)) + Position(start).getDistance(shuttle.getDrop()));
 
-	for (auto tile : Util().getMiniTilesUnderUnit(shuttle.unit()))
+	for (auto tile : Util().getWalkPositionsUnderUnit(shuttle.unit()))
 	{
 		if (Grids().getEGroundGrid(tile) > 0 || Grids().getEAirGrid(tile) > 0 || Grids().getEGroundDistanceGrid(tile) > 0 || Grids().getEAirDistanceGrid(tile) > 0)
 		{
@@ -217,5 +217,5 @@ void TransportTrackerClass::storeUnit(Unit unit)
 	myShuttles[unit].setUnit(unit);
 	myShuttles[unit].setType(unit->getType());
 	myShuttles[unit].setPosition(unit->getPosition());
-	myShuttles[unit].setMiniTile(Util().getMiniTile(unit));
+	myShuttles[unit].setMiniTile(Util().getWalkPosition(unit));
 }
