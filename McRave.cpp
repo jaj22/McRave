@@ -13,6 +13,7 @@
 // Take angles into account for micro?
 
 // TODOS:
+// Player class to track upgrades/race/supply/strength?
 // Reavers flee into shuttles
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid

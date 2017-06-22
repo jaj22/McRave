@@ -19,12 +19,13 @@ public:
 	Unit getScout() { return scout; }
 	
 	void update();
+	void updateScout(ProbeInfo&);
+	void updateDecision(ProbeInfo&);
+
 	void storeProbe(Unit);
 	void removeProbe(Unit);
 	void assignProbe(Unit);	
-	void reAssignProbe(Unit);
-	void scoutProbe();
-	void enforceAssignments();
+	void reAssignProbe(Unit);	
 	void exploreArea(Unit);
 	void avoidEnemy(Unit);
 

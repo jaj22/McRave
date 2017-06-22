@@ -10,13 +10,17 @@ class UnitInfo {
 	int deadFrame, strategy, lastAttackFrame, currentGoal;
 	Position position, targetPosition;
 	WalkPosition miniTile;
-	Unit target;
+	Unit target, storedUnit;
 	UnitType type;
 	UnitCommandType command;
 	bool transport;
 public:
 	UnitInfo();
 	~UnitInfo();
+
+	// Unit access
+	Unit unit() { return storedUnit; }
+	void setUnit(Unit newUnit) { storedUnit = newUnit; }
 
 	// Accessors
 	UnitType getType(){ return type; }

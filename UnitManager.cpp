@@ -365,7 +365,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			// Else hold ramp and attack anything within range
 			else if (Strategy().needZealotWall())
 			{
-				if (target && target->exists() && unit->getDistance(target) < 16)
+				if (target && target->exists() && unit->getDistance(target) < 16 && Terrain().getAllyTerritory().find(getRegion(unit->getTilePosition())) != Terrain().getAllyTerritory().end() && Terrain().getAllyTerritory().find(getRegion(target->getTilePosition())) != Terrain().getAllyTerritory().end() && !target->getType().isWorker())
 				{
 					allyUnits[unit].setStrategy(1);
 					return;
@@ -382,7 +382,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	// Specific Dragoon commands for early defense
 	if (globalStrategy == 2 && unit->getType() == UnitTypes::Protoss_Dragoon)
 	{
-		if (target && target->exists() && (unit->getDistance(target) <= allyUnits[unit].getGroundRange() || (Terrain().getAllyTerritory().find(getRegion(target->getTilePosition())) != Terrain().getAllyTerritory().end() && !target->getType().isWorker())))
+		if (target && target->exists() && ((Terrain().getAllyTerritory().find(getRegion(unit->getTilePosition())) != Terrain().getAllyTerritory().end() && unit->getDistance(target) <= allyUnits[unit].getGroundRange()) || (Terrain().getAllyTerritory().find(getRegion(target->getTilePosition())) != Terrain().getAllyTerritory().end() && !target->getType().isWorker())))
 		{
 			allyUnits[unit].setStrategy(1);
 			return;

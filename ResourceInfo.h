@@ -13,13 +13,17 @@ private:
 	Position resourcePosition;
 	TilePosition resourceTilePosition;
 	UnitType unitType;
-	Unit nexus;
+	Unit nexus, storedUnit;
 	BWTA::Region* resourceRegion;
 public:
 	// Constructors
 	ResourceInfo();
 	~ResourceInfo();
 	ResourceInfo(int, int, Unit, Position, TilePosition, UnitType);
+
+	// Unit access
+	Unit unit() { return storedUnit; }
+	void setUnit(Unit newUnit) { storedUnit = newUnit; }
 
 	// Accessors
 	int getGathererCount() { return gathererCount; };

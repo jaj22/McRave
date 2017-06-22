@@ -11,6 +11,7 @@ class BuildingTrackerClass
 	int queuedMineral, queuedGas;
 	map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
 	map <Unit, BuildingInfo> myBuildings;
+	map <Unit, BuildingInfo> myBatteries;
 public:
 	TilePosition getBuildLocation(UnitType);
 	TilePosition getCannonLocation();

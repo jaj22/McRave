@@ -3,7 +3,7 @@
 void CommandTrackerClass::update()
 {
 	for (auto &u : Units().getMyUnits())
-	{
+	{		
 		// Special units have their own commands
 		if (u.second.getType() == UnitTypes::Protoss_Observer || u.second.getType() == UnitTypes::Protoss_Arbiter || u.second.getType() == UnitTypes::Protoss_Shuttle)
 		{
@@ -105,7 +105,7 @@ void CommandTrackerClass::attackMove(Unit unit, Unit target)
 	// If target doesn't exist, move towards it
 	if (target && Units().getEnUnits()[target].getPosition().isValid())
 	{
-		if (unit->getOrderTargetPosition() != Units().getEnUnits()[target].getPosition())
+		if (unit->getOrderTargetPosition() != Units().getEnUnits()[target].getPosition() || unit->isStuck())
 		{
 			unit->move(Units().getEnUnits()[target].getPosition());
 		}
@@ -187,7 +187,7 @@ void CommandTrackerClass::microTarget(Unit unit, Unit target)
 		{
 			return;
 		}
-		if (unit->getOrderTarget() != target)
+		if (unit->getOrderTarget() != target || unit->isStuck())
 		{
 			unit->attack(target);
 		}
@@ -242,7 +242,7 @@ void CommandTrackerClass::fleeTarget(Unit unit, Unit target)
 				double mobility = double(Grids().getMobilityGrid(x, y));
 				double threat = Grids().getEGroundGrid(x, y);
 				double distance = Grids().getEGroundDistanceGrid(x, y);
-				double distanceHome = double(pow(Grids().getDistanceHome(x, y), 0.1));
+				double distanceHome = double(pow(Grids().getDistanceHome(x, y), 0.1));				
 
 				if (Grids().getAntiMobilityGrid(x, y) == 0 && (mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility && (getRegion(TilePosition(x / 4, y / 4)) && getRegion(unit->getTilePosition()) && getRegion(TilePosition(x / 4, y / 4)) == getRegion(unit->getTilePosition()) || (getNearestChokepoint(TilePosition(x / 4, y / 4)) && Position(x * 8, y * 8).getDistance(getNearestChokepoint(TilePosition(x / 4, y / 4))->getCenter()) < 128)))
 				{
@@ -278,7 +278,7 @@ void CommandTrackerClass::fleeTarget(Unit unit, Unit target)
 	{
 		Grids().updateAllyMovement(unit, finalPosition);
 		Units().getMyUnits()[unit].setTargetPosition(Position(finalPosition));
-		if (unit->getOrderTargetPosition() != Position(finalPosition))
+		if (unit->getOrderTargetPosition() != Position(finalPosition) || unit->isStuck())
 		{
 			unit->move(Position(finalPosition));
 		}
@@ -299,7 +299,7 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 		{
 			closestP = Position(Terrain().getPath().at(2)->Center());
 		}
-		if (unit->getOrderTargetPosition() != closestP && unit->getDistance(closestP) > 64)
+		if (unit->getLastCommand().getTargetPosition() != closestP || unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->isStuck())
 		{
 			unit->move(closestP);
 		}
@@ -311,7 +311,7 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 	{
 		for (auto nexus : Nexuses().getMyNexus())
 		{
-			if (unit->getOrderTargetPosition() != (Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2 && unit->getDistance((Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2) > 64)
+			if (unit->getLastCommand().getTargetPosition() != (Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2 || unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->isStuck())
 			{
 				unit->move((Position(nexus.second.getCannonPosition()) + Position(nexus.first->getPosition())) / 2);
 			}
@@ -321,7 +321,7 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 
 	// Defend chokepoint with concave
 	int min = 128;
-	int max = 160;
+	int max = 256;
 	closestD = 0.0;
 	WalkPosition start = Units().getMyUnits()[unit].getMiniTile();
 	WalkPosition bestPosition = start;
@@ -366,7 +366,7 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 		}
 		if (bestPosition.isValid() && bestPosition != start)
 		{
-			if (unit->getLastCommand().getTargetPosition() != Position(bestPosition) || unit->getLastCommand().getType() != UnitCommandTypes::Move)
+			if (unit->getLastCommand().getTargetPosition() != Position(bestPosition) || unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->isStuck())
 			{
 				unit->move(Position(bestPosition));
 				Grids().updateAllyMovement(unit, bestPosition);

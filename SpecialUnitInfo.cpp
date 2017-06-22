@@ -17,7 +17,7 @@ TransportInfo::TransportInfo()
 	destination = Positions::None;
 	drop = Positions::None;
 	miniTile = WalkPositions::None;
-	transport = nullptr;
+	storedUnit = nullptr;
 	target = nullptr;
 	loadState = 0;
 	cargoSize = 0;

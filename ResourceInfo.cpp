@@ -3,6 +3,7 @@
 // Constructors
 ResourceInfo::ResourceInfo()
 {
+	storedUnit;
 	gathererCount = 0;
 	remainingResources = 0;
 	resourcePosition = Positions::None;

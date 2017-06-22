@@ -9,7 +9,7 @@ double UnitUtilClass::getStrength(UnitType unitType)
 	}
 	if (unitType == UnitTypes::Terran_Medic)
 	{
-		return 5.0;
+		return 10.0;
 	}
 	if (unitType == UnitTypes::Zerg_Lurker)
 	{
@@ -26,6 +26,10 @@ double UnitUtilClass::getStrength(UnitType unitType)
 	if (unitType == UnitTypes::Protoss_Scarab || unitType == UnitTypes::Terran_Vulture_Spider_Mine || unitType == UnitTypes::Zerg_Egg || unitType == UnitTypes::Zerg_Larva || unitType == UnitTypes::Protoss_Interceptor)
 	{
 		return 0.0;
+	}
+	if (unitType == UnitTypes::Terran_Siege_Tank_Siege_Mode || unitType == UnitTypes::Terran_Siege_Tank_Tank_Mode)
+	{
+		return 50.0;
 	}
 
 	if (!unitType.isWorker() && unitType != UnitTypes::Protoss_Scarab && unitType != UnitTypes::Terran_Vulture_Spider_Mine && unitType.groundWeapon().damageAmount() > 0 || (unitType.isBuilding() && unitType.groundWeapon().damageAmount() > 0))

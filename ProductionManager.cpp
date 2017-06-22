@@ -6,13 +6,19 @@ void ProductionTrackerClass::update()
 	int supply = Units().getSupply();
 	int queuedMineral = Buildings().getQueuedMineral();
 	int queuedGas = Buildings().getQueuedGas();
+
 	if (Broodwar->enemy()->getRace() == Races::Terran)
 	{
 		noZealots = true;
 	}
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
+	if (Broodwar->getFrameCount() > 10000)
 	{
 		noZealots = false;
+	}
+
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)))
+	{
+		gateSat = true;
 	}
 
 	for (auto building : Buildings().getMyBuildings())
@@ -175,6 +181,7 @@ void ProductionTrackerClass::updateGateway(Unit building)
 	int supply = Units().getSupply();
 	int queuedMineral = Buildings().getQueuedMineral();
 	int queuedGas = Buildings().getQueuedGas();
+
 	// If we need a High Templar
 	if (Broodwar->self()->hasResearched(TechTypes::Psionic_Storm) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Templar_Archives) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar) < 5)
 	{

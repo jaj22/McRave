@@ -369,21 +369,37 @@ void GridTrackerClass::updateEnemyGrids()
 				{
 					if (WalkPosition(x, y).isValid())
 					{
-						if (u.second.getAirDamage() > 0 && Position(x * 8, y * 8).getDistance(u.second.getPosition()) < u.second.getAirRange() * u.second.getSpeed())
-						{							
-							eAirDistanceGrid[x][y] += u.second.getStrength();
-						}
+						double distance = Position(x * 8, y * 8).getDistance(u.second.getPosition()) - double(u.second.getType().tileWidth()) * 16.0;
 
-						if (u.second.getGroundDamage() > 0 && Position(x * 8, y * 8).getDistance(u.second.getPosition()) < u.second.getGroundRange() * u.second.getSpeed())
+						if (u.second.getAirDamage() > 0 && distance < u.second.getAirRange() + u.second.getSpeed() * 16)
 						{
-							eGroundDistanceGrid[x][y] += 10.0;
+							if (distance > 0)
+							{
+								eAirDistanceGrid[x][y] += u.second.getMaxStrength() / distance;
+							}
+							else
+							{
+								eAirDistanceGrid[x][y] += u.second.getMaxStrength();
+							}
 						}
 
-						if (u.second.getGroundDamage() > 0.0 && Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getGroundRange() + u.second.getSpeed() * 8)
+						if (u.second.getGroundDamage() > 0 && distance < u.second.getGroundRange() + u.second.getSpeed() * 16)
+						{
+							if (distance > 0)
+							{
+								eGroundDistanceGrid[x][y] += u.second.getMaxStrength() / distance;
+							}
+							else
+							{
+								eGroundDistanceGrid[x][y] += u.second.getMaxStrength();
+							}
+						}
+
+						if (u.second.getGroundDamage() > 0.0 && Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getGroundRange())
 						{
 							eGroundGrid[x][y] += u.second.getMaxStrength();
 						}
-						if (u.second.getAirDamage() > 0.0 && Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getAirRange() + u.second.getSpeed() * 8)
+						if (u.second.getAirDamage() > 0.0 && Position(x * 8, y * 8).getDistance(u.second.getPosition()) - u.second.getType().tileWidth() * 16 < u.second.getAirRange())
 						{
 							eAirGrid[x][y] += u.second.getMaxStrength();
 						}
@@ -556,12 +572,12 @@ void GridTrackerClass::updateObserverMovement(Unit observer)
 {
 	WalkPosition destination = WalkPosition(SpecialUnits().getMyObservers()[observer].getDestination());
 
-	for (int x = destination.x - 20; x <= destination.x + 20; x++)
+	for (int x = destination.x - 40; x <= destination.x + 40; x++)
 	{
-		for (int y = destination.y - 20; y <= destination.y + 20; y++)
+		for (int y = destination.y - 40; y <= destination.y + 40; y++)
 		{
 			// Create a circle of detection rather than a square
-			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyObservers()[observer].getDestination().getDistance(Position(WalkPosition(x, y))) < 160)
+			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyObservers()[observer].getDestination().getDistance(Position(WalkPosition(x, y))) < 320)
 			{
 				observerGrid[x][y] = 1;
 			}

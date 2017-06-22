@@ -54,7 +54,7 @@ void NexusTrackerClass::trainProbes()
 {
 	for (auto nexus : myNexus)
 	{
-		if (!Resources().isSaturated() && nexus.first->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+		if ((!Resources().isMinSaturated() || !Resources().isGasSaturated()) && nexus.first->isIdle() && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
 		{
 			nexus.first->train(UnitTypes::Protoss_Probe);
 		}

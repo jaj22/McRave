@@ -8,10 +8,15 @@ class SupportUnitInfo
 {
 	Position position, destination;
 	WalkPosition miniTile;
+	Unit storedUnit;
 
 public:
 	SupportUnitInfo();
 	~SupportUnitInfo();
+
+	// Unit access
+	Unit unit() { return storedUnit; }
+	void setUnit(Unit newUnit) { storedUnit = newUnit; }
 
 	// Accessors
 	Position getPosition() { return position; }
@@ -27,7 +32,7 @@ public:
 class TransportInfo
 {
 	Position position, destination, drop;
-	Unit transport, target;
+	Unit storedUnit, target;
 	UnitType transportType;
 	WalkPosition miniTile;
 	set <Unit> assignedCargo;
@@ -40,8 +45,8 @@ public:
 	~TransportInfo();
 
 	// Unit access
-	Unit unit() { return transport; }
-	void setUnit(Unit newTransport) { transport = newTransport; }
+	Unit unit() { return storedUnit; }
+	void setUnit(Unit newTransport) { storedUnit = newTransport; }
 
 	// Accessors
 	Position getDrop() { return drop; }

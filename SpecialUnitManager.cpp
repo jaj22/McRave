@@ -40,15 +40,17 @@ void SpecialUnitTrackerClass::updateArbiters()
 		Grids().updateArbiterMovement(u.first);
 
 		// If there's a stasis target, cast stasis on it
-		Unit target = Units().getMyUnits()[u.first].getTarget();
-		if (target && target->exists() && u.first->getEnergy() >= 100)
+		UnitInfo target = Units().getMyUnits()[u.first];
+		if (target.unit() && target.unit()->exists() && u.first->getEnergy() >= 100)
 		{
-			u.first->useTech(TechTypes::Stasis_Field, target);
-			Broodwar->drawLineMap(u.second.getPosition(), target->getPosition(), Broodwar->self()->getColor());
+			u.first->useTech(TechTypes::Stasis_Field, target.unit());
+			Broodwar->drawLineMap(u.second.getPosition(), target.getPosition(), Broodwar->self()->getColor());
+			Broodwar->drawBoxMap(target.getPosition() - Position(4, 4), target.getPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
 		}
 		else
 		{
 			Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
+			Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 		}
 	}
 	return;
@@ -96,8 +98,9 @@ void SpecialUnitTrackerClass::updateObservers()
 		}
 		u.second.setDestination(newDestination);
 		u.first->move(newDestination);
-		Grids().updateObserverMovement(u.first);
+		Grids().updateObserverMovement(u.first);		
 		Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
+		Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 		continue;
 	}
 	return;

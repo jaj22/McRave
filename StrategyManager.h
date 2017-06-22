@@ -10,6 +10,7 @@ class StrategyTrackerClass
 	map <UnitType, int> enemyComposition;
 	map <UnitType, double> unitScore;
 	double globalAllyStrength, globalEnemyStrength;
+	int eZerg, eProtoss, eTerran;
 	bool fastExpand = false;
 	bool invis = false;
 	bool rush = false;
@@ -23,6 +24,9 @@ public:
 	bool needDetection() { return invis; }	
 	bool isRush() { return rush; }
 	bool needZealotWall() { return zealotWall; }
+	int getNumberZerg() { return eZerg; }
+	int getNumberProtoss() { return eProtoss; }
+	int getNumberTerran() { return eTerran; }
 	
 	// Updating
 	void update();

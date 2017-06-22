@@ -5,13 +5,17 @@ using namespace BWAPI;
 using namespace std;
 
 class ProbeInfo{
-	Unit resource, target;
+	Unit resource, target, storedUnit;
 	WalkPosition miniTile;
 	Position resourcePosition;
 	int lastGatherFrame;
 public:
 	// Constructors
 	ProbeInfo();
+
+	// Unit access
+	Unit unit() { return storedUnit; }
+	void setUnit(Unit newUnit) { storedUnit = newUnit; }
 
 	// Accessors
 	Unit getTarget() { return target; }

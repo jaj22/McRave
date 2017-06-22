@@ -5,11 +5,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 	int offset = 0;
 	// Offset for first pylon
 	if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
-	{
-		if (Terrain().getDefendHere()[0].getDistance(Position(buildTilePosition)) > 640)
-		{
-			return false;
-		}
+	{		
 		offset = 3;
 	}
 
@@ -52,7 +48,7 @@ bool canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignore
 				}
 
 				// If it's not a cannon and on top of the resource grid
-				if (building != UnitTypes::Protoss_Photon_Cannon && Grids().getResourceGrid(x, y) > 0)
+				if (!ignoreCond && building != UnitTypes::Protoss_Photon_Cannon && Grids().getResourceGrid(x, y) > 0)
 				{
 					return false;
 				}
@@ -171,6 +167,16 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 				if (Broodwar->getUnitsInRadius(Position(base), 128, Filter::IsResourceDepot).size() <= 0)
 				{
 					return base;
+				}
+			}
+		}
+		else if (building == UnitTypes::Protoss_Shield_Battery)
+		{
+			for (auto nexus : Nexuses().getMyNexus())
+			{
+				if (Broodwar->getUnitsInRadius(Position(nexus.second.getCannonPosition()), 320, Filter::GetType == UnitTypes::Protoss_Shield_Battery).size() <= 0)
+				{
+					return getBuildLocationNear(building, nexus.second.getCannonPosition(), true);
 				}
 			}
 		}

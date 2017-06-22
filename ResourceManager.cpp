@@ -30,20 +30,21 @@ void ResourceTrackerClass::update()
 	}
 
 	// Assume saturated so check happens
-	saturated = true;
+	minSat = true;
 	for (auto &m : myMinerals)
 	{
 		if (m.first->exists())
 		{
 			m.second.setRemainingResources(m.first->getResources());				
 		}
-		if (saturated && m.second.getGathererCount() < 2)
+		if (minSat && m.second.getGathererCount() < 2)
 		{
-			saturated = false;
-		}
-		//Broodwar->drawTextMap(m.second.getPosition(), "%d", m.second.getGathererCount());
+			minSat = false;
+		}		
 	}
 
+	// Assume saturated again
+	gasSat = true;
 	for (auto &g : myGas)
 	{
 		if (g.first->exists())
@@ -54,7 +55,7 @@ void ResourceTrackerClass::update()
 		if (g.second.getGathererCount() < 3)
 		{
 			gasNeeded = 3 - g.second.getGathererCount();
-			saturated = false;
+			gasSat = false;
 			break;
 		}
 	}

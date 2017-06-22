@@ -13,6 +13,7 @@ class ProductionTrackerClass
 	map <Unit, UpgradeType> idleUpgrade;
 	int reservedMineral, reservedGas;
 	bool noZealots = false;
+	bool gateSat = false;
 public:
 	map <Unit, UnitType>& getIdleBuildings() { return idleBuildings; }
 	map <Unit, UnitType>& getIdleGates() { return idleGates; }
@@ -22,6 +23,7 @@ public:
 	int getReservedMineral() { return reservedMineral; }
 	int getReservedGas() { return reservedGas; }
 	bool getNoZealots() { return noZealots; }
+	bool isGateSat() { return gateSat; }
 
 	void update();
 	void updateGateway(Unit);
