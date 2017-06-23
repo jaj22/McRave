@@ -15,8 +15,8 @@ public:
 	void update();
 	void storeBase(Unit);
 	void removeBase(Unit);
-	void trainWorkers(BaseInfo);
-	void updateDefenses(BaseInfo);
+	void trainWorkers(BaseInfo&);
+	void updateDefenses(BaseInfo&);
 	TilePosition staticDefensePosition(Unit);
 };
 

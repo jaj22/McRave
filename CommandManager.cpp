@@ -5,7 +5,7 @@ void CommandTrackerClass::update()
 	for (auto &u : Units().getMyUnits())
 	{		
 		// Special units have their own commands
-		if (u.second.getType() == UnitTypes::Protoss_Observer || u.second.getType() == UnitTypes::Protoss_Arbiter || u.second.getType() == UnitTypes::Protoss_Shuttle)
+		if (u.second.getType() == UnitTypes::Protoss_Observer || u.second.getType() == UnitTypes::Protoss_Arbiter || u.second.getType() == UnitTypes::Protoss_Shuttle || u.second.getType() == UnitTypes::Terran_Medic)
 		{
 			continue;
 		}
@@ -23,6 +23,12 @@ void CommandTrackerClass::getDecision(Unit unit, Unit target)
 	if (unit->getType() == UnitTypes::Protoss_Dragoon)
 	{
 		offset = 9;
+	}
+
+	// If we aren't stimmed and in range of our target
+	if ((unit->getType() == UnitTypes::Terran_Marine || unit->getType() == UnitTypes::Terran_Firebat) && !unit->isStimmed() && unit->getDistance(Units().getEnUnits()[target].getPosition()) <= Units().getMyUnits()[unit].getGroundRange())
+	{
+		unit->useTech(TechTypes::Stim_Packs);
 	}
 
 	// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, not powered or not completed

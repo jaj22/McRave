@@ -188,7 +188,7 @@ void GridTrackerClass::updateAllyGrids()
 		int offsetY = u.second.getPosition().y % 32;
 
 		// Make sure unit is alive and not an Arbiter or Observer
-		if (u.second.getDeadFrame() == 0 && u.second.getType() != UnitTypes::Protoss_Arbiter && u.second.getType() != UnitTypes::Protoss_Observer)
+		if (u.second.getDeadFrame() == 0 && u.second.getType() != UnitTypes::Protoss_Arbiter && u.second.getType() != UnitTypes::Protoss_Observer && u.second.getType() != UnitTypes::Terran_Medic)
 		{
 			for (int x = start.x - 20; x <= start.x + 20 + u.second.getType().tileWidth() * 4; x++)
 			{
@@ -200,17 +200,17 @@ void GridTrackerClass::updateAllyGrids()
 					}
 				}
 			}
-			// Anti mobility doesn't apply to flying units (carriers, scouts, shuttles)
-			if (!u.second.getType().isFlyer())
+		}
+		// Anti mobility doesn't apply to flying units (carriers, scouts, shuttles)
+		if (!u.second.getType().isFlyer())
+		{
+			for (int x = start.x; x <= start.x + u.second.getType().tileWidth() * 4; x++)
 			{
-				for (int x = start.x; x <= start.x + u.second.getType().tileWidth() * 4; x++)
+				for (int y = start.y; y <= start.y + u.second.getType().tileHeight() * 4; y++)
 				{
-					for (int y = start.y; y <= start.y + u.second.getType().tileHeight() * 4; y++)
+					if (WalkPosition(x, y).isValid())
 					{
-						if (WalkPosition(x, y).isValid())
-						{
-							antiMobilityGrid[x][y] = 1;
-						}
+						antiMobilityGrid[x][y] = 1;
 					}
 				}
 			}
@@ -444,28 +444,28 @@ void GridTrackerClass::updateEnemyGrids()
 
 void GridTrackerClass::updateNeutralGrids()
 {
-	for (auto m : Resources().getMyMinerals())
+	for (auto &m : Resources().getMyMinerals())
 	{
 		// Update resource grid
 		for (int x = m.second.getTilePosition().x - 5; x < m.second.getTilePosition().x + m.second.getUnitType().tileWidth() + 5; x++)
 		{
 			for (int y = m.second.getTilePosition().y - 5; y < m.second.getTilePosition().y + m.second.getUnitType().tileHeight() + 5; y++)
 			{
-				if (Position(Bases().getMyBases()[m.second.getClosestNexus()].getDefensePosition()).getDistance(Position(TilePosition(x, y))) <= 192 && TilePosition(x, y).isValid() && m.second.getPosition().getDistance(m.second.getClosestNexus()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(m.second.getClosestNexus()->getPosition()))
+				if (Position(Bases().getMyBases()[m.second.getClosestBase()].getDefensePosition()).getDistance(Position(TilePosition(x, y))) <= 192 && TilePosition(x, y).isValid() && m.second.getPosition().getDistance(m.second.getClosestBase()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(m.second.getClosestBase()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
 				}
 			}
 		}
 	}
-	for (auto g : Resources().getMyGas())
+	for (auto &g : Resources().getMyGas())
 	{
 		// Update resource grid
 		for (int x = g.second.getTilePosition().x - 5; x < g.second.getTilePosition().x + g.second.getUnitType().tileWidth() + 5; x++)
 		{
 			for (int y = g.second.getTilePosition().y - 5; y < g.second.getTilePosition().y + g.second.getUnitType().tileHeight() + 5; y++)
 			{
-				if (Position(Bases().getMyBases()[g.second.getClosestNexus()].getDefensePosition()).getDistance(Position(TilePosition(x, y))) <= 256 && TilePosition(x, y).isValid() && g.second.getPosition().getDistance(g.second.getClosestNexus()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(g.second.getClosestNexus()->getPosition()))
+				if (Position(Bases().getMyBases()[g.second.getClosestBase()].getDefensePosition()).getDistance(Position(TilePosition(x, y))) <= 256 && TilePosition(x, y).isValid() && g.second.getPosition().getDistance(g.second.getClosestBase()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(g.second.getClosestBase()->getPosition()))
 				{
 					resourceGrid[x][y] = 1;
 				}

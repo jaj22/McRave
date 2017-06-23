@@ -10,6 +10,10 @@ Unit TargetTrackerClass::getTarget(Unit unit)
 	{
 		return nullptr;
 	}
+	else if (unit->getType() == UnitTypes::Terran_Medic)
+	{
+		return allyTarget(unit);
+	}
 	else
 	{
 		return singleTarget(unit);
@@ -68,6 +72,43 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 			target = u.first;
 			highest = thisUnit;
 		}
+	}	
+	return target;
+}
+
+Unit TargetTrackerClass::allyTarget(Unit unit)
+{
+	double highest = 0.0, thisUnit = 0.0;
+	Unit target = nullptr;
+
+	for (auto &u : Units().getMyUnits())
+	{
+		if (!u.first)
+		{
+			continue;
+		}
+
+		if (u.second.getType() != UnitTypes::Terran_Marine && u.second.getType() != UnitTypes::Terran_Firebat)
+		{
+			continue;
+		}
+
+		double distance = 1.0 / (1.0 + double(unit->getDistance(u.second.getPosition())));
+
+		if (u.first->exists() && u.first->getType().maxHitPoints() - u.first->getHitPoints() > 0)
+		{
+			Broodwar->drawCircleMap(u.second.getPosition(), 5, Colors::Red);
+			thisUnit = distance;
+		}
+
+		
+
+		// If this is the strongest ally around, target it
+		if (thisUnit > highest)
+		{
+			target = u.first;
+			highest = thisUnit;
+		}		
 	}	
 	return target;
 }

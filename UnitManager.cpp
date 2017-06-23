@@ -38,8 +38,8 @@ void UnitTrackerClass::storeUnits()
 		if (u->getType().isBuilding())
 		{
 			Buildings().storeBuilding(u);
-			if (u->getType() == UnitTypes::Protoss_Nexus)
-			{
+			if (u->getType().isResourceDepot())
+			{				
 				Bases().storeBase(u);
 			}
 			else if (u->getType() == UnitTypes::Protoss_Pylon)
@@ -60,7 +60,7 @@ void UnitTrackerClass::storeUnits()
 			Workers().storeWorker(u);
 		}
 		// Store Special Units in both
-		else if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter)
+		else if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Terran_Medic)
 		{
 			storeAllyUnit(u);
 			SpecialUnits().storeUnit(u);
@@ -69,7 +69,7 @@ void UnitTrackerClass::storeUnits()
 		{
 			storeAllyUnit(u);
 			Transport().storeUnit(u);
-		}
+		}		
 		// Store the rest
 		else
 		{
@@ -127,12 +127,12 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 	// Update units
 	enemyUnits[unit].setUnitType(unit->getType());
 	enemyUnits[unit].setPosition(unit->getPosition());
-	enemyUnits[unit].setStrength(Util().getVisibleStrength(unit));
-	enemyUnits[unit].setMaxStrength(Util().getStrength(unit->getType()));
+	enemyUnits[unit].setStrength(Util().getVisibleStrength(unit, unit->getPlayer()));
+	enemyUnits[unit].setMaxStrength(Util().getStrength(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setGroundRange(Util().getTrueRange(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setAirRange(Util().getTrueAirRange(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setSpeed(Util().getTrueSpeed(unit->getType(), Broodwar->self()));
-	enemyUnits[unit].setPriority(Util().getPriority(unit->getType()));
+	enemyUnits[unit].setPriority(Util().getPriority(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setGroundDamage(Util().getTrueGroundDamage(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setAirDamage(Util().getTrueAirDamage(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setCommand(unit->getLastCommand().getType());
@@ -148,18 +148,18 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 	// Update units
 	allyUnits[unit].setUnitType(unit->getType());
 	allyUnits[unit].setPosition(unit->getPosition());
-	allyUnits[unit].setStrength(Util().getVisibleStrength(unit));
-	allyUnits[unit].setMaxStrength(Util().getStrength(unit->getType()));
+	allyUnits[unit].setStrength(Util().getVisibleStrength(unit, unit->getPlayer()));
+	allyUnits[unit].setMaxStrength(Util().getStrength(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setGroundRange(Util().getTrueRange(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setAirRange(Util().getTrueAirRange(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setSpeed(Util().getTrueSpeed(unit->getType(), Broodwar->self()));
-	allyUnits[unit].setPriority(Util().getPriority(unit->getType()));
+	allyUnits[unit].setPriority(Util().getPriority(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setGroundDamage(Util().getTrueGroundDamage(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setAirDamage(Util().getTrueAirDamage(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setCommand(unit->getLastCommand().getType());
 	allyUnits[unit].setWalkPosition(Util().getWalkPosition(unit));
 	allyUnits[unit].setTarget(Targets().getTarget(unit));
-	allyUnits[unit].setTargetPosition(enemyUnits[allyUnits[unit].getTarget()].getPosition());
+	allyUnits[unit].setTargetPosition(enemyUnits[allyUnits[unit].getTarget()].getPosition());	
 
 	// Update sizes and calculations
 	allySizes[unit->getType().size()] += 1;
@@ -458,40 +458,55 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 void UnitTrackerClass::getGlobalCalculation(Unit unit, Unit target)
 {
-	if (Strategy().isFastExpand())
+	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		globalStrategy = 0;
-		return;
-	}
+		if (Strategy().isFastExpand())
+		{
+			globalStrategy = 0;
+			return;
+		}
+		// If Zerg, wait for a larger army before moving out
+		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
+		{
+			globalStrategy = 2;
+			return;
+		}
+		// If Toss, wait for Dragoon range upgrade against rushes
+		if (Broodwar->enemy()->getRace() == Races::Protoss && Strategy().isRush() && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
+		{
+			globalStrategy = 2;
+			return;
+		}
 
-	// If Zerg, wait for a larger army before moving out
-	if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
-	{
-		globalStrategy = 2;
-		return;
-	}
-	// If Toss, wait for Dragoon range upgrade against rushes
-	if (Broodwar->enemy()->getRace() == Races::Protoss && Strategy().isRush() && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
-	{
-		globalStrategy = 2;
-		return;
-	}
-
-	if (Strategy().globalAlly() > Strategy().globalEnemy())
-	{
-		globalStrategy = 1;
-		return;
-	}
-	else
-	{
-		// If Terran, contain
-		if (Broodwar->enemy()->getRace() == Races::Terran)
+		if (Strategy().globalAlly() > Strategy().globalEnemy())
 		{
 			globalStrategy = 1;
 			return;
 		}
-		globalStrategy = 0;
-		return;
+		else
+		{
+			// If Terran, contain
+			if (Broodwar->enemy()->getRace() == Races::Terran)
+			{
+				globalStrategy = 1;
+				return;
+			}
+			globalStrategy = 0;
+			return;
+		}
+	}
+	else if (Broodwar->self()->getRace() == Races::Terran)
+	{		
+		if (Broodwar->self()->hasResearched(TechTypes::Stim_Packs))
+		{			
+			globalStrategy = 1;
+			return;
+		}
+		else
+		{
+			globalStrategy = 0;
+			return;
+		}
 	}
 	globalStrategy = 1;
 	return;

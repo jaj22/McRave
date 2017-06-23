@@ -50,6 +50,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	// For each expansion, check if you can build near it, starting at the main
 	for (TilePosition tile : Terrain().getActiveExpansion())
 	{
+		// First make sure every expansion has a pylon
 		if (building == UnitTypes::Protoss_Pylon)
 		{
 			for (auto base : Bases().getMyBases())
@@ -60,7 +61,8 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 				}
 			}
 		}
-		if (building == UnitTypes::Protoss_Assimilator)
+
+		if (building == UnitTypes::Protoss_Assimilator || building == UnitTypes::Terran_Refinery)
 		{
 			for (auto gas : Resources().getMyGas())
 			{

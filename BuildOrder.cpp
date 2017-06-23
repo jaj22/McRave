@@ -36,10 +36,7 @@ void BuildOrderTrackerClass::updateBuildStage()
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		if (buildingDesired[UnitTypes::Terran_Factory] >= 1)
-		{
-			getEarlyBuild = false;
-		}
+		
 	}
 	return;
 }
@@ -86,7 +83,7 @@ void BuildOrderTrackerClass::updateBaseBuild()
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		buildingDesired[UnitTypes::Terran_Supply_Depot] = min(22, (int)floor((Units().getSupply() / max(14, (18 - Broodwar->self()->allUnitCount(UnitTypes::Terran_Supply_Depot))))));
+		buildingDesired[UnitTypes::Terran_Supply_Depot] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Terran_Supply_Depot))))));
 		buildingDesired[UnitTypes::Terran_Armory] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Terran_Command_Center) / 2);
 		earlyBuild = 0;
 		midBuild = 0;
@@ -109,28 +106,31 @@ void BuildOrderTrackerClass::updateBaseBuild()
 
 void BuildOrderTrackerClass::updateSituationalBuild()
 {
-	// Expansion logic
-	if (!Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && ((Broodwar->self()->minerals() > 300 && Resources().isMinSaturated() && Production().isGateSat() && Production().getIdleGates().size() == 0) || (Strategy().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)))
+	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
-	}
+		// Expansion logic
+		if (!Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && ((Broodwar->self()->minerals() > 300 && Resources().isMinSaturated() && Production().isGateSat() && Production().getIdleGates().size() == 0) || (Strategy().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)))
+		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
+		}
 
-	// Shield battery logic
-	if (Strategy().isRush())
-	{
-		buildingDesired[UnitTypes::Protoss_Shield_Battery] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
-	}
+		// Shield battery logic
+		if (Strategy().isRush())
+		{
+			buildingDesired[UnitTypes::Protoss_Shield_Battery] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
+		}
 
-	// Gateway logic
-	if ((Broodwar->self()->minerals() - Production().getReservedMineral() - Buildings().getQueuedMineral() > 200) || (!Production().isGateSat() && Resources().isMinSaturated()))
-	{
-		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
-	}
+		// Gateway logic
+		if ((Broodwar->self()->minerals() - Production().getReservedMineral() - Buildings().getQueuedMineral() > 200) || (!Production().isGateSat() && Resources().isMinSaturated()))
+		{
+			buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
+		}
 
-	// Assimilator logic
-	if (Resources().isMinSaturated())
-	{
-		buildingDesired[UnitTypes::Protoss_Assimilator] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
+		// Assimilator logic
+		if (Resources().isMinSaturated())
+		{
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
+		}
 	}
 }
 
@@ -170,7 +170,9 @@ void BuildOrderTrackerClass::earlyBuilds()
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 20);
+		buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 22) + (Units().getSupply() >= 26) + (Units().getSupply() >= 50) + (Units().getSupply() >= 80);
+		buildingDesired[UnitTypes::Terran_Refinery] = (Units().getSupply() >= 40);
+		buildingDesired[UnitTypes::Terran_Academy] = (Units().getSupply() >= 48);
 	}
 	return;
 }

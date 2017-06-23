@@ -10,7 +10,7 @@ class ResourceInfo
 {
 private:
 	int gathererCount, remainingResources;
-	Unit storedUnit, nexus;
+	Unit storedUnit, base;
 	UnitType unitType;
 	Position position;
 	TilePosition tilePosition;
@@ -24,7 +24,7 @@ public:
 	int getRemainingResources() { return remainingResources; }
 
 	Unit unit() { return storedUnit; }
-	Unit getClosestNexus() { return nexus; }
+	Unit getClosestBase() { return base; }
 	UnitType getUnitType() { return unitType; }
 
 	Position getPosition() { return position; }
@@ -36,7 +36,7 @@ public:
 	void setRemainingResources(int newRemainingResources) { remainingResources = newRemainingResources; }
 
 	void setUnit(Unit newUnit) { storedUnit = newUnit; }
-	void setClosestNexus(Unit newNexus) { nexus = newNexus; }
+	void setClosestBase(Unit newBase) { base = newBase; }
 	void setUnitType(UnitType newType) { unitType = newType; }
 
 	void setPosition(Position newPosition) { position = newPosition; }

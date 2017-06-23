@@ -10,6 +10,7 @@ class TargetTrackerClass
 public:
 	Unit getTarget(Unit);
 	Unit singleTarget(Unit);
+	Unit allyTarget(Unit);
 	Unit clusterTarget(Unit);
 };
 

@@ -1,6 +1,6 @@
 #include "McRave.h"
 
-double UtilTrackerClass::getStrength(UnitType unitType, Player who)
+double UnitUtilClass::getStrength(UnitType unitType)
 {
 	// Some hardcoded values that don't have attacks but should still be considered for strength
 	if (unitType == UnitTypes::Terran_Bunker)
@@ -32,17 +32,17 @@ double UtilTrackerClass::getStrength(UnitType unitType, Player who)
 		return 50.0;
 	}
 
-	if (!unitType.isWorker() && unitType != UnitTypes::Protoss_Scarab && unitType != UnitTypes::Terran_Vulture_Spider_Mine && unitType.groundWeapon().damageAmount() > 0)
+	if (!unitType.isWorker() && unitType != UnitTypes::Protoss_Scarab && unitType != UnitTypes::Terran_Vulture_Spider_Mine && unitType.groundWeapon().damageAmount() > 0 || (unitType.isBuilding() && unitType.groundWeapon().damageAmount() > 0))
 	{
 		double range, damage, hp, speed;
 		// Range upgrade check (applies to enemy Dragoons, not a big issue currently)
-		if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
+		if (unitType == UnitTypes::Protoss_Dragoon && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 		{
 			range = 192.0;
 		}
 
 		// Enemy ranged upgrade check
-		else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
+		else if ((unitType == UnitTypes::Terran_Marine && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
 		{
 			range = 160.0;
 		}
@@ -64,7 +64,7 @@ double UtilTrackerClass::getStrength(UnitType unitType, Player who)
 		}
 
 		// Check for Zergling attack speed upgrade
-		if (unitType == UnitTypes::Zerg_Zergling && who->getUpgradeLevel(UpgradeTypes::Adrenal_Glands))
+		if (unitType == UnitTypes::Zerg_Zergling && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Adrenal_Glands))
 		{
 			damage = damage * 1.33;
 		}
@@ -73,7 +73,7 @@ double UtilTrackerClass::getStrength(UnitType unitType, Player who)
 		hp = double(unitType.maxHitPoints() + (unitType.maxShields() / 2));
 
 		// Assume strength doubled for units that can use Stim to prevent poking into armies frequently
-		if (who->hasResearched(TechTypes::Stim_Packs) && (unitType == UnitTypes::Terran_Marine || unitType == UnitTypes::Terran_Firebat))
+		if (stimResearched && (unitType == UnitTypes::Terran_Marine || unitType == UnitTypes::Terran_Firebat))
 		{
 			return 20.0 * (1.0 + (range / 320.0)) * damage * (hp / 100.0);
 		}
@@ -87,21 +87,21 @@ double UtilTrackerClass::getStrength(UnitType unitType, Player who)
 	return 1.0;
 }
 
-double UtilTrackerClass::getAirStrength(UnitType unitType, Player who)
+double UnitUtilClass::getAirStrength(UnitType unitType)
 {
 	double range, damage, hp;
 	range = double(unitType.airWeapon().maxRange());
 
 	// Enemy ranged upgrade check
-	if (unitType == UnitTypes::Terran_Goliath && who->getUpgradeLevel(UpgradeTypes::Charon_Boosters))
+	if (unitType == UnitTypes::Terran_Goliath && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Charon_Boosters))
 	{
 		range = 256.0;
 	}
-	else if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
+	else if (unitType == UnitTypes::Protoss_Dragoon && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 	{
 		range = 192.0;
 	}
-	else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
+	else if ((unitType == UnitTypes::Terran_Marine && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && Broodwar->enemy()->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
 	{
 		range = 160.0;
 	}
@@ -119,7 +119,7 @@ double UtilTrackerClass::getAirStrength(UnitType unitType, Player who)
 	return sqrt(1 + (range / 320.0)) * damage * (hp / 100);
 }
 
-double UtilTrackerClass::getVisibleStrength(Unit unit, Player who)
+double UnitUtilClass::getVisibleStrength(Unit unit)
 {
 	if (unit->isMaelstrommed() || unit->isStasised())
 	{
@@ -133,14 +133,14 @@ double UtilTrackerClass::getVisibleStrength(Unit unit, Player who)
 	}
 
 	// Make units under an Arbiter feel stronger
-	if (unit->getPlayer() == who && unit->isCloaked() && !unit->isDetected())
+	if (unit->getPlayer() == Broodwar->self() && unit->isCloaked() && !unit->isDetected())
 	{
-		return 4.0 * hp * getStrength(unit->getType(), who);
+		return 4.0 * hp * getStrength(unit->getType());
 	}
-	return hp * getStrength(unit->getType(), who);
+	return hp * getStrength(unit->getType());
 }
 
-double UtilTrackerClass::getTrueRange(UnitType unitType, Player who)
+double UnitUtilClass::getTrueRange(UnitType unitType, Player who)
 {
 	// Ranged upgrade check for Dragoons, Marines, Hydralisks and Bunkers
 
@@ -172,7 +172,7 @@ double UtilTrackerClass::getTrueRange(UnitType unitType, Player who)
 	return double(unitType.groundWeapon().maxRange());
 }
 
-double UtilTrackerClass::getTrueAirRange(UnitType unitType, Player who)
+double UnitUtilClass::getTrueAirRange(UnitType unitType, Player who)
 {
 	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 	{
@@ -200,7 +200,7 @@ double UtilTrackerClass::getTrueAirRange(UnitType unitType, Player who)
 	return double(unitType.airWeapon().maxRange());
 }
 
-double UtilTrackerClass::getTrueGroundDamage(UnitType unitType, Player who)
+double UnitUtilClass::getTrueGroundDamage(UnitType unitType, Player who)
 {
 	if (unitType == UnitTypes::Protoss_Reaver)
 	{
@@ -223,7 +223,7 @@ double UtilTrackerClass::getTrueGroundDamage(UnitType unitType, Player who)
 	}
 }
 
-double UtilTrackerClass::getTrueAirDamage(UnitType unitType, Player who)
+double UnitUtilClass::getTrueAirDamage(UnitType unitType, Player who)
 {
 	if (unitType == UnitTypes::Terran_Bunker)
 	{
@@ -232,7 +232,7 @@ double UtilTrackerClass::getTrueAirDamage(UnitType unitType, Player who)
 	return unitType.airWeapon().damageAmount();
 }
 
-double UtilTrackerClass::getPriority(UnitType unitType, Player who)
+double UnitUtilClass::getPriority(UnitType unitType)
 {
 	// Low strength units with high threat	
 	if (unitType == UnitTypes::Protoss_Arbiter || unitType == UnitTypes::Protoss_Observer || unitType == UnitTypes::Protoss_Shuttle || unitType == UnitTypes::Terran_Science_Vessel || unitType == UnitTypes::Terran_Dropship || unitType == UnitTypes::Terran_Vulture_Spider_Mine)
@@ -251,11 +251,11 @@ double UtilTrackerClass::getPriority(UnitType unitType, Player who)
 	}
 	else
 	{
-		return getStrength(unitType, who);
+		return getStrength(unitType);
 	}
 }
 
-double UtilTrackerClass::getTrueSpeed(UnitType unitType, Player who)
+double UnitUtilClass::getTrueSpeed(UnitType unitType, Player who)
 {
 	double speed = unitType.topSpeed();
 
@@ -275,7 +275,7 @@ double UtilTrackerClass::getTrueSpeed(UnitType unitType, Player who)
 	return speed;
 }
 
-WalkPosition UtilTrackerClass::getWalkPosition(Unit unit)
+WalkPosition UnitUtilClass::getMiniTile(Unit unit)
 {
 	int x = unit->getPosition().x;
 	int y = unit->getPosition().y;
@@ -297,9 +297,9 @@ WalkPosition UtilTrackerClass::getWalkPosition(Unit unit)
 	return WalkPositions::None;
 }
 
-set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
+set<WalkPosition> UnitUtilClass::getMiniTilesUnderUnit(Unit unit)
 {
-	WalkPosition start = Units().getMyUnits()[unit].getWalkPosition();
+	WalkPosition start = Units().getMyUnits()[unit].getMiniTile();		
 	set<WalkPosition> returnValues;
 
 	for (int i = start.x; i <= start.x + unit->getType().tileWidth(); i++)
@@ -310,108 +310,4 @@ set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
 		}
 	}
 	return returnValues;
-}
-
-bool UtilTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond = false)
-{
-	int offset = 0;
-	// Offset for first pylon
-	if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
-	{
-		offset = 3;
-	}
-
-	// Offset for production buildings
-	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
-	{
-		offset = 1;
-	}
-
-	// If Protoss, check for power
-	if (Broodwar->self()->getRace() == Races::Protoss)
-	{
-		// Check if it's not a pylon and in a preset buildable position based on power grid
-		if (building != UnitTypes::Protoss_Pylon && !Pylons().hasPower(buildTilePosition, building))
-		{
-			return false;
-		}
-
-		// Check if it's a pylon and in a buildable position
-		if (building == UnitTypes::Protoss_Pylon && !Broodwar->canBuildHere(buildTilePosition, building))
-		{
-			return false;
-		}
-	}
-
-	// For every tile of a buildings size
-	for (int x = buildTilePosition.x; x < buildTilePosition.x + building.tileWidth(); x++)
-	{
-		for (int y = buildTilePosition.y; y < buildTilePosition.y + building.tileHeight(); y++)
-		{
-			// Checking if the tile is valid, and the reasons that could make this position an unsuitable build location
-			if (TilePosition(x, y).isValid())
-			{
-				// If it's reserved
-				if (Grids().getReserveGrid(x, y) > 0)
-				{
-					return false;
-				}
-
-				// If it's a pylon and overlapping too many pylons
-				if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 2)
-				{
-					return false;
-				}
-
-				// If it's not a cannon and on top of the resource grid
-				if (!ignoreCond && building != UnitTypes::Protoss_Photon_Cannon && Grids().getResourceGrid(x, y) > 0)
-				{
-					return false;
-				}
-
-				// If it's on an unbuildable tile
-				if (!Broodwar->isBuildable(TilePosition(x, y), true))
-				{
-					return false;
-				}
-			}
-			else
-			{
-				return false;
-			}
-		}
-	}
-
-	// If the building requires an offset (production buildings and first pylon)
-	if (offset > 0)
-	{
-		for (int x = buildTilePosition.x - offset; x < buildTilePosition.x + building.tileWidth() + offset; x++)
-		{
-			for (int y = buildTilePosition.y - offset; y < buildTilePosition.y + building.tileHeight() + offset; y++)
-			{
-				if (Grids().getReserveGrid(x, y) > 0 && !Broodwar->isBuildable(TilePosition(x, y), true))
-				{
-					return false;
-				}
-			}
-		}
-	}
-
-	// For every tile of an expansion
-	for (auto base : Terrain().getNextExpansion())
-	{
-		for (int i = 0; i < building.tileWidth(); i++)
-		{
-			for (int j = 0; j < building.tileHeight(); j++)
-			{
-				// If the x value of this tile of the building is within an expansion and the y value of this tile of the building is within an expansion, return false
-				if (buildTilePosition.x + i >= base.x && buildTilePosition.x + i < base.x + 4 && buildTilePosition.y + j >= base.y && buildTilePosition.y + j < base.y + 3)
-				{
-					return false;
-				}
-			}
-		}
-	}
-	// If no issues, return true
-	return true;
 }

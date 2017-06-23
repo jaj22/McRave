@@ -52,7 +52,7 @@ void ResourceTrackerClass::update()
 			g.second.setUnitType(g.first->getType());
 			g.second.setRemainingResources(g.first->getResources());			
 		}
-		if (g.second.getGathererCount() < 3)
+		if (g.second.getGathererCount() < 3 && g.second.getUnitType() != UnitTypes::Resource_Vespene_Geyser)
 		{
 			gasNeeded = 3 - g.second.getGathererCount();
 			gasSat = false;
@@ -66,7 +66,7 @@ void ResourceTrackerClass::storeMineral(Unit resource)
 	myMinerals[resource].setGathererCount(0);
 	myMinerals[resource].setRemainingResources(resource->getResources());
 	myMinerals[resource].setUnit(resource);
-	myMinerals[resource].setClosestNexus(resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus));
+	myMinerals[resource].setClosestBase(resource->getClosestUnit(Filter::IsAlly && Filter::IsResourceDepot));
 	myMinerals[resource].setUnitType(resource->getType());
 	myMinerals[resource].setPosition(resource->getPosition());
 	myMinerals[resource].setWalkPosition(Util().getWalkPosition(resource));
@@ -79,7 +79,7 @@ void ResourceTrackerClass::storeGas(Unit resource)
 	myGas[resource].setGathererCount(0);
 	myGas[resource].setRemainingResources(resource->getResources());
 	myGas[resource].setUnit(resource);
-	myGas[resource].setClosestNexus(resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus));
+	myGas[resource].setClosestBase(resource->getClosestUnit(Filter::IsAlly && Filter::IsResourceDepot));
 	myGas[resource].setUnitType(resource->getType());
 	myGas[resource].setPosition(resource->getPosition());
 	myGas[resource].setWalkPosition(Util().getWalkPosition(resource));
@@ -92,7 +92,7 @@ void ResourceTrackerClass::storeBoulder(Unit resource)
 	myBoulders[resource].setGathererCount(0);
 	myBoulders[resource].setRemainingResources(resource->getResources());
 	myBoulders[resource].setUnit(resource);
-	myBoulders[resource].setClosestNexus(resource->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_Nexus));
+	myBoulders[resource].setClosestBase(resource->getClosestUnit(Filter::IsAlly && Filter::IsResourceDepot));
 	myBoulders[resource].setUnitType(resource->getType());
 	myBoulders[resource].setPosition(resource->getPosition());
 	myBoulders[resource].setWalkPosition(Util().getWalkPosition(resource));

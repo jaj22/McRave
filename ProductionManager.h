@@ -26,6 +26,8 @@ public:
 	bool isGateSat() { return gateSat; }
 
 	void update();
+	void updateProtoss();
+	void updateTerran();
 	void updateGateway(Unit);
 	void updateRobo(Unit);
 	void updateStargate(Unit);

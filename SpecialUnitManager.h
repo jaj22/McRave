@@ -11,12 +11,14 @@ class SpecialUnitTrackerClass
 	map <Unit, SupportUnitInfo> myObservers;
 	map <Unit, SupportUnitInfo> myTemplars;
 	map <Unit, SupportUnitInfo> myReavers;
+	map <Unit, SupportUnitInfo> myMedics;
 public:
 	void update();
 	void updateArbiters();
 	void updateObservers();
 	void updateTemplars();
 	void updateReavers();
+	void updateMedics();
 	void storeUnit(Unit);
 	void removeUnit(Unit);
 

@@ -6,12 +6,13 @@ void SpecialUnitTrackerClass::update()
 	updateObservers();
 	updateTemplars();
 	updateReavers();
+	updateMedics();
 	return;
 }
 
 void SpecialUnitTrackerClass::updateArbiters()
 {
-	for (auto & u : myArbiters)
+	for (auto &u : myArbiters)
 	{
 		// Move towards high cluster counts and closest to ally starting position
 		int bestCluster = 0;
@@ -58,7 +59,7 @@ void SpecialUnitTrackerClass::updateArbiters()
 
 void SpecialUnitTrackerClass::updateObservers()
 {
-	for (auto & u : myObservers)
+	for (auto &u : myObservers)
 	{
 		// First check if any expansions need detection on them
 		if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
@@ -98,7 +99,7 @@ void SpecialUnitTrackerClass::updateObservers()
 		}
 		u.second.setDestination(newDestination);
 		u.first->move(newDestination);
-		Grids().updateObserverMovement(u.first);		
+		Grids().updateObserverMovement(u.first);
 		Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
 		Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 		continue;
@@ -108,7 +109,7 @@ void SpecialUnitTrackerClass::updateObservers()
 
 void SpecialUnitTrackerClass::updateTemplars()
 {
-	for (auto & u : myTemplars)
+	for (auto &u : myTemplars)
 	{
 		// If we should warp an archon
 		if (u.first->isUnderAttack() && u.first->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar))
@@ -125,11 +126,26 @@ void SpecialUnitTrackerClass::updateTemplars()
 
 void SpecialUnitTrackerClass::updateReavers()
 {
-	for (auto & u : myReavers)
+	for (auto &u : myReavers)
 	{
 		if (u.first->getScarabCount() < 5)
 		{
 			u.first->train(UnitTypes::Protoss_Scarab);
+		}
+	}
+}
+
+void SpecialUnitTrackerClass::updateMedics()
+{
+	for (auto &u : myMedics)
+	{
+		if (Units().getMyUnits()[u.first].getTarget())
+		{
+			u.first->attack(Units().getMyUnits()[u.first].getTarget());
+		}
+		else
+		{
+			u.first->move(Grids().getArmyCenter());
 		}
 	}
 }
@@ -139,27 +155,28 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 	if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
 		myArbiters[unit].setPosition(unit->getPosition());
-		myArbiters[unit].setDestination(unit->getPosition());
 		myArbiters[unit].setMiniTile(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Observer)
 	{
 		myObservers[unit].setPosition(unit->getPosition());
-		myObservers[unit].setDestination(unit->getPosition());
 		myObservers[unit].setMiniTile(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
 		myTemplars[unit].setPosition(unit->getPosition());
-		myTemplars[unit].setDestination(unit->getPosition());
 		myTemplars[unit].setMiniTile(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
 		myReavers[unit].setPosition(unit->getPosition());
-		myReavers[unit].setDestination(unit->getPosition());
 		myReavers[unit].setMiniTile(Util().getWalkPosition(unit));
-	}	
+	}
+	else if (unit->getType() == UnitTypes::Terran_Medic)
+	{
+		myMedics[unit].setPosition(unit->getPosition());
+		myMedics[unit].setMiniTile(Util().getWalkPosition(unit));
+	}
 	return;
 }
 
@@ -180,7 +197,7 @@ void SpecialUnitTrackerClass::removeUnit(Unit unit)
 	else if (myReavers.find(unit) != myReavers.end())
 	{
 		myReavers.erase(unit);
-	}	
+	}
 	return;
 }
 

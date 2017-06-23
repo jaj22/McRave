@@ -2,7 +2,7 @@
 
 void BaseTrackerClass::update()
 {
-	for (auto base : myBases)
+	for (auto &base : myBases)
 	{
 		trainWorkers(base.second);
 		updateDefenses(base.second);
@@ -14,11 +14,18 @@ void BaseTrackerClass::storeBase(Unit base)
 {
 	if (myBases.find(base) == myBases.end())
 	{
+		myBases[base].setUnit(base);
+		myBases[base].setUnitType(base->getType());
 		myBases[base].setDefensePosition(staticDefensePosition(base));
 		myBases[base].setPosition(base->getPosition());
 		myBases[base].setTilePosition(base->getTilePosition());
 		myBases[base].setRegion(getRegion(base->getTilePosition()));
 		myBases[base].setPosition(base->getPosition());
+	}
+
+	if (Terrain().getAnalyzed())
+	{
+		myBases[base].setRegion(getRegion(myBases[base].getTilePosition()));
 	}
 	return;
 }
@@ -26,7 +33,7 @@ void BaseTrackerClass::storeBase(Unit base)
 void BaseTrackerClass::removeBase(Unit base)
 {
 	if (myBases.find(base) != myBases.end())
-	{		
+	{
 		if (Terrain().getAllyTerritory().find(myBases[base].getRegion()) != Terrain().getAllyTerritory().end())
 		{
 			Terrain().getAllyTerritory().erase(myBases[base].getRegion());
@@ -36,9 +43,9 @@ void BaseTrackerClass::removeBase(Unit base)
 	return;
 }
 
-void BaseTrackerClass::trainWorkers(BaseInfo base)
+void BaseTrackerClass::trainWorkers(BaseInfo& base)
 {
-	if (!Resources().isMinSaturated() || !Resources().isGasSaturated() && base.unit()->isIdle())
+	if (base.unit() && (!Resources().isMinSaturated() || !Resources().isGasSaturated()) && base.unit()->isIdle())
 	{
 		if (base.getUnitType() == UnitTypes::Protoss_Nexus && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
 		{
@@ -52,7 +59,7 @@ void BaseTrackerClass::trainWorkers(BaseInfo base)
 	return;
 }
 
-void BaseTrackerClass::updateDefenses(BaseInfo base)
+void BaseTrackerClass::updateDefenses(BaseInfo& base)
 {
 	if (Terrain().getAnalyzed())
 	{

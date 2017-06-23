@@ -147,13 +147,27 @@ void StrategyTrackerClass::updateComposition()
 	}
 
 	// Check if our supply is high enough to hold the ramp or the minerals
-	if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3 || Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1)
+	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		holdRamp = true;
+		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3 || Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1)
+		{
+			holdRamp = true;
+		}
+		else
+		{
+			holdRamp = false;
+		}
 	}
-	else
+	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		holdRamp = false;
+		if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) < 1)
+		{
+			holdRamp = false;
+		}
+		else
+		{
+			holdRamp = true;
+		}
 	}
 
 	for (auto &t : enemyComposition)
