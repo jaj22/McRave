@@ -12,7 +12,7 @@ class BaseInfo{
 	Unit thisUnit;
 	UnitType unitType;
 	Position position;
-	TilePosition defensePosition, tilePosition;
+	TilePosition resourcesPosition, tilePosition;
 	BWTA::Region* region;
 public:
 	BaseInfo();	
@@ -22,7 +22,7 @@ public:
 	UnitType getUnitType() { return unitType; }
 	Position getPosition() { return position; }
 	TilePosition getTilePosition() { return tilePosition; }
-	TilePosition getDefensePosition() { return defensePosition; }
+	TilePosition getResourcesPosition() { return resourcesPosition; }
 	BWTA::Region* getRegion() { return region; }
 
 	void setDefenseCount(int newCount) { defenseCount = newCount; }
@@ -30,6 +30,6 @@ public:
 	void setUnit(Unit newUnit) { thisUnit = newUnit; }
 	void setPosition(Position newPosition) { position = newPosition; }
 	void setTilePosition(TilePosition newPosition) { tilePosition = newPosition; }
-	void setDefensePosition(TilePosition newPosition) { defensePosition = newPosition; }	
+	void setResourcesPosition(TilePosition newPosition) { resourcesPosition = newPosition; }	
 	void setRegion(BWTA::Region* newRegion) { region = newRegion; }
 };

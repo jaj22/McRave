@@ -10,9 +10,10 @@ class GridTrackerClass
 	// Ally grids
 	int aClusterGrid[1024][1024];
 	int reserveGrid[256][256];
-	int nexusGrid[256][256];
+	int baseGrid[256][256];
 	int pylonGrid[256][256];
 	int batteryGrid[256][256];
+	int bunkerGrid[256][256];
 
 	// Enemy grids
 	double eGroundGrid[1024][1024];
@@ -38,7 +39,8 @@ class GridTrackerClass
 	int templarGrid[256][256];
 
 	// Other
-	bool distanceOnce = true;
+	bool distanceAnalysis = false;
+	bool mobilityAnalysis = false;
 	Position armyCenter;
 public:
 
@@ -62,8 +64,8 @@ public:
 	// Ally tile grid functions
 	int getReserveGrid(int x, int y) { return reserveGrid[x][y]; }
 	int getReserveGrid(TilePosition here) { return reserveGrid[here.x][here.y]; }
-	int getNexusGrid(int x, int y) { return nexusGrid[x][y]; }
-	int getNexusGrid(TilePosition here) { return nexusGrid[here.x][here.y]; }
+	int getBaseGrid(int x, int y) { return baseGrid[x][y]; }
+	int getBaseGrid(TilePosition here) { return baseGrid[here.x][here.y]; }
 	int getPylonGrid(int x, int y) { return pylonGrid[x][y]; }
 	int getPylonGrid(TilePosition here) { return pylonGrid[here.x][here.y]; }
 	int getBatteryGrid(int x, int y) { return batteryGrid[x][y]; }

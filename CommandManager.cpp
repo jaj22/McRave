@@ -314,9 +314,9 @@ void CommandTrackerClass::defend(Unit unit, Unit target)
 	{
 		for (auto base : Bases().getMyBases())
 		{
-			if (unit->getLastCommand().getTargetPosition() != (Position(base.second.getDefensePosition()) + Position(base.second.getPosition())) / 2 || unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->isStuck())
+			if (unit->getLastCommand().getTargetPosition() != (Position(base.second.getResourcesPosition()) + Position(base.second.getPosition())) / 2 || unit->getLastCommand().getType() != UnitCommandTypes::Move || unit->isStuck())
 			{
-				unit->move((Position(base.second.getDefensePosition()) + Position(base.second.getPosition())) / 2);
+				unit->move((Position(base.second.getResourcesPosition()) + Position(base.second.getPosition())) / 2);
 			}
 			return;
 		}

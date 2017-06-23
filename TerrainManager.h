@@ -32,7 +32,7 @@ class TerrainTrackerClass
 public:
 	void update();
 	void setAnalyzed();
-	bool getAnalyzed() { return analyzed; }
+	bool isAnalyzed() { return analyzed; }
 	bool isWalled() { return wallin; }
 	void setWalled() { wallin = true; }
 	void removeTerritory(Unit);

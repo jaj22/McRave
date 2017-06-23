@@ -6,7 +6,7 @@ void ResourceTrackerClass::update()
 	{
 		if (r && r->exists())
 		{
-			if (Grids().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 1)
+			if (Grids().getBaseGrid(r->getTilePosition().x, r->getTilePosition().y) == 1)
 			{
 				if (r->getType().isMineralField() && r->getInitialResources() > 0 && myMinerals.find(r) == myMinerals.end())
 				{
@@ -18,7 +18,7 @@ void ResourceTrackerClass::update()
 					storeGas(r);
 				}				
 			}	
-			else if (Grids().getNexusGrid(r->getTilePosition().x, r->getTilePosition().y) == 0)
+			else if (Grids().getBaseGrid(r->getTilePosition().x, r->getTilePosition().y) == 0)
 			{
 				removeResource(r);
 			}

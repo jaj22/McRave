@@ -17,7 +17,7 @@ public:
 	void removeBase(Unit);
 	void trainWorkers(BaseInfo&);
 	void updateDefenses(BaseInfo&);
-	TilePosition staticDefensePosition(Unit);
+	TilePosition centerOfResources(Unit);
 };
 
 typedef Singleton<BaseTrackerClass> BaseTracker;

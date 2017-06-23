@@ -335,12 +335,6 @@ bool UtilTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePos
 		{
 			return false;
 		}
-
-		// Check if it's a pylon and in a buildable position
-		if (building == UnitTypes::Protoss_Pylon && !Broodwar->canBuildHere(buildTilePosition, building))
-		{
-			return false;
-		}
 	}
 
 	// For every tile of a buildings size

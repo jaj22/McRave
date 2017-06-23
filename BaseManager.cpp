@@ -16,14 +16,14 @@ void BaseTrackerClass::storeBase(Unit base)
 	{
 		myBases[base].setUnit(base);
 		myBases[base].setUnitType(base->getType());
-		myBases[base].setDefensePosition(staticDefensePosition(base));
+		myBases[base].setResourcesPosition(centerOfResources(base));
 		myBases[base].setPosition(base->getPosition());
 		myBases[base].setTilePosition(base->getTilePosition());
 		myBases[base].setRegion(getRegion(base->getTilePosition()));
 		myBases[base].setPosition(base->getPosition());
 	}
 
-	if (Terrain().getAnalyzed())
+	if (!myBases[base].getRegion() && Terrain().isAnalyzed())
 	{
 		myBases[base].setRegion(getRegion(myBases[base].getTilePosition()));
 	}
@@ -61,7 +61,7 @@ void BaseTrackerClass::trainWorkers(BaseInfo& base)
 
 void BaseTrackerClass::updateDefenses(BaseInfo& base)
 {
-	if (Terrain().getAnalyzed())
+	if (Terrain().isAnalyzed())
 	{
 		Terrain().getAllyTerritory().emplace(base.getRegion());
 	}
@@ -69,7 +69,7 @@ void BaseTrackerClass::updateDefenses(BaseInfo& base)
 	return;
 }
 
-TilePosition BaseTrackerClass::staticDefensePosition(Unit base)
+TilePosition BaseTrackerClass::centerOfResources(Unit base)
 {
 	// Get average of minerals	
 	int avgX = 0, avgY = 0, size = 0;

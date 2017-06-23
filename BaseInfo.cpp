@@ -6,7 +6,7 @@ BaseInfo::BaseInfo()
 	thisUnit = nullptr;
 	unitType = UnitTypes::None;
 	position = Positions::None;
-	defensePosition = TilePositions::None;
+	resourcesPosition = TilePositions::None;
 	tilePosition = TilePositions::None;
 	region = nullptr;
 }

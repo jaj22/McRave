@@ -86,9 +86,9 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		{
 			for (auto base : Bases().getMyBases())
 			{
-				if (Broodwar->getUnitsInRadius(Position(base.second.getDefensePosition()), 320, Filter::GetType == UnitTypes::Protoss_Shield_Battery).size() <= 0)
+				if (Broodwar->getUnitsInRadius(Position(base.second.getResourcesPosition()), 320, Filter::GetType == UnitTypes::Protoss_Shield_Battery).size() <= 0)
 				{
-					return getBuildLocationNear(building, base.second.getDefensePosition(), true);
+					return getBuildLocationNear(building, base.second.getResourcesPosition(), true);
 				}
 			}
 		}

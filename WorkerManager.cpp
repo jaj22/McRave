@@ -114,7 +114,7 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 		{
 			worker.setTarget(worker.unit()->getClosestUnit(Filter::IsEnemy && !Filter::IsFlying, 320));
 		}
-		else if (worker.getTarget()->exists() && (Grids().getResourceGrid(worker.getTarget()->getTilePosition().x, worker.getTarget()->getTilePosition().y) > 0/* || (!worker.getTarget()->getType().isWorker() && Grids().getNexusGrid(worker.getTarget()->getTilePosition().x, worker.getTarget()->getTilePosition().y) > 0)*/))
+		else if (worker.getTarget()->exists() && (Grids().getResourceGrid(worker.getTarget()->getTilePosition().x, worker.getTarget()->getTilePosition().y) > 0/* || (!worker.getTarget()->getType().isWorker() && Grids().getBaseGrid(worker.getTarget()->getTilePosition().x, worker.getTarget()->getTilePosition().y) > 0)*/))
 		{
 			if ((worker.unit()->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && worker.unit()->getLastCommand().getTarget() && !worker.unit()->getLastCommand().getTarget()->exists()) || (worker.unit()->getLastCommand().getType() != UnitCommandTypes::Attack_Unit))
 			{

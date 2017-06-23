@@ -45,7 +45,7 @@ void InterfaceTrackerClass::update()
 	//}	
 
 	// Show expansions
-	if (Terrain().getAnalyzed())
+	if (Terrain().isAnalyzed())
 	{
 		for (int i = 0; i <= (int)Terrain().getActiveExpansion().size() - 1; i++)
 		{

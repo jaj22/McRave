@@ -3,21 +3,21 @@
 // For any questions, email christianmccrave@gmail.com
 // Bot started 01/03/2017
 
-// Includes
 #include "Header.h"
 #include "McRave.h"
 
-// IMPORTANT: Move to BWEM and ditch BWTA, too slow
+// --- AUTHOR NOTES ---
 // DISABLED CURRENTLY: Cannons
+// Critical TODOS:
+// Re-check all grids!!! - Specifically the center of t/w/positions, is it the center or top left corner?
+// Add getCenter() to UnitInfo?
+// Store neutral untis and buildings
 
-// Take angles into account for micro?
-
-// TODOS:
-// Player class to track upgrades/race/supply/strength?
+// Other TODOS:
+// Move to BWEM and ditch BWTA, too slow
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
-// One time supply increase instead of resetting?
 // If cannon was built in region, add to that Nexus
 // Limit building number by region? Make pylons next to expansions for cannons/gateways
 // Store the closest worker when ready to move to build position
@@ -29,6 +29,9 @@
 
 // Possibility:
 // 3 base carrier against iron?
+// Take angles into account for micro?
+// Player class to track upgrades/race/supply/strength?
+// One time supply increase instead of resetting?
 
 void McRaveModule::onStart()
 {
@@ -50,7 +53,7 @@ void McRaveModule::onStart()
 	BWEM::utils::printMap(theMap);      // will print the map into the file <StarCraftFolder>bwapi-data/map.bmp
 	BWEM::utils::pathExample(theMap);   // add to the printed map a path between two starting locations
 
-	if (Terrain().getAnalyzed() == false) {
+	if (Terrain().isAnalyzed() == false) {
 		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AnalyzeThread, NULL, 0, NULL);
 	}
 	readMap();
