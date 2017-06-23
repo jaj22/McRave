@@ -27,13 +27,13 @@ void InterfaceTrackerClass::update()
 	// Display remaining minerals on each mineral patch that is near our Nexus
 	for (auto r : Resources().getMyMinerals())
 	{
-		Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 8), "%c%d", Text::White, r.second.getRemainingResources());
+		//Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 8), "%c%d", Text::White, r.second.getRemainingResources());
 	}
 
 	// Display remaining gas on each geyser that is near our Nexus
 	for (auto r : Resources().getMyGas())
 	{
-		Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 32), "%c%d", Text::Green, r.second.getRemainingResources());
+		//Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 32), "%c%d", Text::Green, r.second.getRemainingResources());
 	}	
 
 	//// Display Goon/Zealot scoring
@@ -49,7 +49,7 @@ void InterfaceTrackerClass::update()
 	{
 		for (int i = 0; i <= (int)Terrain().getActiveExpansion().size() - 1; i++)
 		{
-			Broodwar->drawTextMap(48 + Terrain().getActiveExpansion().at(i).x * 32, 104 + Terrain().getActiveExpansion().at(i).y * 32, "%cBase %d", Broodwar->self()->getTextColor(), i, Colors::White);
+			//Broodwar->drawTextMap(48 + Terrain().getActiveExpansion().at(i).x * 32, 104 + Terrain().getActiveExpansion().at(i).y * 32, "%cBase %d", Broodwar->self()->getTextColor(), i, Colors::White);
 		}
 
 	}

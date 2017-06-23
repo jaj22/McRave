@@ -33,20 +33,20 @@ void StrategyTrackerClass::updateAlly()
 				// Drawing
 				if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None && u.first->getDistance(u.second.getTargetPosition()) < 500)
 				{
-					Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), Broodwar->self()->getColor());
-					Broodwar->drawBoxMap(u.second.getTargetPosition() - Position(4, 4), u.second.getTargetPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
+					//Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), Broodwar->self()->getColor());
+					//Broodwar->drawBoxMap(u.second.getTargetPosition() - Position(4, 4), u.second.getTargetPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
 				}
 				if (u.second.getLocal() < 0)
 				{
-					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getLocal());
+					//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getLocal());
 				}
 				else if (u.second.getLocal() > 0)
 				{
-					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->self()->getTextColor(), u.second.getLocal());
+					//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->self()->getTextColor(), u.second.getLocal());
 				}
 				else
 				{
-					Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Text::Default, u.second.getLocal());
+					//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Text::Default, u.second.getLocal());
 				}
 			}
 		}
@@ -54,7 +54,7 @@ void StrategyTrackerClass::updateAlly()
 		{
 			globalEnemyStrength += u.second.getMaxStrength() * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 
-			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->self()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
+			//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->self()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
 
 		}
 	}
@@ -114,14 +114,14 @@ void StrategyTrackerClass::updateEnemy()
 			// Drawing
 			if (u.second.getType().isBuilding())
 			{
-				Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
+				//Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
 			}
 			else
 			{
-				Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getType().height() / 2), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
+				//Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getType().height() / 2), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
 			}
 
-			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());
+			//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());
 		}
 
 		// If unit is dead
@@ -131,7 +131,7 @@ void StrategyTrackerClass::updateEnemy()
 			globalAllyStrength += u.second.getMaxStrength() * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 
 
-			Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->enemy()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
+			//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->enemy()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
 
 		}
 	}
@@ -187,7 +187,7 @@ void StrategyTrackerClass::updateComposition()
 		}
 
 		// Check for early rushes before we get goon range
-		if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
+		if (Broodwar->self()->getRace() == Races::Protoss && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 		{
 			// If we are being 2 gate rushed or proxy rushed, make a shield battery
 			if (Workers().isScouting() && t.first == UnitTypes::Protoss_Gateway && (t.second >= 2 || t.second == 0) && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end() && Terrain().getEnemyBasePositions().size() > 0)

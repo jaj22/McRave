@@ -10,7 +10,7 @@ void UnitTrackerClass::storeUnits()
 {
 	// Reset sizes and supply
 	for (auto &size : allySizes)
-	{
+	{		
 		size.second = 0;
 	}
 	for (auto &size : enemySizes)
@@ -125,6 +125,7 @@ void UnitTrackerClass::removeUnits()
 void UnitTrackerClass::storeEnemyUnit(Unit unit)
 {
 	// Update units
+	enemyUnits[unit].setUnit(unit);
 	enemyUnits[unit].setUnitType(unit->getType());
 	enemyUnits[unit].setPosition(unit->getPosition());
 	enemyUnits[unit].setStrength(Util().getVisibleStrength(unit, unit->getPlayer()));
@@ -146,6 +147,7 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 void UnitTrackerClass::storeAllyUnit(Unit unit)
 {
 	// Update units
+	allyUnits[unit].setUnit(unit);
 	allyUnits[unit].setUnitType(unit->getType());
 	allyUnits[unit].setPosition(unit->getPosition());
 	allyUnits[unit].setStrength(Util().getVisibleStrength(unit, unit->getPlayer()));
@@ -401,23 +403,23 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 		return;
 	}
 
-	// If a unit has higher range than another unit and is currently safe, engage it
-	if (allyUnits[unit].getGroundRange() > enemyUnits[target].getGroundRange())
-	{
-		bool safeTile = true;
-		for (auto miniTile : Util().getWalkPositionsUnderUnit(unit))
-		{
-			if (miniTile.isValid() && Grids().getEGroundDistanceGrid(miniTile.x, miniTile.y) > 0)
-			{
-				safeTile = false;
-			}
-		}
-		if (safeTile)
-		{
-			allyUnits[unit].setStrategy(1);
-			return;
-		}
-	}
+	//// If a unit has higher range than another unit and is currently safe, engage it
+	//if (allyUnits[unit].getGroundRange() > enemyUnits[target].getGroundRange())
+	//{
+	//	bool safeTile = true;
+	//	for (auto miniTile : Util().getWalkPositionsUnderUnit(unit))
+	//	{
+	//		if (miniTile.isValid() && Grids().getEGroundDistanceGrid(miniTile.x, miniTile.y) > 0)
+	//		{
+	//			safeTile = false;
+	//		}
+	//	}
+	//	if (safeTile)
+	//	{
+	//		allyUnits[unit].setStrategy(1);
+	//		return;
+	//	}
+	//}
 
 	// If a Reaver is in range of something, engage it
 	if (unit->getType() == UnitTypes::Protoss_Reaver && allyUnits[unit].getGroundRange() > unit->getDistance(targetPosition))

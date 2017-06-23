@@ -166,7 +166,7 @@ void GridTrackerClass::updateAllyGrids()
 			{
 				for (int y = start.y - 20; y <= start.y + 20 + u.second.getType().tileHeight() * 4; y++)
 				{
-					if (WalkPosition(x, y).isValid() && (u.second.getPosition()).getDistance(Position((x * 8 + offsetX), (y * 8 + offsetY))) <= 160)
+					if (WalkPosition(x, y).isValid() && (u.second.getPosition()).getDistance(Position((x * 8), (y * 8))) <= 160)
 					{
 						aClusterGrid[x][y] += 1;
 					}
@@ -305,26 +305,29 @@ void GridTrackerClass::updateEnemyGrids()
 	for (auto &u : Units().getEnUnits())
 	{
 		WalkPosition start = u.second.getWalkPosition();
-		// Cluster grid for storm/stasis (96x96)		
-		if (u.second.unit() && u.second.unit()->exists() && !u.second.getType().isBuilding() && !u.second.unit()->isStasised() && !u.second.unit()->isMaelstrommed())
+		// Cluster grid for storm/stasis (96x96)
+		if (u.second.getDeadFrame() == 0)
 		{
-			for (int x = u.second.getTilePosition().x - 1; x <= u.second.getTilePosition().x + 1; x++)
+			if (u.second.unit() && u.second.unit()->exists() && !u.second.getType().isBuilding() && !u.second.unit()->isStasised() && !u.second.unit()->isMaelstrommed())
 			{
-				for (int y = u.second.getTilePosition().y - 1; y <= u.second.getTilePosition().y + 1; y++)
+				for (int x = u.second.getTilePosition().x - 1; x <= u.second.getTilePosition().x + 1; x++)
 				{
-					if (TilePosition(x, y).isValid())
+					for (int y = u.second.getTilePosition().y - 1; y <= u.second.getTilePosition().y + 1; y++)
 					{
-						if (!u.second.getType().isFlyer())
+						if (TilePosition(x, y).isValid())
 						{
-							eGroundClusterGrid[x][y] += 1;
-						}
-						else
-						{
-							eAirClusterGrid[x][y] += 1;
-						}
-						if (u.second.getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode || u.second.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
-						{
-							stasisClusterGrid[x][y] += 1;
+							if (!u.second.getType().isFlyer())
+							{
+								eGroundClusterGrid[x][y] += 1;
+							}
+							else
+							{
+								eAirClusterGrid[x][y] += 1;
+							}
+							if (u.second.getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode || u.second.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
+							{
+								stasisClusterGrid[x][y] += 1;
+							}
 						}
 					}
 				}

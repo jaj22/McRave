@@ -170,7 +170,8 @@ void BuildOrderTrackerClass::earlyBuilds()
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 22) + (Units().getSupply() >= 26) + (Units().getSupply() >= 50) + (Units().getSupply() >= 80);
+		buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 20) + (Units().getSupply() >= 24) + (Units().getSupply() >= 42) + (Units().getSupply() >= 80);
+		buildingDesired[UnitTypes::Terran_Engineering_Bay] = (Units().getSupply() >= 36);
 		buildingDesired[UnitTypes::Terran_Refinery] = (Units().getSupply() >= 40);
 		buildingDesired[UnitTypes::Terran_Academy] = (Units().getSupply() >= 48);
 	}

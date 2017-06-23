@@ -31,7 +31,7 @@ void SpecialUnitTrackerClass::updateArbiters()
 				}
 				if (WalkPosition(x, y).isValid())
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
+					//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
 				}
 			}
 		}
@@ -45,13 +45,13 @@ void SpecialUnitTrackerClass::updateArbiters()
 		if (target.unit() && target.unit()->exists() && u.first->getEnergy() >= 100)
 		{
 			u.first->useTech(TechTypes::Stasis_Field, target.unit());
-			Broodwar->drawLineMap(u.second.getPosition(), target.getPosition(), Broodwar->self()->getColor());
-			Broodwar->drawBoxMap(target.getPosition() - Position(4, 4), target.getPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
+			//Broodwar->drawLineMap(u.second.getPosition(), target.getPosition(), Broodwar->self()->getColor());
+			//Broodwar->drawBoxMap(target.getPosition() - Position(4, 4), target.getPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
 		}
 		else
 		{
-			Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
-			Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
+			//Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
+			//Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 		}
 	}
 	return;
@@ -100,8 +100,8 @@ void SpecialUnitTrackerClass::updateObservers()
 		u.second.setDestination(newDestination);
 		u.first->move(newDestination);
 		Grids().updateObserverMovement(u.first);
-		Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
-		Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
+		//Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
+		//Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 		continue;
 	}
 	return;
@@ -141,12 +141,33 @@ void SpecialUnitTrackerClass::updateMedics()
 	{
 		if (Units().getMyUnits()[u.first].getTarget())
 		{
-			u.first->attack(Units().getMyUnits()[u.first].getTarget());
+			if (u.first->getLastCommand().getType() != UnitCommandTypes::Attack_Unit)
+			{
+				u.first->attack(Units().getMyUnits()[u.first].getTarget());
+			}
+			//Broodwar->drawLineMap(u.second.getPosition(), Units().getMyUnits()[u.first].getTarget()->getPosition(), Broodwar->self()->getColor());
+			continue;
 		}
-		else
+
+		// Move towards front of army	
+		double closestD = 0.0;
+		Position newDestination = Grids().getArmyCenter();
+		WalkPosition start = u.second.getMiniTile();
+		for (int x = start.x - 20; x <= start.x + 20; x++)
 		{
-			u.first->move(Grids().getArmyCenter());
+			for (int y = start.y - 20; y <= start.y + 20; y++)
+			{
+				if (WalkPosition(x, y).isValid() && Grids().getACluster(x, y) > 0 && (closestD == 0.0 || Grids().getDistanceHome(x,y) > closestD))
+				{
+					newDestination = Position(WalkPosition(x, y));					
+					closestD = Grids().getDistanceHome(x, y);
+				}
+			}
 		}
+		u.second.setDestination(newDestination);
+		u.first->attack(newDestination);	
+		//Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
+		//Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 	}
 }
 

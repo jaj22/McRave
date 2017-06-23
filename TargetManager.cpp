@@ -88,7 +88,12 @@ Unit TargetTrackerClass::allyTarget(Unit unit)
 			continue;
 		}
 
-		if (u.second.getType() != UnitTypes::Terran_Marine && u.second.getType() != UnitTypes::Terran_Firebat)
+		if (u.second.getDeadFrame() != 0)
+		{
+			continue;
+		}
+
+		if (u.second.getType() != UnitTypes::Terran_Marine && u.second.getType() != UnitTypes::Terran_Firebat && u.second.getType() != UnitTypes::Terran_Medic)
 		{
 			continue;
 		}
@@ -96,8 +101,7 @@ Unit TargetTrackerClass::allyTarget(Unit unit)
 		double distance = 1.0 / (1.0 + double(unit->getDistance(u.second.getPosition())));
 
 		if (u.first->exists() && u.first->getType().maxHitPoints() - u.first->getHitPoints() > 0)
-		{
-			Broodwar->drawCircleMap(u.second.getPosition(), 5, Colors::Red);
+		{			
 			thisUnit = distance;
 		}
 

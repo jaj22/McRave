@@ -151,7 +151,7 @@ void TerrainTrackerClass::update()
 		// Draw territory boundaries
 		for (auto position : defendHere)
 		{
-			Broodwar->drawCircleMap(position, 80, Broodwar->self()->getColor());
+			//Broodwar->drawCircleMap(position, 80, Broodwar->self()->getColor());
 		}
 	}
 	for (auto p : defendHere)

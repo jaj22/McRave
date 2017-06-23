@@ -384,7 +384,6 @@ void ProductionTrackerClass::updateTerran()
 			{
 				building.first->research(TechTypes::Stim_Packs);
 				idleTech.erase(building.first);
-				return;
 			}
 			else
 			{
@@ -393,6 +392,25 @@ void ProductionTrackerClass::updateTerran()
 			if (Broodwar->self()->hasResearched(TechTypes::Stim_Packs) && !Broodwar->self()->getUpgradeLevel(UpgradeTypes::U_238_Shells) && Broodwar->self()->minerals() >= UpgradeTypes::U_238_Shells.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::U_238_Shells.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 			{
 				building.first->upgrade(UpgradeTypes::U_238_Shells);
+			}
+		}
+		if (building.second.getUnitType() == UnitTypes::Terran_Engineering_Bay && building.first->isIdle())
+		{
+			if (Broodwar->self()->minerals() >= UpgradeTypes::Terran_Infantry_Armor.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UpgradeTypes::Terran_Infantry_Armor.gasPrice() + Buildings().getQueuedGas())
+			{
+				if (Broodwar->enemy()->getRace() == Races::Zerg)
+				{
+					building.first->upgrade(UpgradeTypes::Terran_Infantry_Armor);
+				}
+				else
+				{
+					building.first->upgrade(UpgradeTypes::Terran_Infantry_Weapons);
+				}
+				idleUpgrade.erase(building.first);				
+			}
+			else
+			{
+				idleUpgrade.emplace(building.first, UpgradeTypes::Terran_Infantry_Armor);
 			}
 		}
 	}
