@@ -10,14 +10,15 @@ Unit TargetTrackerClass::getTarget(Unit unit)
 	{
 		return nullptr;
 	}
-	else if (unit->getType() == UnitTypes::Terran_Medic)
+	/*else if (unit->getType() == UnitTypes::Terran_Medic)
 	{
-		return allyTarget(unit);
-	}
+	return allyTarget(unit);
+	}*/
 	else
 	{
 		return singleTarget(unit);
 	}
+	return nullptr;
 }
 
 Unit TargetTrackerClass::singleTarget(Unit unit)
@@ -72,7 +73,11 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 			target = u.first;
 			highest = thisUnit;
 		}
-	}	
+	}
+	if (target)
+	{
+		Units().getMyUnits()[unit].setTargetPosition(Units().getEnUnits()[target].getPosition());
+	}
 	return target;
 }
 
@@ -101,19 +106,21 @@ Unit TargetTrackerClass::allyTarget(Unit unit)
 		double distance = 1.0 / (1.0 + double(unit->getDistance(u.second.getPosition())));
 
 		if (u.first->exists() && u.first->getType().maxHitPoints() - u.first->getHitPoints() > 0)
-		{			
+		{
 			thisUnit = distance;
 		}
-
-		
 
 		// If this is the strongest ally around, target it
 		if (thisUnit > highest)
 		{
 			target = u.first;
 			highest = thisUnit;
-		}		
-	}	
+		}
+	}
+	/*if (target)
+	{
+	Units().getMyUnits()[unit].setTargetPosition(Units().getMyUnits()[target].getPosition());
+	}*/
 	return target;
 }
 
@@ -189,17 +196,32 @@ Unit TargetTrackerClass::clusterTarget(Unit unit)
 	// Return ground cluster for Reavers
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
-		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 256);
+		Unit target = Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsFlyer, 256);
+		if (target)
+		{
+			Units().getMyUnits()[unit].setTargetPosition(Units().getEnUnits()[target].getPosition());
+		}
+		return target;
 	}
 	// Return tank cluster for Arbiters
 	else if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
-		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128);
+		Unit target = Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && (Filter::GetType == UnitTypes::Terran_Siege_Tank_Tank_Mode || Filter::GetType == UnitTypes::Terran_Siege_Tank_Siege_Mode), 128);
+		if (target)
+		{
+			Units().getMyUnits()[unit].setTargetPosition(Units().getEnUnits()[target].getPosition());
+		}
+		return target;
 	}
 	// Return unit cluster for High Templars
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
-		return Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && !Filter::IsUnderStorm, 128);
+		Unit target = Broodwar->getClosestUnit(Position(clusterTile), Filter::IsEnemy && !Filter::IsBuilding && !Filter::IsUnderStorm, 128);
+		if (target)
+		{
+			Units().getMyUnits()[unit].setTargetPosition(Units().getEnUnits()[target].getPosition());
+		}
+		return target;
 	}
 	return nullptr;
 }

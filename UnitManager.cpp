@@ -2,15 +2,22 @@
 
 void UnitTrackerClass::update()
 {
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();	
+
 	storeUnits();
 	removeUnits();
+
+	duration = 1000.0 * double(clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 100, "Unit Manager: %d ms", duration);
 }
 
 void UnitTrackerClass::storeUnits()
 {
 	// Reset sizes and supply
 	for (auto &size : allySizes)
-	{		
+	{
 		size.second = 0;
 	}
 	for (auto &size : enemySizes)
@@ -32,21 +39,21 @@ void UnitTrackerClass::storeUnits()
 		if (u->getType().supplyRequired() > 0)
 		{
 			supply = supply + u->getType().supplyRequired();
-		}		
+		}
 
 		// Store buildings even if they're not completed
 		if (u->getType().isBuilding())
 		{
 			Buildings().storeBuilding(u);
 			if (u->getType().isResourceDepot())
-			{				
+			{
 				Bases().storeBase(u);
 			}
 			else if (u->getType() == UnitTypes::Protoss_Pylon)
 			{
 				Pylons().storePylon(u);
 			}
-		}		
+		}
 
 		// Don't want to store units that aren't completed
 		else if (!u->isCompleted())
@@ -69,7 +76,7 @@ void UnitTrackerClass::storeUnits()
 		{
 			storeAllyUnit(u);
 			Transport().storeUnit(u);
-		}		
+		}
 		// Store the rest
 		else
 		{
@@ -78,7 +85,7 @@ void UnitTrackerClass::storeUnits()
 	}
 
 	// For all enemy units
-	for (auto player : Broodwar->getPlayers())
+	for (auto &player : Broodwar->getPlayers())
 	{
 		if (player->isEnemy(Broodwar->self()))
 		{
@@ -125,19 +132,22 @@ void UnitTrackerClass::removeUnits()
 void UnitTrackerClass::storeEnemyUnit(Unit unit)
 {
 	// Update units
-	enemyUnits[unit].setUnit(unit);
-	enemyUnits[unit].setUnitType(unit->getType());
-	enemyUnits[unit].setPosition(unit->getPosition());
 	enemyUnits[unit].setStrength(Util().getVisibleStrength(unit, unit->getPlayer()));
 	enemyUnits[unit].setMaxStrength(Util().getStrength(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setGroundRange(Util().getTrueRange(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setAirRange(Util().getTrueAirRange(unit->getType(), unit->getPlayer()));
-	enemyUnits[unit].setSpeed(Util().getTrueSpeed(unit->getType(), Broodwar->self()));
 	enemyUnits[unit].setPriority(Util().getPriority(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setGroundDamage(Util().getTrueGroundDamage(unit->getType(), unit->getPlayer()));
 	enemyUnits[unit].setAirDamage(Util().getTrueAirDamage(unit->getType(), unit->getPlayer()));
-	enemyUnits[unit].setCommand(unit->getLastCommand().getType());
+	enemyUnits[unit].setSpeed(Util().getTrueSpeed(unit->getType(), Broodwar->self()));
+	enemyUnits[unit].setMinStopFrame(Util().getMinStopFrame(unit->getType()));
+
+	enemyUnits[unit].setUnit(unit);
+	enemyUnits[unit].setUnitType(unit->getType());
+
+	enemyUnits[unit].setPosition(unit->getPosition());
 	enemyUnits[unit].setWalkPosition(Util().getWalkPosition(unit));
+	enemyUnits[unit].setTilePosition(unit->getTilePosition());
 
 	// Update sizes
 	enemySizes[unit->getType().size()] += 1;
@@ -147,21 +157,25 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 void UnitTrackerClass::storeAllyUnit(Unit unit)
 {
 	// Update units
-	allyUnits[unit].setUnit(unit);
-	allyUnits[unit].setUnitType(unit->getType());
-	allyUnits[unit].setPosition(unit->getPosition());
 	allyUnits[unit].setStrength(Util().getVisibleStrength(unit, unit->getPlayer()));
 	allyUnits[unit].setMaxStrength(Util().getStrength(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setGroundRange(Util().getTrueRange(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setAirRange(Util().getTrueAirRange(unit->getType(), unit->getPlayer()));
-	allyUnits[unit].setSpeed(Util().getTrueSpeed(unit->getType(), Broodwar->self()));
 	allyUnits[unit].setPriority(Util().getPriority(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setGroundDamage(Util().getTrueGroundDamage(unit->getType(), unit->getPlayer()));
 	allyUnits[unit].setAirDamage(Util().getTrueAirDamage(unit->getType(), unit->getPlayer()));
+	allyUnits[unit].setSpeed(Util().getTrueSpeed(unit->getType(), Broodwar->self()));
+	allyUnits[unit].setMinStopFrame(Util().getMinStopFrame(unit->getType()));
+
+	allyUnits[unit].setUnit(unit);
+	allyUnits[unit].setUnitType(unit->getType());
+	allyUnits[unit].setPosition(unit->getPosition());
+	allyUnits[unit].setTilePosition(unit->getTilePosition());
+
 	allyUnits[unit].setCommand(unit->getLastCommand().getType());
 	allyUnits[unit].setWalkPosition(Util().getWalkPosition(unit));
 	allyUnits[unit].setTarget(Targets().getTarget(unit));
-	allyUnits[unit].setTargetPosition(enemyUnits[allyUnits[unit].getTarget()].getPosition());	
+
 
 	// Update sizes and calculations
 	allySizes[unit->getType().size()] += 1;
@@ -172,7 +186,7 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 
 void UnitTrackerClass::decayUnit(Unit unit)
 {
-	if (allyUnits.find(unit) != allyUnits.end() && unit->getPlayer() == Broodwar->self())
+	if (allyUnits.find(unit) != allyUnits.end())
 	{
 		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
 	}
@@ -208,7 +222,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	// Check every enemy unit being in range of the target
 	for (auto &u : enemyUnits)
 	{
-		// Ignore workers, keep buildings (reinforcements and static defenses)
+		// Ignore workers and stasised units
 		if (u.second.getType().isWorker() || (u.first && u.first->exists() && u.first->isStasised()))
 		{
 			continue;
@@ -352,7 +366,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			// If against rush and not ready to wall up, fight in mineral line
 			if (Strategy().isRush() && !Strategy().isHoldRamp())
 			{
-				if (target && target->exists() && Grids().getResourceGrid(target->getTilePosition().x, target->getTilePosition().y) > 0)
+				if (target && target->exists() && (Grids().getResourceGrid(target->getTilePosition()) > 0 || Grids().getResourceGrid(unit->getTilePosition()) > 0))
 				{
 					allyUnits[unit].setStrategy(1);
 					return;
@@ -367,7 +381,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			// Else hold ramp and attack anything within range
 			else if (Strategy().isHoldRamp())
 			{
-				if (target && target->exists() && unit->getDistance(target) < 16 && Terrain().getAllyTerritory().find(getRegion(unit->getTilePosition())) != Terrain().getAllyTerritory().end() && Terrain().getAllyTerritory().find(getRegion(target->getTilePosition())) != Terrain().getAllyTerritory().end() && !target->getType().isWorker())
+				if (target && target->exists() && theMap.GetArea(target->getTilePosition()) && theMap.GetArea(unit->getTilePosition()) && unit->getDistance(target) < 16 && Terrain().getAllyTerritory().find(theMap.GetArea(target->getTilePosition())->Id()) != Terrain().getAllyTerritory().end() && Terrain().getAllyTerritory().find(theMap.GetArea(target->getTilePosition())->Id()) != Terrain().getAllyTerritory().end() && !target->getType().isWorker())
 				{
 					allyUnits[unit].setStrategy(1);
 					return;
@@ -384,7 +398,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	// Specific Dragoon commands for early defense
 	if (globalStrategy == 2 && unit->getType() == UnitTypes::Protoss_Dragoon)
 	{
-		if (target && target->exists() && ((Terrain().getAllyTerritory().find(getRegion(unit->getTilePosition())) != Terrain().getAllyTerritory().end() && unit->getDistance(target) <= allyUnits[unit].getGroundRange()) || (Terrain().getAllyTerritory().find(getRegion(target->getTilePosition())) != Terrain().getAllyTerritory().end() && !target->getType().isWorker())))
+		if (target && target->exists() && theMap.GetArea(target->getTilePosition()) && ((Terrain().getAllyTerritory().find(theMap.GetArea(unit->getTilePosition())->Id()) != Terrain().getAllyTerritory().end() && unit->getDistance(target) <= allyUnits[unit].getGroundRange()) || (Terrain().getAllyTerritory().find(theMap.GetArea(target->getTilePosition())->Id()) != Terrain().getAllyTerritory().end() && !target->getType().isWorker())))
 		{
 			allyUnits[unit].setStrategy(1);
 			return;
@@ -397,29 +411,11 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	}
 
 	// If an enemy is within ally territory, engage
-	if (target && target->exists() && Terrain().getAllyTerritory().find(getRegion(target->getTilePosition())) != Terrain().getAllyTerritory().end())
+	if (target && target->exists() && theMap.GetArea(target->getTilePosition()) && Terrain().getAllyTerritory().find(theMap.GetArea(target->getTilePosition())->Id()) != Terrain().getAllyTerritory().end())
 	{
 		allyUnits[unit].setStrategy(1);
 		return;
 	}
-
-	//// If a unit has higher range than another unit and is currently safe, engage it
-	//if (allyUnits[unit].getGroundRange() > enemyUnits[target].getGroundRange())
-	//{
-	//	bool safeTile = true;
-	//	for (auto miniTile : Util().getWalkPositionsUnderUnit(unit))
-	//	{
-	//		if (miniTile.isValid() && Grids().getEGroundDistanceGrid(miniTile.x, miniTile.y) > 0)
-	//		{
-	//			safeTile = false;
-	//		}
-	//	}
-	//	if (safeTile)
-	//	{
-	//		allyUnits[unit].setStrategy(1);
-	//		return;
-	//	}
-	//}
 
 	// If a Reaver is in range of something, engage it
 	if (unit->getType() == UnitTypes::Protoss_Reaver && allyUnits[unit].getGroundRange() > unit->getDistance(targetPosition))
@@ -437,8 +433,10 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			allyUnits[unit].setStrategy(0);
 			return;
 		}
-		allyUnits[unit].setStrategy(1);
-		return;
+		else
+		{
+			return;
+		}
 	}
 	// If last command was disengage/no command
 	else
@@ -449,9 +447,11 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			allyUnits[unit].setStrategy(1);
 			return;
 		}
-		// Otherwise return 3 or 0, whichever was previous
-		allyUnits[unit].setStrategy(0);
-		return;
+		else
+		{
+			allyUnits[unit].setStrategy(0);
+			return;
+		}
 	}
 	// Disregard local if no target, no recent local calculation and not within ally region
 	allyUnits[unit].setStrategy(3);
@@ -498,9 +498,9 @@ void UnitTrackerClass::getGlobalCalculation(Unit unit, Unit target)
 		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
-	{		
-		if (Broodwar->self()->hasResearched(TechTypes::Stim_Packs))
-		{			
+	{
+		if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Medic) >= 2)
+		{
 			globalStrategy = 1;
 			return;
 		}

@@ -7,7 +7,7 @@ using namespace std;
 // Class for storing information about all units
 class UnitInfo {
 	double strength, maxStrength, local, groundRange, airRange, priority, groundDamage, airDamage, speed;
-	int deadFrame, strategy, lastAttackFrame, currentGoal;	
+	int deadFrame, strategy, lastAttackFrame, minStopFrame;	
 
 	Unit target, thisUnit, transport;
 	UnitType unitType;
@@ -31,8 +31,8 @@ public:
 	double getSpeed() { return speed; }
 	int getDeadFrame() { return deadFrame; }
 	int getStrategy() { return strategy; }
-	int getLastAttackFrame() { return lastAttackFrame; }
-	int getCurrentGoal() { return currentGoal; }
+	int getLastAttackFrame() { return lastAttackFrame; }	
+	int getMinStopFrame() { return minStopFrame; }
 
 	Unit unit() { return thisUnit; }
 	Unit getTarget() { return target; }
@@ -59,7 +59,7 @@ public:
 	void setDeadFrame(int newDeadFrame) { deadFrame = newDeadFrame; }
 	void setStrategy(int newStrategy){ strategy = newStrategy; }
 	void setLastAttackFrame(int newAttackFrame) { lastAttackFrame = newAttackFrame; }
-	void setCurrentGoal(int newGoal){ currentGoal = newGoal; }
+	void setMinStopFrame(int newFrame) { minStopFrame = newFrame; }
 
 	void setUnit(Unit newUnit) { thisUnit = newUnit; }
 	void setTarget(Unit newTarget){ target = newTarget; }

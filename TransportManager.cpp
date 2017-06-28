@@ -2,12 +2,19 @@
 
 void TransportTrackerClass::update()
 {
-	for (auto & shuttle : myShuttles)
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();	
+
+	for (auto &shuttle : myShuttles)
 	{
 		updateCargo(shuttle.second);
 		updateDecision(shuttle.second);
 		updateMovement(shuttle.second);
 	}
+
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 90, "Transport Manager: %d ms", duration);
 	return;
 }
 
@@ -17,18 +24,18 @@ void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
 	if (shuttle.getCargoSize() < 4)
 	{
 		// See if any Reavers need a shuttle
-		for (auto & reaver : SpecialUnits().getMyReavers())
+		for (auto &reaver : SpecialUnits().getMyReavers())
 		{
-			if (!Units().getMyUnits()[reaver.first].getTransport() && shuttle.getCargoSize() + 2 < 4)
+			if ((!Units().getMyUnits()[reaver.first].getTransport() || !Units().getMyUnits()[reaver.first].getTransport()->exists()) && shuttle.getCargoSize() + 2 < 4)
 			{
 				Units().getMyUnits()[reaver.first].setTransport(shuttle.unit());
 				shuttle.assignCargo(reaver.first);
 			}
 		}
 		// See if any High Templars need a shuttle
-		for (auto & templar : SpecialUnits().getMyTemplars())
+		for (auto &templar : SpecialUnits().getMyTemplars())
 		{
-			if (!Units().getMyUnits()[templar.first].getTransport() && shuttle.getCargoSize() + 1 < 4)
+			if ((!Units().getMyUnits()[templar.first].getTransport() || !Units().getMyUnits()[templar.first].getTransport()->exists()) && shuttle.getCargoSize() + 1 < 4)
 			{
 				Units().getMyUnits()[templar.first].setTransport(shuttle.unit());
 				shuttle.assignCargo(templar.first);
@@ -41,12 +48,12 @@ void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
 void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 {
 	// Update what tiles have been used recently
-	for (auto & tile : Util().getWalkPositionsUnderUnit(shuttle.unit()))
+	for (auto &tile : Util().getWalkPositionsUnderUnit(shuttle.unit()))
 	{
 		recentExplorations[tile] = Broodwar->getFrameCount();
 	}
 
-	for (auto & tile : recentExplorations)
+	for (auto &tile : recentExplorations)
 	{
 		if (tile.second > 100)
 		{
@@ -66,28 +73,29 @@ void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 	//}
 	//else
 	//{
-		shuttle.setDrop(Grids().getArmyCenter());
-		shuttle.setHarassing(false);
+	shuttle.setDrop(Grids().getArmyCenter());
+	shuttle.setHarassing(false);
 	//}
 
 	// Check if we should be loading/unloading any cargo
-	for (auto & cargo : shuttle.getAssignedCargo())
+	for (auto &cargo : shuttle.getAssignedCargo())
 	{
 		// If the cargo is not loaded
 		if (!cargo->isLoaded())
 		{
 			// If it's requesting a pickup
-			if ((Units().getMyUnits()[cargo].getTargetPosition().getDistance(Units().getMyUnits()[cargo].getPosition()) > 256) || (cargo->getType() == UnitTypes::Protoss_Reaver && cargo->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()) || (cargo->getType() == UnitTypes::Protoss_High_Templar && cargo->getEnergy() < 75))
+			if ((Units().getMyUnits()[cargo].getTargetPosition().getDistance(Units().getMyUnits()[cargo].getPosition()) > 320) || (cargo->getType() == UnitTypes::Protoss_Reaver && cargo->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()) || (cargo->getType() == UnitTypes::Protoss_High_Templar && cargo->getEnergy() < 75))
 			{
 				shuttle.unit()->load(cargo);
-				shuttle.setLoadState(1);
-				Broodwar->drawLineMap(shuttle.getPosition(), cargo->getPosition(), Broodwar->self()->getColor());
+				shuttle.setLoadState(1);				
 				continue;
 			}
 		}
 		// Else if the cargo is loaded
 		else if (cargo->isLoaded())
 		{
+			shuttle.setDrop(Units().getMyUnits()[cargo].getTargetPosition());
+
 			// If we are harassing, check if we are close to drop point
 			if (shuttle.isHarassing() && shuttle.getPosition().getDistance(shuttle.getDrop()) < 160)
 			{
@@ -114,12 +122,12 @@ void TransportTrackerClass::updateMovement(TransportInfo& shuttle)
 	}
 
 	Position bestPosition = shuttle.getDrop();
-	WalkPosition start = shuttle.getMiniTile();
+	WalkPosition start = shuttle.getWalkPosition();
 	double bestCluster = 0;
 	int radius = 10;
 	double closestD = ((32 * Grids().getMobilityGrid(start)) + Position(start).getDistance(shuttle.getDrop()));
 
-	for (auto tile : Util().getWalkPositionsUnderUnit(shuttle.unit()))
+	for (auto &tile : Util().getWalkPositionsUnderUnit(shuttle.unit()))
 	{
 		if (Grids().getEGroundGrid(tile) > 0 || Grids().getEAirGrid(tile) > 0 || Grids().getEGroundDistanceGrid(tile) > 0 || Grids().getEAirDistanceGrid(tile) > 0)
 		{
@@ -144,10 +152,10 @@ void TransportTrackerClass::updateMovement(TransportInfo& shuttle)
 			if (shuttle.getLoadState() == 2 && Grids().getMobilityGrid(x, y) == 0)
 			{
 				continue;
-			}			
+			}
 
 			// Else, move to high ally cluster areas
-			if (WalkPosition(x, y).getDistance(start) > 5 && (Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && bestCluster != 0 && shuttle.getDrop().getDistance(Position(WalkPosition(x, y))) < closestD)))
+			if (Position(WalkPosition(x, y)).getDistance(Position(start)) > 64 && (Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && bestCluster != 0 && shuttle.getDrop().getDistance(Position(WalkPosition(x, y))) < closestD)))
 			{
 				closestD = shuttle.getDrop().getDistance(Position(WalkPosition(x, y)));
 				bestCluster = Grids().getACluster(x, y);
@@ -191,13 +199,10 @@ void TransportTrackerClass::updateMovement(TransportInfo& shuttle)
 	return;
 }
 
-
-
-
 void TransportTrackerClass::removeUnit(Unit unit)
 {
 	// Delete if it's a shuttled unit
-	for (auto shuttle : myShuttles)
+	for (auto &shuttle : myShuttles)
 	{
 		if (shuttle.second.getAssignedCargo().find(unit) != shuttle.second.getAssignedCargo().end())
 		{
@@ -217,5 +222,5 @@ void TransportTrackerClass::storeUnit(Unit unit)
 	myShuttles[unit].setUnit(unit);
 	myShuttles[unit].setType(unit->getType());
 	myShuttles[unit].setPosition(unit->getPosition());
-	myShuttles[unit].setMiniTile(Util().getWalkPosition(unit));
+	myShuttles[unit].setWalkPosition(Util().getWalkPosition(unit));
 }

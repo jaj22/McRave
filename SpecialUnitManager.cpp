@@ -2,11 +2,18 @@
 
 void SpecialUnitTrackerClass::update()
 {
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();	
+
 	updateArbiters();
 	updateObservers();
 	updateTemplars();
 	updateReavers();
 	updateMedics();
+
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 60, "SpecUnit Manager: %d ms", duration);
 	return;
 }
 
@@ -65,10 +72,10 @@ void SpecialUnitTrackerClass::updateObservers()
 		if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
 		{
 			bool baseScout = false;
-			for (auto base : Terrain().getNextExpansion())
+			for (auto &base : Terrain().getAllBaseLocations())
 			{
 				// If an expansion is unbuildable and we've scouted it already, move there to detect burrowed units
-				if (!Broodwar->canBuildHere(base, UnitTypes::Protoss_Nexus, nullptr) && Grids().getBaseGrid(base.x, base.y) == 0)
+				if (!Broodwar->canBuildHere(base, UnitTypes::Protoss_Nexus, nullptr) && Grids().getBaseGrid(base) == 0)
 				{
 					u.second.setDestination(Position(base));
 					u.first->move(Position(base));
@@ -110,11 +117,11 @@ void SpecialUnitTrackerClass::updateObservers()
 void SpecialUnitTrackerClass::updateTemplars()
 {
 	for (auto &u : myTemplars)
-	{
+	{		
 		// If we should warp an archon
 		if (u.first->isUnderAttack() && u.first->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar))
 		{
-			if (!u.first->getLastCommand().getType() == UnitCommandTypes::Use_Tech_Unit)
+			if (!u.first->getLastCommand().getType() != UnitCommandTypes::Use_Tech_Unit)
 			{
 				u.first->useTech(TechTypes::Archon_Warp, u.first->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
 			}
@@ -128,6 +135,7 @@ void SpecialUnitTrackerClass::updateReavers()
 {
 	for (auto &u : myReavers)
 	{
+		// If we need Scarabs
 		if (u.first->getScarabCount() < 5)
 		{
 			u.first->train(UnitTypes::Protoss_Scarab);
@@ -138,36 +146,8 @@ void SpecialUnitTrackerClass::updateReavers()
 void SpecialUnitTrackerClass::updateMedics()
 {
 	for (auto &u : myMedics)
-	{
-		if (Units().getMyUnits()[u.first].getTarget())
-		{
-			if (u.first->getLastCommand().getType() != UnitCommandTypes::Attack_Unit)
-			{
-				u.first->attack(Units().getMyUnits()[u.first].getTarget());
-			}
-			//Broodwar->drawLineMap(u.second.getPosition(), Units().getMyUnits()[u.first].getTarget()->getPosition(), Broodwar->self()->getColor());
-			continue;
-		}
-
-		// Move towards front of army	
-		double closestD = 0.0;
-		Position newDestination = Grids().getArmyCenter();
-		WalkPosition start = u.second.getMiniTile();
-		for (int x = start.x - 20; x <= start.x + 20; x++)
-		{
-			for (int y = start.y - 20; y <= start.y + 20; y++)
-			{
-				if (WalkPosition(x, y).isValid() && Grids().getACluster(x, y) > 0 && (closestD == 0.0 || Grids().getDistanceHome(x,y) > closestD))
-				{
-					newDestination = Position(WalkPosition(x, y));					
-					closestD = Grids().getDistanceHome(x, y);
-				}
-			}
-		}
-		u.second.setDestination(newDestination);
-		u.first->attack(newDestination);	
-		//Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
-		//Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
+	{ 
+		// Cast abilities
 	}
 }
 
@@ -176,27 +156,27 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 	if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
 		myArbiters[unit].setPosition(unit->getPosition());
-		myArbiters[unit].setMiniTile(Util().getWalkPosition(unit));
+		myArbiters[unit].setWalkPosition(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Observer)
 	{
 		myObservers[unit].setPosition(unit->getPosition());
-		myObservers[unit].setMiniTile(Util().getWalkPosition(unit));
+		myObservers[unit].setWalkPosition(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
 		myTemplars[unit].setPosition(unit->getPosition());
-		myTemplars[unit].setMiniTile(Util().getWalkPosition(unit));
+		myTemplars[unit].setWalkPosition(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
 		myReavers[unit].setPosition(unit->getPosition());
-		myReavers[unit].setMiniTile(Util().getWalkPosition(unit));
+		myReavers[unit].setWalkPosition(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Terran_Medic)
 	{
 		myMedics[unit].setPosition(unit->getPosition());
-		myMedics[unit].setMiniTile(Util().getWalkPosition(unit));
+		myMedics[unit].setWalkPosition(Util().getWalkPosition(unit));
 	}
 	return;
 }

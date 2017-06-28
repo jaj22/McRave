@@ -2,26 +2,33 @@
 
 void ProductionTrackerClass::update()
 {
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();	
+
 	updateReservedResources();
 	updateProtoss();
 	updateTerran();
+
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 40, "Production Manager: %d ms", duration);
 }
 
 void ProductionTrackerClass::updateReservedResources()
 {
 	// Reserved minerals for idle buildings, tech and upgrades
 	reservedMineral = 0, reservedGas = 0;
-	for (auto b : idleBuildings)
+	for (auto &b : idleBuildings)
 	{
 		reservedMineral += b.second.mineralPrice();
 		reservedGas += b.second.gasPrice();
 	}
-	for (auto t : idleTech)
+	for (auto &t : idleTech)
 	{
 		reservedMineral += t.second.mineralPrice();
 		reservedGas += t.second.gasPrice();
 	}
-	for (auto u : idleUpgrade)
+	for (auto &u : idleUpgrade)
 	{
 		reservedMineral += u.second.mineralPrice();
 		reservedGas += u.second.gasPrice();
@@ -94,7 +101,7 @@ void ProductionTrackerClass::updateRobo(Unit building)
 	{
 		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && building->isTraining())
 		{
-			for (auto unit : building->getTrainingQueue())
+			for (auto &unit : building->getTrainingQueue())
 			{
 				if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
 				{
@@ -367,11 +374,7 @@ void ProductionTrackerClass::updateTerran()
 				if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Medic) < 6 && Broodwar->self()->minerals() >= UnitTypes::Terran_Medic.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Terran_Medic.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 				{
 					building.first->train(UnitTypes::Terran_Medic);
-				}
-				else if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Firebat) < 6 && Broodwar->self()->minerals() >= UnitTypes::Terran_Firebat.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Terran_Firebat.gasPrice() + Buildings().getQueuedGas() + reservedGas)
-				{
-					building.first->train(UnitTypes::Terran_Firebat);
-				}
+				}				
 				else if (Broodwar->self()->minerals() >= UnitTypes::Terran_Marine.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral)
 				{
 					building.first->train(UnitTypes::Terran_Marine);

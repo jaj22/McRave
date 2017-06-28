@@ -1,5 +1,108 @@
 #include "McRave.h"
 
+void BuildingTrackerClass::update()
+{
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();
+
+	queueBuildings();
+	constructBuildings();
+
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 0, "Building Manager: %d ms", duration);
+
+	int closestD = 0;
+	TilePosition closestP;
+	if (Strategy().isFastExpand())
+	{
+		for (auto &area : theMap.Areas())
+		{
+			for (auto &base : area.Bases())
+			{
+				if (Grids().getDistanceHome(WalkPosition(base.Location())) > 50 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
+				{
+					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
+					closestP = base.Location();
+				}
+			}
+		}	
+		Broodwar->drawCircleMap(Position(closestP), 32, Colors::Red);
+	}
+}
+
+void BuildingTrackerClass::queueBuildings()
+{
+	// For each building desired
+	for (auto &b : BuildOrder().getBuildingDesired())
+	{
+		// If our visible count is lower than our desired count
+		if (b.second > Broodwar->self()->visibleUnitCount(b.first) && b.second - Broodwar->self()->visibleUnitCount(b.first) > buildingsQueued[b.first])
+		{
+			TilePosition here = Buildings().getBuildLocation(b.first);
+			Unit builder = Workers().getClosestWorker(Position(here));
+
+			// If the Tile Position and Builder are valid
+			if (here.isValid() && builder)
+			{
+				// Queue at this building type a pair of building placement and builder		
+				Workers().getMyWorkers()[builder].setBuildingType(b.first);
+				Workers().getMyWorkers()[builder].setBuildPosition(here);
+			}
+		}
+	}
+}
+
+void BuildingTrackerClass::constructBuildings()
+{
+	queuedMineral = 0;
+	queuedGas = 0;
+	for (auto &building : buildingsQueued)
+	{
+		building.second = 0;
+	}
+	for (auto &worker : Workers().getMyWorkers())
+	{
+		if (worker.second.getBuildingType().isValid() && worker.second.getBuildPosition().isValid())
+		{
+			buildingsQueued[worker.second.getBuildingType()] += 1;
+			queuedMineral = queuedMineral + worker.second.getBuildingType().mineralPrice();
+			queuedGas = queuedGas + worker.second.getBuildingType().gasPrice();
+		}
+	}
+	for (auto &building : myBuildings)
+	{
+		if (building.second.getUnitType().getRace() == Races::Terran && !building.first->isCompleted() && !building.first->getBuildUnit())
+		{
+			Unit builder = Workers().getClosestWorker(building.second.getPosition());
+			if (builder)
+			{
+				builder->rightClick(building.first);
+			}
+			continue;
+		}
+	}
+}
+
+void BuildingTrackerClass::storeBuilding(Unit building)
+{
+	if (myBuildings.find(building) != myBuildings.end())
+	{
+		myBuildings[building].setUnit(building);
+		myBuildings[building].setUnitType(building->getType());
+		myBuildings[building].setPosition(building->getPosition());
+		myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
+		myBuildings[building].setTilePosition(building->getTilePosition());
+	}
+	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
+	myBuildings[building].setEnergy(building->getEnergy());
+}
+
+void BuildingTrackerClass::removeBuilding(Unit building)
+{
+	myBuildings.erase(building);
+}
+
 TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TilePosition buildTilePosition, bool ignoreCond = false)
 {
 	int x = buildTilePosition.x;
@@ -11,10 +114,16 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 	int dy = 1;
 
 	// Searches in a spiral around the specified tile position
-	while (length < 50)
+	while (length < 200)
 	{
+		//
+		if (Strategy().isFastExpand() && Grids().getDistanceHome(WalkPosition(TilePosition(x, y))) < Grids().getDistanceHome(WalkPosition(buildTilePosition)))
+		{
+
+		}
+
 		// If we can build here, return this tile position		
-		if (TilePosition(x, y).isValid() && Util().canBuildHere(building, TilePosition(x, y), ignoreCond) == true)
+		else if (TilePosition(x, y).isValid() && Util().canBuildHere(building, TilePosition(x, y), ignoreCond))
 		{
 			return TilePosition(x, y);
 		}
@@ -47,182 +156,73 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 
 TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 {
-	// For each expansion, check if you can build near it, starting at the main
-	for (TilePosition tile : Terrain().getActiveExpansion())
+	// If we are expanding, it must be on an expansion area
+	int closestD = 0;
+	TilePosition closestP;
+	if (building.isResourceDepot())
 	{
-		// First make sure every expansion has a pylon
-		if (building == UnitTypes::Protoss_Pylon)
+		for (auto &area : theMap.Areas())
 		{
-			for (auto base : Bases().getMyBases())
+			for (auto &base : area.Bases())
 			{
-				if (Grids().getPylonGrid(base.second.getTilePosition()) == 0)
+				if (Grids().getReserveGrid(base.Location()) == 0 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
 				{
-					return getBuildLocationNear(building, base.second.getTilePosition());
+					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
+					closestP = base.Location();
 				}
 			}
 		}
+		return closestP;
+	}
 
-		if (building == UnitTypes::Protoss_Assimilator || building == UnitTypes::Terran_Refinery)
+	// If we are fast expanding
+	if (Strategy().isFastExpand())
+	{
+		for (auto &area : theMap.Areas())
 		{
-			for (auto gas : Resources().getMyGas())
+			for (auto &base : area.Bases())
 			{
-				if (gas.second.getUnitType() == UnitTypes::Resource_Vespene_Geyser)
+				if (base.Geysers().size() == 0)
 				{
-					return gas.second.getTilePosition();
+					continue;
+				}
+				if (Grids().getDistanceHome(WalkPosition(base.Location())) > 50 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
+				{
+					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
+					closestP = base.Location();
 				}
 			}
 		}
-		else if (building == UnitTypes::Protoss_Nexus)
+		return getBuildLocationNear(building, closestP);
+	}
+
+	// For each base, check if there's a Pylon or Cannon needed
+	for (auto &base : Bases().getMyBases())
+	{
+		if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
 		{
-			for (auto base : Terrain().getNextExpansion())
+			if (Grids().getPylonGrid(base.second.getTilePosition()) == 0)
 			{
-				if (Broodwar->getUnitsInRadius(Position(base), 128, Filter::IsResourceDepot).size() <= 0)
-				{
-					return base;
-				}
+				return getBuildLocationNear(building, base.second.getTilePosition());
 			}
 		}
-		else if (building == UnitTypes::Protoss_Shield_Battery)
+		if (building == UnitTypes::Protoss_Photon_Cannon)
 		{
-			for (auto base : Bases().getMyBases())
+			if (Grids().getDefenseGrid(base.second.getTilePosition()) < Grids().getDistanceHome(base.second.getWalkPosition()) / 100)
 			{
-				if (Broodwar->getUnitsInRadius(Position(base.second.getResourcesPosition()), 320, Filter::GetType == UnitTypes::Protoss_Shield_Battery).size() <= 0)
-				{
-					return getBuildLocationNear(building, base.second.getResourcesPosition(), true);
-				}
+				return getBuildLocationNear(building, base.second.getResourcesPosition());
 			}
 		}
-		else
+	}
+
+	// For each base, check if you can build near it
+	for (auto &base : Bases().getMyOrderedBases())
+	{
+		TilePosition here = getBuildLocationNear(building, base.second);
+		if (here.isValid())
 		{
-			return getBuildLocationNear(building, tile);
+			return here;
 		}
 	}
 	return TilePositions::None;
-}
-
-void BuildingTrackerClass::update()
-{
-	queueBuildings();
-	constructBuildings();
-}
-
-void BuildingTrackerClass::queueBuildings()
-{
-	// For each building desired
-	for (auto &b : BuildOrder().getBuildingDesired())
-	{
-		// If our visible count is lower than our desired count
-		if (b.second > Broodwar->self()->visibleUnitCount(b.first) && queuedBuildings.find(b.first) == queuedBuildings.end())
-		{
-			TilePosition here = Buildings().getBuildLocation(b.first);
-			Unit builder = Workers().getClosestWorker(Position(here));			
-		
-			// If the Tile Position and Builder are valid
-			if (here.isValid() && builder)
-			{
-				// Queue at this building type a pair of building placement and builder
-				queuedBuildings.emplace(b.first, make_pair(here, builder));
-				Grids().updateReservedLocation(b.first, here);
-			}
-		}
-	}
-}
-
-void BuildingTrackerClass::constructBuildings()
-{
-	// Queued minerals for buildings needed
-	queuedMineral = 0, queuedGas = 0;
-	for (auto &b : queuedBuildings)
-	{		
-		queuedMineral += b.first.mineralPrice();
-		queuedGas += b.first.gasPrice();
-
-		// If worker died, replace the worker
-		if (!b.second.second || !b.second.second->exists())
-		{
-			b.second.second = Workers().getClosestWorker(Position(b.second.first));
-			continue;
-		}
-
-		// If placement is invalid, replace
-		if (!b.second.first.isValid())
-		{
-			b.second.first = Buildings().getBuildLocation(b.first);
-			continue;
-		}		
-
-		// If the worker is mining a boulder, replace
-		if (b.second.second->getTarget() && b.second.second->getTarget()->getType().isMineralField() && b.second.second->getTarget()->getResources() == 0)
-		{
-			continue;
-		}
-
-		// If drawing is on, draw a box around the build position			
-		//Broodwar->drawLineMap(Position(b.second.first), b.second.second->getPosition(), Broodwar->self()->getColor());
-		//Broodwar->drawBoxMap(Position(b.second.first), Position(TilePosition(b.second.first.x + b.first.tileWidth(), b.second.first.y + b.first.tileHeight())), Broodwar->self()->getColor());
-
-		// If we issued a command to this worker already, skip
-		if (b.second.second->isConstructing() || b.second.second->getLastCommandFrame() >= Broodwar->getFrameCount())
-		{
-			continue;
-		}
-
-		// If we almost have enough resources, move the worker to the build position
-		if (Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && Broodwar->self()->minerals() <= b.first.mineralPrice() && Broodwar->self()->gas() >= 0.8*b.first.gasPrice() && Broodwar->self()->gas() <= b.first.gasPrice() || (b.second.second->getDistance(Position(b.second.first)) > 160 && Broodwar->self()->minerals() >= 0.8*b.first.mineralPrice() && 0.8*Broodwar->self()->gas() >= b.first.gasPrice()))
-		{
-			if (b.second.second->getOrderTargetPosition() != Position(b.second.first))
-			{			
-				b.second.second->move(Position(b.second.first));
-			}
-			continue;
-		}
-
-		// If can't build here right now and the tile is visible, replace the building position
-		for (int x = b.second.first.x; x <= b.second.first.x + b.first.tileWidth(); x++)
-		{
-			for (int y = b.second.first.y; y <= b.second.first.y + b.first.tileHeight(); y++)
-			{
-				if (Broodwar->isVisible(TilePosition(x, y)) && (Grids().getReserveGrid(x, y) > 0 || !Broodwar->isBuildable(TilePosition(x, y))))
-				{
-					b.second.first = Buildings().getBuildLocation(b.first);
-					continue;
-				}
-			}
-		}
-
-		// If worker is not currently returning minerals or constructing, the build position is valid and can afford the building, then proceed with build
-		if (b.second.first != TilePositions::None && Broodwar->self()->minerals() >= b.first.mineralPrice() && Broodwar->self()->gas() >= b.first.gasPrice())
-		{			
-			b.second.second->build(b.first, b.second.first);
-			continue;
-		}
-	}
-}
-
-void BuildingTrackerClass::updateQueue(Unit building)
-{
-	// When a building is created, remove from queue
-	if (building->getPlayer() == Broodwar->self())
-	{
-		queuedBuildings.erase(building->getType());
-	}
-}
-
-void BuildingTrackerClass::storeBuilding(Unit building)
-{
-	if (myBuildings.find(building) != myBuildings.end())
-	{
-		myBuildings[building].setUnit(building);
-		myBuildings[building].setUnitType(building->getType());
-		myBuildings[building].setPosition(building->getPosition());
-		myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
-		myBuildings[building].setTilePosition(building->getTilePosition());
-	}
-	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
-	myBuildings[building].setEnergy(building->getEnergy());
-}
-
-void BuildingTrackerClass::removeBuilding(Unit building)
-{
-	myBuildings.erase(building);
 }

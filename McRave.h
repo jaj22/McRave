@@ -1,31 +1,18 @@
 #pragma once
 // Include API files
 #include <BWAPI.h>
-#include <BWTA.h>
 #include "src\bwem.h"
 #include "Singleton.h"
 
 // Namespaces
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
 
 // Include standard libraries that are needed
-#include <vector>
 #include <Windows.h>
 #include <set>
-#include <iterator>
 #include <BWTA.h>
 #include <ctime>
-
-// Declare info classes first
-class BuildingInfo;
-class NexusInfo;
-class WorkerInfo;
-class ResourceInfo;
-class SupportUnitInfo;
-class TransportInfo;
-class UnitInfo;
 
 // Include other source files
 #include "BuildingManager.h"
@@ -46,6 +33,7 @@ class UnitInfo;
 #include "UnitManager.h"
 #include "Util.h"
 
+// Namespace to access all trackers globally
 namespace McRave
 {	
 	inline BuildingTrackerClass& Buildings() { return BuildingTracker::Instance(); }

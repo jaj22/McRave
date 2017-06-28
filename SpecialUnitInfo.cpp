@@ -4,11 +4,7 @@ SupportUnitInfo::SupportUnitInfo()
 {
 	position = Positions::None;
 	destination = Positions::None;
-	miniTile = WalkPositions::None;
-}
-
-SupportUnitInfo::~SupportUnitInfo()
-{
+	walkPosition = WalkPositions::None;
 }
 
 TransportInfo::TransportInfo()
@@ -16,7 +12,7 @@ TransportInfo::TransportInfo()
 	position = Positions::None;
 	destination = Positions::None;
 	drop = Positions::None;
-	miniTile = WalkPositions::None;
+	walkPosition = WalkPositions::None;
 	storedUnit = nullptr;
 	target = nullptr;
 	loadState = 0;

@@ -23,8 +23,8 @@ public:
 	UnitType getUnitType() { return unitType; }
 	UnitType getNextUnit() { return nextUnit; }
 	Position getPosition() { return position; }
-	TilePosition getTilePosition() { return tilePosition; }
 	WalkPosition getWalkPosition() { return walkPosition; }
+	TilePosition getTilePosition() { return tilePosition; }	
 	
 	void setEnergy(int newEnergy) { energy = newEnergy; }
 	void setIdleStatus(bool newIdleStatus) { idleStatus = newIdleStatus; }

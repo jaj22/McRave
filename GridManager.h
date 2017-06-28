@@ -14,6 +14,7 @@ class GridTrackerClass
 	int pylonGrid[256][256];
 	int batteryGrid[256][256];
 	int bunkerGrid[256][256];
+	int defenseGrid[256][256];
 
 	// Enemy grids
 	double eGroundGrid[1024][1024];
@@ -56,6 +57,7 @@ public:
 	void updateAllyMovement(Unit, WalkPosition);
 	void updateReservedLocation(UnitType, TilePosition);
 	void updateGroundDistanceGrid();
+	bool isAnalyzed() { return distanceAnalysis; }
 
 	// Ally mini tile grid functions
 	int getACluster(int x, int y) { return aClusterGrid[x][y]; }
@@ -70,6 +72,10 @@ public:
 	int getPylonGrid(TilePosition here) { return pylonGrid[here.x][here.y]; }
 	int getBatteryGrid(int x, int y) { return batteryGrid[x][y]; }
 	int getBatteryGrid(TilePosition here) { return batteryGrid[here.x][here.y]; }
+	int getBunkerGrid(int x, int y) { return bunkerGrid[x][y]; }
+	int getBunkerGrid(TilePosition here) { return bunkerGrid[here.x][here.y]; }
+	int getDefenseGrid(int x, int y) { return defenseGrid[x][y]; }
+	int getDefenseGrid(TilePosition here) { return defenseGrid[here.x][here.y]; }
 
 	// Enemy mini tile grid functions
 	double getEGroundGrid(int x, int y) { return eGroundGrid[x][y]; }

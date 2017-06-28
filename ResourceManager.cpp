@@ -2,11 +2,15 @@
 
 void ResourceTrackerClass::update()
 {
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();	
+
 	for (auto &r : Broodwar->neutral()->getUnits())
 	{
 		if (r && r->exists())
 		{
-			if (Grids().getBaseGrid(r->getTilePosition().x, r->getTilePosition().y) == 1)
+			if (Grids().getBaseGrid(r->getTilePosition()) == 1)
 			{
 				if (r->getType().isMineralField() && r->getInitialResources() > 0 && myMinerals.find(r) == myMinerals.end())
 				{
@@ -18,7 +22,7 @@ void ResourceTrackerClass::update()
 					storeGas(r);
 				}				
 			}	
-			else if (Grids().getBaseGrid(r->getTilePosition().x, r->getTilePosition().y) == 0)
+			else if (Grids().getBaseGrid(r->getTilePosition()) == 0)
 			{
 				removeResource(r);
 			}
@@ -59,6 +63,9 @@ void ResourceTrackerClass::update()
 			break;
 		}
 	}
+
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 50, "Resource Manager: %d ms", duration);
 }
 
 void ResourceTrackerClass::storeMineral(Unit resource)
@@ -117,7 +124,7 @@ void ResourceTrackerClass::removeResource(Unit resource)
 	}
 
 	// Any workers that targeted that resource now have no target
-	for (auto & worker : Workers().getMyWorkers())
+	for (auto &worker : Workers().getMyWorkers())
 	{
 		if (worker.second.getTarget() == resource)
 		{

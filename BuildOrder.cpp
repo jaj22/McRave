@@ -2,9 +2,16 @@
 
 void BuildOrderTrackerClass::update()
 {
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();	
+
 	updateBuildStage();
-	updateBaseBuild();
 	updateSituationalBuild();
+	updateBaseBuild();
+
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 10, "Build Order: %d ms", duration);
 }
 
 void BuildOrderTrackerClass::updateBuildStage()
@@ -23,6 +30,7 @@ void BuildOrderTrackerClass::updateBuildStage()
 			getMidBuild = true;
 		}
 
+		// If we have our robo tech choice, mid build is over
 		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) >= 1 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) >= 1 && getMidBuild)
 		{
 			getMidBuild = false;
@@ -36,7 +44,7 @@ void BuildOrderTrackerClass::updateBuildStage()
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		
+
 	}
 	return;
 }
@@ -46,13 +54,19 @@ void BuildOrderTrackerClass::updateBaseBuild()
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
 		// Pylon, Forge, Nexus
-		buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
-		buildingDesired[UnitTypes::Protoss_Forge] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) / 3);		
+		if (Strategy().isFastExpand() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Pylon) <= 0)
+		{
+			buildingDesired[UnitTypes::Protoss_Pylon] = Units().getSupply() >= 14;
+		}
+		else
+		{
+			buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
+		}
 
 		if (Strategy().getNumberZerg() > 0)
 		{
-			earlyBuild = 0;
-			midBuild = Strategy().needDetection();
+			earlyBuild = 4;
+			midBuild = 4;
 			lateBuild = 1;
 		}
 		else if (Strategy().getNumberProtoss() > 0)
@@ -64,7 +78,7 @@ void BuildOrderTrackerClass::updateBaseBuild()
 		else if (Strategy().getNumberTerran() > 0)
 		{
 			earlyBuild = 3;
-			if (Terrain().isWalled())
+			if (Strategy().isWalled())
 			{
 				midBuild = 2;
 			}
@@ -84,7 +98,6 @@ void BuildOrderTrackerClass::updateBaseBuild()
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
 		buildingDesired[UnitTypes::Terran_Supply_Depot] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Terran_Supply_Depot))))));
-		buildingDesired[UnitTypes::Terran_Armory] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Terran_Command_Center) / 2);
 		earlyBuild = 0;
 		midBuild = 0;
 		lateBuild = 0;
@@ -117,11 +130,11 @@ void BuildOrderTrackerClass::updateSituationalBuild()
 		// Shield battery logic
 		if (Strategy().isRush())
 		{
-			buildingDesired[UnitTypes::Protoss_Shield_Battery] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway));
+			buildingDesired[UnitTypes::Protoss_Shield_Battery] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Cybernetics_Core));
 		}
 
 		// Gateway logic
-		if ((Broodwar->self()->minerals() - Production().getReservedMineral() - Buildings().getQueuedMineral() > 200) || (!Production().isGateSat() && Resources().isMinSaturated()))
+		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && (Production().getIdleGates().size() == 0 && ((Broodwar->self()->minerals() - Production().getReservedMineral() - Buildings().getQueuedMineral() > 200) || (!Production().isGateSat() && Resources().isMinSaturated()))))
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 		}
@@ -130,6 +143,25 @@ void BuildOrderTrackerClass::updateSituationalBuild()
 		if (Resources().isMinSaturated())
 		{
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus);
+		}
+
+		// Forge logic
+		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 3)
+		{
+			buildingDesired[UnitTypes::Protoss_Forge] = 1;
+		}
+
+		// Cannon logic
+		if (!Strategy().isFastExpand() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge))
+		{
+			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 0;
+			for (auto &base : Bases().getMyBases())
+			{
+				if (Grids().getDefenseGrid(base.second.getTilePosition()) < Grids().getDistanceHome(base.second.getWalkPosition()) / 100)
+				{
+					buildingDesired[UnitTypes::Protoss_Photon_Cannon] += Grids().getDistanceHome(base.second.getWalkPosition()) / 100;
+				}
+			}
 		}
 	}
 }
@@ -167,12 +199,22 @@ void BuildOrderTrackerClass::earlyBuilds()
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 26;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 30;
 		}
+		// FFE
+		else if (earlyBuild == 4)
+		{
+			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 20;
+			buildingDesired[UnitTypes::Protoss_Nexus] = 2 * (Units().getSupply() >= 28);
+			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 2 * (Units().getSupply() >= 24);
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 30) + (Units().getSupply() >= 46);
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 32;
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 40;
+		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
 		buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 20) + (Units().getSupply() >= 24) + (Units().getSupply() >= 42) + (Units().getSupply() >= 80);
 		buildingDesired[UnitTypes::Terran_Engineering_Bay] = (Units().getSupply() >= 36);
-		buildingDesired[UnitTypes::Terran_Refinery] = (Units().getSupply() >= 40);
+		buildingDesired[UnitTypes::Terran_Refinery] = (Units().getSupply() >= 30);
 		buildingDesired[UnitTypes::Terran_Academy] = (Units().getSupply() >= 48);
 	}
 	return;
@@ -206,14 +248,16 @@ void BuildOrderTrackerClass::midBuilds()
 	}
 	if (midBuild == 3)
 	{
-		// Corsairs
-		buildingDesired[UnitTypes::Protoss_Stargate] = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 4);
+		// Corsair and DT
+		buildingDesired[UnitTypes::Protoss_Stargate] = 1;
+		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
+		buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
 	}
 	if (midBuild == 4)
 	{
 		// Templar tech
 		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-		buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
+		buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
 	}
 	return;
 }

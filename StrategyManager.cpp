@@ -2,14 +2,21 @@
 
 void StrategyTrackerClass::update()
 {
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();	
+
 	updateAlly();
 	updateEnemy();
 	updateComposition();
+
+	duration = 1000.0 * double(clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 70, "Strategy Manager: %d ms", duration);
 }
 
 void StrategyTrackerClass::updateAlly()
 {
-	// Reset	
+	// Reset
 	globalAllyStrength = 0.0;
 
 	// Check through all alive units or units dead within 500 frames
@@ -27,49 +34,31 @@ void StrategyTrackerClass::updateAlly()
 				// Set last command frame
 				if (u.first->isAttackFrame())
 				{
-					u.second.setLastAttackFrame(Broodwar->getFrameCount());
-				}
-
-				// Drawing
-				if (u.second.getTargetPosition() != Positions::None && u.second.getPosition() != Positions::None && u.first->getDistance(u.second.getTargetPosition()) < 500)
-				{
-					//Broodwar->drawLineMap(u.second.getPosition(), u.second.getTargetPosition(), Broodwar->self()->getColor());
-					//Broodwar->drawBoxMap(u.second.getTargetPosition() - Position(4, 4), u.second.getTargetPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
-				}
-				if (u.second.getLocal() < 0)
-				{
-					//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getLocal());
-				}
-				else if (u.second.getLocal() > 0)
-				{
-					//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Broodwar->self()->getTextColor(), u.second.getLocal());
-				}
-				else
-				{
-					//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%.2f", Text::Default, u.second.getLocal());
+					u.second.setLastAttackFrame(Broodwar->getFrameCount());				
 				}
 			}
 		}
 		else
 		{
 			globalEnemyStrength += u.second.getMaxStrength() * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-
-			//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->self()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
-
 		}
 	}
 }
 
 void StrategyTrackerClass::updateEnemy()
 {
-	// Keep track of how many enemy races there are
+	// Reset	
+	globalEnemyStrength = 0.0;
 	eZerg = 0;
 	eProtoss = 0;
 	eTerran = 0;
-	for (auto player : Broodwar->enemies())
+
+	// Store enemy races
+	for (auto &player : Broodwar->enemies())
 	{
 		if (player->getRace() == Races::Zerg)
 		{
+			fastExpand = true;
 			eZerg++;
 		}
 		else if (player->getRace() == Races::Protoss)
@@ -82,9 +71,6 @@ void StrategyTrackerClass::updateEnemy()
 		}
 	}
 
-	// Reset	
-	globalEnemyStrength = 0.0;
-
 	// Stored enemy units iterator
 	for (auto &u : Units().getEnUnits())
 	{
@@ -96,6 +82,14 @@ void StrategyTrackerClass::updateEnemy()
 		// If deadframe is 0, unit is alive still
 		if (u.second.getDeadFrame() == 0)
 		{
+			if (Workers().isScouting())
+			{
+				if (eTerran > 0 && u.second.getPosition().getDistance(getNearestChokepoint(u.second.getPosition())->getCenter()) < 256)
+				{
+					walledOff = true;
+				}
+			}		
+
 			enemyComposition[u.second.getType()] += 1;
 
 			// If tile is visible but unit is not, remove position
@@ -105,23 +99,11 @@ void StrategyTrackerClass::updateEnemy()
 			}
 
 			// Strength based calculations ignore workers and buildings
-			if ((u.second.getType().isBuilding() && u.second.getMaxStrength() > 1.0) || (!u.second.getType().isBuilding() && !u.second.getType().isWorker()) || u.first->exists() && Terrain().getAllyTerritory().find(getRegion(u.first->getTilePosition())) != Terrain().getAllyTerritory().end())
+			if (!u.second.getType().isBuilding() && !u.second.getType().isWorker())
 			{
 				// Add strength				
 				globalEnemyStrength += u.second.getStrength();
-			}
-
-			// Drawing
-			if (u.second.getType().isBuilding())
-			{
-				//Broodwar->drawEllipseMap(u.second.getPosition(), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
-			}
-			else
-			{
-				//Broodwar->drawEllipseMap(u.second.getPosition() + Position(0, u.second.getType().height() / 2), u.second.getType().height() / 2, u.second.getType().height() / 3, Broodwar->enemy()->getColor());
-			}
-
-			//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, -8), "%c%.2f", Broodwar->enemy()->getTextColor(), u.second.getStrength());
+			}			
 		}
 
 		// If unit is dead
@@ -129,10 +111,6 @@ void StrategyTrackerClass::updateEnemy()
 		{
 			// Add a portion of the strength to ally strength
 			globalAllyStrength += u.second.getMaxStrength() * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-
-
-			//Broodwar->drawTextMap(u.second.getPosition() + Position(-8, 8), "%c%d", Broodwar->enemy()->getTextColor(), Broodwar->getFrameCount() - u.second.getDeadFrame());
-
 		}
 	}
 }
@@ -149,7 +127,7 @@ void StrategyTrackerClass::updateComposition()
 	// Check if our supply is high enough to hold the ramp or the minerals
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3 || Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1)
+		if ((Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3) || (Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
 		{
 			holdRamp = true;
 		}
@@ -209,13 +187,13 @@ void StrategyTrackerClass::updateComposition()
 		// Force expand based on enemy composition
 		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2 && Broodwar->getFrameCount() < 10000)
 		{
-			if (t.first == UnitTypes::Terran_Bunker || (t.first == UnitTypes::Zerg_Sunken_Colony && t.second >= 2) || (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2))
+			if (t.first == UnitTypes::Terran_Bunker || (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2))
 			{
 				fastExpand = true;
 			}
 		}
 		else
-		{
+		{		
 			fastExpand = false;
 		}
 		t.second = 0;

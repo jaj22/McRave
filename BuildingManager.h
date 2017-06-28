@@ -9,22 +9,22 @@ using namespace std;
 class BuildingTrackerClass
 {
 	int queuedMineral, queuedGas;
-	map <UnitType, pair<TilePosition, Unit>> queuedBuildings;
+	map <UnitType, int> buildingsQueued;
 	map <Unit, BuildingInfo> myBuildings;
 	map <Unit, BuildingInfo> myBatteries;
 public:
-	TilePosition getBuildLocation(UnitType);
-	TilePosition getCannonLocation();
-	TilePosition getBuildLocationNear(UnitType, TilePosition, bool);
+	map <Unit, BuildingInfo>& getMyBuildings() { return myBuildings; }
+	map <Unit, BuildingInfo>& getMyBatteries() { return myBatteries; }
+	map <UnitType, int>& getbuildingsQueued() { return buildingsQueued; }
+
 	int getQueuedMineral() { return queuedMineral; }
 	int getQueuedGas() { return queuedGas; }
-	map <UnitType, pair<TilePosition, Unit>>& getQueuedBuildings() { return queuedBuildings; }
-	map <Unit, BuildingInfo> getMyBuildings() { return myBuildings; }
+	TilePosition getBuildLocation(UnitType);
+	TilePosition getBuildLocationNear(UnitType, TilePosition, bool);
 
 	void update();
 	void queueBuildings();
 	void constructBuildings();
-	void updateQueue(Unit);
 	void storeBuilding(Unit);
 	void removeBuilding(Unit);
 };

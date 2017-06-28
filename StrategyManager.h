@@ -15,6 +15,7 @@ class StrategyTrackerClass
 	bool invis = false;
 	bool rush = false;
 	bool holdRamp = false;
+	bool walledOff = false;
 public:
 	double globalAlly() { return globalAllyStrength; }
 	double globalEnemy() {	return globalEnemyStrength;	}
@@ -24,6 +25,7 @@ public:
 	bool needDetection() { return invis; }	
 	bool isRush() { return rush; }
 	bool isHoldRamp() { return holdRamp; }
+	bool isWalled() { return walledOff; }
 	int getNumberZerg() { return eZerg; }
 	int getNumberProtoss() { return eProtoss; }
 	int getNumberTerran() { return eTerran; }

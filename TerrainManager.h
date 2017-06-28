@@ -17,38 +17,40 @@ class TerrainTrackerClass
 	bool wallin = false;
 	bool analyzeHome = true;
 	bool analyzeMap = true;
+	bool BWTAdone = false;
 	int currentSize = 0;
-	BWEM::CPPath path;
-	set <BWTA::Region*> territory;
-	set <BWTA::Region*> allyTerritory;
-	set <BWTA::Region*> islandRegions;
+
+	CPPath path;
+	set <int> allyTerritory;
+	set <int> islandRegions;
 	vector<Position> defendHere;
 	set<Position> enemyBasePositions;
-	vector<TilePosition> nextExpansion;
-	vector<TilePosition> activeExpansion;
-	Position enemyStartingPosition, playerStartingPosition;
-	TilePosition enemyStartingTilePosition, playerStartingTilePosition;
+	set<TilePosition> allBaseLocations;
+	Position enemyStartingPosition, playerStartingPosition, playerNaturalPosition;
+	TilePosition enemyStartingTilePosition, playerStartingTilePosition, playerNaturalTilePosition;
 
 public:
 	void update();
-	void setAnalyzed();
+	void setAnalyzed() { analyzed = true; }
+	void setBWTAdone() { BWTAdone = true; }
 	bool isAnalyzed() { return analyzed; }
-	bool isWalled() { return wallin; }
-	void setWalled() { wallin = true; }
+	bool isBWTAdone() { return BWTAdone; }
 	void removeTerritory(Unit);
 	
-	BWEM::CPPath getPath() { return path; }
-	set <BWTA::Region*>& getTerritory() { return territory; }
-	set <BWTA::Region*>& getAllyTerritory() { return allyTerritory; }	
+	CPPath getPath() { return path; }
+	set <int>& getAllyTerritory() { return allyTerritory; }	
+	set <int>& getIslandRegions() { return islandRegions; }
 	vector<Position>& getDefendHere() { return defendHere; }
 	set<Position>& getEnemyBasePositions() { return enemyBasePositions; }
-	vector<TilePosition>& getNextExpansion() { return nextExpansion; }
-	vector<TilePosition>& getActiveExpansion() { return activeExpansion; }
+	set<TilePosition>& getAllBaseLocations() { return allBaseLocations; }
+
 	Position getEnemyStartingPosition() { return enemyStartingPosition; }
 	Position getPlayerStartingPosition() { return playerStartingPosition; }
+	Position getPlayerNaturalPosition() { return playerNaturalPosition; }
 	TilePosition getEnemyStartingTilePosition() { return enemyStartingTilePosition; }
 	TilePosition getPlayerStartingTilePosition() { return playerStartingTilePosition; }	
-	set <BWTA::Region*>& getIslandRegions() { return islandRegions; }
+	TilePosition getPlayerNaturalTilePosition() { return playerNaturalTilePosition; }
+
 };
 
 typedef Singleton<TerrainTrackerClass> TerrainTracker;

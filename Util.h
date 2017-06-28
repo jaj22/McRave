@@ -18,9 +18,10 @@ public:
 	double getTrueAirDamage(UnitType, Player);
 	double getPriority(UnitType, Player);
 	double getTrueSpeed(UnitType, Player);
+	int getMinStopFrame(UnitType);
 	WalkPosition getWalkPosition(Unit);
 	set<WalkPosition> getWalkPositionsUnderUnit(Unit);
-	bool canBuildHere(UnitType, TilePosition, bool);
+	bool canBuildHere(UnitType, TilePosition, bool ignoreCond = false);
 };
 
 typedef Singleton<UtilTrackerClass> UtilTracker;

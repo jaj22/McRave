@@ -275,6 +275,15 @@ double UtilTrackerClass::getTrueSpeed(UnitType unitType, Player who)
 	return speed;
 }
 
+int UtilTrackerClass::getMinStopFrame(UnitType unitType)
+{
+	if (unitType == UnitTypes::Protoss_Dragoon)
+	{
+		return 9;
+	}
+	return 0;
+}
+
 WalkPosition UtilTrackerClass::getWalkPosition(Unit unit)
 {
 	int x = unit->getPosition().x;
@@ -312,26 +321,52 @@ set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
 	return returnValues;
 }
 
-bool UtilTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond = false)
+bool UtilTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
 	int offset = 0;
-	// Offset for first pylon
-	if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
+	// Offset for first pylon and production
+	/*if (Strategy().isFastExpand())
 	{
-		offset = 3;
-	}
-
-	// Offset for production buildings
+		if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
+		{
+			offset = 2;
+		}
+	}*/
 	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
 	{
 		offset = 1;
+	}
+
+
+	if (Strategy().isFastExpand() && !building.isResourceDepot())
+	{
+		if ((building == UnitTypes::Protoss_Photon_Cannon || building == UnitTypes::Protoss_Pylon) && Broodwar->getUnitsInRadius(Position(buildTilePosition), 128, Filter::IsResourceContainer).size() > 0)
+		{
+			return false;
+		}
+		else if (building != UnitTypes::Protoss_Pylon && Broodwar->getUnitsInRadius(Position(buildTilePosition), 160, Filter::IsResourceContainer).size() > 0)
+		{
+			return false;
+		}
+	}
+
+	if (building == UnitTypes::Protoss_Assimilator || building == UnitTypes::Terran_Refinery)
+	{
+		for (auto &gas : Resources().getMyGas())
+		{
+			if (buildTilePosition == gas.second.getTilePosition() && gas.second.getUnitType() == UnitTypes::Resource_Vespene_Geyser)
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	// If Protoss, check for power
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
 		// Check if it's not a pylon and in a preset buildable position based on power grid
-		if (building != UnitTypes::Protoss_Pylon && !Pylons().hasPower(buildTilePosition, building))
+		if (building.requiresPsi() && !Pylons().hasPower(buildTilePosition, building))
 		{
 			return false;
 		}
@@ -352,13 +387,13 @@ bool UtilTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePos
 				}
 
 				// If it's a pylon and overlapping too many pylons
-				if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 2)
+				if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Pylon) <= 6 && Grids().getPylonGrid(x, y) >= 1)
 				{
 					return false;
 				}
 
 				// If it's not a cannon and on top of the resource grid
-				if (!ignoreCond && building != UnitTypes::Protoss_Photon_Cannon && Grids().getResourceGrid(x, y) > 0)
+				if (!ignoreCond && Grids().getResourceGrid(x, y) > 0)
 				{
 					return false;
 				}
@@ -387,21 +422,28 @@ bool UtilTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePos
 				{
 					return false;
 				}
+				if (building == UnitTypes::Protoss_Pylon && !Broodwar->isBuildable(TilePosition(x, y), true))
+				{
+					return false;
+				}
 			}
 		}
 	}
 
-	// For every tile of an expansion
-	for (auto base : Terrain().getNextExpansion())
+	// If the building is not a resource depot and being placed on an expansion
+	if (!building.isResourceDepot())
 	{
-		for (int i = 0; i < building.tileWidth(); i++)
+		for (auto &base : Terrain().getAllBaseLocations())
 		{
-			for (int j = 0; j < building.tileHeight(); j++)
+			for (int i = 0; i < building.tileWidth(); i++)
 			{
-				// If the x value of this tile of the building is within an expansion and the y value of this tile of the building is within an expansion, return false
-				if (buildTilePosition.x + i >= base.x && buildTilePosition.x + i < base.x + 4 && buildTilePosition.y + j >= base.y && buildTilePosition.y + j < base.y + 3)
+				for (int j = 0; j < building.tileHeight(); j++)
 				{
-					return false;
+					// If the x value of this tile of the building is within an expansion and the y value of this tile of the building is within an expansion, return false
+					if (buildTilePosition.x + i >= base.x && buildTilePosition.x + i < base.x + 4 && buildTilePosition.y + j >= base.y && buildTilePosition.y + j < base.y + 3)
+					{
+						return false;
+					}
 				}
 			}
 		}
