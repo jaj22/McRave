@@ -12,6 +12,7 @@ class BuildingTrackerClass
 	map <UnitType, int> buildingsQueued;
 	map <Unit, BuildingInfo> myBuildings;
 	map <Unit, BuildingInfo> myBatteries;
+	int errorTime = 0;
 public:
 	map <Unit, BuildingInfo>& getMyBuildings() { return myBuildings; }
 	map <Unit, BuildingInfo>& getMyBatteries() { return myBatteries; }
@@ -21,11 +22,13 @@ public:
 	int getQueuedGas() { return queuedGas; }
 	TilePosition getBuildLocation(UnitType);
 	TilePosition getBuildLocationNear(UnitType, TilePosition, bool);
+	bool canBuildHere(UnitType, TilePosition, bool ignoreCond = false);
 
 	void update();
 	void queueBuildings();
 	void constructBuildings();
 	void storeBuilding(Unit);
+	void storeBattery(Unit);
 	void removeBuilding(Unit);
 };
 

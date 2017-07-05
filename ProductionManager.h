@@ -7,16 +7,17 @@ using namespace std;
 
 class ProductionTrackerClass
 {
-	map <Unit, UnitType> idleBuildings;
-	map <Unit, UnitType> idleGates;
+	map <Unit, UnitType> idleLowProduction;
+	map <Unit, UnitType> idleHighProduction;
 	map <Unit, TechType> idleTech;
 	map <Unit, UpgradeType> idleUpgrade;
 	int reservedMineral, reservedGas;
 	bool noZealots = false;
 	bool gateSat = false;
+	bool barracksSat = false;
 public:
-	map <Unit, UnitType>& getIdleBuildings() { return idleBuildings; }
-	map <Unit, UnitType>& getIdleGates() { return idleGates; }
+	map <Unit, UnitType>& getIdleLowProduction() { return idleLowProduction; }
+	map <Unit, UnitType>& getIdleHighProduction() { return idleHighProduction; }
 	map <Unit, TechType>& getIdleTech() { return idleTech; }
 	map <Unit, UpgradeType>& getIdleUpgrade() { return idleUpgrade; }
 
@@ -24,11 +25,11 @@ public:
 	int getReservedGas() { return reservedGas; }
 	bool getNoZealots() { return noZealots; }
 	bool isGateSat() { return gateSat; }
+	bool isBarracksSat() { return barracksSat; }
 
 	void update();
 	void updateProtoss();
-	void updateTerran();
-	void updateGateway(Unit);
+	void updateTerran();	
 	void updateRobo(Unit);
 	void updateStargate(Unit);
 	void updateLuxuryTech(Unit);

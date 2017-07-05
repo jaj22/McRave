@@ -4,7 +4,7 @@ void ProductionTrackerClass::update()
 {
 	clock_t myClock;
 	double duration = 0.0;
-	myClock = clock();	
+	myClock = clock();
 
 	updateReservedResources();
 	updateProtoss();
@@ -18,7 +18,7 @@ void ProductionTrackerClass::updateReservedResources()
 {
 	// Reserved minerals for idle buildings, tech and upgrades
 	reservedMineral = 0, reservedGas = 0;
-	for (auto &b : idleBuildings)
+	for (auto &b : idleHighProduction)
 	{
 		reservedMineral += b.second.mineralPrice();
 		reservedGas += b.second.gasPrice();
@@ -32,60 +32,6 @@ void ProductionTrackerClass::updateReservedResources()
 	{
 		reservedMineral += u.second.mineralPrice();
 		reservedGas += u.second.gasPrice();
-	}
-	return;
-}
-
-void ProductionTrackerClass::updateGateway(Unit building)
-{
-	int supply = Units().getSupply();
-	int queuedMineral = Buildings().getQueuedMineral();
-	int queuedGas = Buildings().getQueuedGas();
-
-	// If we need a High Templar
-	if (Broodwar->self()->hasResearched(TechTypes::Psionic_Storm) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Templar_Archives) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar) < 5)
-	{
-		// If we can afford a High Temlar, train
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_High_Templar.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_High_Templar.gasPrice() + queuedGas + reservedGas && supply + UnitTypes::Protoss_High_Templar.supplyRequired() <= Broodwar->self()->supplyTotal())
-		{
-			building->train(UnitTypes::Protoss_High_Templar);
-			idleGates.erase(building);
-			return;
-		}
-		else
-		{
-			idleGates.emplace(building, UnitTypes::Protoss_High_Templar);
-		}
-	}
-	// If we need a Dragoon
-	if ((noZealots || Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] >= Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
-	{
-		// If we can afford a Dragoon, train
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas && supply + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
-		{
-			building->train(UnitTypes::Protoss_Dragoon);
-			idleGates.erase(building);
-			return;
-		}
-		else
-		{
-			idleGates.emplace(building, UnitTypes::Protoss_Dragoon);
-		}
-	}
-	// If we need a Zealot
-	if (!noZealots && (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] < Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] || ((Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1) || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice() + queuedGas + reservedGas)))
-	{
-		// If we can afford a Zealot, train
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + queuedMineral + reservedMineral && supply + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
-		{
-			building->train(UnitTypes::Protoss_Zealot);
-			idleGates.erase(building);
-			return;
-		}
-		else
-		{
-			idleGates.emplace(building, UnitTypes::Protoss_Zealot);
-		}
 	}
 	return;
 }
@@ -112,12 +58,12 @@ void ProductionTrackerClass::updateRobo(Unit building)
 		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
 		{
 			building->train(UnitTypes::Protoss_Observer);
-			idleBuildings.erase(building);
+			idleHighProduction.erase(building);
 			return;
 		}
 		else
 		{
-			idleBuildings.emplace(building, UnitTypes::Protoss_Observer);
+			idleHighProduction.emplace(building, UnitTypes::Protoss_Observer);
 		}
 	}
 
@@ -128,12 +74,12 @@ void ProductionTrackerClass::updateRobo(Unit building)
 		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)
 		{
 			building->train(UnitTypes::Protoss_Observer);
-			idleBuildings.erase(building);
+			idleHighProduction.erase(building);
 			return;
 		}
 		else
 		{
-			idleBuildings.emplace(building, UnitTypes::Protoss_Observer);
+			idleHighProduction.emplace(building, UnitTypes::Protoss_Observer);
 		}
 	}
 
@@ -144,11 +90,11 @@ void ProductionTrackerClass::updateRobo(Unit building)
 		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + queuedMineral)
 		{
 			building->train(UnitTypes::Protoss_Shuttle);
-			idleBuildings.erase(building);
+			idleHighProduction.erase(building);
 		}
 		else
 		{
-			idleBuildings.emplace(building, UnitTypes::Protoss_Shuttle);
+			idleHighProduction.emplace(building, UnitTypes::Protoss_Shuttle);
 		}
 	}
 
@@ -159,12 +105,12 @@ void ProductionTrackerClass::updateRobo(Unit building)
 		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + queuedGas)
 		{
 			building->train(UnitTypes::Protoss_Reaver);
-			idleBuildings.erase(building);
+			idleHighProduction.erase(building);
 			return;
 		}
 		else
 		{
-			idleBuildings.emplace(building, UnitTypes::Protoss_Reaver);
+			idleHighProduction.emplace(building, UnitTypes::Protoss_Reaver);
 		}
 	}
 }
@@ -176,17 +122,17 @@ void ProductionTrackerClass::updateStargate(Unit building)
 	int queuedGas = Buildings().getQueuedGas();
 
 	// Set as visible so it saves resources for Arbiters if we're teching to them
-	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter) < 3)
+	if ((Broodwar->self()->isUpgrading(UpgradeTypes::Khaydarin_Core) || Broodwar->self()->getUpgradeLevel(UpgradeTypes::Khaydarin_Core)) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter) < 3)
 	{
 		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Arbiter.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Arbiter.gasPrice() + queuedGas)
 		{
 			building->train(UnitTypes::Protoss_Arbiter);
-			idleBuildings.erase(building);
+			idleHighProduction.erase(building);
 			return;
 		}
 		else
 		{
-			idleBuildings.emplace(building, UnitTypes::Protoss_Arbiter);
+			idleHighProduction.emplace(building, UnitTypes::Protoss_Arbiter);
 		}
 	}
 	// Only build corsairs against Zerg
@@ -206,151 +152,234 @@ void ProductionTrackerClass::updateLuxuryTech(Unit building)
 
 void ProductionTrackerClass::updateProtoss()
 {
-	int supply = Units().getSupply();
-	int queuedMineral = Buildings().getQueuedMineral();
-	int queuedGas = Buildings().getQueuedGas();
-	if (Broodwar->enemy()->getRace() == Races::Terran)
-	{
-		noZealots = true;
+	// Specifically no Zealots early against Terran
+	if (Strategy().getNumberTerran() > 0)
+	{		
+		if (Strategy().isRush() || Broodwar->self()->isUpgrading(UpgradeTypes::Leg_Enhancements) || Broodwar->self()->getUpgradeLevel(UpgradeTypes::Leg_Enhancements))
+		{
+			noZealots = false;
+		}
+		else
+		{
+			noZealots = true;
+		}
 	}
-	if (Broodwar->getFrameCount() > 10000)
-	{
-		noZealots = false;
-	}
+	
 
+	// Gateway saturation
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)))
 	{
 		gateSat = true;
 	}
 
-	for (auto &building : Buildings().getMyBuildings())
+	// Production
+	for (auto &thisBuilding : Buildings().getMyBuildings())
 	{
-		if (building.first->isIdle())
+		BuildingInfo &building = thisBuilding.second;
+		if (building.unit() && building.unit()->isIdle())
 		{
-			if (building.second.getUnitType() == UnitTypes::Protoss_Forge)
+			// Forge
+			if (building.getType() == UnitTypes::Protoss_Forge && Units().getSupply() > 100)
 			{
-				if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Ground_Weapons.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Ground_Weapons.gasPrice() + queuedGas + reservedGas)
+				if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Ground_Weapons.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Ground_Weapons.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 				{
-					building.first->upgrade(UpgradeTypes::Protoss_Ground_Weapons);
+					building.unit()->upgrade(UpgradeTypes::Protoss_Ground_Weapons);
 				}
-				if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Ground_Armor.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Ground_Armor.gasPrice() + queuedGas + reservedGas)
+				if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Ground_Armor.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Ground_Armor.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 				{
-					building.first->upgrade(UpgradeTypes::Protoss_Ground_Armor);
+					building.unit()->upgrade(UpgradeTypes::Protoss_Ground_Armor);
 				}
-				if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Plasma_Shields.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Plasma_Shields.gasPrice() + queuedGas + reservedGas)
+				if (Broodwar->self()->minerals() >= UpgradeTypes::Protoss_Plasma_Shields.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Protoss_Plasma_Shields.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 				{
-					building.first->upgrade(UpgradeTypes::Protoss_Plasma_Shields);
+					building.unit()->upgrade(UpgradeTypes::Protoss_Plasma_Shields);
 				}
 			}
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Cybernetics_Core)
+
+			// Cybernetics Core
+			else if (building.getType() == UnitTypes::Protoss_Cybernetics_Core)
 			{
-				if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && idleGates.size() == 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon) >= 3)
+				if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) && idleLowProduction.size() == 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon) >= 3)
 				{
 					if (Broodwar->self()->minerals() >= UpgradeTypes::Singularity_Charge.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Singularity_Charge.gasPrice())
 					{
-						building.first->upgrade(UpgradeTypes::Singularity_Charge);
-						idleUpgrade.erase(building.first);
+						building.unit()->upgrade(UpgradeTypes::Singularity_Charge);
+						idleUpgrade.erase(building.unit());
 					}
 					else
 					{
-						idleUpgrade.emplace(building.first, UpgradeTypes::Singularity_Charge);
+						idleUpgrade.emplace(building.unit(), UpgradeTypes::Singularity_Charge);
 					}
 				}
 			}
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Robotics_Support_Bay)
+
+			// Robotics Support Bay
+			else if (building.getType() == UnitTypes::Protoss_Robotics_Support_Bay)
 			{
 				if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) > 2)
 				{
-					if (Broodwar->enemy()->getRace() != Races::Zerg && Broodwar->self()->minerals() >= UpgradeTypes::Scarab_Damage.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Scarab_Damage.gasPrice() + queuedGas + reservedGas)
+					if (Broodwar->enemy()->getRace() != Races::Zerg && Broodwar->self()->minerals() >= UpgradeTypes::Scarab_Damage.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Scarab_Damage.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 					{
-						building.first->upgrade(UpgradeTypes::Scarab_Damage);
+						building.unit()->upgrade(UpgradeTypes::Scarab_Damage);
 					}
 				}
 				if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Shuttle) >= 2)
 				{
-					if (Broodwar->self()->minerals() >= UpgradeTypes::Gravitic_Drive.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Gravitic_Drive.gasPrice() + queuedGas + reservedGas)
+					if (Broodwar->self()->minerals() >= UpgradeTypes::Gravitic_Drive.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Gravitic_Drive.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 					{
-						building.first->upgrade(UpgradeTypes::Gravitic_Drive);
+						building.unit()->upgrade(UpgradeTypes::Gravitic_Drive);
 					}
 				}
 			}
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Fleet_Beacon)
+
+			// Fleet Beacon
+			else if (building.getType() == UnitTypes::Protoss_Fleet_Beacon)
 			{
 				if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Carrier) > 2)
 				{
-					if (Broodwar->self()->minerals() >= UpgradeTypes::Carrier_Capacity.mineralPrice() + queuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Carrier_Capacity.gasPrice() + queuedGas + reservedGas)
+					if (Broodwar->self()->minerals() >= UpgradeTypes::Carrier_Capacity.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Carrier_Capacity.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 					{
-						building.first->upgrade(UpgradeTypes::Carrier_Capacity);
+						building.unit()->upgrade(UpgradeTypes::Carrier_Capacity);
 					}
 				}
 			}
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Citadel_of_Adun)
+
+			// Citadel Of Adun
+			else if (building.getType() == UnitTypes::Protoss_Citadel_of_Adun)
 			{
 				if (Broodwar->self()->minerals() >= UpgradeTypes::Leg_Enhancements.mineralPrice() && Broodwar->self()->gas() >= UpgradeTypes::Leg_Enhancements.gasPrice())
 				{
-					building.first->upgrade(UpgradeTypes::Leg_Enhancements);
-					idleUpgrade.erase(building.first);
+					building.unit()->upgrade(UpgradeTypes::Leg_Enhancements);
+					idleUpgrade.erase(building.unit());
 				}
 				else
 				{
-					idleUpgrade.emplace(building.first, UpgradeTypes::Leg_Enhancements);
+					idleUpgrade.emplace(building.unit(), UpgradeTypes::Leg_Enhancements);
 				}
 			}
 
-			// Production Buildings
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Gateway)
+			// Gateway
+			else if (building.getType() == UnitTypes::Protoss_Gateway)
 			{
-				updateGateway(building.first);
-			}
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Stargate)
-			{
-				updateStargate(building.first);
-			}
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Robotics_Facility)
-			{
-				updateRobo(building.first);
+				if (Broodwar->self()->hasResearched(TechTypes::Psionic_Storm) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Templar_Archives) >= 1 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar) < 5)
+				{
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_High_Templar.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_High_Templar.gasPrice() + Buildings().getQueuedGas() + reservedGas && Units().getSupply() + UnitTypes::Protoss_High_Templar.supplyRequired() <= Broodwar->self()->supplyTotal())
+					{
+						building.unit()->train(UnitTypes::Protoss_High_Templar);
+						idleHighProduction.erase(building.unit());
+					}
+					else
+					{
+						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_High_Templar);
+					}
+				}
+				if ((noZealots || Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] >= Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+				{
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + Buildings().getQueuedGas() + reservedGas && Units().getSupply() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
+					{
+						building.unit()->train(UnitTypes::Protoss_Dragoon);
+						idleLowProduction.erase(building.unit());
+					}
+					else
+					{
+						idleLowProduction.emplace(building.unit(), UnitTypes::Protoss_Dragoon);
+					}
+				}
+				if (!noZealots && (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] < Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] || ((Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1) || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice() + Buildings().getQueuedGas() + reservedGas)))
+				{
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Units().getSupply() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
+					{
+						building.unit()->train(UnitTypes::Protoss_Zealot);
+						idleLowProduction.erase(building.unit());
+					}
+					else
+					{
+						idleLowProduction.emplace(building.unit(), UnitTypes::Protoss_Zealot);
+					}
+				}
+				return;
 			}
 
-			// Tech Research
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Templar_Archives)
+			// Stargate
+			else if (building.getType() == UnitTypes::Protoss_Stargate)
 			{
-				if (!Broodwar->self()->hasResearched(TechTypes::Psionic_Storm))
+				updateStargate(building.unit());
+			}
+
+			// Robotics Facility
+			else if (building.getType() == UnitTypes::Protoss_Robotics_Facility)
+			{
+				updateRobo(building.unit());
+			}
+
+			// Templar Archives
+			else if (building.getType() == UnitTypes::Protoss_Templar_Archives)
+			{
+				if (Strategy().getNumberTerran() == 0 || (Strategy().getNumberTerran() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter) > 0))
 				{
-					if (Broodwar->self()->minerals() >= TechTypes::Psionic_Storm.mineralPrice() && Broodwar->self()->gas() >= TechTypes::Psionic_Storm.gasPrice())
+					if (!Broodwar->self()->hasResearched(TechTypes::Psionic_Storm))
 					{
-						building.first->research(TechTypes::Psionic_Storm);
-						idleTech.erase(building.first);
+						if (Broodwar->self()->minerals() >= TechTypes::Psionic_Storm.mineralPrice() && Broodwar->self()->gas() >= TechTypes::Psionic_Storm.gasPrice())
+						{
+							building.unit()->research(TechTypes::Psionic_Storm);
+							idleTech.erase(building.unit());
+						}
+						else
+						{
+							idleTech.emplace(building.unit(), TechTypes::Psionic_Storm);
+						}
 					}
-					else
+					else if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Khaydarin_Amulet) == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_High_Templar) > 2)
 					{
-						idleTech.emplace(building.first, TechTypes::Psionic_Storm);
-					}
-				}
-				else if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Khaydarin_Amulet) == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_High_Templar) > 2)
-				{
-					if (Broodwar->self()->minerals() >= UpgradeTypes::Khaydarin_Amulet.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UpgradeTypes::Khaydarin_Amulet.gasPrice())
-					{
-						building.first->upgrade(UpgradeTypes::Khaydarin_Amulet);
-						idleUpgrade.erase(building.first);
-					}
-					else
-					{
-						idleUpgrade.emplace(building.first, UpgradeTypes::Khaydarin_Amulet);
+						if (Broodwar->self()->minerals() >= UpgradeTypes::Khaydarin_Amulet.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UpgradeTypes::Khaydarin_Amulet.gasPrice())
+						{
+							building.unit()->upgrade(UpgradeTypes::Khaydarin_Amulet);
+							idleUpgrade.erase(building.unit());
+						}
+						else
+						{
+							idleUpgrade.emplace(building.unit(), UpgradeTypes::Khaydarin_Amulet);
+						}
 					}
 				}
 			}
-			else if (building.second.getUnitType() == UnitTypes::Protoss_Arbiter_Tribunal)
+
+			// Arbiter Tribunal
+			else if (building.getType() == UnitTypes::Protoss_Arbiter_Tribunal)
 			{
-				if (!Broodwar->self()->hasResearched(TechTypes::Stasis_Field))
+				if (!Broodwar->self()->getUpgradeLevel(UpgradeTypes::Khaydarin_Core))
 				{
-					if (Broodwar->self()->minerals() >= TechTypes::Stasis_Field.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= TechTypes::Stasis_Field.gasPrice() + queuedGas)
+					if (Broodwar->self()->minerals() >= UpgradeTypes::Khaydarin_Core.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UpgradeTypes::Khaydarin_Core.gasPrice() + Buildings().getQueuedGas())
 					{
-						building.first->research(TechTypes::Stasis_Field);
-						idleTech.erase(building.first);
+						building.unit()->upgrade(UpgradeTypes::Khaydarin_Core);
+						idleUpgrade.erase(building.unit());
 					}
 					else
 					{
-						idleTech.emplace(building.first, TechTypes::Stasis_Field);
+						idleUpgrade.emplace(building.unit(), UpgradeTypes::Khaydarin_Core);
+					}
+				}
+				else if (!Broodwar->self()->hasResearched(TechTypes::Recall))
+				{
+					if (Broodwar->self()->minerals() >= TechTypes::Recall.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= TechTypes::Recall.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->research(TechTypes::Recall);
+						idleTech.erase(building.unit());
+					}
+					else
+					{
+						idleTech.emplace(building.unit(), TechTypes::Recall);
+					}
+				}
+				else if (!Broodwar->self()->hasResearched(TechTypes::Stasis_Field))
+				{					
+					if (Broodwar->self()->minerals() >= TechTypes::Stasis_Field.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= TechTypes::Stasis_Field.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->research(TechTypes::Stasis_Field);
+						idleTech.erase(building.unit());
+					}
+					else
+					{
+						idleTech.emplace(building.unit(), TechTypes::Stasis_Field);
 					}
 				}
 			}
@@ -361,60 +390,116 @@ void ProductionTrackerClass::updateProtoss()
 
 void ProductionTrackerClass::updateTerran()
 {
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Barracks) >= (3 * Broodwar->self()->visibleUnitCount(UnitTypes::Terran_Command_Center)))
+	{
+		barracksSat = true;
+	}
+
 	for (auto &building : Buildings().getMyBuildings())
 	{
-		if (building.second.getUnitType() == UnitTypes::Terran_Barracks && building.first->isIdle())
+		if (building.second.unit() && building.second.unit()->isIdle() && building.second.unit()->isCompleted())
 		{
-			if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) == 0 && Broodwar->self()->minerals() >= UnitTypes::Terran_Marine.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral)
+
+			// Barracks
+			if (building.second.getType() == UnitTypes::Terran_Barracks)
 			{
-				building.first->train(UnitTypes::Terran_Marine);
-			}
-			else if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) > 0)
-			{
-				if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Medic) < 6 && Broodwar->self()->minerals() >= UnitTypes::Terran_Medic.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Terran_Medic.gasPrice() + Buildings().getQueuedGas() + reservedGas)
+				if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Medic) < 6 && Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) >= 1)
 				{
-					building.first->train(UnitTypes::Terran_Medic);
-				}				
-				else if (Broodwar->self()->minerals() >= UnitTypes::Terran_Marine.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral)
-				{
-					building.first->train(UnitTypes::Terran_Marine);
-				}
-			}
-		}
-		if (building.second.getUnitType() == UnitTypes::Terran_Academy && building.first->isIdle())
-		{
-			if (!Broodwar->self()->hasResearched(TechTypes::Stim_Packs) && Broodwar->self()->minerals() >= TechTypes::Stim_Packs.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= TechTypes::Stim_Packs.gasPrice() + Buildings().getQueuedGas())
-			{
-				building.first->research(TechTypes::Stim_Packs);
-				idleTech.erase(building.first);
-			}
-			else
-			{
-				idleTech.emplace(building.first, TechTypes::Stim_Packs);
-			}
-			if (Broodwar->self()->hasResearched(TechTypes::Stim_Packs) && !Broodwar->self()->getUpgradeLevel(UpgradeTypes::U_238_Shells) && Broodwar->self()->minerals() >= UpgradeTypes::U_238_Shells.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::U_238_Shells.gasPrice() + Buildings().getQueuedGas() + reservedGas)
-			{
-				building.first->upgrade(UpgradeTypes::U_238_Shells);
-			}
-		}
-		if (building.second.getUnitType() == UnitTypes::Terran_Engineering_Bay && building.first->isIdle())
-		{
-			if (Broodwar->self()->minerals() >= UpgradeTypes::Terran_Infantry_Armor.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UpgradeTypes::Terran_Infantry_Armor.gasPrice() + Buildings().getQueuedGas())
-			{
-				if (Broodwar->enemy()->getRace() == Races::Zerg)
-				{
-					building.first->upgrade(UpgradeTypes::Terran_Infantry_Armor);
+					if (Broodwar->self()->minerals() >= UnitTypes::Terran_Medic.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Terran_Medic.gasPrice() + Buildings().getQueuedGas() + reservedGas)
+					{
+						building.first->train(UnitTypes::Terran_Medic);
+					}
+					else
+					{
+						idleLowProduction.emplace(building.first, UnitTypes::Terran_Medic);
+					}
 				}
 				else
 				{
-					building.first->upgrade(UpgradeTypes::Terran_Infantry_Weapons);
+					if (Broodwar->self()->minerals() >= UnitTypes::Terran_Marine.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral)
+					{
+						building.first->train(UnitTypes::Terran_Marine);
+					}
+					else
+					{
+						idleLowProduction.emplace(building.first, UnitTypes::Terran_Marine);
+					}
 				}
-				idleUpgrade.erase(building.first);				
 			}
-			else
+
+			// Academy
+			if (building.second.getType() == UnitTypes::Terran_Academy)
 			{
-				idleUpgrade.emplace(building.first, UpgradeTypes::Terran_Infantry_Armor);
+				if (!Broodwar->self()->hasResearched(TechTypes::Stim_Packs) && Broodwar->self()->minerals() >= TechTypes::Stim_Packs.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= TechTypes::Stim_Packs.gasPrice() + Buildings().getQueuedGas())
+				{
+					building.first->research(TechTypes::Stim_Packs);
+				}
+				else
+				{
+					idleTech.emplace(building.first, TechTypes::Stim_Packs);
+				}
+				if (Broodwar->self()->hasResearched(TechTypes::Stim_Packs) && !Broodwar->self()->getUpgradeLevel(UpgradeTypes::U_238_Shells) && Broodwar->self()->minerals() >= UpgradeTypes::U_238_Shells.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::U_238_Shells.gasPrice() + Buildings().getQueuedGas() + reservedGas)
+				{
+					building.first->upgrade(UpgradeTypes::U_238_Shells);
+				}
 			}
+
+			// Engineering Bay
+			if (building.second.getType() == UnitTypes::Terran_Engineering_Bay)
+			{
+				if (Broodwar->self()->minerals() >= UpgradeTypes::Terran_Infantry_Armor.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UpgradeTypes::Terran_Infantry_Armor.gasPrice() + Buildings().getQueuedGas())
+				{
+					if (Broodwar->enemy()->getRace() == Races::Zerg)
+					{
+						building.first->upgrade(UpgradeTypes::Terran_Infantry_Armor);
+					}
+					else
+					{
+						building.first->upgrade(UpgradeTypes::Terran_Infantry_Weapons);
+					}
+				}
+				else
+				{
+					idleUpgrade.emplace(building.first, UpgradeTypes::Terran_Infantry_Armor);
+				}
+			}
+
+			// Factory
+			if (building.second.getType() == UnitTypes::Terran_Factory)
+			{
+				if (!building.second.unit()->getAddon())
+				{
+					building.second.unit()->buildAddon(UnitTypes::Terran_Machine_Shop);
+				}
+				else if (Broodwar->self()->minerals() >= UnitTypes::Terran_Siege_Tank_Tank_Mode.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Terran_Siege_Tank_Tank_Mode.gasPrice() + Buildings().getQueuedGas())
+				{
+					building.second.unit()->train(UnitTypes::Terran_Siege_Tank_Tank_Mode);
+				}
+				else
+				{
+					idleHighProduction.emplace(building.first, UnitTypes::Terran_Siege_Tank_Tank_Mode);
+				}
+			}
+
+			// Machine Shop
+			if (building.second.getType() == UnitTypes::Terran_Machine_Shop)
+			{
+				if (!Broodwar->self()->hasResearched(TechTypes::Tank_Siege_Mode))
+				{
+					building.second.unit()->research(TechTypes::Tank_Siege_Mode);
+				}
+				else
+				{
+					idleTech.emplace(building.second.unit(), TechTypes::Tank_Siege_Mode);
+				}
+			}
+		}
+		else
+		{
+			idleLowProduction.erase(building.second.unit());
+			idleHighProduction.erase(building.second.unit());
+			idleTech.erase(building.second.unit());
+			idleUpgrade.erase(building.second.unit());
 		}
 	}
 }

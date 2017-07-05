@@ -20,7 +20,7 @@ public:
 	int getEnergy() { return energy; }
 	bool isIdle() { return idleStatus; }
 	Unit unit() { return thisUnit; }
-	UnitType getUnitType() { return unitType; }
+	UnitType getType() { return unitType; }
 	UnitType getNextUnit() { return nextUnit; }
 	Position getPosition() { return position; }
 	WalkPosition getWalkPosition() { return walkPosition; }

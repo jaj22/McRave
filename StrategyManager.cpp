@@ -4,11 +4,11 @@ void StrategyTrackerClass::update()
 {
 	clock_t myClock;
 	double duration = 0.0;
-	myClock = clock();	
+	myClock = clock();
 
 	updateAlly();
 	updateEnemy();
-	updateComposition();
+	updateSituationalBehaviour();
 
 	duration = 1000.0 * double(clock() - myClock) / (double)CLOCKS_PER_SEC;
 	//Broodwar->drawTextScreen(200, 70, "Strategy Manager: %d ms", duration);
@@ -17,13 +17,16 @@ void StrategyTrackerClass::update()
 void StrategyTrackerClass::updateAlly()
 {
 	// Reset
+	globalEnemyStrength = 0.0;
 	globalAllyStrength = 0.0;
+	allyDefense = 0.0;
+	enemyDefense = 0.0;
 
 	// Check through all alive units or units dead within 500 frames
 	for (auto &u : Units().getMyUnits())
 	{
 		// If deadframe is 0, unit is alive still
-		if (u.second.getDeadFrame() == 0)
+		if (u.second.unit() && u.second.getDeadFrame() == 0)
 		{
 			// Strength based calculations ignore workers and buildings
 			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
@@ -34,13 +37,17 @@ void StrategyTrackerClass::updateAlly()
 				// Set last command frame
 				if (u.first->isAttackFrame())
 				{
-					u.second.setLastAttackFrame(Broodwar->getFrameCount());				
+					u.second.setLastAttackFrame(Broodwar->getFrameCount());
 				}
+			}
+			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
+			{
+				allyDefense += u.second.getStrength();
 			}
 		}
 		else
 		{
-			globalEnemyStrength += u.second.getMaxStrength() * 0.5 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			globalAllyStrength += u.second.getMaxStrength() * 0.5 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 		}
 	}
 }
@@ -48,7 +55,6 @@ void StrategyTrackerClass::updateAlly()
 void StrategyTrackerClass::updateEnemy()
 {
 	// Reset	
-	globalEnemyStrength = 0.0;
 	eZerg = 0;
 	eProtoss = 0;
 	eTerran = 0;
@@ -58,7 +64,6 @@ void StrategyTrackerClass::updateEnemy()
 	{
 		if (player->getRace() == Races::Zerg)
 		{
-			fastExpand = true;
 			eZerg++;
 		}
 		else if (player->getRace() == Races::Protoss)
@@ -84,11 +89,17 @@ void StrategyTrackerClass::updateEnemy()
 		{
 			if (Workers().isScouting())
 			{
-				if (eTerran > 0 && u.second.getPosition().getDistance(getNearestChokepoint(u.second.getPosition())->getCenter()) < 256)
+				if (eTerran > 0 && theMap.GetArea(u.second.getTilePosition()))
 				{
-					walledOff = true;
+					for (auto &choke : theMap.GetArea(u.second.getTilePosition())->ChokePoints())
+					{
+						if (Position(choke->Center()).getDistance(u.second.getPosition()) < 256)
+						{
+							walledOff = true;
+						}
+					}
 				}
-			}		
+			}
 
 			enemyComposition[u.second.getType()] += 1;
 
@@ -99,55 +110,56 @@ void StrategyTrackerClass::updateEnemy()
 			}
 
 			// Strength based calculations ignore workers and buildings
-			if (!u.second.getType().isBuilding() && !u.second.getType().isWorker())
+			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
 				// Add strength				
 				globalEnemyStrength += u.second.getStrength();
-			}			
+			}
+			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
+			{
+				enemyDefense += u.second.getStrength();
+			}
 		}
 
 		// If unit is dead
 		else if (u.second.getDeadFrame() != 0)
 		{
 			// Add a portion of the strength to ally strength
-			globalAllyStrength += u.second.getMaxStrength() * 1 / (1.0 + 0.01*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			globalAllyStrength += u.second.getMaxStrength() * 1 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 		}
 	}
 }
 
-void StrategyTrackerClass::updateComposition()
+void StrategyTrackerClass::updateSituationalBehaviour()
 {
-	int offset = 0;
 	// Reset unit score
 	for (auto &unit : unitScore)
 	{
 		unit.second = 0;
+	}		
+
+	// Invisible unit detection
+	if (enemyComposition[UnitTypes::Protoss_Dark_Templar] > 0 || enemyComposition[UnitTypes::Protoss_Citadel_of_Adun] > 0 || enemyComposition[UnitTypes::Protoss_Templar_Archives] > 0 || enemyComposition[UnitTypes::Terran_Wraith] > 0 || enemyComposition[UnitTypes::Terran_Ghost] > 0 || enemyComposition[UnitTypes::Zerg_Lurker] > 0)
+	{
+		invis = true;
 	}
 
-	// Check if our supply is high enough to hold the ramp or the minerals
+	// Specific behaviours
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		if ((Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3) || (Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
-		{
-			holdRamp = true;
-		}
-		else
-		{
-			holdRamp = false;
-		}
+		protossStrategy();
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) < 1)
-		{
-			holdRamp = false;
-		}
-		else
-		{
-			holdRamp = true;
-		}
+		terranStrategy();
+	}
+	else if (Broodwar->self()->getRace() == Races::Zerg)
+	{
+		zergStrategy();
 	}
 
+	// Enemy composition
+	int offset = 0;
 	for (auto &t : enemyComposition)
 	{
 		// For each type, add a score to production based on the unit count divided by our current unit count
@@ -157,47 +169,87 @@ void StrategyTrackerClass::updateComposition()
 			Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
 			offset = offset + 10;
 		}
+		t.second = 0;
+	}
+}
 
-		// If a possible invis unit exists, we can get Observers first
-		if (t.first == UnitTypes::Protoss_Dark_Templar || t.first == UnitTypes::Protoss_Citadel_of_Adun || t.first == UnitTypes::Protoss_Templar_Archives || t.first == UnitTypes::Terran_Wraith || t.first == UnitTypes::Terran_Ghost || t.first == UnitTypes::Zerg_Lurker)
+void StrategyTrackerClass::protossStrategy()
+{
+	// Ramp holding logic
+	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2 && (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3) || (Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
+	{
+		holdRamp = true;
+	}
+	else
+	{
+		holdRamp = false;
+	}
+
+	// If it's early on and we're being rushed
+	if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
+	{
+		if (eProtoss > 0 && (enemyComposition[UnitTypes::Protoss_Gateway] >= 2 || enemyComposition[UnitTypes::Protoss_Gateway] == 0) && enemyComposition[UnitTypes::Protoss_Assimilator] == 0 && Terrain().getEnemyBasePositions().size() > 0)
 		{
-			invis = true;
+			rush = true;
 		}
 
-		// Check for early rushes before we get goon range
-		if (Broodwar->self()->getRace() == Races::Protoss && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
+		// If we are being 4/5 pooled, make a shield battery
+		else if (eZerg > 0 && enemyComposition[UnitTypes::Zerg_Zergling] >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
 		{
-			// If we are being 2 gate rushed or proxy rushed, make a shield battery
-			if (Workers().isScouting() && t.first == UnitTypes::Protoss_Gateway && (t.second >= 2 || t.second == 0) && enemyComposition.find(UnitTypes::Protoss_Assimilator) == enemyComposition.end() && Terrain().getEnemyBasePositions().size() > 0)
-			{
-				rush = true;
-			}
+			rush = true;
+		}
 
-			// If we are being 4/5 pooled, make a shield battery
-			if (Workers().isScouting() && t.first == UnitTypes::Zerg_Zergling && t.second >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
-			{
-				rush = true;
-			}
+		// If we are being BBS'd
+		else if (eTerran > 0 && enemyComposition[UnitTypes::Terran_Barracks] == 0 && enemyComposition[UnitTypes::Terran_Command_Center] > 0)
+		{
+			rush = true;
 		}
 		else
 		{
 			rush = false;
 		}
+	}
+	else
+	{
+		rush = false;
+	}
 
-		// Force expand based on enemy composition
-		if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2 && Broodwar->getFrameCount() < 10000)
+	// Forge fast expand Logic
+	if (eZerg > 0)
+	{
+		//fastExpand = true; -- removed FFE for now
+	}
+
+	// Fast expand logic
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) < 2)
+	{
+		if (enemyComposition[UnitTypes::Terran_Bunker] > 0 || enemyComposition[UnitTypes::Protoss_Photon_Cannon] >= 2)
 		{
-			if (t.first == UnitTypes::Terran_Bunker || (t.first == UnitTypes::Protoss_Photon_Cannon && t.second >= 2))
-			{
-				fastExpand = true;
-			}
+			fastExpand = true;
 		}
 		else
-		{		
+		{
 			fastExpand = false;
 		}
-		t.second = 0;
 	}
+}
+
+void StrategyTrackerClass::terranStrategy()
+{
+	// Ramp holding logic
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) < 1)
+	{
+		holdRamp = false;
+	}
+	else
+	{
+		holdRamp = true;
+	}
+}
+
+void StrategyTrackerClass::zergStrategy()
+{
+
 }
 
 void StrategyTrackerClass::updateUnitScore(UnitType unit, int count)

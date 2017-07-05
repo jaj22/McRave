@@ -19,9 +19,13 @@ public:
 	bool isLateBuild() { return getLateBuild; }
 
 	void update();
+	void updateBuildDecision();
 	void updateBaseBuild();
-	void updateBuildStage();
 	void updateSituationalBuild();
+
+	void protossSituational();
+	void terranSituational();
+	void zergSituational();
 
 	void earlyBuilds();
 	void midBuilds();

@@ -17,6 +17,7 @@ UnitInfo::UnitInfo()
 	position = Positions::None;
 	targetPosition = Positions::None;
 	walkPosition = WalkPositions::None;
+	thisUnit = nullptr;
 	target = nullptr;
 	unitType = UnitTypes::Enum::None;
 	command = UnitCommandTypes::None;	

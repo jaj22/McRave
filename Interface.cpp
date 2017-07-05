@@ -22,7 +22,7 @@ void InterfaceTrackerClass::update()
 	//Broodwar->drawTextScreen(200, 10, "%d", Broodwar->getFrameCount());
 
 	// Display global strength calculations	
-	//Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Strategy().globalAlly(), Strategy().globalEnemy());
+	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Strategy().globalAlly(), Strategy().globalEnemy());
 
 	// Display remaining minerals on each mineral patch that is near our Nexus
 	/*for (auto &r : Resources().getMyMinerals())

@@ -10,6 +10,7 @@ class StrategyTrackerClass
 	map <UnitType, int> enemyComposition;
 	map <UnitType, double> unitScore;
 	double globalAllyStrength, globalEnemyStrength;
+	double allyDefense, enemyDefense;
 	int eZerg, eProtoss, eTerran;
 	bool fastExpand = false;
 	bool invis = false;
@@ -34,8 +35,15 @@ public:
 	void update();
 	void updateAlly();
 	void updateEnemy();
-	void updateComposition();
+	void updateSituationalBehaviour();
 	void updateUnitScore(UnitType, int);	
+
+	void protossStrategy();
+	void terranStrategy();
+	void zergStrategy();
+
+	void increaseGlobalAlly(int increase) { globalAllyStrength += increase; }
+	void increaseGlobalEnemy(int increase) { globalEnemyStrength += increase; }
 };
 
 typedef Singleton<StrategyTrackerClass> StrategyTracker;

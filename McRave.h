@@ -11,8 +11,9 @@ using namespace std;
 // Include standard libraries that are needed
 #include <Windows.h>
 #include <set>
-#include <BWTA.h>
 #include <ctime>
+
+class UnitInfo;
 
 // Include other source files
 #include "BuildingManager.h"
@@ -32,6 +33,8 @@ using namespace std;
 #include "TransportManager.h"
 #include "UnitManager.h"
 #include "Util.h"
+
+
 
 // Namespace to access all trackers globally
 namespace McRave

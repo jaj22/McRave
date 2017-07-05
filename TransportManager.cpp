@@ -148,6 +148,11 @@ void TransportTrackerClass::updateMovement(TransportInfo& shuttle)
 				continue;
 			}
 
+			if (Grids().getEAirDistanceGrid(WalkPosition(x, y)) > 0)
+			{
+				continue;
+			}
+
 			// If trying to unload, must find a walkable tile
 			if (shuttle.getLoadState() == 2 && Grids().getMobilityGrid(x, y) == 0)
 			{

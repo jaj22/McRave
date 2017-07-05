@@ -56,7 +56,7 @@ void ResourceTrackerClass::update()
 			g.second.setUnitType(g.first->getType());
 			g.second.setRemainingResources(g.first->getResources());			
 		}
-		if (g.second.getGathererCount() < 3 && g.second.getUnitType() != UnitTypes::Resource_Vespene_Geyser)
+		if (g.second.getGathererCount() < 3 && g.second.getType() != UnitTypes::Resource_Vespene_Geyser)
 		{
 			gasNeeded = 3 - g.second.getGathererCount();
 			gasSat = false;

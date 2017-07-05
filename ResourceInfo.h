@@ -1,9 +1,7 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
 
 class ResourceInfo
@@ -15,7 +13,6 @@ private:
 	Position position;
 	TilePosition tilePosition;
 	WalkPosition walkPosition;	
-	BWTA::Region* resourceRegion;
 public:
 	ResourceInfo();
 	~ResourceInfo();
@@ -25,12 +22,11 @@ public:
 
 	Unit unit() { return storedUnit; }
 	Unit getClosestBase() { return base; }
-	UnitType getUnitType() { return unitType; }
+	UnitType getType() { return unitType; }
 
 	Position getPosition() { return position; }
 	WalkPosition getWalkPosition() { return walkPosition; }
 	TilePosition getTilePosition() { return tilePosition; }
-	BWTA::Region* getRegion() { return resourceRegion; }
 
 	void setGathererCount(int newGathererCount) { gathererCount = newGathererCount; }
 	void setRemainingResources(int newRemainingResources) { remainingResources = newRemainingResources; }

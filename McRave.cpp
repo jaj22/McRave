@@ -7,20 +7,17 @@
 #include "McRave.h"
 
 // --- AUTHOR NOTES ---
-// DISABLED CURRENTLY: Cannons
 // Critical TODOS:
-// Add getCenter() to UnitInfo?
-// Store neutral units and buildings
+// Improve FFE functionality (store FFE position)
+// Secondary scout, see what sort of tech we are against
 
 // Other TODOS:
-// Pull probes against 4/5 pool with FFE
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
 
 // Testing:
 // Spider mine removal from expansions - Testing 2.0
-// Reavers flee into shuttles
 
 // Possibility:
 // 3 base carrier against iron?
@@ -43,15 +40,6 @@ void McRaveModule::onStart()
 	theMap.EnableAutomaticPathAnalysis();
 	bool startingLocationsOK = theMap.FindBasesForStartingLocations();
 	assert(startingLocationsOK);
-
-	BWEM::utils::MapPrinter::Initialize(&theMap);
-	BWEM::utils::printMap(theMap);      // will print the map into the file <StarCraftFolder>bwapi-data/map.bmp
-	BWEM::utils::pathExample(theMap);   // add to the printed map a path between two starting locations
-
-	/*if (!Terrain().isBWTAdone()) {
-		CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)AnalyzeThread, NULL, 0, NULL);
-	}*/
-	readMap();
 }
 
 void McRaveModule::onEnd(bool isWinner)

@@ -1,10 +1,8 @@
 #pragma once
 #include <BWAPI.h>
-#include <BWTA.h>
 #include "Singleton.h"
 
 using namespace BWAPI;
-using namespace BWTA;
 using namespace std;
 
 class BaseInfo{
@@ -14,18 +12,16 @@ class BaseInfo{
 	Position position;
 	WalkPosition walkPosition;
 	TilePosition resourcesPosition, tilePosition;
-	BWTA::Region* region;
 public:
 	BaseInfo();	
 
 	int getDefenseCount() { return defenseCount; }
 	Unit unit() { return thisUnit; }
-	UnitType getUnitType() { return unitType; }
+	UnitType getType() { return unitType; }
 	Position getPosition() { return position; }
 	WalkPosition getWalkPosition() { return walkPosition; }
 	TilePosition getTilePosition() { return tilePosition; }
 	TilePosition getResourcesPosition() { return resourcesPosition; }	
-	BWTA::Region* getRegion() { return region; }
 
 	void setDefenseCount(int newCount) { defenseCount = newCount; }
 	void setUnitType(UnitType newType) { unitType = newType; }
@@ -34,5 +30,4 @@ public:
 	void setWalkPosition(WalkPosition newPosition) { walkPosition = newPosition; }
 	void setTilePosition(TilePosition newPosition) { tilePosition = newPosition; }
 	void setResourcesPosition(TilePosition newPosition) { resourcesPosition = newPosition; }	
-	void setRegion(BWTA::Region* newRegion) { region = newRegion; }
 };

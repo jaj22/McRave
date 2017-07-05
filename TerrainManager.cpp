@@ -6,9 +6,7 @@ void TerrainTrackerClass::update()
 	double duration = 0.0;
 	myClock = clock();
 
-	// Create island regions and natural expansion
-	TilePosition natural;
-	double closest = 0.0;
+	// Create island regions and natural expansion	
 	for (auto &area : theMap.Areas())
 	{
 		for (auto &base : area.Bases())
@@ -24,7 +22,7 @@ void TerrainTrackerClass::update()
 		}
 	}
 
-	// Start location and path
+	// Start location
 	playerStartingTilePosition = Broodwar->self()->getStartLocation();
 	playerStartingPosition = Position(playerStartingTilePosition);
 
@@ -58,33 +56,98 @@ void TerrainTrackerClass::update()
 
 	for (auto &base : Bases().getMyBases())
 	{
-		allyTerritory.emplace(theMap.GetArea(base.second.getTilePosition())->Id());
+		if (base.second.getTilePosition().isValid() && theMap.GetArea(base.second.getTilePosition()))
+		{
+			allyTerritory.emplace(theMap.GetArea(base.second.getTilePosition())->Id());
+		}
 	}
 
 	for (auto &base : enemyBasePositions)
-	{		
-		if (Broodwar->isVisible(TilePosition(base)) && Broodwar->getUnitsInRadius(base, 128, Filter::IsEnemy).size() == 0)
+	{
+		if (base.isValid() && Broodwar->isVisible(TilePosition(base)) && Broodwar->getUnitsInRadius(base, 128, Filter::IsEnemy).size() == 0)
 		{
-			enemyBasePositions.erase(find(enemyBasePositions.begin(), enemyBasePositions.end(), base));
+			enemyBasePositions.erase(base);
 			break;
 		}
+	}
+
+	// Establish FFE position
+	if (Broodwar->getFrameCount() > 100)
+	{
+		int x = 0;
+		int y = 0;
+		const Area* closestA;
+		double closestD = 0.0;
+		TilePosition closestP;
+		for (auto &area : theMap.Areas())
+		{
+			for (auto &base : area.Bases())
+			{
+				if (base.Geysers().size() == 0 || area.AccessibleNeighbours().size() == 0)
+				{
+					continue;
+				}
+				if (Grids().getDistanceHome(WalkPosition(base.Location())) > 50 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
+				{
+					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
+					closestA = base.GetArea();
+				}
+			}
+		}
+		if (closestA)
+		{
+			for (auto &choke : closestA->ChokePoints())
+			{
+				x += Position(choke->Center()).x;
+				y += Position(choke->Center()).y;
+
+			}
+			x += closestP.x;
+			y += closestP.y;
+
+			x = x / closestA->ChokePoints().size();
+			y = y / closestA->ChokePoints().size();
+			FFEPosition = TilePosition(Position(x, y));
+		}
+	}
+
+	// Draw path for debugging
+	for (auto &choke : path)
+	{
+		Broodwar->drawCircleMap(Position(choke->Center()), 32, Colors::Red);
 	}
 
 	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
 	//Broodwar->drawTextScreen(200, 80, "Terrain Manager: %d ms", duration);
 }
 
+bool TerrainTrackerClass::isInAllyTerritory(Unit unit)
+{
+	if (unit && unit->exists() && unit->getTilePosition().isValid() && theMap.GetArea(unit->getTilePosition()))
+	{
+		if (allyTerritory.find(theMap.GetArea(unit->getTilePosition())->Id()) != allyTerritory.end())
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
 void TerrainTrackerClass::removeTerritory(Unit base)
 {
-	if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
+	if (base)
 	{
-		enemyBasePositions.erase(base->getPosition());
-	}
-	if (theMap.GetArea(base->getTilePosition()))
-	{
-		if (allyTerritory.find(theMap.GetArea(base->getTilePosition())->Id()) != allyTerritory.end())
+		if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
 		{
-			allyTerritory.erase(theMap.GetArea(base->getTilePosition())->Id());
+			enemyBasePositions.erase(base->getPosition());
+
+			if (theMap.GetArea(base->getTilePosition()))
+			{
+				if (allyTerritory.find(theMap.GetArea(base->getTilePosition())->Id()) != allyTerritory.end())
+				{
+					allyTerritory.erase(theMap.GetArea(base->getTilePosition())->Id());
+				}
+			}
 		}
 	}
 }

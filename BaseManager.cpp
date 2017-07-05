@@ -24,8 +24,7 @@ void BaseTrackerClass::storeBase(Unit base)
 	}	
 
 	if (Grids().isAnalyzed())
-	{
-		myBases[base].setRegion(getRegion(myBases[base].getTilePosition()));	
+	{		
 		myOrderedBases[base->getPosition().getDistance(Terrain().getPlayerStartingPosition())] = base->getTilePosition();
 	}	
 	return;
@@ -44,11 +43,11 @@ void BaseTrackerClass::trainWorkers(BaseInfo& base)
 {
 	if (base.unit() && (!Resources().isMinSaturated() || !Resources().isGasSaturated()) && base.unit()->isIdle())
 	{
-		if (base.getUnitType() == UnitTypes::Protoss_Nexus && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+		if (base.getType() == UnitTypes::Protoss_Nexus && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
 		{
 			base.unit()->train(UnitTypes::Protoss_Probe);
 		}
-		else if (base.getUnitType() == UnitTypes::Terran_Command_Center && Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Terran_SCV.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+		else if (base.getType() == UnitTypes::Terran_Command_Center && Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Terran_SCV.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
 		{
 			base.unit()->train(UnitTypes::Terran_SCV);
 		}

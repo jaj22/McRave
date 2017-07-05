@@ -9,14 +9,12 @@ class CommandTrackerClass
 {
 public:
 	void update();
-	void getDecision(Unit, Unit);
-	void defend(Unit, Unit);
-	void attackMove(Unit, Unit);
-
-	void unitGetLocalStrategy(Unit, Unit);
-	void microTarget(Unit, Unit);
-	void exploreArea(Unit);
-	void fleeTarget(Unit, Unit);
+	void getDecision(UnitInfo&);
+	void defend(UnitInfo&);
+	void attackMove(UnitInfo&);	
+	void microTarget(UnitInfo&);
+	void exploreArea(UnitInfo&);
+	void fleeTarget(UnitInfo&);
 };
 
 typedef Singleton<CommandTrackerClass> CommandTracker;

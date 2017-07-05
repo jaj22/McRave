@@ -8,5 +8,4 @@ BaseInfo::BaseInfo()
 	position = Positions::None;
 	resourcesPosition = TilePositions::None;
 	tilePosition = TilePositions::None;
-	region = nullptr;
 }

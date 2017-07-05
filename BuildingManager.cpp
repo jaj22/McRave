@@ -11,24 +11,8 @@ void BuildingTrackerClass::update()
 
 	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
 	//Broodwar->drawTextScreen(200, 0, "Building Manager: %d ms", duration);
+	return;
 
-	int closestD = 0;
-	TilePosition closestP;
-	if (Strategy().isFastExpand())
-	{
-		for (auto &area : theMap.Areas())
-		{
-			for (auto &base : area.Bases())
-			{
-				if (Grids().getDistanceHome(WalkPosition(base.Location())) > 50 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
-				{
-					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
-					closestP = base.Location();
-				}
-			}
-		}	
-		Broodwar->drawCircleMap(Position(closestP), 32, Colors::Red);
-	}
 }
 
 void BuildingTrackerClass::queueBuildings()
@@ -48,6 +32,7 @@ void BuildingTrackerClass::queueBuildings()
 				// Queue at this building type a pair of building placement and builder		
 				Workers().getMyWorkers()[builder].setBuildingType(b.first);
 				Workers().getMyWorkers()[builder].setBuildPosition(here);
+				Grids().updateReservedLocation(b.first, here);
 			}
 		}
 	}
@@ -67,12 +52,12 @@ void BuildingTrackerClass::constructBuildings()
 		{
 			buildingsQueued[worker.second.getBuildingType()] += 1;
 			queuedMineral = queuedMineral + worker.second.getBuildingType().mineralPrice();
-			queuedGas = queuedGas + worker.second.getBuildingType().gasPrice();
+			queuedGas = queuedGas + worker.second.getBuildingType().gasPrice();			
 		}
 	}
 	for (auto &building : myBuildings)
 	{
-		if (building.second.getUnitType().getRace() == Races::Terran && !building.first->isCompleted() && !building.first->getBuildUnit())
+		if (building.second.getType().getRace() == Races::Terran && !building.first->isCompleted() && !building.first->getBuildUnit())
 		{
 			Unit builder = Workers().getClosestWorker(building.second.getPosition());
 			if (builder)
@@ -94,8 +79,24 @@ void BuildingTrackerClass::storeBuilding(Unit building)
 		myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
 		myBuildings[building].setTilePosition(building->getTilePosition());
 	}
+	
 	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBuildings[building].setEnergy(building->getEnergy());
+}
+
+void BuildingTrackerClass::storeBattery(Unit building)
+{
+	if (building->getType() == UnitTypes::Protoss_Shield_Battery)
+	{
+		myBatteries[building].setUnit(building);
+		myBatteries[building].setUnitType(building->getType());
+		myBatteries[building].setPosition(building->getPosition());
+		myBatteries[building].setWalkPosition(Util().getWalkPosition(building));
+		myBatteries[building].setTilePosition(building->getTilePosition());
+	}
+
+	myBatteries[building].setIdleStatus(building->getRemainingTrainTime() == 0);
+	myBatteries[building].setEnergy(building->getEnergy());
 }
 
 void BuildingTrackerClass::removeBuilding(Unit building)
@@ -115,15 +116,9 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 
 	// Searches in a spiral around the specified tile position
 	while (length < 200)
-	{
-		//
-		if (Strategy().isFastExpand() && Grids().getDistanceHome(WalkPosition(TilePosition(x, y))) < Grids().getDistanceHome(WalkPosition(buildTilePosition)))
-		{
-
-		}
-
+	{		
 		// If we can build here, return this tile position		
-		else if (TilePosition(x, y).isValid() && Util().canBuildHere(building, TilePosition(x, y), ignoreCond))
+		if (TilePosition(x, y).isValid() && canBuildHere(building, TilePosition(x, y), ignoreCond))
 		{
 			return TilePosition(x, y);
 		}
@@ -150,7 +145,11 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 			}
 		}
 	}
-	Broodwar << "Out of tiles" << endl;
+	if (Broodwar->getFrameCount() - errorTime > 500)
+	{
+		Broodwar << "Issues placing: " << building.c_str() << endl;
+		errorTime = Broodwar->getFrameCount();
+	}
 	return TilePositions::None;
 }
 
@@ -165,6 +164,10 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		{
 			for (auto &base : area.Bases())
 			{
+				if ((Strategy().isFastExpand() && base.Geysers().size() == 0) || area.AccessibleNeighbours().size() == 0)
+				{
+					continue;
+				}
 				if (Grids().getReserveGrid(base.Location()) == 0 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
 				{
 					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
@@ -174,26 +177,11 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 		return closestP;
 	}
-
+	
 	// If we are fast expanding
 	if (Strategy().isFastExpand())
 	{
-		for (auto &area : theMap.Areas())
-		{
-			for (auto &base : area.Bases())
-			{
-				if (base.Geysers().size() == 0)
-				{
-					continue;
-				}
-				if (Grids().getDistanceHome(WalkPosition(base.Location())) > 50 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
-				{
-					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
-					closestP = base.Location();
-				}
-			}
-		}
-		return getBuildLocationNear(building, closestP);
+		return getBuildLocationNear(building, Terrain().getFFEPosition());
 	}
 
 	// For each base, check if there's a Pylon or Cannon needed
@@ -225,4 +213,138 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 	}
 	return TilePositions::None;
+}
+
+bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
+{
+	int offset = 0;
+	// Offset for first pylon and production
+	if (Strategy().isFastExpand())
+	{
+		if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
+		{
+			offset = 2;
+		}
+	}
+	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
+	{
+		offset = 1;
+	}
+
+	if (building == UnitTypes::Protoss_Assimilator || building == UnitTypes::Terran_Refinery)
+	{
+		for (auto &gas : Resources().getMyGas())
+		{
+			if (buildTilePosition == gas.second.getTilePosition() && gas.second.getType() == UnitTypes::Resource_Vespene_Geyser)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// If Protoss, check for power
+	if (Broodwar->self()->getRace() == Races::Protoss)
+	{
+		// Check if it's not a pylon and in a preset buildable position based on power grid
+		if (building.requiresPsi() && !Pylons().hasPower(buildTilePosition, building))
+		{
+			return false;
+		}
+	}
+
+	// For every tile of a buildings size
+	for (int x = buildTilePosition.x; x < buildTilePosition.x + building.tileWidth(); x++)
+	{
+		for (int y = buildTilePosition.y; y < buildTilePosition.y + building.tileHeight(); y++)
+		{
+			// Checking if the tile is valid, and the reasons that could make this position an unsuitable build location
+			if (TilePosition(x, y).isValid())
+			{
+				// If it's reserved
+				if (Grids().getReserveGrid(x, y) > 0)
+				{
+					return false;
+				}
+
+				// If it's a pylon and overlapping too many pylons
+				if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 1)
+				{
+					return false;
+				}
+
+				// If it's not a cannon and on top of the resource grid
+				if (building != UnitTypes::Protoss_Shield_Battery && building != UnitTypes::Terran_Bunker && !ignoreCond && Grids().getResourceGrid(x, y) > 0)
+				{
+					return false;
+				}
+
+				// If it's on an unbuildable tile
+				if (!Broodwar->isBuildable(TilePosition(x, y), true))
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+
+	// If the building requires an offset (production buildings and first pylon)
+	if (offset > 0)
+	{
+		for (int x = buildTilePosition.x - offset; x < buildTilePosition.x + building.tileWidth() + offset; x++)
+		{
+			for (int y = buildTilePosition.y - offset; y < buildTilePosition.y + building.tileHeight() + offset; y++)
+			{
+				if (Grids().getReserveGrid(x, y) > 0 && !Broodwar->isBuildable(TilePosition(x, y), true))
+				{
+					return false;
+				}
+				if (building == UnitTypes::Protoss_Pylon && !Broodwar->isBuildable(TilePosition(x, y), true))
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	// If the building is not a resource depot and being placed on an expansion
+	if (!building.isResourceDepot())
+	{
+		for (auto &base : Terrain().getAllBaseLocations())
+		{
+			for (int i = 0; i < building.tileWidth(); i++)
+			{
+				for (int j = 0; j < building.tileHeight(); j++)
+				{
+					// If the x value of this tile of the building is within an expansion and the y value of this tile of the building is within an expansion, return false
+					if (buildTilePosition.x + i >= base.x && buildTilePosition.x + i < base.x + 4 && buildTilePosition.y + j >= base.y && buildTilePosition.y + j < base.y + 3)
+					{
+						return false;
+					}
+				}
+			}
+		}
+	}
+
+	// If the building can build addons
+	if (building.canBuildAddon())
+	{
+		for (int x = buildTilePosition.x + building.tileWidth(); x <= buildTilePosition.x + building.tileWidth() + 2; x++)
+		{
+			for (int y = buildTilePosition.y + 1; y <= buildTilePosition.y + 3; y++)
+			{
+				if (Grids().getReserveGrid(x, y) > 0 || !Broodwar->isBuildable(TilePosition(x, y), true))
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	// If no issues, return true
+	return true;
 }

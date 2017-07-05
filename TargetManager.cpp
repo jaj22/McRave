@@ -10,10 +10,10 @@ Unit TargetTrackerClass::getTarget(Unit unit)
 	{
 		return nullptr;
 	}
-	/*else if (unit->getType() == UnitTypes::Terran_Medic)
+	else if (unit->getType() == UnitTypes::Terran_Medic)
 	{
-	return allyTarget(unit);
-	}*/
+		return allyTarget(unit);
+	}
 	else
 	{
 		return singleTarget(unit);
@@ -34,7 +34,7 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 		}
 
 		// If unit is dead or unattackble based on flying
-		if (u.second.getDeadFrame() > 0 || (u.second.getType().isFlyer() && (unit->getType() == UnitTypes::Protoss_Zealot || unit->getType() == UnitTypes::Protoss_Reaver)))
+		if (u.second.getDeadFrame() > 0 || (u.second.getType().isFlyer() && Util().getTrueAirDamage(unit->getType(), Broodwar->self()) == 0) || (!u.second.getType().isFlyer() && Util().getTrueGroundDamage(unit->getType(), Broodwar->self()) == 0))
 		{
 			continue;
 		}
@@ -83,7 +83,7 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 
 Unit TargetTrackerClass::allyTarget(Unit unit)
 {
-	double highest = 0.0, thisUnit = 0.0;
+	double highest = 640.0, thisUnit = 0.0;
 	Unit target = nullptr;
 
 	for (auto &u : Units().getMyUnits())
@@ -97,30 +97,28 @@ Unit TargetTrackerClass::allyTarget(Unit unit)
 		{
 			continue;
 		}
+		if (u.second.unit()->isBeingHealed() && Units().getMyUnits()[unit].getTarget() != u.second.unit())
+		{
+			continue;
+		}
 
 		if (u.second.getType() != UnitTypes::Terran_Marine && u.second.getType() != UnitTypes::Terran_Firebat && u.second.getType() != UnitTypes::Terran_Medic)
 		{
 			continue;
 		}
 
-		double distance = 1.0 / (1.0 + double(unit->getDistance(u.second.getPosition())));
+		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
 
-		if (u.first->exists() && u.first->getType().maxHitPoints() - u.first->getHitPoints() > 0)
+		if (u.first->exists() && u.first->getHitPoints() < u.second.getType().maxHitPoints() && distance < highest)
 		{
-			thisUnit = distance;
-		}
-
-		// If this is the strongest ally around, target it
-		if (thisUnit > highest)
-		{
+			highest = distance;
 			target = u.first;
-			highest = thisUnit;
 		}
 	}
-	/*if (target)
+	if (target)
 	{
-	Units().getMyUnits()[unit].setTargetPosition(Units().getMyUnits()[target].getPosition());
-	}*/
+		Units().getMyUnits()[unit].setTargetPosition(Units().getMyUnits()[target].getPosition());
+	}
 	return target;
 }
 
