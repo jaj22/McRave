@@ -2,19 +2,19 @@
 
 void TransportTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();	
+	updateTransports();
+	Display().performanceTest(__func__);
+	return;
+}
 
+void TransportTrackerClass::updateTransports()
+{
 	for (auto &shuttle : myShuttles)
 	{
 		updateCargo(shuttle.second);
 		updateDecision(shuttle.second);
 		updateMovement(shuttle.second);
 	}
-
-	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 90, "Transport Manager: %d ms", duration);
 	return;
 }
 

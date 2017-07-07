@@ -2,6 +2,13 @@
 
 void BaseTrackerClass::update()
 {
+	updateAlliedBases();
+	Display().performanceTest(__func__);
+	return;
+}
+
+void BaseTrackerClass::updateAlliedBases()
+{
 	for (auto &base : myBases)
 	{
 		trainWorkers(base.second);
@@ -12,7 +19,6 @@ void BaseTrackerClass::update()
 
 void BaseTrackerClass::storeBase(Unit base)
 {
-
 	myBases[base].setUnit(base);
 	myBases[base].setUnitType(base->getType());
 	myBases[base].setResourcesPosition(centerOfResources(base));
@@ -55,10 +61,7 @@ void BaseTrackerClass::trainWorkers(BaseInfo& base)
 
 void BaseTrackerClass::updateDefenses(BaseInfo& base)
 {
-	if (base.getTilePosition().isValid())
-	{
-		Terrain().getAllyTerritory().emplace(theMap.GetArea(base.getTilePosition())->Id());
-	}
+	Terrain().getAllyTerritory().emplace(theMap.GetArea(base.getTilePosition())->Id());
 	return;
 }
 

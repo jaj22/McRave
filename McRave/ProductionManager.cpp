@@ -2,16 +2,17 @@
 
 void ProductionTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();
-
 	updateReservedResources();
+	updatePriorities();
 	updateProtoss();
 	updateTerran();
+	updateZerg();
+	Display().performanceTest(__func__);
+	return;
+}
 
-	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 40, "Production Manager: %d ms", duration);
+void ProductionTrackerClass::updatePriorities()
+{
 }
 
 void ProductionTrackerClass::updateReservedResources()
@@ -36,125 +37,11 @@ void ProductionTrackerClass::updateReservedResources()
 	return;
 }
 
-void ProductionTrackerClass::updateRobo(Unit building)
-{
-	int supply = Units().getSupply();
-	int queuedMineral = Buildings().getQueuedMineral();
-	int queuedGas = Buildings().getQueuedGas();
-
-	// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
-	if (Strategy().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
-	{
-		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && building->isTraining())
-		{
-			for (auto &unit : building->getTrainingQueue())
-			{
-				if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
-				{
-					building->cancelTrain();
-				}
-			}
-		}
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
-		{
-			building->train(UnitTypes::Protoss_Observer);
-			idleHighProduction.erase(building);
-			return;
-		}
-		else
-		{
-			idleHighProduction.emplace(building, UnitTypes::Protoss_Observer);
-		}
-	}
-
-	// If we need an Observer
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1))
-	{
-		// If we can afford an Observer, train, otherwise, add to priority
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + queuedGas)
-		{
-			building->train(UnitTypes::Protoss_Observer);
-			idleHighProduction.erase(building);
-			return;
-		}
-		else
-		{
-			idleHighProduction.emplace(building, UnitTypes::Protoss_Observer);
-		}
-	}
-
-	// If we need a Shuttle
-	else if ((Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 2 > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle)) || (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) <= 0))
-	{
-		// If we can afford a Shuttle, train, otherwise, add to priority
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + queuedMineral)
-		{
-			building->train(UnitTypes::Protoss_Shuttle);
-			idleHighProduction.erase(building);
-		}
-		else
-		{
-			idleHighProduction.emplace(building, UnitTypes::Protoss_Shuttle);
-		}
-	}
-
-	// If we need a Reaver			
-	else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) < 10)
-	{
-		// If we can afford a Reaver, train, otherwise, add to priority
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + queuedGas)
-		{
-			building->train(UnitTypes::Protoss_Reaver);
-			idleHighProduction.erase(building);
-			return;
-		}
-		else
-		{
-			idleHighProduction.emplace(building, UnitTypes::Protoss_Reaver);
-		}
-	}
-}
-
-void ProductionTrackerClass::updateStargate(Unit building)
-{
-	int supply = Units().getSupply();
-	int queuedMineral = Buildings().getQueuedMineral();
-	int queuedGas = Buildings().getQueuedGas();
-
-	// Set as visible so it saves resources for Arbiters if we're teching to them
-	if ((Broodwar->self()->isUpgrading(UpgradeTypes::Khaydarin_Core) || Broodwar->self()->getUpgradeLevel(UpgradeTypes::Khaydarin_Core)) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter) < 3)
-	{
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Arbiter.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Arbiter.gasPrice() + queuedGas)
-		{
-			building->train(UnitTypes::Protoss_Arbiter);
-			idleHighProduction.erase(building);
-			return;
-		}
-		else
-		{
-			idleHighProduction.emplace(building, UnitTypes::Protoss_Arbiter);
-		}
-	}
-	// Only build corsairs against Zerg
-	if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Corsair) < 10)
-	{
-		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Corsair.mineralPrice() + queuedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Corsair.gasPrice() + queuedGas)
-		{
-			building->train(UnitTypes::Protoss_Corsair);
-		}
-	}
-}
-
-void ProductionTrackerClass::updateLuxuryTech(Unit building)
-{
-
-}
-
 void ProductionTrackerClass::updateProtoss()
 {
 	// Specifically no Zealots early against Terran
 	if (Strategy().getNumberTerran() > 0)
-	{		
+	{
 		if (Strategy().isRush() || Broodwar->self()->isUpgrading(UpgradeTypes::Leg_Enhancements) || Broodwar->self()->getUpgradeLevel(UpgradeTypes::Leg_Enhancements))
 		{
 			noZealots = false;
@@ -164,12 +51,47 @@ void ProductionTrackerClass::updateProtoss()
 			noZealots = true;
 		}
 	}
-	
+
 
 	// Gateway saturation
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)))
 	{
 		gateSat = true;
+	}
+
+	// TEMP Production testing
+	// Goal here is to check of all the units that are possible for a building, which is the best to build that we can afford based on resources, score and priority
+	// Could become a much simpler approach to production than what is currently implemented
+	bool test = false;
+	if (test)
+	{
+		for (auto &b : Buildings().getMyBuildings())
+		{
+			BuildingInfo building = b.second;
+			double highestPriority;
+			UnitType highestType;
+			if (building.unit()->isIdle())
+			{
+				for (auto &unit : building.getType().buildsWhat())
+				{
+					// Setup a high/med/low priority for units and reserved minerals
+					// Make a function that checks for canBuild first (tech requirements)
+					// If canBuild is true, check to see the priority of the unit based on its score and whether we can afford it
+					// Store the highest priority unit
+				}
+				// If a unit is desired and we can afford it, train it, else, emplace
+
+				for (auto &research : building.getType().researchesWhat())
+				{
+					// Researches
+				}
+
+				for (auto &upgrade : building.getType().upgradesWhat())
+				{
+					// Upgrades
+				}
+			}
+		}
 	}
 
 	// Production
@@ -302,13 +224,104 @@ void ProductionTrackerClass::updateProtoss()
 			// Stargate
 			else if (building.getType() == UnitTypes::Protoss_Stargate)
 			{
-				updateStargate(building.unit());
+				// Set as visible so it saves resources for Arbiters if we're teching to them
+				if ((Broodwar->self()->isUpgrading(UpgradeTypes::Khaydarin_Core) || Broodwar->self()->getUpgradeLevel(UpgradeTypes::Khaydarin_Core)) && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter) < 3)
+				{
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Arbiter.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Arbiter.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->train(UnitTypes::Protoss_Arbiter);
+						idleHighProduction.erase(building.unit());
+						return;
+					}
+					else
+					{
+						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Arbiter);
+					}
+				}
+				// Only build corsairs against Zerg
+				if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Corsair) < 5)
+				{
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Corsair.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Corsair.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->train(UnitTypes::Protoss_Corsair);
+					}
+				}
 			}
 
 			// Robotics Facility
 			else if (building.getType() == UnitTypes::Protoss_Robotics_Facility)
 			{
-				updateRobo(building.unit());
+				// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
+				if (Strategy().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
+				{
+					if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && building.unit()->isTraining())
+					{
+						for (auto &unit : building.unit()->getTrainingQueue())
+						{
+							if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
+							{
+								building.unit()->cancelTrain();
+							}
+						}
+					}
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
+					{
+						building.unit()->train(UnitTypes::Protoss_Observer);
+						idleHighProduction.erase(building.unit());
+						return;
+					}
+					else
+					{
+						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
+					}
+				}
+
+				// If we need an Observer
+				if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1))
+				{
+					// If we can afford an Observer, train, otherwise, add to priority
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->train(UnitTypes::Protoss_Observer);
+						idleHighProduction.erase(building.unit());
+						return;
+					}
+					else
+					{
+						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
+					}
+				}
+
+				// If we need a Shuttle
+				else if ((Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 2 > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle)) || (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) <= 0))
+				{
+					// If we can afford a Shuttle, train, otherwise, add to priority
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + Buildings().getQueuedMineral())
+					{
+						building.unit()->train(UnitTypes::Protoss_Shuttle);
+						idleHighProduction.erase(building.unit());
+					}
+					else
+					{
+						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Shuttle);
+					}
+				}
+
+				// If we need a Reaver			
+				else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) < 10)
+				{
+					// If we can afford a Reaver, train, otherwise, add to priority
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Reaver.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Reaver.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->train(UnitTypes::Protoss_Reaver);
+						idleHighProduction.erase(building.unit());
+						return;
+					}
+					else
+					{
+						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Reaver);
+					}
+				}
 			}
 
 			// Templar Archives
@@ -371,7 +384,7 @@ void ProductionTrackerClass::updateProtoss()
 					}
 				}
 				else if (!Broodwar->self()->hasResearched(TechTypes::Stasis_Field))
-				{					
+				{
 					if (Broodwar->self()->minerals() >= TechTypes::Stasis_Field.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= TechTypes::Stasis_Field.gasPrice() + Buildings().getQueuedGas())
 					{
 						building.unit()->research(TechTypes::Stasis_Field);
@@ -502,4 +515,8 @@ void ProductionTrackerClass::updateTerran()
 			idleUpgrade.erase(building.second.unit());
 		}
 	}
+}
+
+void ProductionTrackerClass::updateZerg()
+{
 }

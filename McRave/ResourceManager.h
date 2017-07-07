@@ -20,6 +20,7 @@ public:
 	map <Unit, ResourceInfo>& getMyBoulders() { return myBoulders; }
 	
 	void update();
+	void updateResources();
 	void storeMineral(Unit);
 	void storeGas(Unit);
 	void storeBoulder(Unit);

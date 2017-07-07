@@ -12,6 +12,7 @@ class TransportTrackerClass
 	map <WalkPosition, int> recentExplorations;
 public:
 	void update();
+	void updateTransports();
 	void updateCargo(TransportInfo&);
 	void updateDecision(TransportInfo&);
 	void updateMovement(TransportInfo&);

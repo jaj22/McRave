@@ -2,15 +2,10 @@
 
 void BuildOrderTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();
-
 	updateBuildDecision();
 	updateBaseBuild();
-
-	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 10, "Build Order: %d ms", duration);
+	Display().performanceTest(__func__);
+	return;
 }
 
 void BuildOrderTrackerClass::updateBuildDecision()
@@ -59,6 +54,7 @@ void BuildOrderTrackerClass::updateBuildDecision()
 
 void BuildOrderTrackerClass::updateBaseBuild()
 {
+	// Protoss
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
 		// PvZ
@@ -79,14 +75,7 @@ void BuildOrderTrackerClass::updateBaseBuild()
 		else if (Strategy().getNumberTerran() > 0)
 		{
 			earlyBuild = 3;
-			if (Strategy().isWalled())
-			{
-				midBuild = 5;
-			}
-			else
-			{
-				midBuild = 5;
-			}
+			midBuild = 5;
 			lateBuild = 0;
 		}
 		// PvR
@@ -100,8 +89,11 @@ void BuildOrderTrackerClass::updateBaseBuild()
 		// Check situational build
 		protossSituational();
 	}
+
+	// Terran
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
+		// TvA
 		buildingDesired[UnitTypes::Terran_Supply_Depot] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Terran_Supply_Depot))))));
 		earlyBuild = 0;
 		midBuild = 0;
@@ -110,9 +102,11 @@ void BuildOrderTrackerClass::updateBaseBuild()
 		// Check situational build
 		terranSituational();
 	}
+
+	// Zerg
 	else if (Broodwar->self()->getRace() == Races::Zerg)
 	{
-
+		
 	}
 
 	if (getEarlyBuild)
@@ -330,7 +324,7 @@ void BuildOrderTrackerClass::midBuilds()
 void BuildOrderTrackerClass::lateBuilds()
 {
 	if (Broodwar->self()->getRace() == Races::Protoss)
-	{
+	{ 
 		if (lateBuild == 0)
 		{
 			// Arbiter

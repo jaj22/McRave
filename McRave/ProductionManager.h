@@ -15,6 +15,7 @@ class ProductionTrackerClass
 	bool noZealots = false;
 	bool gateSat = false;
 	bool barracksSat = false;
+	bool hatchSat = false;
 public:
 	map <Unit, UnitType>& getIdleLowProduction() { return idleLowProduction; }
 	map <Unit, UnitType>& getIdleHighProduction() { return idleHighProduction; }
@@ -23,19 +24,15 @@ public:
 
 	int getReservedMineral() { return reservedMineral; }
 	int getReservedGas() { return reservedGas; }
-	bool getNoZealots() { return noZealots; }
 	bool isGateSat() { return gateSat; }
 	bool isBarracksSat() { return barracksSat; }
 
 	void update();
+	void updatePriorities();
 	void updateProtoss();
-	void updateTerran();	
-	void updateRobo(Unit);
-	void updateStargate(Unit);
-	void updateLuxuryTech(Unit);
-	void updateRequiredTech(Unit);
+	void updateTerran();
+	void updateZerg();
 	void updateReservedResources();
-	void setNoZealots(bool);
 };
 
 typedef Singleton<ProductionTrackerClass> ProductionTracker;

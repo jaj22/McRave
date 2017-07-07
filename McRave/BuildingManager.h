@@ -12,7 +12,7 @@ class BuildingTrackerClass
 	map <UnitType, int> buildingsQueued;
 	map <Unit, BuildingInfo> myBuildings;
 	map <Unit, BuildingInfo> myBatteries;
-	int errorTime = 0;
+	int errorTime = 0, buildingOffset = 0;
 public:
 	map <Unit, BuildingInfo>& getMyBuildings() { return myBuildings; }
 	map <Unit, BuildingInfo>& getMyBatteries() { return myBatteries; }

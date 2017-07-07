@@ -34,8 +34,6 @@ class UnitInfo;
 #include "UnitManager.h"
 #include "Util.h"
 
-
-
 // Namespace to access all trackers globally
 namespace McRave
 {	

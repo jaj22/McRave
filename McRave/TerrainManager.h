@@ -6,7 +6,10 @@ using namespace BWAPI;
 using namespace BWEM;
 using namespace std;
 
-namespace { auto & theMap = BWEM::Map::Instance(); }
+namespace 
+{
+	auto & theMap = BWEM::Map::Instance(); 
+}
 
 class TerrainTrackerClass
 {
@@ -22,11 +25,12 @@ class TerrainTrackerClass
 
 public:
 	void update();
+	void updateAreas();
+	void updateChokes();
 	void removeTerritory(Unit);
-
 	bool isInAllyTerritory(Unit);
 	Position getClosestEnemyBase(Position);
-	TilePosition getRandomBase();	
+	Position getClosestAllyBase(Position);
 	
 	CPPath getPath() { return path; }
 	set <int>& getAllyTerritory() { return allyTerritory; }	

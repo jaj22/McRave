@@ -1,9 +1,9 @@
 #include "McRave.h"
 
 void PylonTrackerClass::storePylon(Unit unit)
-{
-	myPylons.emplace(unit);
+{	
 	storePower(unit);
+	Display().performanceTest(__func__);
 	return;
 }
 
@@ -96,10 +96,6 @@ void PylonTrackerClass::storePower(Unit unit)
 			}
 		}
 	}
-	/*for (auto tile : mediumPowerSites)
-	{
-	Broodwar->drawBoxMap(Position(tile.first), Position(tile.first) + Position(32, 32), Colors::Black);
-	}*/
 	return;
 }
 

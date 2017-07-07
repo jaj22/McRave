@@ -2,25 +2,19 @@
 
 void GridTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();
-
 	reset();
 	updateMobilityGrids();
 	updateAllyGrids();
 	updateEnemyGrids();
 	updateNeutralGrids();
 	updateGroundDistanceGrid();
-
-	duration = 1000.0 * double(clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 30, "Grid Manager: %d ms", duration);
+	Display().performanceTest(__func__);
 	return;
 }
 
 void GridTrackerClass::reset()
 {
-	// For each tile, draw the current threat onto the tile
+	// Reset all tiles to 0
 	int center = 0;
 	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
 	{
@@ -50,7 +44,7 @@ void GridTrackerClass::reset()
 				arbiterGrid[x][y] = 0;
 				eDetectorGrid[x][y] = 0;
 
-				// Reset TilePosition grids (removes one iteration of the map tiles)
+				// Reset TilePosition grids
 				if (x % 4 == 0 && y % 4 == 0 && TilePosition(x / 4, y / 4).isValid())
 				{
 					// Debug test
@@ -268,7 +262,7 @@ void GridTrackerClass::updateAllyGrids()
 			{
 				if (TilePosition(x, y).isValid())
 				{
-					if (base.unit() && base.unit()->isCompleted())
+					if (base.unit()->isCompleted())
 					{
 						baseGrid[x][y] = 2;
 					}

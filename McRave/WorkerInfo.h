@@ -39,5 +39,4 @@ public:
 	void setWalkPosition(WalkPosition newPosition) { walkPosition = newPosition; }
 	void setTilePosition(TilePosition newPosition) { tilePosition = newPosition; }
 	void setBuildPosition(TilePosition newPosition) { buildPosition = newPosition; }
-
 };
