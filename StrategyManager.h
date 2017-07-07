@@ -17,9 +17,12 @@ class StrategyTrackerClass
 	bool rush = false;
 	bool holdRamp = false;
 	bool walledOff = false;
+	bool bust = false;
 public:
 	double globalAlly() { return globalAllyStrength; }
 	double globalEnemy() {	return globalEnemyStrength;	}
+	double getAllyDefense() { return allyDefense; }
+	double getEnemyDefense() { return enemyDefense; }
 	map <UnitType, double>& getUnitScore() { return unitScore; }
 	bool isFastExpand() { return fastExpand; }
 	bool setFastExpand(bool FE) { fastExpand = FE; }
@@ -27,6 +30,7 @@ public:
 	bool isRush() { return rush; }
 	bool isHoldRamp() { return holdRamp; }
 	bool isWalled() { return walledOff; }
+	bool isBust() { return bust; }
 	int getNumberZerg() { return eZerg; }
 	int getNumberProtoss() { return eProtoss; }
 	int getNumberTerran() { return eTerran; }

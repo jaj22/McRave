@@ -25,6 +25,7 @@ class TerrainTrackerClass
 	set<TilePosition> allBaseLocations;
 	Position enemyStartingPosition, playerStartingPosition;
 	TilePosition enemyStartingTilePosition, playerStartingTilePosition, FFEPosition;
+	TilePosition secondChoke, firstChoke;
 
 public:
 	void update();
@@ -33,6 +34,8 @@ public:
 	void removeTerritory(Unit);
 
 	bool isInAllyTerritory(Unit);
+	Position getClosestEnemyBase(Position);
+	TilePosition getRandomBase();	
 	
 	CPPath getPath() { return path; }
 	set <int>& getAllyTerritory() { return allyTerritory; }	
@@ -46,6 +49,8 @@ public:
 	TilePosition getEnemyStartingTilePosition() { return enemyStartingTilePosition; }
 	TilePosition getPlayerStartingTilePosition() { return playerStartingTilePosition; }	
 	TilePosition getFFEPosition() { return FFEPosition; }
+	TilePosition getFirstChoke() { return firstChoke; }
+	TilePosition getSecondChoke() { return secondChoke; }
 };
 
 typedef Singleton<TerrainTrackerClass> TerrainTracker;

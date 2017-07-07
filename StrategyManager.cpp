@@ -112,7 +112,7 @@ void StrategyTrackerClass::updateEnemy()
 			// Strength based calculations ignore workers and buildings
 			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
-				// Add strength				
+				// Add strength	
 				globalEnemyStrength += u.second.getStrength();
 			}
 			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
@@ -136,7 +136,7 @@ void StrategyTrackerClass::updateSituationalBehaviour()
 	for (auto &unit : unitScore)
 	{
 		unit.second = 0;
-	}		
+	}
 
 	// Invisible unit detection
 	if (enemyComposition[UnitTypes::Protoss_Dark_Templar] > 0 || enemyComposition[UnitTypes::Protoss_Citadel_of_Adun] > 0 || enemyComposition[UnitTypes::Protoss_Templar_Archives] > 0 || enemyComposition[UnitTypes::Terran_Wraith] > 0 || enemyComposition[UnitTypes::Terran_Ghost] > 0 || enemyComposition[UnitTypes::Zerg_Lurker] > 0)
@@ -175,19 +175,19 @@ void StrategyTrackerClass::updateSituationalBehaviour()
 
 void StrategyTrackerClass::protossStrategy()
 {
-	// Ramp holding logic
-	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) < 2 && (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3) || (Broodwar->enemy()->getRace() == Races::Protoss && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
-	{
-		holdRamp = true;
-	}
-	else
-	{
-		holdRamp = false;
-	}
-
 	// If it's early on and we're being rushed
 	if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 	{
+		// Ramp holding logic
+		if (eZerg > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3 || (eProtoss > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
+		{
+			holdRamp = true;
+		}
+		else
+		{
+			holdRamp = false;
+		}
+
 		if (eProtoss > 0 && (enemyComposition[UnitTypes::Protoss_Gateway] >= 2 || enemyComposition[UnitTypes::Protoss_Gateway] == 0) && enemyComposition[UnitTypes::Protoss_Assimilator] == 0 && Terrain().getEnemyBasePositions().size() > 0)
 		{
 			rush = true;
@@ -208,22 +208,13 @@ void StrategyTrackerClass::protossStrategy()
 		{
 			rush = false;
 		}
-	}
-	else
-	{
-		rush = false;
-	}
 
-	// Forge fast expand Logic
-	if (eZerg > 0)
-	{
-		//fastExpand = true; -- removed FFE for now
-	}
-
-	// Fast expand logic
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) < 2)
-	{
+		// Fast expand Logic
 		if (enemyComposition[UnitTypes::Terran_Bunker] > 0 || enemyComposition[UnitTypes::Protoss_Photon_Cannon] >= 2)
+		{
+			fastExpand = true;
+		}
+		else if (eZerg > 0)
 		{
 			fastExpand = true;
 		}
@@ -231,6 +222,18 @@ void StrategyTrackerClass::protossStrategy()
 		{
 			fastExpand = false;
 		}
+
+		// Check to see if a bust is coming
+		if (fastExpand && enemyComposition[UnitTypes::Zerg_Hydralisk_Den] > 0 || enemyComposition[UnitTypes::Zerg_Hydralisk] >= 4)
+		{
+			bust = true;
+		}
+	}
+	else
+	{
+		rush = false;
+		fastExpand = false;
+		bust = false;
 	}
 }
 

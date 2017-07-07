@@ -61,21 +61,11 @@ void BuildOrderTrackerClass::updateBaseBuild()
 {
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		// Earlier first Pylon if FFE
-		if (Strategy().isFastExpand() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Pylon) <= 0)
-		{
-			buildingDesired[UnitTypes::Protoss_Pylon] = Units().getSupply() >= 14;
-		}
-		else
-		{
-			buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
-		}
-
 		// PvZ
 		if (Strategy().getNumberZerg() > 0)
 		{
-			earlyBuild = 0;
-			midBuild = Strategy().needDetection();
+			earlyBuild = 4;
+			midBuild = 4;
 			lateBuild = 1;
 		}
 		// PvP
@@ -141,6 +131,16 @@ void BuildOrderTrackerClass::updateBaseBuild()
 
 void BuildOrderTrackerClass::protossSituational()
 {
+	// Pylon logic
+	if (Strategy().isFastExpand() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Pylon) <= 0)
+	{
+		buildingDesired[UnitTypes::Protoss_Pylon] = Units().getSupply() >= 14;
+	}
+	else
+	{
+		buildingDesired[UnitTypes::Protoss_Pylon] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Protoss_Pylon))))));
+	}
+
 	// Expansion logic
 	if (!Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && ((Broodwar->self()->minerals() > 300 && Resources().isMinSaturated() && Production().isGateSat() && Production().getIdleLowProduction().size() == 0) || (Strategy().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)))
 	{
@@ -182,6 +182,10 @@ void BuildOrderTrackerClass::protossSituational()
 				buildingDesired[UnitTypes::Protoss_Photon_Cannon] += Grids().getDistanceHome(base.second.getWalkPosition()) / 100;
 			}
 		}
+	}
+	if (Strategy().isBust())
+	{
+		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 6;
 	}
 }
 
@@ -250,10 +254,10 @@ void BuildOrderTrackerClass::earlyBuilds()
 		{
 			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 20;
 			buildingDesired[UnitTypes::Protoss_Nexus] = 2 * (Units().getSupply() >= 28);
-			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24) + (Units().getSupply() >= 30) + (Units().getSupply() >= 32) + (Units().getSupply() >= 34) + (Units().getSupply() >= 36);
-			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 40) + (Units().getSupply() >= 46);
-			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 42;
-			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 44;
+			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24);
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 30) + (Units().getSupply() >= 46);
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 36;
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 42;
 		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)

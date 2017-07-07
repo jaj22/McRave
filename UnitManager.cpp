@@ -4,7 +4,7 @@ void UnitTrackerClass::update()
 {
 	clock_t myClock;
 	double duration = 0.0;
-	myClock = clock();	
+	myClock = clock();
 
 	storeUnits();
 	removeUnits();
@@ -44,19 +44,23 @@ void UnitTrackerClass::storeUnits()
 		// Store buildings even if they're not completed
 		if (u->getType().isBuilding())
 		{
-			Buildings().storeBuilding(u);
-			if (u->getType().isResourceDepot())
-			{
-				Bases().storeBase(u);
-			}
-			else if (u->getType() == UnitTypes::Protoss_Pylon)
-			{
-				Pylons().storePylon(u);
-			}
-			else if (u->getType() == UnitTypes::Protoss_Shield_Battery)
-			{
-				Buildings().storeBattery(u);
-			}
+			Buildings().storeBuilding(u);			
+		}
+		if (u->getType().isResourceDepot())
+		{
+			Bases().storeBase(u);
+		}
+		else if (u->getType() == UnitTypes::Protoss_Pylon)
+		{
+			Pylons().storePylon(u);
+		}
+		else if (u->getType() == UnitTypes::Protoss_Shield_Battery)
+		{
+			Buildings().storeBattery(u);
+		}
+		else if (u->getType() == UnitTypes::Protoss_Photon_Cannon)
+		{
+			storeAllyUnit(u);
 		}
 
 		// Don't want to store units that aren't completed
@@ -137,7 +141,7 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 	auto t = unit->getType();
 	auto p = unit->getPlayer();
 	u.setUnit(unit);
-	
+
 	u.setStrength(Util().getVisibleStrength(unit, p));
 	u.setMaxStrength(Util().getStrength(t, p));
 	u.setGroundRange(Util().getTrueRange(t, p));
@@ -146,7 +150,7 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 	u.setGroundDamage(Util().getTrueGroundDamage(t, p));
 	u.setAirDamage(Util().getTrueAirDamage(t, p));
 	u.setSpeed(Util().getTrueSpeed(t, p));
-	u.setMinStopFrame(Util().getMinStopFrame(t));	
+	u.setMinStopFrame(Util().getMinStopFrame(t));
 	u.setUnitType(t);
 
 	u.setPosition(unit->getPosition());
@@ -174,9 +178,9 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 	u.setGroundDamage(Util().getTrueGroundDamage(t, p));
 	u.setAirDamage(Util().getTrueAirDamage(t, p));
 	u.setSpeed(Util().getTrueSpeed(t, p));
-	u.setMinStopFrame(Util().getMinStopFrame(t));	
+	u.setMinStopFrame(Util().getMinStopFrame(t));
 
-	
+
 	u.setUnitType(t);
 	u.setPosition(unit->getPosition());
 	u.setTilePosition(unit->getTilePosition());
@@ -196,11 +200,11 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 void UnitTrackerClass::decayUnit(Unit unit)
 {
 	if (allyUnits.find(unit) != allyUnits.end())
-	{		
+	{
 		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
 	}
 	else if (enemyUnits.find(unit) != enemyUnits.end())
-	{		
+	{
 		enemyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
 	}
 }
@@ -230,7 +234,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 	// Check every enemy unit being in range of the target
 	for (auto &e : enemyUnits)
-	{		
+	{
 		UnitInfo enemy = e.second;
 		// Ignore workers and stasised units
 		if (enemy.getType().isWorker() || (enemy.unit() && enemy.unit()->exists() && enemy.unit()->isStasised()))
@@ -240,7 +244,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
-		double threatRange = (enemy.getGroundRange() / 32.0) + enemy.getSpeed() + double(enemy.getType().width()) / 32 + double(enemyUnits[target].getType().width()) / 32;
+		double threatRange = (enemy.getGroundRange() / 32.0) + enemy.getSpeed();
 
 		// If a unit is within range of the target, add to local strength
 		if (enemy.getPosition().getDistance(targetPosition) / 32.0 < threatRange)
@@ -293,7 +297,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
-		double threatRange = (ally.getGroundRange() / 32.0) + ally.getSpeed() + double(ally.getType().width()) / 32.0 + double(allyUnits[unit].getType().width()) / 32;
+		double threatRange = (ally.getGroundRange() / 32.0) + ally.getSpeed();
 
 		// If a unit is within the range of the ally unit, add to local strength
 		if (ally.getPosition().getDistance(unit->getPosition()) / 32.0 < threatRange)
@@ -368,7 +372,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 		{
 			allyUnits[unit].setStrategy(1);
 			return;
-		}		
+		}
 	}
 
 	// Specific Zealot Commands

@@ -42,7 +42,7 @@ void CommandTrackerClass::getDecision(UnitInfo& unit)
 		if (Units().getGlobalStrategy() == 0 || Units().getGlobalStrategy() == 2)
 		{
 			// Check if we have a target
-			if (unit.getTarget())
+			if (unit.getTarget() && unit.getTarget()->exists())
 			{
 				// If locally ahead, fight
 				if (unit.getStrategy() == 1)
@@ -75,7 +75,7 @@ void CommandTrackerClass::getDecision(UnitInfo& unit)
 					return;
 				}
 				// Else attack
-				else if (unit.getStrategy() == 1)
+				else if (unit.getStrategy() == 1 && unit.getTarget()->exists())
 				{
 					microTarget(unit);
 					return;
@@ -116,25 +116,19 @@ void CommandTrackerClass::attackMove(UnitInfo& unit)
 	// Else if no target, attack closest enemy base if there is any
 	else if (Terrain().getEnemyBasePositions().size() > 0)
 	{
-		double closestD = 0.0;
-		Position closestP;
-		for (auto &base : Terrain().getEnemyBasePositions())
+		Position here = Terrain().getClosestEnemyBase(unit.getPosition());
+		if (here.isValid())
 		{
-			if (unit.unit()->getDistance(base) < closestD || closestD == 0.0)
+			if (unit.unit()->getOrderTargetPosition() != here || unit.unit()->isStuck())
 			{
-				closestP = base;
-				closestD = unit.unit()->getDistance(base);
-			}
-		}
-		if (unit.unit()->getOrderTargetPosition() != closestP || unit.unit()->isStuck())
-		{
-			if (unit.getGroundDamage() > 0 || unit.getAirDamage() > 0)
-			{
-				unit.unit()->attack(closestP);
-			}
-			else
-			{
-				unit.unit()->move(closestP);
+				if (unit.getGroundDamage() > 0 || unit.getAirDamage() > 0)
+				{
+					unit.unit()->attack(here);
+				}
+				else
+				{
+					unit.unit()->move(here);
+				}
 			}
 		}
 	}

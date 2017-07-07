@@ -33,6 +33,7 @@ class GridTrackerClass
 	int mobilityGrid[1024][1024];
 	int antiMobilityGrid[1024][1024];
 	int distanceGridHome[1024][1024];
+	int reservePathHome[256][256];
 
 	// Special Unit grids
 	int observerGrid[1024][1024];

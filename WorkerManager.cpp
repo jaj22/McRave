@@ -164,7 +164,7 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 	}
 
 	// If we are fast expanding and enemy is rushing, we need to defend with workers
-	if ((Strategy().isFastExpand() && Strategy().globalAlly() < Strategy().globalEnemy()) || (Grids().getDefenseGrid(worker.getTilePosition()) > 0 && Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0))
+	if (Strategy().isFastExpand() && (Strategy().globalAlly() + Strategy().getAllyDefense()) < Strategy().globalEnemy())
 	{
 		Unit cannon = worker.unit()->getClosestUnit(Filter::GetType == UnitTypes::Protoss_Photon_Cannon);
 		if (cannon && cannon->exists())

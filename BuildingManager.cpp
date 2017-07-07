@@ -52,7 +52,7 @@ void BuildingTrackerClass::constructBuildings()
 		{
 			buildingsQueued[worker.second.getBuildingType()] += 1;
 			queuedMineral = queuedMineral + worker.second.getBuildingType().mineralPrice();
-			queuedGas = queuedGas + worker.second.getBuildingType().gasPrice();			
+			queuedGas = queuedGas + worker.second.getBuildingType().gasPrice();
 		}
 	}
 	for (auto &building : myBuildings)
@@ -79,7 +79,7 @@ void BuildingTrackerClass::storeBuilding(Unit building)
 		myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
 		myBuildings[building].setTilePosition(building->getTilePosition());
 	}
-	
+
 	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBuildings[building].setEnergy(building->getEnergy());
 }
@@ -116,7 +116,7 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 
 	// Searches in a spiral around the specified tile position
 	while (length < 200)
-	{		
+	{
 		// If we can build here, return this tile position		
 		if (TilePosition(x, y).isValid() && canBuildHere(building, TilePosition(x, y), ignoreCond))
 		{
@@ -177,11 +177,33 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 		return closestP;
 	}
-	
+
+	/*if (Broodwar->self()->getRace() == Races::Terran && (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Terran_Barracks))
+	{
+		for (auto wall : BWEM::utils::findWalls(theMap.Instance()))
+		{
+			if (wall.Center().getDistance(Terrain().getPlayerStartingPosition()) < 640 && wall.Possible())
+			{				
+			
+			}
+		}
+	}*/
+
 	// If we are fast expanding
 	if (Strategy().isFastExpand())
 	{
-		return getBuildLocationNear(building, Terrain().getFFEPosition());
+		if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(Terrain().getFFEPosition()) <= 0 + Strategy().isBust())
+		{
+			return getBuildLocationNear(building, Terrain().getFFEPosition());
+		}
+		if (building == UnitTypes::Protoss_Photon_Cannon)
+		{
+			return getBuildLocationNear(building, Terrain().getSecondChoke());
+		}
+		if (building == UnitTypes::Protoss_Forge && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Forge) == 0)
+		{
+			return getBuildLocationNear(building, Terrain().getSecondChoke());
+		}
 	}
 
 	// For each base, check if there's a Pylon or Cannon needed
@@ -223,7 +245,11 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 	{
 		if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
 		{
-			offset = 2;
+			offset = 0;
+		}
+		if (building == UnitTypes::Protoss_Photon_Cannon && Position(Terrain().getSecondChoke()).getDistance(Position(buildTilePosition)) < 128)
+		{
+			return false;
 		}
 	}
 	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
@@ -268,7 +294,7 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 				}
 
 				// If it's a pylon and overlapping too many pylons
-				if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 1)
+				if (!Strategy().isFastExpand() && building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 1)
 				{
 					return false;
 				}

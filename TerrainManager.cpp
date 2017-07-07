@@ -72,50 +72,52 @@ void TerrainTrackerClass::update()
 	}
 
 	// Establish FFE position
-	if (Broodwar->getFrameCount() > 100)
+	int x = 0;
+	int y = 0;
+	const Area* closestA;
+	double closestBaseDistance = 0.0, furthestChokeDistance = 0.0, closestChokeDistance = 0.0;
+	TilePosition natural;
+
+	for (auto &area : theMap.Areas())
 	{
-		int x = 0;
-		int y = 0;
-		const Area* closestA;
-		double closestD = 0.0;
-		TilePosition closestP;
-		for (auto &area : theMap.Areas())
+		for (auto &base : area.Bases())
 		{
-			for (auto &base : area.Bases())
+			if (base.Geysers().size() == 0 || area.AccessibleNeighbours().size() == 0)
 			{
-				if (base.Geysers().size() == 0 || area.AccessibleNeighbours().size() == 0)
-				{
-					continue;
-				}
-				if (Grids().getDistanceHome(WalkPosition(base.Location())) > 50 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
-				{
-					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
-					closestA = base.GetArea();
-				}
+				continue;
+			}
+
+			if (Grids().getDistanceHome(WalkPosition(base.Location())) > 50 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestBaseDistance || closestBaseDistance == 0))
+			{
+				closestBaseDistance = Grids().getDistanceHome(WalkPosition(base.Location()));
+				closestA = base.GetArea();
+				natural = base.Location();
 			}
 		}
-		if (closestA)
-		{
-			for (auto &choke : closestA->ChokePoints())
-			{
-				x += Position(choke->Center()).x;
-				y += Position(choke->Center()).y;
-
-			}
-			x += closestP.x;
-			y += closestP.y;
-
-			x = x / closestA->ChokePoints().size();
-			y = y / closestA->ChokePoints().size();
-			FFEPosition = TilePosition(Position(x, y));
-		}
 	}
-
-	// Draw path for debugging
-	for (auto &choke : path)
+	if (closestA)
 	{
-		Broodwar->drawCircleMap(Position(choke->Center()), 32, Colors::Red);
+		for (auto &choke : closestA->ChokePoints())
+		{
+			if (choke && Grids().getDistanceHome(choke->Center()) > furthestChokeDistance)
+			{
+				secondChoke = TilePosition(choke->Center());
+				furthestChokeDistance = Grids().getDistanceHome(choke->Center());
+			}
+			if (choke && (Grids().getDistanceHome(choke->Center()) < closestChokeDistance || closestChokeDistance == 0.0))
+			{
+				firstChoke = TilePosition(choke->Center());
+				closestChokeDistance = Grids().getDistanceHome(choke->Center());
+			}
+		}
+		FFEPosition = TilePosition(secondChoke.x*0.35 + natural.x*0.65, secondChoke.y*0.35 + natural.y*0.65);
 	}
+
+
+	Broodwar->drawCircleMap(Position(secondChoke), 32, Colors::Red);
+	Broodwar->drawCircleMap(Position(firstChoke), 32, Colors::Blue);
+
+
 
 	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
 	//Broodwar->drawTextScreen(200, 80, "Terrain Manager: %d ms", duration);
@@ -131,6 +133,21 @@ bool TerrainTrackerClass::isInAllyTerritory(Unit unit)
 		}
 	}
 	return false;
+}
+
+Position TerrainTrackerClass::getClosestEnemyBase(Position here)
+{
+	double closestD = 0.0;
+	Position closestP;
+	for (auto &base : Terrain().getEnemyBasePositions())
+	{
+		if (here.getDistance(base) < closestD || closestD == 0.0)
+		{
+			closestP = base;
+			closestD = here.getDistance(base);
+		}
+	}
+	return closestP;
 }
 
 void TerrainTrackerClass::removeTerritory(Unit base)

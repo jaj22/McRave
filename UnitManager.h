@@ -12,6 +12,7 @@ class UnitTrackerClass
 	map <Unit, UnitInfo> allyUnits;
 	map <UnitSizeType, int> allySizes;
 	map <UnitSizeType, int> enemySizes;
+
 	int supply;
 	int globalStrategy;
 public:

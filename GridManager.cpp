@@ -34,6 +34,11 @@ void GridTrackerClass::reset()
 					armyCenter = Position(WalkPosition(x, y));
 				}
 
+				/*if ()
+				{
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
+				}*/
+
 				// Reset WalkPosition grids
 				aClusterGrid[x][y] = 0;
 				antiMobilityGrid[x][y] = 0;
@@ -46,12 +51,12 @@ void GridTrackerClass::reset()
 				eDetectorGrid[x][y] = 0;
 
 				// Reset TilePosition grids (removes one iteration of the map tiles)
-				if (x % 4 == 0 && y % 4 == 0 && TilePosition(x/4,y/4).isValid())
+				if (x % 4 == 0 && y % 4 == 0 && TilePosition(x / 4, y / 4).isValid())
 				{
 					// Debug test
-					if (reserveGrid[x / 4][y / 4] > 0)
+					if (reservePathHome[x / 4][y / 4] > 0)
 					{
-					//	Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
+						//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);v
 					}
 
 					// Reset cluster grids
@@ -67,6 +72,12 @@ void GridTrackerClass::reset()
 					bunkerGrid[x / 4][y / 4] = 0;
 					resourceGrid[x / 4][y / 4] = 0;
 				}
+			}
+
+			// Temp path home stuff
+			if (reservePathHome[x / 4][y / 4] == 1)
+			{
+				reserveGrid[x / 4][y / 4] = 1;
 			}
 		}
 	}
@@ -268,9 +279,9 @@ void GridTrackerClass::updateAllyGrids()
 void GridTrackerClass::updateEnemyGrids()
 {
 	for (auto &e : Units().getEnUnits())
-	{		
+	{
 		UnitInfo enemy = e.second;
-		
+
 		if (enemy.unit() && enemy.getDeadFrame() == 0)
 		{
 			WalkPosition start = enemy.getWalkPosition();
@@ -518,6 +529,40 @@ void GridTrackerClass::updateMobilityGrids()
 				{
 					distanceGridHome[x][y] = 0;
 				}
+			}
+		}
+	}
+
+
+	if (Broodwar->getFrameCount() > 500)
+	{
+		// Create reserve path home
+		TilePosition end = Terrain().getPlayerStartingTilePosition();
+		TilePosition start = Terrain().getSecondChoke();
+		while (reservePathHome[end.x][end.y] == 0)
+		{
+			double closestD = 0.0;
+			TilePosition closestT;
+			for (int x = start.x - 1; x <= start.x + 1; x++)
+			{
+				for (int y = start.y - 1; y <= start.y + 1; y++)
+				{
+					if (!TilePosition(x, y).isValid() && TilePosition(x, y).getDistance(start) > 1)
+					{
+						continue;
+					}
+					if (Grids().getMobilityGrid(WalkPosition(TilePosition(x, y))) > 0 && TilePosition(x, y).isValid() && (Grids().getDistanceHome(WalkPosition(TilePosition(x, y))) < closestD || closestD == 0.0))
+					{
+						closestD = Grids().getDistanceHome(WalkPosition(TilePosition(x, y)));
+						closestT = TilePosition(x, y);
+					}
+				}
+			}
+
+			if (closestT.isValid())
+			{
+				start = closestT;
+				reservePathHome[closestT.x][closestT.y] = 1;
 			}
 		}
 	}

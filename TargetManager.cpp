@@ -51,7 +51,7 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 			continue;
 		}
 
-		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
+		double distance = double(unit->getDistance(u.second.getPosition()));
 
 		if (u.first->exists())
 		{
@@ -66,6 +66,8 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 		{
 			thisUnit = thisUnit * 0.25;
 		}
+
+		//thisUnit = u.second.getPriority() / (1.0 + (distance * Grids().getEGroundDistanceGrid(u.second.getWalkPosition())));
 
 		// If this is the strongest enemy around, target it
 		if (thisUnit > highest || highest == 0.0)
@@ -83,38 +85,33 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 
 Unit TargetTrackerClass::allyTarget(Unit unit)
 {
-	double highest = 640.0, thisUnit = 0.0;
+	double highest = 0.0;
 	Unit target = nullptr;
 
-	for (auto &u : Units().getMyUnits())
+	// Search for an ally target that needs healing for medics
+	for (auto &a : Units().getMyUnits())
 	{
-		if (!u.first)
+		UnitInfo ally = a.second;
+		if (!ally.unit() || ally.getDeadFrame() != 0 || !ally.getType().isOrganic())
+		{
+			continue;
+		}
+		
+		if (ally.unit()->isBeingHealed() && Units().getMyUnits()[unit].getTarget() != ally.unit())
 		{
 			continue;
 		}
 
-		if (u.second.getDeadFrame() != 0)
-		{
-			continue;
-		}
-		if (u.second.unit()->isBeingHealed() && Units().getMyUnits()[unit].getTarget() != u.second.unit())
-		{
-			continue;
-		}
+		double distance = 1.0 + double(unit->getDistance(ally.getPosition()));
 
-		if (u.second.getType() != UnitTypes::Terran_Marine && u.second.getType() != UnitTypes::Terran_Firebat && u.second.getType() != UnitTypes::Terran_Medic)
-		{
-			continue;
-		}
-
-		double distance = 1.0 + double(unit->getDistance(u.second.getPosition()));
-
-		if (u.first->exists() && u.first->getHitPoints() < u.second.getType().maxHitPoints() && distance < highest)
+		if (ally.unit()->exists() && ally.unit()->getHitPoints() < ally.getType().maxHitPoints() && (distance < highest || highest == 0.0))
 		{
 			highest = distance;
-			target = u.first;
+			target = ally.unit();
 		}
 	}
+
+	// If we found an ally target, store the position
 	if (target)
 	{
 		Units().getMyUnits()[unit].setTargetPosition(Units().getMyUnits()[target].getPosition());

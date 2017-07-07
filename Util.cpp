@@ -14,11 +14,7 @@ double UtilTrackerClass::getStrength(UnitType unitType, Player who)
 	if (unitType == UnitTypes::Zerg_Lurker)
 	{
 		return 20.0;
-	}
-	if (unitType == UnitTypes::Protoss_Reaver || unitType == UnitTypes::Protoss_Carrier)
-	{
-		return 50.0;
-	}
+	}	
 	if (unitType == UnitTypes::Protoss_High_Templar)
 	{
 		return 20.0;
