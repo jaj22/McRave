@@ -33,7 +33,7 @@ void ResourceTrackerClass::update()
 		}
 	}
 
-	// Assume saturated so check happens
+	// Assume mineral saturated, proven wrong if a mineral doesn't have 2 gatherers
 	minSat = true;
 	for (auto &m : myMinerals)
 	{
@@ -47,7 +47,7 @@ void ResourceTrackerClass::update()
 		}		
 	}
 
-	// Assume saturated again
+	// Assume gas saturated, proven wrong if a gas doesn't have 3 gatherers
 	gasSat = true;
 	for (auto &g : myGas)
 	{

@@ -2,10 +2,17 @@
 
 void BuildingTrackerClass::update()
 {
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();
+
 	queueBuildings();
 	constructBuildings();
-	Display().performanceTest(__func__);
+
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 0, "Building Manager: %d ms", duration);
 	return;
+
 }
 
 void BuildingTrackerClass::queueBuildings()
@@ -44,8 +51,8 @@ void BuildingTrackerClass::constructBuildings()
 		if (worker.second.getBuildingType().isValid() && worker.second.getBuildPosition().isValid())
 		{
 			buildingsQueued[worker.second.getBuildingType()] += 1;
-			queuedMineral += worker.second.getBuildingType().mineralPrice();
-			queuedGas += worker.second.getBuildingType().gasPrice();
+			queuedMineral = queuedMineral + worker.second.getBuildingType().mineralPrice();
+			queuedGas = queuedGas + worker.second.getBuildingType().gasPrice();
 		}
 	}
 	for (auto &building : myBuildings)
@@ -64,22 +71,30 @@ void BuildingTrackerClass::constructBuildings()
 
 void BuildingTrackerClass::storeBuilding(Unit building)
 {
-	myBuildings[building].setUnit(building);
-	myBuildings[building].setUnitType(building->getType());
-	myBuildings[building].setPosition(building->getPosition());
-	myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
-	myBuildings[building].setTilePosition(building->getTilePosition());
+	if (myBuildings.find(building) != myBuildings.end())
+	{
+		myBuildings[building].setUnit(building);
+		myBuildings[building].setUnitType(building->getType());
+		myBuildings[building].setPosition(building->getPosition());
+		myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
+		myBuildings[building].setTilePosition(building->getTilePosition());
+	}
+
 	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBuildings[building].setEnergy(building->getEnergy());
 }
 
 void BuildingTrackerClass::storeBattery(Unit building)
 {
-	myBatteries[building].setUnit(building);
-	myBatteries[building].setUnitType(building->getType());
-	myBatteries[building].setPosition(building->getPosition());
-	myBatteries[building].setWalkPosition(Util().getWalkPosition(building));
-	myBatteries[building].setTilePosition(building->getTilePosition());
+	if (building->getType() == UnitTypes::Protoss_Shield_Battery)
+	{
+		myBatteries[building].setUnit(building);
+		myBatteries[building].setUnitType(building->getType());
+		myBatteries[building].setPosition(building->getPosition());
+		myBatteries[building].setWalkPosition(Util().getWalkPosition(building));
+		myBatteries[building].setTilePosition(building->getTilePosition());
+	}
+
 	myBatteries[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBatteries[building].setEnergy(building->getEnergy());
 }
@@ -165,13 +180,13 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 
 	/*if (Broodwar->self()->getRace() == Races::Terran && (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Terran_Barracks))
 	{
-	for (auto wall : BWEM::utils::findWalls(theMap.Instance()))
-	{
-	if (wall.Center().getDistance(Terrain().getPlayerStartingPosition()) < 640 && wall.Possible())
-	{
-
-	}
-	}
+		for (auto wall : BWEM::utils::findWalls(theMap.Instance()))
+		{
+			if (wall.Center().getDistance(Terrain().getPlayerStartingPosition()) < 640 && wall.Possible())
+			{				
+			
+			}
+		}
 	}*/
 
 	// If we are fast expanding
@@ -210,7 +225,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 	}
 
-	// For each base, check if you can build near it
+	// For each base, check if you can build near it, starting at the main
 	for (auto &base : Bases().getMyOrderedBases())
 	{
 		TilePosition here = getBuildLocationNear(building, base.second);
@@ -224,23 +239,25 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 
 bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
-	// Attempt to place Cannons in a concave around the second choke on a fast expansion
+	int offset = 0;
+	// Offset for first pylon and production
 	if (Strategy().isFastExpand())
-	{		
+	{
+		if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) <= 0)
+		{
+			offset = 0;
+		}
 		if (building == UnitTypes::Protoss_Photon_Cannon && Position(Terrain().getSecondChoke()).getDistance(Position(buildTilePosition)) < 128)
 		{
 			return false;
 		}
 	}
-
-	// Production buildings that create ground units require spacing so they don't trap units -- TEMP: Supply depot to not block SCVs (need to find solution)
 	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
 	{
-		buildingOffset = 1;
+		offset = 1;
 	}
 
-	// Refineries are only built on my own gas resources
-	if (building.isRefinery())
+	if (building == UnitTypes::Protoss_Assimilator || building == UnitTypes::Terran_Refinery)
 	{
 		for (auto &gas : Resources().getMyGas())
 		{
@@ -302,11 +319,11 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 	}
 
 	// If the building requires an offset (production buildings and first pylon)
-	if (buildingOffset > 0)
+	if (offset > 0)
 	{
-		for (int x = buildTilePosition.x - buildingOffset; x < buildTilePosition.x + building.tileWidth() + buildingOffset; x++)
+		for (int x = buildTilePosition.x - offset; x < buildTilePosition.x + building.tileWidth() + offset; x++)
 		{
-			for (int y = buildTilePosition.y - buildingOffset; y < buildTilePosition.y + building.tileHeight() + buildingOffset; y++)
+			for (int y = buildTilePosition.y - offset; y < buildTilePosition.y + building.tileHeight() + offset; y++)
 			{
 				if (Grids().getReserveGrid(x, y) > 0 && !Broodwar->isBuildable(TilePosition(x, y), true))
 				{

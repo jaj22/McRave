@@ -7,13 +7,12 @@ using namespace std;
 
 class CommandTrackerClass
 {
-	bool kite;
 public:
 	void update();
-	void updateAlliedUnits();
+	void getDecision(UnitInfo&);
 	void defend(UnitInfo&);
 	void attackMove(UnitInfo&);	
-	void attackTarget(UnitInfo&);
+	void microTarget(UnitInfo&);
 	void exploreArea(UnitInfo&);
 	void fleeTarget(UnitInfo&);
 };

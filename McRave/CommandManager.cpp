@@ -1,91 +1,95 @@
 #include "McRave.h"
 
 void CommandTrackerClass::update()
-{	
-	updateAlliedUnits();
-	Display().performanceTest(__func__);
-	return;
-}
-
-void CommandTrackerClass::updateAlliedUnits()
 {
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();
+
 	for (auto &u : Units().getMyUnits())
 	{
-		UnitInfo unit = u.second;
-
 		// Special units have their own commands
-		if (unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Shuttle)
+		if (u.second.getType() == UnitTypes::Protoss_Observer || u.second.getType() == UnitTypes::Protoss_Arbiter || u.second.getType() == UnitTypes::Protoss_Shuttle)
 		{
 			continue;
 		}
-
-		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, or not completed
-		if (!unit.unit() || (unit.unit() && !unit.unit()->exists()))
+		if (u.second.unit())
 		{
-			return;
+			getDecision(u.second);
 		}
-		if (unit.unit()->exists() && (unit.unit()->isLockedDown() || unit.unit()->isMaelstrommed() || unit.unit()->isStasised() || !unit.unit()->isCompleted()))
-		{
-			return;
-		}
+	}
 
-		// If the unit is ready to perform an action after an attack (certain units have minimum frames after an attack before they can receive a new command)
-		if (Broodwar->getFrameCount() - unit.getLastAttackFrame() > unit.getMinStopFrame() - Broodwar->getLatencyFrames())
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 20, "Command Manager: %d ms", duration);
+}
+
+void CommandTrackerClass::getDecision(UnitInfo& unit)
+{
+	// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, not powered or not completed
+	if (!unit.unit() || (unit.unit() && !unit.unit()->exists()))
+	{
+		return;
+	}
+	if (unit.unit()->exists() && (unit.unit()->isLockedDown() || unit.unit()->isMaelstrommed() || unit.unit()->isStasised() || !unit.unit()->isCompleted()))
+	{
+		return;
+	}
+
+	// If the unit is ready to perform an action after an attack (Dragoons require 9 frames after an attack)
+	if (Broodwar->getFrameCount() - unit.getLastAttackFrame() > unit.getMinStopFrame() - Broodwar->getLatencyFrames())
+	{
+		// If globally behind
+		if (Units().getGlobalStrategy() == 0 || Units().getGlobalStrategy() == 2)
 		{
-			// If globally behind
-			if (Units().getGlobalStrategy() == 0 || Units().getGlobalStrategy() == 2)
+			// Check if we have a target
+			if (unit.getTarget() && unit.getTarget()->exists())
 			{
-				// Check if we have a target
-				if (unit.getTarget())
+				// If locally ahead, fight
+				if (unit.getStrategy() == 1)
 				{
-					// If locally ahead, fight
-					if (unit.getStrategy() == 1 && unit.getTarget()->exists())
-					{
-						attackTarget(unit);
-						return;
-					}
-					// Else flee
-					else if (unit.getStrategy() == 0)
-					{
-						fleeTarget(unit);
-						return;
-					}
+					microTarget(unit);
+					return;
 				}
-				// Else defend
-				defend(unit);
-				return;
-			}
-
-			// If globally ahead
-			else if (Units().getGlobalStrategy() == 1)
-			{
-				// Check if we have a target
-				if (unit.getTarget())
+				// Else flee
+				else if (unit.getStrategy() == 0)
 				{
-					// If locally behind, contain
-					if (unit.getStrategy() == 0 || unit.getStrategy() == 2)
-					{
-						fleeTarget(unit);
-						return;
-					}
-					// Else attack
-					else if (unit.getStrategy() == 1 && unit.getTarget()->exists())
-					{
-						attackTarget(unit);
-						return;
-					}
-					// Else attack move best location
-					else
-					{
-						attackMove(unit);
-						return;
-					}
+					fleeTarget(unit);
+					return;
 				}
 			}
-			// Else attack move
-			attackMove(unit);
+			// Else defend
+			defend(unit);
 			return;
-		}		
+		}
+
+		// If globally ahead
+		else if (Units().getGlobalStrategy() == 1)
+		{
+			// Check if we have a target
+			if (unit.getTarget())
+			{
+				// If locally behind, contain
+				if (unit.getStrategy() == 0 || unit.getStrategy() == 2)
+				{
+					fleeTarget(unit);
+					return;
+				}
+				// Else attack
+				else if (unit.getStrategy() == 1 && unit.getTarget()->exists())
+				{
+					microTarget(unit);
+					return;
+				}
+				// Else attack move best location
+				else
+				{
+					attackMove(unit);
+					return;
+				}
+			}
+		}
+		attackMove(unit);
+		return;
 	}
 	return;
 }
@@ -153,10 +157,10 @@ void CommandTrackerClass::attackMove(UnitInfo& unit)
 	return;
 }
 
-void CommandTrackerClass::attackTarget(UnitInfo& unit)
-{	
-	// TEMP -- Set to false initially
-	kite = false;
+void CommandTrackerClass::microTarget(UnitInfo& unit)
+{
+	// Variables
+	bool kite = false;
 
 	// Specific High Templar behavior
 	if (unit.getType() == UnitTypes::Protoss_High_Templar)
@@ -253,7 +257,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 	}
 	else if (unit.unit()->getGroundWeaponCooldown() <= 0)
 	{
-		// If unit receieved an attack command on the target already, don't give another order
+		// If unit receieved an attack command on the target already, don't give another order - TODO: Test if it could be removed maybe to prevent goon stop bug
 		if (unit.unit()->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit.unit()->getLastCommand().getTarget() == unit.getTarget())
 		{
 			return;
@@ -284,16 +288,16 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 	double highestMobility = 0.0;
 
 	// Search a 16x16 (4 tiles) mini tile area around the unit for highest mobility	and lowest threat
-	for (int x = start.x - 8; x <= start.x + 8 + (unit.getType().tileWidth() * 4); x++)
+	for (int x = start.x - 12; x <= start.x + 12 + (unit.getType().tileWidth() * 4); x++)
 	{
-		for (int y = start.y - 8; y <= start.y + 8 + (unit.getType().tileHeight() * 4); y++)
+		for (int y = start.y - 12; y <= start.y + 12 + (unit.getType().tileHeight() * 4); y++)
 		{
 			if (WalkPosition(x, y).isValid())
 			{
 				if (unit.getType() == UnitTypes::Protoss_Dragoon && Grids().getResourceGrid(x / 4, y / 4) > 0)
 				{
 					continue;
-				}			
+				}
 
 				double mobility = double(Grids().getMobilityGrid(x, y));
 				double threat = Grids().getEGroundGrid(x, y);
@@ -359,14 +363,14 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 
 	// Defend chokepoint with concave
 	int min = 128;
-	int max = 320;
+	int max = 256;
 	double closestD = 0.0;
 	WalkPosition start = unit.getWalkPosition();
 	WalkPosition bestPosition = start;
 	if (unit.getGroundRange() <= 32)
 	{
 		min = 64;
-		max = 128;
+		max = 96;
 	}
 
 	WalkPosition choke;
@@ -399,7 +403,7 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 				bool safeTile = true;
 				for (int i = x - unit.getType().width() / 16; i < x + unit.getType().tileWidth() / 16; i++)
 				{
-					for (int j = y - unit.getType().height() / 16; j < y + unit.getType().tileHeight() / 16; j++)
+					for (int j = y - unit.getType().height() / 8; j < y + unit.getType().tileHeight() / 16; j++)
 					{
 						// If mini tile exists on top of unit, ignore it
 						if (i >= start.x && i < start.x + unit.getType().tileWidth() * 4 && j >= start.y && j < start.y + unit.getType().tileHeight() * 4)
@@ -429,6 +433,7 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 			Grids().updateAllyMovement(unit.unit(), bestPosition);
 			unit.setTargetPosition(Position(bestPosition));
 		}
+		return;
 	}
 	return;
 }

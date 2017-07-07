@@ -19,16 +19,15 @@ public:
 	Unit getScout() { return scout; }
 	
 	void update();
-	void updateScout();
-	void updateWorkers();
-	void updateSituational(WorkerInfo&);
-	void updateGathering(WorkerInfo&);
-	void assignWorker(WorkerInfo&);
-	void reAssignWorker(WorkerInfo&);
+	void updateScout(WorkerInfo&);
+	void updateDecision(WorkerInfo&);
 
 	void storeWorker(Unit);
 	void removeWorker(Unit);
+	void assignWorker(Unit);	
+	void reAssignWorker(Unit);	
 	void exploreArea(Unit);
+	void avoidEnemy(Unit);
 
 	Unit getClosestWorker(Position);
 };

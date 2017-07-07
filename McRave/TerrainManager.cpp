@@ -2,12 +2,10 @@
 
 void TerrainTrackerClass::update()
 {
-	updateAreas();
-	updateChokes();	
-}
+	clock_t myClock;
+	double duration = 0.0;
+	myClock = clock();
 
-void TerrainTrackerClass::updateAreas()
-{
 	// Create island regions and natural expansion	
 	for (auto &area : theMap.Areas())
 	{
@@ -72,10 +70,7 @@ void TerrainTrackerClass::updateAreas()
 			break;
 		}
 	}
-}
 
-void TerrainTrackerClass::updateChokes()
-{
 	// Establish FFE position
 	int x = 0;
 	int y = 0;
@@ -122,25 +117,11 @@ void TerrainTrackerClass::updateChokes()
 
 	Broodwar->drawCircleMap(Position(secondChoke), 32, Colors::Red);
 	Broodwar->drawCircleMap(Position(firstChoke), 32, Colors::Blue);
-}
 
-void TerrainTrackerClass::removeTerritory(Unit base)
-{
-	if (base)
-	{
-		if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
-		{
-			enemyBasePositions.erase(base->getPosition());
 
-			if (theMap.GetArea(base->getTilePosition()))
-			{
-				if (allyTerritory.find(theMap.GetArea(base->getTilePosition())->Id()) != allyTerritory.end())
-				{
-					allyTerritory.erase(theMap.GetArea(base->getTilePosition())->Id());
-				}
-			}
-		}
-	}
+
+	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
+	//Broodwar->drawTextScreen(200, 80, "Terrain Manager: %d ms", duration);
 }
 
 bool TerrainTrackerClass::isInAllyTerritory(Unit unit)
@@ -170,7 +151,21 @@ Position TerrainTrackerClass::getClosestEnemyBase(Position here)
 	return closestP;
 }
 
-Position TerrainTrackerClass::getClosestAllyBase(Position here)
+void TerrainTrackerClass::removeTerritory(Unit base)
 {
+	if (base)
+	{
+		if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
+		{
+			enemyBasePositions.erase(base->getPosition());
 
+			if (theMap.GetArea(base->getTilePosition()))
+			{
+				if (allyTerritory.find(theMap.GetArea(base->getTilePosition())->Id()) != allyTerritory.end())
+				{
+					allyTerritory.erase(theMap.GetArea(base->getTilePosition())->Id());
+				}
+			}
+		}
+	}
 }

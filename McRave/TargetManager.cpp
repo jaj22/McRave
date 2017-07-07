@@ -160,7 +160,7 @@ Unit TargetTrackerClass::clusterTarget(Unit unit)
 					}
 				}
 				// High Templars can have air or ground clusters
-				else if (unit->getType() == UnitTypes::Protoss_High_Templar && Grids().getACluster(WalkPosition(TilePosition(x,y))) == 0)
+				else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 				{
 					if (Grids().getEGroundCluster(x, y) > highest)
 					{

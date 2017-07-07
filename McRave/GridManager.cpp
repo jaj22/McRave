@@ -20,7 +20,7 @@ void GridTrackerClass::update()
 
 void GridTrackerClass::reset()
 {
-	// Reset all tiles to 0
+	// For each tile, draw the current threat onto the tile
 	int center = 0;
 	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
 	{
@@ -50,7 +50,7 @@ void GridTrackerClass::reset()
 				arbiterGrid[x][y] = 0;
 				eDetectorGrid[x][y] = 0;
 
-				// Reset TilePosition grids
+				// Reset TilePosition grids (removes one iteration of the map tiles)
 				if (x % 4 == 0 && y % 4 == 0 && TilePosition(x / 4, y / 4).isValid())
 				{
 					// Debug test
@@ -268,7 +268,7 @@ void GridTrackerClass::updateAllyGrids()
 			{
 				if (TilePosition(x, y).isValid())
 				{
-					if (base.unit()->isCompleted())
+					if (base.unit() && base.unit()->isCompleted())
 					{
 						baseGrid[x][y] = 2;
 					}
@@ -661,7 +661,7 @@ void GridTrackerClass::updateGroundDistanceGrid()
 {
 	// TODO: Goal with this grid is to create a ground distance grid from home for unit micro
 	// Need to check for islands
-	if (mobilityAnalysis && !distanceAnalysis)
+	if (!distanceAnalysis)
 	{
 		WalkPosition start = WalkPosition(Terrain().getPlayerStartingPosition());
 		distanceGridHome[start.x][start.y] = 1;
