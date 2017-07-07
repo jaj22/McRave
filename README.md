@@ -4,6 +4,10 @@
 
 A Broodwar AI Developed in C++ using Visual Studio Express 2013, BWAPI, BWTA and BWEM. This bot is focused on ending the game in the early or middle stages of the game by applying pressure through containing the opponent, using unit efficiency to take as many favorable fights and utilizing the concept of momentum to push advantages. Currently the bot can do the following:
 
+**BWEM Differences:**
+- Removed all map drawings
+- Applied map instance fix (found by jaj22 on SSCAIT)
+
 **Information:**
 - Based on enemy composition, trains an ideal mixture of Dragoons/Zealots.
 - Based on enemy build order, creates a tech reaction to counter it.
