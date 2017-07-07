@@ -8,20 +8,24 @@
 
 // --- AUTHOR NOTES ---
 // Critical TODOS:
-// Improve FFE functionality (store FFE position)
 // Secondary scout, see what sort of tech we are against
 
-// Other TODOS:
+// TODOS:
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
+// One time increases: supply, sizes
+
+// TODOS to move to no latency compensation:
+// Building idle status stored
+// Unit idle status stored?
+// Update commands to remove any latency components
 
 // Testing:
 // Spider mine removal from expansions - Testing 2.0
 
 // Possibility:
-// 3 base carrier against iron?
-// Take angles into account for micro?
+// Take angles into account for micro? (Distance to target)
 // Player class to track upgrades/race/supply/strength?
 // One time supply increase instead of resetting?
 
@@ -44,11 +48,6 @@ void McRaveModule::onStart()
 
 void McRaveModule::onEnd(bool isWinner)
 {
-	// Called when the game ends
-	if (isWinner)
-	{
-		// Log your win here!
-	}
 }
 
 void McRaveModule::onFrame()

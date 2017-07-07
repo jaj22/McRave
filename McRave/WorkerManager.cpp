@@ -2,53 +2,26 @@
 
 void WorkerTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();
-
-	for (auto &worker : myWorkers)
-	{
-		updateScout(worker.second);
-		updateDecision(worker.second);
-	}
-
-	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 110, "Worker Manager: %d ms", duration);
+	updateScout();
+	updateWorkers();
 }
 
-void WorkerTrackerClass::updateScout(WorkerInfo& worker)
+void WorkerTrackerClass::updateWorkers()
 {
-	if (!scouting)
+	for (auto &worker : myWorkers)
 	{
-		return;
+		updateSituational(worker.second);
+		updateGathering(worker.second);
 	}
+}
 
-	// Crappy scouting method
-	if (!scout && !worker.unit()->isCarryingMinerals() && Units().getSupply() >= 18)
+void WorkerTrackerClass::updateScout()
+{
+	// Update scout probes decision if we are above 9 supply
+	if (!scout && Units().getSupply() >= 18)
 	{
-		scout = worker.unit();
-	}
-	if (worker.unit() == scout && !worker.unit()->isCarryingMinerals() && worker.getBuildingType() == UnitTypes::None)
-	{
-		if (Terrain().getEnemyBasePositions().size() == 0 && Units().getSupply() >= 18 && scouting)
-		{
-			for (auto &start : theMap.StartingLocations())
-			{
-				if (Broodwar->isExplored(start) == false)
-				{
-					if (worker.unit()->getOrderTargetPosition() != Position(start))
-					{
-						worker.unit()->move(Position(start));
-					}
-					break;
-				}
-			}
-		}
-		if (Terrain().getEnemyBasePositions().size() > 0)
-		{
-			exploreArea(worker.unit());
-		}
-	}
+		scout = getClosestWorker(Position(Terrain().getSecondChoke()));
+	}	
 	return;
 }
 
@@ -80,16 +53,39 @@ void WorkerTrackerClass::exploreArea(Unit worker)
 	return;
 }
 
-void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
+void WorkerTrackerClass::updateSituational(WorkerInfo& worker)
 {
-	// Reassign workers if we need gas
+	// Scout logic
+	if (scout && worker.unit() == scout && !worker.unit()->isCarryingMinerals() && worker.getBuildingType() == UnitTypes::None)
+	{
+		if (Terrain().getEnemyBasePositions().size() == 0 && Units().getSupply() >= 18 && scouting)
+		{
+			for (auto &start : theMap.StartingLocations())
+			{
+				if (Broodwar->isExplored(start) == false)
+				{
+					if (worker.unit()->getOrderTargetPosition() != Position(start))
+					{
+						worker.unit()->move(Position(start));
+					}
+					break;
+				}
+			}
+		}
+		if (Terrain().getEnemyBasePositions().size() > 0)
+		{
+			exploreArea(worker.unit());
+		}
+	}
+
+	// Reassignment logic
 	if (Resources().getGasNeeded() > 0 && (!Strategy().isRush() || Broodwar->self()->getRace() == Races::Terran))
 	{
-		reAssignWorker(worker.unit());
+		reAssignWorker(worker);
 		Resources().setGasNeeded(Resources().getGasNeeded() - 1);
 	}
 
-	// If not scouting and there's boulders to remove	
+	// Boulder removal logic
 	if (Resources().getMyBoulders().size() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
 	{
 		for (auto &b : Resources().getMyBoulders())
@@ -105,7 +101,7 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 		}
 	}
 
-	// If the worker has a building to construct
+	// Building logic
 	if (worker.getBuildingType().isValid() && worker.getBuildPosition().isValid())
 	{
 		if (!Buildings().canBuildHere(worker.getBuildingType(), worker.getBuildPosition()))
@@ -120,7 +116,6 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 		}
 		else
 		{
-			// Update reserved area
 			Grids().updateReservedLocation(worker.getBuildingType(), worker.getBuildPosition());
 
 			if (!Broodwar->isVisible(worker.getBuildPosition()) || Broodwar->self()->minerals() >= worker.getBuildingType().mineralPrice() / worker.getPosition().getDistance(Position(worker.getBuildPosition())) && Broodwar->self()->minerals() <= worker.getBuildingType().mineralPrice() && Broodwar->self()->gas() >= worker.getBuildingType().gasPrice() / worker.getPosition().getDistance(Position(worker.getBuildPosition())) && Broodwar->self()->gas() <= worker.getBuildingType().gasPrice())
@@ -135,14 +130,14 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 			{
 				if (worker.unit()->getOrderTargetPosition() != Position(worker.getBuildPosition()) || worker.unit()->isStuck())
 				{
-					worker.unit()->build(worker.getBuildingType(), worker.getBuildPosition());					
+					worker.unit()->build(worker.getBuildingType(), worker.getBuildPosition());
 				}
 				return;
 			}
 		}
 	}
 
-	// If worker has no shields left and on a shield battery grid
+	// Shield Battery logic
 	if (worker.unit()->getShields() <= 5 && Grids().getBatteryGrid(worker.unit()->getTilePosition()) > 0)
 	{
 		if (worker.unit()->getLastCommand().getType() != UnitCommandTypes::Right_Click_Unit && worker.unit()->getClosestUnit(Filter::IsAlly && Filter::IsCompleted  && Filter::GetType == UnitTypes::Protoss_Shield_Battery && Filter::Energy > 10))
@@ -152,7 +147,7 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 		}
 	}
 
-	// If worker can repair a bunker
+	// Bunker logic
 	if (Grids().getBunkerGrid(worker.getTilePosition()) > 0)
 	{
 		Unit bunker = worker.unit()->getClosestUnit(Filter::GetType == UnitTypes::Terran_Bunker && Filter::HP_Percent < 100);
@@ -183,21 +178,7 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 		}
 	}
 
-	// If no valid target, try to get a new one
-	if (!worker.getResource())
-	{
-		assignWorker(worker.unit());
-		// Any idle workers can gather closest mineral field until they are assigned again
-		if (worker.unit()->isIdle() && worker.unit()->getClosestUnit(Filter::IsMineralField))
-		{
-			worker.unit()->gather(worker.unit()->getClosestUnit(Filter::IsMineralField));
-			worker.setTarget(nullptr);
-			return;
-		}
-		return;
-	}
-
-	// Attack units in mineral line
+	// Defending logic
 	if (Broodwar->getFrameCount() - worker.getLastGatherFrame() <= 25 && Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0)
 	{
 		if (!worker.getTarget() || (worker.getTarget() && !worker.getTarget()->exists()))
@@ -213,6 +194,29 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 			return;
 		}
 	}
+}
+
+void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
+{
+	// If we gave the worker a command already from situational behaviors, return
+	if (worker.unit()->getLastCommandFrame() >= Broodwar->getFrameCount())
+	{
+		return;
+	}
+
+	// If worker doesn't have an assigned resource, assign one
+	if (!worker.getResource())
+	{
+		assignWorker(worker);
+		// Any idle workers can gather closest mineral field until they are assigned again
+		if (worker.unit()->isIdle() && worker.unit()->getClosestUnit(Filter::IsMineralField))
+		{
+			worker.unit()->gather(worker.unit()->getClosestUnit(Filter::IsMineralField));
+			worker.setTarget(nullptr);
+			return;
+		}
+	}
+	
 	// If idle and carrying gas or minerals, return cargo			
 	if (worker.unit()->isCarryingGas() || worker.unit()->isCarryingMinerals())
 	{
@@ -222,13 +226,7 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 		}
 		return;
 	}
-
-	// If we have been given a command this frame already, return
-	if (!worker.unit()->isIdle() && (worker.unit()->getLastCommand().getType() == UnitCommandTypes::Move || worker.unit()->getOrder() == Orders::PlaceBuilding))
-	{
-		return;
-	}
-
+	
 	// If not targeting the mineral field the worker is mapped to
 	if (!worker.unit()->isCarryingGas() && !worker.unit()->isCarryingMinerals())
 	{
@@ -243,7 +241,7 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 			return;
 		}
 		// If the mineral field is in vision and no target, force to gather from the assigned mineral field
-		if (worker.getResource())
+		if (worker.getResource() && Grids().getBaseGrid(TilePosition(worker.getResourcePosition())) == 2)
 		{
 			if (worker.getResource()->exists())
 			{
@@ -253,7 +251,7 @@ void WorkerTrackerClass::updateDecision(WorkerInfo& worker)
 			}
 			else
 			{
-				worker.unit()->move(Resources().getMyMinerals()[worker.getResource()].getPosition());
+				worker.unit()->move(worker.getResourcePosition());
 				return;
 			}
 		}
@@ -317,7 +315,7 @@ void WorkerTrackerClass::removeWorker(Unit worker)
 	myWorkers.erase(worker);
 }
 
-void WorkerTrackerClass::assignWorker(Unit worker)
+void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
 {
 	// Assign a task if none
 	int cnt = 1;
@@ -329,7 +327,8 @@ void WorkerTrackerClass::assignWorker(Unit worker)
 			if (gas.second.getType() != UnitTypes::Resource_Vespene_Geyser && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
 			{
 				gas.second.setGathererCount(gas.second.getGathererCount() + 1);
-				myWorkers[worker].setResource(gas.first);
+				worker.setResource(gas.first);
+				worker.setResourcePosition(gas.second.getPosition());
 				return;
 			}
 		}
@@ -343,7 +342,8 @@ void WorkerTrackerClass::assignWorker(Unit worker)
 			if (mineral.second.getGathererCount() < cnt)
 			{
 				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
-				myWorkers[worker].setResource(mineral.first);
+				worker.setResource(mineral.first);
+				worker.setResourcePosition(mineral.second.getPosition());
 				return;
 			}
 		}
@@ -352,15 +352,18 @@ void WorkerTrackerClass::assignWorker(Unit worker)
 	return;
 }
 
-void WorkerTrackerClass::reAssignWorker(Unit worker)
+void WorkerTrackerClass::reAssignWorker(WorkerInfo& worker)
 {
-	if (Resources().getMyGas().find(myWorkers[worker].getResource()) != Resources().getMyGas().end())
+	if (worker.getResource())
 	{
-		Resources().getMyGas()[myWorkers[worker].getResource()].setGathererCount(Resources().getMyGas()[myWorkers[worker].getResource()].getGathererCount() - 1);
-	}
-	if (Resources().getMyMinerals().find(myWorkers[worker].getResource()) != Resources().getMyMinerals().end())
-	{
-		Resources().getMyMinerals()[myWorkers[worker].getResource()].setGathererCount(Resources().getMyMinerals()[myWorkers[worker].getResource()].getGathererCount() - 1);
+		if (Resources().getMyGas().find(worker.getResource()) != Resources().getMyGas().end())
+		{
+			Resources().getMyGas()[worker.getResource()].setGathererCount(Resources().getMyGas()[worker.getResource()].getGathererCount() - 1);
+		}
+		if (Resources().getMyMinerals().find(worker.getResource()) != Resources().getMyMinerals().end())
+		{
+			Resources().getMyMinerals()[worker.getResource()].setGathererCount(Resources().getMyMinerals()[worker.getResource()].getGathererCount() - 1);
+		}
 	}
 	assignWorker(worker);
 }

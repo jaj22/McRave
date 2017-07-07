@@ -2,15 +2,9 @@
 
 void UnitTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();
-
 	storeUnits();
 	removeUnits();
-
-	duration = 1000.0 * double(clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 100, "Unit Manager: %d ms", duration);
+	Display().performanceTest(__func__);
 }
 
 void UnitTrackerClass::storeUnits()
@@ -26,73 +20,73 @@ void UnitTrackerClass::storeUnits()
 	}
 	supply = 0;
 
-	// For all ally units
-	for (auto &u : Broodwar->self()->getUnits())
+	// Store all allied units
+	for (auto &ally : Broodwar->allies())
 	{
-		// Don't want to store scarabs or units that don't exist
-		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists())
+		for (auto &u : ally->getUnits())
 		{
-			continue;
-		}
+			// Don't want to store scarabs or units that don't exist
+			if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists())
+			{
+				continue;
+			}
 
-		// Add supply of this unit
-		if (u->getType().supplyRequired() > 0)
-		{
-			supply = supply + u->getType().supplyRequired();
-		}
+			// Add supply of this unit if it has one
+			if (u->getType().supplyRequired() > 0)
+			{
+				supply = supply + u->getType().supplyRequired();
+			}
 
-		// Store buildings even if they're not completed
-		if (u->getType().isBuilding())
-		{
-			Buildings().storeBuilding(u);			
-		}
-		if (u->getType().isResourceDepot())
-		{
-			Bases().storeBase(u);
-		}
-		else if (u->getType() == UnitTypes::Protoss_Pylon)
-		{
-			Pylons().storePylon(u);
-		}
-		else if (u->getType() == UnitTypes::Protoss_Shield_Battery)
-		{
-			Buildings().storeBattery(u);
-		}
-		else if (u->getType() == UnitTypes::Protoss_Photon_Cannon)
-		{
-			storeAllyUnit(u);
-		}
+			// Store buildings even if they're not completed
+			if (u->getType().isBuilding())
+			{
+				Buildings().storeBuilding(u);
+				if (u->getType().isResourceDepot())
+				{
+					Bases().storeBase(u);
+				}
+				else if (u->getType() == UnitTypes::Protoss_Pylon)
+				{
+					Pylons().storePylon(u);
+				}
+				else if (u->getType() == UnitTypes::Protoss_Shield_Battery)
+				{
+					Buildings().storeBattery(u);
+				}
+				else if (u->getType() == UnitTypes::Protoss_Photon_Cannon)
+				{
+					storeAllyUnit(u);
+				}
+			}
 
-		// Don't want to store units that aren't completed
-		else if (!u->isCompleted())
-		{
-			continue;
-		}
+			// Don't want to store units that aren't completed
+			else if (!u->isCompleted())
+			{
+				continue;
+			}
 
-		// Store workers
-		else if (u->getType().isWorker())
-		{
-			Workers().storeWorker(u);
-		}
-		// Store Special Units in both
-		else if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Terran_Medic)
-		{
-			storeAllyUnit(u);
-			SpecialUnits().storeUnit(u);
-		}
-		else if (u->getType() == UnitTypes::Protoss_Shuttle)
-		{
-			storeAllyUnit(u);
-			Transport().storeUnit(u);
-		}
-		// Store the rest
-		else
-		{
-			storeAllyUnit(u);
+			// Store workers
+			else if (u->getType().isWorker())
+			{
+				Workers().storeWorker(u);
+			}
+			// Store units
+			else
+			{
+				storeAllyUnit(u);
+				if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Terran_Medic)
+				{
+					SpecialUnits().storeUnit(u);
+				}
+				else if (u->getType() == UnitTypes::Protoss_Shuttle)
+				{
+					Transport().storeUnit(u);
+				}
+			}
 		}
 	}
 
-	// For all enemy units
+	// Store all enemy units
 	for (auto &player : Broodwar->enemies())
 	{
 		for (auto &u : player->getUnits())
@@ -104,6 +98,8 @@ void UnitTrackerClass::storeUnits()
 			}
 		}
 	}
+
+	// Store all neutral units
 }
 
 void UnitTrackerClass::removeUnits()

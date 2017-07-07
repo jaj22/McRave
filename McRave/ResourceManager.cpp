@@ -10,7 +10,7 @@ void ResourceTrackerClass::update()
 	{
 		if (r && r->exists())
 		{
-			if (Grids().getBaseGrid(r->getTilePosition()) == 1)
+			if (Grids().getBaseGrid(r->getTilePosition()) != 0)
 			{
 				if (r->getType().isMineralField() && r->getInitialResources() > 0 && myMinerals.find(r) == myMinerals.end())
 				{

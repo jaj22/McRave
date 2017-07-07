@@ -7,6 +7,7 @@ void BaseTrackerClass::update()
 		trainWorkers(base.second);
 		updateDefenses(base.second);
 	}
+	Display().performanceTest(__func__);
 	return;
 }
 

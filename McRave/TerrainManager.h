@@ -6,16 +6,13 @@ using namespace BWAPI;
 using namespace BWEM;
 using namespace std;
 
-namespace { auto & theMap = BWEM::Map::Instance(); }
+namespace 
+{
+	auto & theMap = BWEM::Map::Instance(); 
+}
 
 class TerrainTrackerClass
 {
-	bool analyzed = false;
-	bool wallin = false;
-	bool analyzeHome = true;
-	bool analyzeMap = true;
-	int currentSize = 0;
-
 	CPPath path;
 	set <int> allyTerritory;
 	set <int> islandRegions;
@@ -28,13 +25,12 @@ class TerrainTrackerClass
 
 public:
 	void update();
-	void setAnalyzed() { analyzed = true; }
-	bool isAnalyzed() { return analyzed; }
+	void updateAreas();
+	void updateChokes();
 	void removeTerritory(Unit);
-
 	bool isInAllyTerritory(Unit);
 	Position getClosestEnemyBase(Position);
-	TilePosition getRandomBase();	
+	Position getClosestAllyBase(Position);
 	
 	CPPath getPath() { return path; }
 	set <int>& getAllyTerritory() { return allyTerritory; }	
