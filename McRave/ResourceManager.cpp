@@ -2,59 +2,35 @@
 
 void ResourceTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();	
+	updateResources();
+	Display().performanceTest(__func__);
+	return;
+}
 
-	for (auto &r : Broodwar->neutral()->getUnits())
-	{
-		if (r && r->exists())
-		{
-			if (Grids().getBaseGrid(r->getTilePosition()) != 0)
-			{
-				if (r->getType().isMineralField() && r->getInitialResources() > 0 && myMinerals.find(r) == myMinerals.end())
-				{
-					storeMineral(r);
-				}
-
-				if (myGas.find(r) == myGas.end() && r->getType() == UnitTypes::Resource_Vespene_Geyser)
-				{
-					storeGas(r);
-				}				
-			}	
-			else if (Grids().getBaseGrid(r->getTilePosition()) == 0)
-			{
-				removeResource(r);
-			}
-			if (r->getInitialResources() == 0 && r->getDistance(Terrain().getPlayerStartingPosition()) < 2560)
-			{
-				storeBoulder(r);
-			}
-		}
-	}
-
-	// Assume saturated so check happens
+void ResourceTrackerClass::updateResources()
+{
+	// Assume mineral saturation, will be changed to false if any mineral field has less than 2 gatherers
 	minSat = true;
 	for (auto &m : myMinerals)
 	{
 		if (m.first->exists())
 		{
-			m.second.setRemainingResources(m.first->getResources());				
+			m.second.setRemainingResources(m.first->getResources());
 		}
 		if (minSat && m.second.getGathererCount() < 2)
 		{
 			minSat = false;
-		}		
+		}
 	}
 
-	// Assume saturated again
+	// Assume gas saturation, will be changed to false if any gas geyser has less than 3 gatherers
 	gasSat = true;
 	for (auto &g : myGas)
 	{
 		if (g.first->exists())
 		{
 			g.second.setUnitType(g.first->getType());
-			g.second.setRemainingResources(g.first->getResources());			
+			g.second.setRemainingResources(g.first->getResources());
 		}
 		if (g.second.getGathererCount() < 3 && g.second.getType() != UnitTypes::Resource_Vespene_Geyser)
 		{
@@ -63,9 +39,7 @@ void ResourceTrackerClass::update()
 			break;
 		}
 	}
-
-	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 50, "Resource Manager: %d ms", duration);
+	return;
 }
 
 void ResourceTrackerClass::storeMineral(Unit resource)
@@ -131,4 +105,5 @@ void ResourceTrackerClass::removeResource(Unit resource)
 			worker.second.setTarget(nullptr);
 		}
 	}
+	return;
 }

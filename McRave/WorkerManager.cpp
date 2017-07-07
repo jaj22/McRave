@@ -4,6 +4,8 @@ void WorkerTrackerClass::update()
 {
 	updateScout();
 	updateWorkers();
+	Display().performanceTest(__func__);
+	return;
 }
 
 void WorkerTrackerClass::updateWorkers()
@@ -18,7 +20,7 @@ void WorkerTrackerClass::updateWorkers()
 void WorkerTrackerClass::updateScout()
 {
 	// Update scout probes decision if we are above 9 supply
-	if (!scout && Units().getSupply() >= 18)
+	if (Units().getSupply() >= 18 && (!scout || (scout && !scout->exists())))
 	{
 		scout = getClosestWorker(Position(Terrain().getSecondChoke()));
 	}	

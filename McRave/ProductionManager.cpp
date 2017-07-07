@@ -7,6 +7,8 @@ void ProductionTrackerClass::update()
 	updateProtoss();
 	updateTerran();
 	updateZerg();
+	Display().performanceTest(__func__);
+	return;
 }
 
 void ProductionTrackerClass::updatePriorities()

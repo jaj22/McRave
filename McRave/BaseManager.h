@@ -15,6 +15,8 @@ public:
 	map <int, TilePosition>& getMyOrderedBases() { return myOrderedBases; }
 
 	void update();
+	void updateAlliedBases();
+	void updateEnemyBases();
 	void storeBase(Unit);
 	void removeBase(Unit);
 	void trainWorkers(BaseInfo&);

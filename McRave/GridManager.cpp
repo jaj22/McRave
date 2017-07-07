@@ -2,19 +2,13 @@
 
 void GridTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();
-
 	reset();
 	updateMobilityGrids();
 	updateAllyGrids();
 	updateEnemyGrids();
 	updateNeutralGrids();
 	updateGroundDistanceGrid();
-
-	duration = 1000.0 * double(clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 30, "Grid Manager: %d ms", duration);
+	Display().performanceTest(__func__);
 	return;
 }
 

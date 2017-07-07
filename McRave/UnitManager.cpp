@@ -5,6 +5,7 @@ void UnitTrackerClass::update()
 	storeUnits();
 	removeUnits();
 	Display().performanceTest(__func__);
+	return;
 }
 
 void UnitTrackerClass::storeUnits()
@@ -100,6 +101,32 @@ void UnitTrackerClass::storeUnits()
 	}
 
 	// Store all neutral units
+	for (auto &r : Broodwar->neutral()->getUnits())
+	{
+		if (r && r->exists())
+		{
+			if (Grids().getBaseGrid(r->getTilePosition()) != 0)
+			{
+				if (r->getType().isMineralField() && r->getInitialResources() > 0 && Resources().getMyMinerals().find(r) == Resources().getMyMinerals().end())
+				{
+					Resources().storeMineral(r);
+				}
+
+				if (Resources().getMyGas().find(r) == Resources().getMyGas().end() && r->getType() == UnitTypes::Resource_Vespene_Geyser)
+				{
+					Resources().storeGas(r);
+				}
+			}
+			else if (Grids().getBaseGrid(r->getTilePosition()) == 0)
+			{
+				Resources().removeResource(r);
+			}
+			if (r->getInitialResources() == 0 && r->getDistance(Terrain().getPlayerStartingPosition()) < 2560)
+			{
+				Resources().storeBoulder(r);
+			}
+		}
+	}
 }
 
 void UnitTrackerClass::removeUnits()

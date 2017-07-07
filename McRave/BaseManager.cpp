@@ -2,12 +2,18 @@
 
 void BaseTrackerClass::update()
 {
+	updateAlliedBases();
+	Display().performanceTest(__func__);
+	return;
+}
+
+void BaseTrackerClass::updateAlliedBases()
+{
 	for (auto &base : myBases)
-	{		
+	{
 		trainWorkers(base.second);
 		updateDefenses(base.second);
 	}
-	Display().performanceTest(__func__);
 	return;
 }
 
@@ -20,21 +26,21 @@ void BaseTrackerClass::storeBase(Unit base)
 		myBases[base].setResourcesPosition(centerOfResources(base));
 		myBases[base].setPosition(base->getPosition());
 		myBases[base].setWalkPosition(Util().getWalkPosition(base));
-		myBases[base].setTilePosition(base->getTilePosition());		
-		myBases[base].setPosition(base->getPosition());		
-	}	
+		myBases[base].setTilePosition(base->getTilePosition());
+		myBases[base].setPosition(base->getPosition());
+	}
 
 	if (Grids().isAnalyzed())
-	{		
+	{
 		myOrderedBases[base->getPosition().getDistance(Terrain().getPlayerStartingPosition())] = base->getTilePosition();
-	}	
+	}
 	return;
 }
 
 void BaseTrackerClass::removeBase(Unit base)
 {
 	if (myBases.find(base) != myBases.end())
-	{		
+	{
 		myBases.erase(base);
 	}
 	return;
@@ -58,10 +64,7 @@ void BaseTrackerClass::trainWorkers(BaseInfo& base)
 
 void BaseTrackerClass::updateDefenses(BaseInfo& base)
 {
-	if (Terrain().isAnalyzed())
-	{
-		Terrain().getAllyTerritory().emplace(theMap.GetArea(base.getTilePosition())->Id());
-	}
+	Terrain().getAllyTerritory().emplace(theMap.GetArea(base.getTilePosition())->Id());
 	return;
 }
 

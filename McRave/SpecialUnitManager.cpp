@@ -2,18 +2,12 @@
 
 void SpecialUnitTrackerClass::update()
 {
-	clock_t myClock;
-	double duration = 0.0;
-	myClock = clock();	
-
 	updateArbiters();
 	updateObservers();
 	updateTemplars();
 	updateReavers();
 	updateMedics();
-
-	duration = 1000.0 * (clock() - myClock) / (double)CLOCKS_PER_SEC;
-	//Broodwar->drawTextScreen(200, 60, "SpecUnit Manager: %d ms", duration);
+	Display().performanceTest(__func__);
 	return;
 }
 

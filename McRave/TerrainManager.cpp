@@ -4,6 +4,8 @@ void TerrainTrackerClass::update()
 {
 	updateAreas();
 	updateChokes();	
+	Display().performanceTest(__func__);
+	return;
 }
 
 void TerrainTrackerClass::updateAreas()
