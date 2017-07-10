@@ -12,6 +12,7 @@ class BaseInfo{
 	WalkPosition walkPosition;
 	TilePosition resourcesPosition, tilePosition;
 public:
+	BaseInfo();
 	Unit unit() { return thisUnit; }
 	UnitType getType() { return unitType; }
 	Position getPosition() { return position; }

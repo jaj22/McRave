@@ -12,7 +12,6 @@
 #include "map.h"
 #include "base.h"
 #include "neutral.h"
-#include "mapDrawer.h"
 #include "bwapiExt.h"
 #include <numeric>
 

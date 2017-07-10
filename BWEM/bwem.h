@@ -20,7 +20,6 @@
 #include "neutral.h"
 #include "gridMap.h"
 #include "examples.h"
-#include "mapDrawer.h"
 #include "utils.h"
 #include "bwapiExt.h"
 #include "defs.h"
