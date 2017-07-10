@@ -37,7 +37,8 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 			continue;
 		}
 
-		if (!unit.getType().isFlyer())
+
+		if (unit.getType().isFlyer())
 		{
 			thisUnit = enemy.getPriority() / (1.0 + (unit.getPosition().getDistance(enemy.getPosition()) * Grids().getEAirDistanceGrid(enemy.getWalkPosition())));
 		}

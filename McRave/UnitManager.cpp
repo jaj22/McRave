@@ -240,6 +240,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	Position targetPosition = allyUnits[unit].getTargetPosition();
 	double timeToTarget = 0.0;
 
+
 	// Time to reach target
 	if (unit->getDistance(targetPosition) > allyUnits[unit].getGroundRange() && allyUnits[unit].getSpeed() > 0)
 	{
@@ -275,7 +276,9 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
+
 		double threatRange = enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget);
+
 
 		// If a unit is within range of the target, add to local strength
 		if (enemy.getPosition().getDistance(targetPosition) < threatRange)
@@ -328,7 +331,9 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
+
 		double threatRange = ally.getGroundRange() + (ally.getSpeed() * timeToTarget);
+
 
 		// If a unit is within the range of the ally unit, add to local strength
 		if (ally.getPosition().getDistance(unit->getPosition()) < threatRange)
@@ -402,6 +407,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	}
 
 	// Specific melee strategy
+
 	if (allyUnits[unit].getGroundRange() <= 32)
 	{
 		// Force to stay on tanks
@@ -411,7 +417,9 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			return;
 		}
 
+
 		// Avoid attacking mines
+
 		if (target && target->exists() && enemyUnits[target].getType() == UnitTypes::Terran_Vulture_Spider_Mine)
 		{
 			allyUnits[unit].setStrategy(0);
@@ -453,7 +461,9 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 		}
 	}
 
+
 	// Specific ranged strategy
+
 	else if (globalStrategy == 2 && allyUnits[unit].getGroundRange() > 32)
 	{
 		if (target && target->exists() && ((Terrain().isInAllyTerritory(unit) && unit->getDistance(target) <= allyUnits[unit].getGroundRange()) || (Terrain().isInAllyTerritory(target) && !target->getType().isWorker())))

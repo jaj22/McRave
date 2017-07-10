@@ -78,6 +78,7 @@ void InterfaceTrackerClass::drawAllyInfo()
 			}
 		}
 	}
+	return;
 }
 
 void InterfaceTrackerClass::drawEnemyInfo()

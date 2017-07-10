@@ -3,7 +3,9 @@
 double UtilTrackerClass::getStrength(UnitInfo& unit, Player who)
 {
 	// Some hardcoded values that don't have attacks but should still be considered for strength
+
 	if (unit.getType() == UnitTypes::Terran_Medic)
+
 	{
 		return 10.0;
 	}
@@ -23,6 +25,7 @@ double UtilTrackerClass::getStrength(UnitInfo& unit, Player who)
 
 	if (!unit.getType().isWorker() && unit.getGroundDamage() > 0)
 	{
+
 		// Check for Zergling attack speed upgrade
 		if (unit.getType() == UnitTypes::Zerg_Zergling && who->getUpgradeLevel(UpgradeTypes::Adrenal_Glands))
 		{
@@ -35,6 +38,7 @@ double UtilTrackerClass::getStrength(UnitInfo& unit, Player who)
 		else
 		{
 			return range * damage;
+
 		}
 	}
 	return 0.0;

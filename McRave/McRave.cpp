@@ -30,7 +30,6 @@
 // Building idle status stored
 // Unit idle status stored?
 // Update commands to remove any latency components
-
 void McRaveModule::onStart()
 {
 	Broodwar->enableFlag(Flag::UserInput);	

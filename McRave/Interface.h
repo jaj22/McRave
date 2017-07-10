@@ -16,6 +16,7 @@ public:
 	void drawAllyInfo();
 	void drawEnemyInfo();
 	void drawInformation();
+
 	void startClock();
 	void performanceTest(string);
 	void sendText(string);

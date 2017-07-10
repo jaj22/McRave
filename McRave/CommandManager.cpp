@@ -2,7 +2,7 @@
 
 void CommandTrackerClass::update()
 {
-	Display().startClock();
+  Display().startClock();
 	updateAlliedUnits();
 	Display().performanceTest(__FUNCTION__);
 	return;
@@ -88,7 +88,7 @@ void CommandTrackerClass::updateAlliedUnits()
 			// Else attack move
 			attackMove(unit);
 			continue;
-		}
+    }
 	}
 	return;
 }
