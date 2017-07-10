@@ -2,9 +2,10 @@
 
 void BuildOrderTrackerClass::update()
 {
+	Display().startClock();
 	updateBuildDecision();
-	updateBaseBuild();
-	Display().performanceTest(__func__);
+	updateBaseBuild();	
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -171,15 +172,15 @@ void BuildOrderTrackerClass::protossSituational()
 		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 0;
 		for (auto &base : Bases().getMyBases())
 		{
-			if (Grids().getDefenseGrid(base.second.getTilePosition()) < Grids().getDistanceHome(base.second.getWalkPosition()) / 100)
+			if (base.second.unit()->isCompleted() && Grids().getDefenseGrid(base.second.getTilePosition()) < Grids().getDistanceHome(base.second.getWalkPosition()) / 100)
 			{
 				buildingDesired[UnitTypes::Protoss_Photon_Cannon] += Grids().getDistanceHome(base.second.getWalkPosition()) / 100;
 			}
 		}
 	}
-	if (Strategy().isBust())
+	if (Strategy().isFastExpand() && Strategy().globalEnemy() > Strategy().globalAlly() + Strategy().getAllyDefense())
 	{
-		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 6;
+		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 1 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Photon_Cannon);
 	}
 }
 

@@ -7,43 +7,41 @@
 #include "McRave.h"
 
 // --- AUTHOR NOTES ---
-// Critical TODOS:
-// Secondary scout, see what sort of tech we are against
+// Critical TODO:
 
-// TODOS:
+// TODO in testing before CIG 2017:
+// Make micro and threat grids relative to speed using 1 second intervals (if a unit moves at 8 pixels/second, they can look at 8 pixels left and right)
+// Archon merging
+// New distance grid
+// New priority
+// New strength
+// New reserve path
+// Delayed second scout
+// Spider mine removal from expansions
+
+// TODO:
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
 // One time increases: supply, sizes
+// Player class to track upgrades/race/supply/strength
 
-// TODOS to move to no latency compensation:
+// TODO to move to no latency compensation:
 // Building idle status stored
 // Unit idle status stored?
 // Update commands to remove any latency components
 
-// Testing:
-// Spider mine removal from expansions - Testing 2.0
-
-// Possibility:
-// Take angles into account for micro? (Distance to target)
-// Player class to track upgrades/race/supply/strength?
-// One time supply increase instead of resetting?
-
 void McRaveModule::onStart()
 {
-	// Enable the UserInput flag, which allows us to control the bot and type messages.
-	Broodwar->enableFlag(Flag::UserInput);
-
-	// Set the command optimization level so that common commands can be grouped and reduce the bot's APM (Actions Per Minute).
+	Broodwar->enableFlag(Flag::UserInput);	
 	Broodwar->setCommandOptimizationLevel(0);
-
 	Broodwar->setLatCom(true);
 	Broodwar->setLocalSpeed(0);
-
 	theMap.Initialize();
 	theMap.EnableAutomaticPathAnalysis();
 	bool startingLocationsOK = theMap.FindBasesForStartingLocations();
 	assert(startingLocationsOK);
+	Terrain().onStart();
 }
 
 void McRaveModule::onEnd(bool isWinner)
@@ -70,8 +68,7 @@ void McRaveModule::onFrame()
 
 void McRaveModule::onSendText(std::string text)
 {
-	// Else send the text to the game if it is not being processed
-	Broodwar->sendText("%s", text.c_str());
+	Display().sendText(text);
 }
 
 void McRaveModule::onReceiveText(BWAPI::Player player, std::string text)

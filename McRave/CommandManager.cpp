@@ -1,9 +1,10 @@
 #include "McRave.h"
 
 void CommandTrackerClass::update()
-{	
+{
+	Display().startClock();
 	updateAlliedUnits();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -12,6 +13,8 @@ void CommandTrackerClass::updateAlliedUnits()
 	for (auto &u : Units().getMyUnits())
 	{
 		UnitInfo unit = u.second;
+
+		Broodwar->drawTextMap(unit.getPosition(), "%.2f", unit.getLocal());
 
 		// Special units have their own commands
 		if (unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Shuttle)
@@ -22,11 +25,11 @@ void CommandTrackerClass::updateAlliedUnits()
 		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, or not completed
 		if (!unit.unit() || (unit.unit() && !unit.unit()->exists()))
 		{
-			return;
+			continue;
 		}
 		if (unit.unit()->exists() && (unit.unit()->isLockedDown() || unit.unit()->isMaelstrommed() || unit.unit()->isStasised() || !unit.unit()->isCompleted()))
 		{
-			return;
+			continue;
 		}
 
 		// If the unit is ready to perform an action after an attack (certain units have minimum frames after an attack before they can receive a new command)
@@ -42,18 +45,18 @@ void CommandTrackerClass::updateAlliedUnits()
 					if (unit.getStrategy() == 1 && unit.getTarget()->exists())
 					{
 						attackTarget(unit);
-						return;
+						continue;
 					}
 					// Else flee
 					else if (unit.getStrategy() == 0)
 					{
 						fleeTarget(unit);
-						return;
+						continue;
 					}
 				}
 				// Else defend
 				defend(unit);
-				return;
+				continue;
 			}
 
 			// If globally ahead
@@ -66,26 +69,26 @@ void CommandTrackerClass::updateAlliedUnits()
 					if (unit.getStrategy() == 0 || unit.getStrategy() == 2)
 					{
 						fleeTarget(unit);
-						return;
+						continue;
 					}
 					// Else attack
 					else if (unit.getStrategy() == 1 && unit.getTarget()->exists())
 					{
 						attackTarget(unit);
-						return;
+						continue;
 					}
 					// Else attack move best location
 					else
 					{
 						attackMove(unit);
-						return;
+						continue;
 					}
 				}
 			}
 			// Else attack move
 			attackMove(unit);
-			return;
-		}		
+			continue;
+		}
 	}
 	return;
 }
@@ -154,7 +157,7 @@ void CommandTrackerClass::attackMove(UnitInfo& unit)
 }
 
 void CommandTrackerClass::attackTarget(UnitInfo& unit)
-{	
+{
 	// TEMP -- Set to false initially
 	kite = false;
 
@@ -181,7 +184,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 		{
 			unit.unit()->useTech(TechTypes::Healing, unit.getTarget());
 		}
-		Broodwar->drawLineMap(unit.getPosition(), unit.getTargetPosition(), Colors::Red);		
+		Broodwar->drawLineMap(unit.getPosition(), unit.getTargetPosition(), Colors::Red);
 		return;
 	}
 
@@ -259,7 +262,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 			return;
 		}
 		if (unit.unit()->getOrderTarget() != unit.getTarget() || unit.unit()->isStuck())
-		{			
+		{
 			unit.unit()->attack(unit.getTarget());
 		}
 		unit.setTargetPosition(Units().getEnUnits()[unit.getTarget()].getPosition());
@@ -282,54 +285,48 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 	WalkPosition start = unit.getWalkPosition();
 	WalkPosition finalPosition = start;
 	double highestMobility = 0.0;
+	int offset = int(unit.getSpeed()) / 8;
 
-	// Search a 16x16 (4 tiles) mini tile area around the unit for highest mobility	and lowest threat
-	for (int x = start.x - 8; x <= start.x + 8 + (unit.getType().tileWidth() * 4); x++)
+	// Specific High Templar flee
+	if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || unit.unit()->isUnderAttack()))
 	{
-		for (int y = start.y - 8; y <= start.y + 8 + (unit.getType().tileHeight() * 4); y++)
+		for (auto templar : SpecialUnits().getMyTemplars())
 		{
-			if (WalkPosition(x, y).isValid())
+			if (templar.second.unit()->getEnergy() < 75 || templar.second.unit()->isUnderAttack())
+			{
+				unit.unit()->useTech(TechTypes::Archon_Warp, templar.second.unit());
+				return;
+			}
+		}
+	}
+
+	// Search a circle around the target based on the speed of the unit in one second of game time
+	for (int x = start.x - offset; x <= start.x + offset + (unit.getType().tileWidth() * 4); x++)
+	{
+		for (int y = start.y - offset; y <= start.y + offset + (unit.getType().tileHeight() * 4); y++)
+		{
+			if (WalkPosition(x, y).isValid() && unit.getPosition().getDistance(Position(WalkPosition(x, y))) < offset)
 			{
 				if (unit.getType() == UnitTypes::Protoss_Dragoon && Grids().getResourceGrid(x / 4, y / 4) > 0)
 				{
 					continue;
-				}			
+				}
 
 				double mobility = double(Grids().getMobilityGrid(x, y));
 				double threat = Grids().getEGroundGrid(x, y);
 				double distance = Grids().getEGroundDistanceGrid(x, y);
 				double distanceHome = double(pow(Grids().getDistanceHome(x, y), 0.1));
 
-				if (Grids().getAntiMobilityGrid(x, y) == 0 && (mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility)
+				if (Grids().getAntiMobilityGrid(x, y) == 0 && (mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility && Util().isSafe(start, WalkPosition(x, y), unit.getType(), false, false, true))
 				{
-					bool bestTile = true;
-					for (int i = x - unit.getType().width() / 16; i < x + unit.getType().width() / 16; i++)
-					{
-						for (int j = y - unit.getType().height() / 16; j < y + unit.getType().height() / 16; j++)
-						{
-							if (WalkPosition(i, j).isValid())
-							{
-								// If mini tile exists on top of unit, ignore it
-								if (i >= start.x && i < start.x + unit.getType().tileWidth() * 4 && j >= start.y && j < start.y + unit.getType().tileHeight() * 4)
-								{
-									continue;
-								}
-								if (Grids().getMobilityGrid(i, j) == 0 || Grids().getAntiMobilityGrid(i, j) == 1)
-								{
-									bestTile = false;
-								}
-							}
-						}
-					}
-					if (bestTile)
-					{
-						highestMobility = (mobility / (1.0 + (distance * threat))) / distanceHome;
-						finalPosition = WalkPosition(x, y);
-					}
+					highestMobility = (mobility / (1.0 + (distance * threat))) / distanceHome;
+					finalPosition = WalkPosition(x, y);
 				}
 			}
 		}
 	}
+
+	// If a valid position was found that isn't the starting position
 	if (finalPosition.isValid() && finalPosition != start)
 	{
 		Grids().updateAllyMovement(unit.unit(), finalPosition);
@@ -338,6 +335,10 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 		{
 			unit.unit()->move(Position(finalPosition));
 		}
+	}
+	else
+	{
+		attackTarget(unit);
 	}
 	return;
 }
@@ -362,13 +363,14 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 	int max = 320;
 	double closestD = 0.0;
 	WalkPosition start = unit.getWalkPosition();
-	WalkPosition bestPosition = start;
+	WalkPosition bestPosition;
 	if (unit.getGroundRange() <= 32)
 	{
 		min = 64;
 		max = 128;
 	}
 
+	// Find closest chokepoint
 	WalkPosition choke;
 	for (auto &base : Bases().getMyBases())
 	{
@@ -389,6 +391,7 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 		}
 	}
 
+	// Find suitable position to hold at chokepoint
 	closestD = unit.getPosition().getDistance(Position(choke));
 	for (int x = choke.x - 25; x <= choke.x + 25; x++)
 	{
@@ -396,24 +399,7 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 		{
 			if (WalkPosition(x, y).isValid() && Grids().getMobilityGrid(x, y) > 0 && theMap.GetArea(WalkPosition(x, y)) && Terrain().getAllyTerritory().find(theMap.GetArea(WalkPosition(x, y))->Id()) != Terrain().getAllyTerritory().end() && Position(WalkPosition(x, y)).getDistance(Position(choke)) > min && Position(WalkPosition(x, y)).getDistance(Position(choke)) < max && Position(WalkPosition(x, y)).getDistance(Position(choke)) < closestD)
 			{
-				bool safeTile = true;
-				for (int i = x - unit.getType().width() / 16; i < x + unit.getType().tileWidth() / 16; i++)
-				{
-					for (int j = y - unit.getType().height() / 16; j < y + unit.getType().tileHeight() / 16; j++)
-					{
-						// If mini tile exists on top of unit, ignore it
-						if (i >= start.x && i < start.x + unit.getType().tileWidth() * 4 && j >= start.y && j < start.y + unit.getType().tileHeight() * 4)
-						{
-							//Broodwar->drawBoxMap(Position(i * 8, j * 8), Position(i * 8 + 8, j * 8 + 8), Broodwar->self()->getColor());
-							continue;
-						}
-						else if (Grids().getAntiMobilityGrid(i, j) > 0 || Grids().getMobilityGrid(i, j) == 0)
-						{
-							safeTile = false;
-						}
-					}
-				}
-				if (safeTile)
+				if (Util().isSafe(start, WalkPosition(x, y), unit.getType(), false, false, true))
 				{
 					bestPosition = WalkPosition(x, y);
 					closestD = Position(WalkPosition(x, y)).getDistance(Position(choke));
@@ -421,14 +407,11 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 			}
 		}
 	}
-	if (bestPosition.isValid() && bestPosition != start)
+	if (bestPosition.isValid() && (unit.unit()->getOrderTargetPosition() != Position(bestPosition) || unit.unit()->getLastCommand().getType() != UnitCommandTypes::Move || unit.unit()->isStuck()))
 	{
-		if (unit.unit()->getLastCommand().getTargetPosition() != Position(bestPosition) || unit.unit()->getLastCommand().getType() != UnitCommandTypes::Move || unit.unit()->isStuck())
-		{
-			unit.unit()->move(Position(bestPosition));
-			Grids().updateAllyMovement(unit.unit(), bestPosition);
-			unit.setTargetPosition(Position(bestPosition));
-		}
+		unit.setTargetPosition(Position(bestPosition));
+		unit.unit()->move(Position(bestPosition));
+		Grids().updateAllyMovement(unit.unit(), bestPosition);
 	}
 	return;
 }

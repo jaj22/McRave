@@ -2,8 +2,9 @@
 
 void TransportTrackerClass::update()
 {
+	Display().startClock();
 	updateTransports();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 

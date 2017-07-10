@@ -2,12 +2,11 @@
 
 void SpecialUnitTrackerClass::update()
 {
+	Display().startClock();
 	updateArbiters();
 	updateObservers();
-	updateTemplars();
 	updateReavers();
-	updateMedics();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -24,15 +23,14 @@ void SpecialUnitTrackerClass::updateArbiters()
 		{
 			for (int y = start.y - 20; y <= start.y + 20; y++)
 			{
-				if (WalkPosition(x, y).isValid() && Grids().getArbiterGrid(x, y) == 0 && Grids().getEAirGrid(x, y) == 0.0 && (closestD == 0.0 || Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
+				if (WalkPosition(x, y).isValid() && Grids().getArbiterGrid(x, y) == 0 && (closestD == 0.0 || Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
 				{
-					closestD = Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y)));
-					bestCluster = Grids().getACluster(x, y);
-					bestPosition = Position(WalkPosition(x, y));
-				}
-				if (WalkPosition(x, y).isValid())
-				{
-					//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 8, y * 8 + 8), Broodwar->self()->getColor());
+					if (Util().isSafe(start, WalkPosition(x, y), UnitTypes::Protoss_Arbiter, false, true, false))
+					{
+						closestD = Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y)));
+						bestCluster = Grids().getACluster(x, y);
+						bestPosition = Position(WalkPosition(x, y));
+					}
 				}
 			}
 		}
@@ -46,13 +44,6 @@ void SpecialUnitTrackerClass::updateArbiters()
 		if (target.unit() && target.unit()->exists() && u.first->getEnergy() >= 100)
 		{
 			u.first->useTech(TechTypes::Stasis_Field, target.unit());
-			//Broodwar->drawLineMap(u.second.getPosition(), target.getPosition(), Broodwar->self()->getColor());
-			//Broodwar->drawBoxMap(target.getPosition() - Position(4, 4), target.getPosition() + Position(4, 4), Broodwar->self()->getColor(), true);
-		}
-		else
-		{
-			//Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
-			//Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 		}
 	}
 	return;
@@ -108,23 +99,6 @@ void SpecialUnitTrackerClass::updateObservers()
 	return;
 }
 
-void SpecialUnitTrackerClass::updateTemplars()
-{
-	for (auto &u : myTemplars)
-	{		
-		// If we should warp an archon
-		if (u.first->isUnderAttack() && u.first->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar))
-		{
-			if (!u.first->getLastCommand().getType() != UnitCommandTypes::Use_Tech_Unit)
-			{
-				u.first->useTech(TechTypes::Archon_Warp, u.first->getClosestUnit(Filter::IsAlly && Filter::GetType == UnitTypes::Protoss_High_Templar));
-			}
-			continue;
-		}
-	}
-	return;
-}
-
 void SpecialUnitTrackerClass::updateReavers()
 {
 	for (auto &u : myReavers)
@@ -134,14 +108,6 @@ void SpecialUnitTrackerClass::updateReavers()
 		{
 			u.first->train(UnitTypes::Protoss_Scarab);
 		}
-	}
-}
-
-void SpecialUnitTrackerClass::updateMedics()
-{
-	for (auto &u : myMedics)
-	{ 
-		// Cast abilities
 	}
 }
 

@@ -2,9 +2,10 @@
 
 void BuildingTrackerClass::update()
 {
+	Display().startClock();
 	queueBuildings();
 	constructBuildings();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -101,7 +102,7 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 
 	// Searches in a spiral around the specified tile position
 	while (length < 200)
-	{
+	{				
 		// If we can build here, return this tile position		
 		if (TilePosition(x, y).isValid() && canBuildHere(building, TilePosition(x, y), ignoreCond))
 		{
@@ -210,7 +211,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 	}
 
-	// For each base, check if you can build near it
+	// For each base, check if you can build near it, starting at the main
 	for (auto &base : Bases().getMyOrderedBases())
 	{
 		TilePosition here = getBuildLocationNear(building, base.second);
@@ -227,7 +228,7 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 	// Attempt to place Cannons in a concave around the second choke on a fast expansion
 	if (Strategy().isFastExpand())
 	{		
-		if (building == UnitTypes::Protoss_Photon_Cannon && Position(Terrain().getSecondChoke()).getDistance(Position(buildTilePosition)) < 128)
+		if (building == UnitTypes::Protoss_Photon_Cannon && (Position(Terrain().getSecondChoke()).getDistance(Position(buildTilePosition)) < 160 || Grids().getDistanceHome(WalkPosition(buildTilePosition)) > Grids().getDistanceHome(WalkPosition(Terrain().getSecondChoke()))))
 		{
 			return false;
 		}
@@ -237,6 +238,10 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
 	{
 		buildingOffset = 1;
+	}
+	else
+	{
+		buildingOffset = 0;
 	}
 
 	// Refineries are only built on my own gas resources
@@ -271,7 +276,7 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 			if (TilePosition(x, y).isValid())
 			{
 				// If it's reserved
-				if (Grids().getReserveGrid(x, y) > 0)
+				if (Grids().getReserveGrid(x, y) > 0 && !building.isResourceDepot())
 				{
 					return false;
 				}
@@ -283,7 +288,7 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 				}
 
 				// If it's not a cannon and on top of the resource grid
-				if (building != UnitTypes::Protoss_Shield_Battery && building != UnitTypes::Terran_Bunker && !ignoreCond && Grids().getResourceGrid(x, y) > 0)
+				if (building != UnitTypes::Protoss_Photon_Cannon && building != UnitTypes::Protoss_Shield_Battery && building != UnitTypes::Terran_Bunker && !ignoreCond && Grids().getResourceGrid(x, y) > 0)
 				{
 					return false;
 				}

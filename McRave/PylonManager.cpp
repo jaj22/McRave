@@ -3,7 +3,6 @@
 void PylonTrackerClass::storePylon(Unit unit)
 {	
 	storePower(unit);
-	Display().performanceTest(__func__);
 	return;
 }
 

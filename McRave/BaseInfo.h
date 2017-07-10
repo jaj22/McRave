@@ -6,16 +6,12 @@ using namespace BWAPI;
 using namespace std;
 
 class BaseInfo{
-	int defenseCount;
 	Unit thisUnit;
 	UnitType unitType;
 	Position position;
 	WalkPosition walkPosition;
 	TilePosition resourcesPosition, tilePosition;
 public:
-	BaseInfo();	
-
-	int getDefenseCount() { return defenseCount; }
 	Unit unit() { return thisUnit; }
 	UnitType getType() { return unitType; }
 	Position getPosition() { return position; }
@@ -23,7 +19,6 @@ public:
 	TilePosition getTilePosition() { return tilePosition; }
 	TilePosition getResourcesPosition() { return resourcesPosition; }	
 
-	void setDefenseCount(int newCount) { defenseCount = newCount; }
 	void setUnitType(UnitType newType) { unitType = newType; }
 	void setUnit(Unit newUnit) { thisUnit = newUnit; }
 	void setPosition(Position newPosition) { position = newPosition; }

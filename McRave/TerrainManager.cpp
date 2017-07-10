@@ -2,34 +2,15 @@
 
 void TerrainTrackerClass::update()
 {
+	Display().startClock();
 	updateAreas();
-	updateChokes();	
-	Display().performanceTest(__func__);
+	updateChokes();
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
 void TerrainTrackerClass::updateAreas()
 {
-	// Create island regions and natural expansion	
-	for (auto &area : theMap.Areas())
-	{
-		for (auto &base : area.Bases())
-		{
-			if (area.AccessibleNeighbours().size() == 0)
-			{
-				islandRegions.emplace(area.Id());
-			}
-			else
-			{
-				allBaseLocations.emplace(base.Location());
-			}
-		}
-	}
-
-	// Start location
-	playerStartingTilePosition = Broodwar->self()->getStartLocation();
-	playerStartingPosition = Position(playerStartingTilePosition);
-
 	// If we see a building, check for closest starting location
 	if (enemyBasePositions.size() <= 0)
 	{
@@ -58,14 +39,6 @@ void TerrainTrackerClass::updateAreas()
 		}
 	}
 
-	for (auto &base : Bases().getMyBases())
-	{
-		if (base.second.getTilePosition().isValid() && theMap.GetArea(base.second.getTilePosition()))
-		{
-			allyTerritory.emplace(theMap.GetArea(base.second.getTilePosition())->Id());
-		}
-	}
-
 	for (auto &base : enemyBasePositions)
 	{
 		if (base.isValid() && Broodwar->isVisible(TilePosition(base)) && Broodwar->getUnitsInRadius(base, 128, Filter::IsEnemy).size() == 0)
@@ -78,14 +51,14 @@ void TerrainTrackerClass::updateAreas()
 
 void TerrainTrackerClass::updateChokes()
 {
-	// Establish FFE position
-	int x = 0;
-	int y = 0;
-	const Area* closestA;
-	double closestBaseDistance = 0.0, furthestChokeDistance = 0.0, closestChokeDistance = 0.0;
-	TilePosition natural;
-	if (Broodwar->getFrameCount() > 100)
+	// Establish FFE position	
+	if (!FFEPosition.isValid() && Broodwar->getFrameCount() > 100)
 	{
+		int x = 0;
+		int y = 0;
+		const Area* closestA;
+		double closestBaseDistance = 0.0, furthestChokeDistance = 0.0, closestChokeDistance = 0.0;
+		TilePosition natural;
 		for (auto &area : theMap.Areas())
 		{
 			for (auto &base : area.Bases())
@@ -105,11 +78,13 @@ void TerrainTrackerClass::updateChokes()
 		}
 		if (closestA)
 		{
+			double largest = 0.0;
 			for (auto &choke : closestA->ChokePoints())
 			{
-				if (choke && Grids().getDistanceHome(choke->Center()) > furthestChokeDistance)
+				if (choke && Grids().getDistanceHome(choke->Center()) > furthestChokeDistance && choke->Pos(choke->end1).getDistance(choke->Pos(choke->end2)) > largest)
 				{
 					secondChoke = TilePosition(choke->Center());
+					largest = choke->Pos(choke->end1).getDistance(choke->Pos(choke->end2));
 					furthestChokeDistance = Grids().getDistanceHome(choke->Center());
 				}
 				if (choke && (Grids().getDistanceHome(choke->Center()) < closestChokeDistance || closestChokeDistance == 0.0))
@@ -118,12 +93,31 @@ void TerrainTrackerClass::updateChokes()
 					closestChokeDistance = Grids().getDistanceHome(choke->Center());
 				}
 			}
-			FFEPosition = TilePosition(secondChoke.x*0.35 + natural.x*0.65, secondChoke.y*0.35 + natural.y*0.65);
+			FFEPosition = TilePosition(int(secondChoke.x*0.35 + natural.x*0.65), int(secondChoke.y*0.35 + natural.y*0.65));
 		}
 	}
 
 	Broodwar->drawCircleMap(Position(secondChoke), 32, Colors::Red);
 	Broodwar->drawCircleMap(Position(firstChoke), 32, Colors::Blue);
+}
+
+void TerrainTrackerClass::onStart()
+{
+	// Store non island bases	
+	for (auto &area : theMap.Areas())
+	{
+		if (area.AccessibleNeighbours().size() > 0)
+		{
+			for (auto &base : area.Bases())
+			{
+				allBaseLocations.emplace(base.Location());
+			}
+		}
+	}
+
+	// Start location
+	playerStartingTilePosition = Broodwar->self()->getStartLocation();
+	playerStartingPosition = Position(playerStartingTilePosition);	
 }
 
 void TerrainTrackerClass::removeTerritory(Unit base)
@@ -133,13 +127,13 @@ void TerrainTrackerClass::removeTerritory(Unit base)
 		if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
 		{
 			enemyBasePositions.erase(base->getPosition());
+		}
 
-			if (theMap.GetArea(base->getTilePosition()))
+		if (theMap.GetArea(base->getTilePosition()))
+		{
+			if (allyTerritory.find(theMap.GetArea(base->getTilePosition())->Id()) != allyTerritory.end())
 			{
-				if (allyTerritory.find(theMap.GetArea(base->getTilePosition())->Id()) != allyTerritory.end())
-				{
-					allyTerritory.erase(theMap.GetArea(base->getTilePosition())->Id());
-				}
+				allyTerritory.erase(theMap.GetArea(base->getTilePosition())->Id());
 			}
 		}
 	}

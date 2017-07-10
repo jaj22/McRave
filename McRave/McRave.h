@@ -7,6 +7,12 @@
 // Namespaces
 using namespace BWAPI;
 using namespace std;
+using namespace BWEM;
+
+namespace
+{
+	auto & theMap = Map::Instance();
+}
 
 // Include standard libraries that are needed
 #include <Windows.h>

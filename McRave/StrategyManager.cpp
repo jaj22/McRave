@@ -2,10 +2,11 @@
 
 void StrategyTrackerClass::update()
 {
+	Display().startClock();
 	updateAlly();
 	updateEnemy();
 	updateSituationalBehaviour();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -195,7 +196,7 @@ void StrategyTrackerClass::protossStrategy()
 		}
 
 		// If we are being BBS'd
-		else if (eTerran > 0 && enemyComposition[UnitTypes::Terran_Barracks] == 0 && enemyComposition[UnitTypes::Terran_Command_Center] > 0)
+		else if (eTerran > 0 && enemyComposition[UnitTypes::Terran_Barracks] == 0 && enemyComposition[UnitTypes::Terran_Command_Center] == 1)
 		{
 			rush = true;
 		}
@@ -229,6 +230,7 @@ void StrategyTrackerClass::protossStrategy()
 		rush = false;
 		fastExpand = false;
 		bust = false;
+		holdRamp = false;
 	}
 }
 

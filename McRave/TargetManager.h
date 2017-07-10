@@ -8,10 +8,9 @@ using namespace std;
 class TargetTrackerClass
 {
 public:
-	Unit getTarget(Unit);
-	Unit singleTarget(Unit);
-	Unit allyTarget(Unit);
-	Unit clusterTarget(Unit);
+	Unit getTarget(UnitInfo&);
+	Unit enemyTarget(UnitInfo&);
+	Unit allyTarget(UnitInfo&);
 };
 
 typedef Singleton<TargetTrackerClass> TargetTracker;

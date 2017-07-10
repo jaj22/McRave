@@ -2,12 +2,13 @@
 
 void ProductionTrackerClass::update()
 {
+	Display().startClock();
 	updateReservedResources();
 	updatePriorities();
 	updateProtoss();
 	updateTerran();
 	updateZerg();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -68,7 +69,7 @@ void ProductionTrackerClass::updateProtoss()
 		for (auto &b : Buildings().getMyBuildings())
 		{
 			BuildingInfo building = b.second;
-			double highestPriority;
+			double highestPriority = 0.0;
 			UnitType highestType;
 			if (building.unit()->isIdle())
 			{
@@ -371,18 +372,6 @@ void ProductionTrackerClass::updateProtoss()
 						idleUpgrade.emplace(building.unit(), UpgradeTypes::Khaydarin_Core);
 					}
 				}
-				else if (!Broodwar->self()->hasResearched(TechTypes::Recall))
-				{
-					if (Broodwar->self()->minerals() >= TechTypes::Recall.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= TechTypes::Recall.gasPrice() + Buildings().getQueuedGas())
-					{
-						building.unit()->research(TechTypes::Recall);
-						idleTech.erase(building.unit());
-					}
-					else
-					{
-						idleTech.emplace(building.unit(), TechTypes::Recall);
-					}
-				}
 				else if (!Broodwar->self()->hasResearched(TechTypes::Stasis_Field))
 				{
 					if (Broodwar->self()->minerals() >= TechTypes::Stasis_Field.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= TechTypes::Stasis_Field.gasPrice() + Buildings().getQueuedGas())
@@ -395,6 +384,18 @@ void ProductionTrackerClass::updateProtoss()
 						idleTech.emplace(building.unit(), TechTypes::Stasis_Field);
 					}
 				}
+				else if (!Broodwar->self()->hasResearched(TechTypes::Recall))
+				{
+					if (Broodwar->self()->minerals() >= TechTypes::Recall.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= TechTypes::Recall.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->research(TechTypes::Recall);
+						idleTech.erase(building.unit());
+					}
+					else
+					{
+						idleTech.emplace(building.unit(), TechTypes::Recall);
+					}
+				}				
 			}
 		}
 	}
