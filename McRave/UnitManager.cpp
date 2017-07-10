@@ -2,9 +2,10 @@
 
 void UnitTrackerClass::update()
 {
+	Display().startClock();
 	storeUnits();
 	removeUnits();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -22,67 +23,64 @@ void UnitTrackerClass::storeUnits()
 	supply = 0;
 
 	// Store all allied units
-	for (auto &ally : Broodwar->allies())
+	for (auto &u : Broodwar->self()->getUnits())
 	{
-		for (auto &u : ally->getUnits())
+		// Don't want to store scarabs or units that don't exist
+		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists())
 		{
-			// Don't want to store scarabs or units that don't exist
-			if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists())
-			{
-				continue;
-			}
+			continue;
+		}
 
-			// Add supply of this unit if it has one
-			if (u->getType().supplyRequired() > 0)
-			{
-				supply = supply + u->getType().supplyRequired();
-			}
+		// Add supply of this unit if it has one
+		if (u->getType().supplyRequired() > 0)
+		{
+			supply = supply + u->getType().supplyRequired();
+		}
 
-			// Store buildings even if they're not completed
-			if (u->getType().isBuilding())
+		// Store buildings even if they're not completed
+		if (u->getType().isBuilding())
+		{
+			Buildings().storeBuilding(u);
+			if (u->getType().isResourceDepot())
 			{
-				Buildings().storeBuilding(u);
-				if (u->getType().isResourceDepot())
-				{
-					Bases().storeBase(u);
-				}
-				else if (u->getType() == UnitTypes::Protoss_Pylon)
-				{
-					Pylons().storePylon(u);
-				}
-				else if (u->getType() == UnitTypes::Protoss_Shield_Battery)
-				{
-					Buildings().storeBattery(u);
-				}
-				else if (u->getType() == UnitTypes::Protoss_Photon_Cannon)
-				{
-					storeAllyUnit(u);
-				}
+				Bases().storeBase(u);
 			}
-
-			// Don't want to store units that aren't completed
-			else if (!u->isCompleted())
+			else if (u->getType() == UnitTypes::Protoss_Pylon)
 			{
-				continue;
+				Pylons().storePylon(u);
 			}
-
-			// Store workers
-			else if (u->getType().isWorker())
+			else if (u->getType() == UnitTypes::Protoss_Shield_Battery)
 			{
-				Workers().storeWorker(u);
+				Buildings().storeBattery(u);
 			}
-			// Store units
-			else
+			else if (u->getType() == UnitTypes::Protoss_Photon_Cannon)
 			{
 				storeAllyUnit(u);
-				if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Terran_Medic)
-				{
-					SpecialUnits().storeUnit(u);
-				}
-				else if (u->getType() == UnitTypes::Protoss_Shuttle)
-				{
-					Transport().storeUnit(u);
-				}
+			}
+		}
+
+		// Don't want to store units that aren't completed
+		else if (!u->isCompleted())
+		{
+			continue;
+		}
+
+		// Store workers
+		else if (u->getType().isWorker())
+		{
+			Workers().storeWorker(u);
+		}
+		// Store units
+		else
+		{
+			storeAllyUnit(u);
+			if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Terran_Medic)
+			{
+				SpecialUnits().storeUnit(u);
+			}
+			else if (u->getType() == UnitTypes::Protoss_Shuttle)
+			{
+				Transport().storeUnit(u);
 			}
 		}
 	}
@@ -237,6 +235,12 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	// Variables for calculating local strengths
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0, thisUnit = 0.0;
 	Position targetPosition = allyUnits[unit].getTargetPosition();
+	double timeToTarget = 0.0;
+
+	if (unit->getDistance(targetPosition) > allyUnits[unit].getGroundRange() && allyUnits[unit].getSpeed() > 0)
+	{
+		timeToTarget = (allyUnits[unit].getGroundRange() - unit->getDistance(targetPosition)) / allyUnits[unit].getSpeed();
+	}
 
 	int aLarge = getMySizes()[UnitSizeTypes::Large];
 	int aMedium = getMySizes()[UnitSizeTypes::Medium];
@@ -267,10 +271,10 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
-		double threatRange = (enemy.getGroundRange() / 32.0) + enemy.getSpeed();
+		double threatRange = 32.0 + enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget);
 
 		// If a unit is within range of the target, add to local strength
-		if (enemy.getPosition().getDistance(targetPosition) / 32.0 < threatRange)
+		if (enemy.getPosition().getDistance(targetPosition) < threatRange)
 		{
 			if (aLarge > 0 || aMedium > 0 || aSmall > 0)
 			{
@@ -320,10 +324,10 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 
 		// Reset unit strength
 		thisUnit = 0.0;
-		double threatRange = (ally.getGroundRange() / 32.0) + ally.getSpeed();
+		double threatRange = 32.0 + ally.getGroundRange() + (ally.getSpeed() * timeToTarget);
 
 		// If a unit is within the range of the ally unit, add to local strength
-		if (ally.getPosition().getDistance(unit->getPosition()) / 32.0 < threatRange)
+		if (ally.getPosition().getDistance(unit->getPosition()) < threatRange)
 		{
 			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
 			{
@@ -398,13 +402,20 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 		}
 	}
 
-	// Specific Zealot Commands
+	// Specific melee Commands
 	if (allyUnits[unit].getGroundRange() <= 32)
 	{
 		// Force Zealots to stay on Tanks and Reavers to shoot if units are near it
 		if (target && target->exists() && (enemyUnits[target].getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemyUnits[target].getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
 		{
 			allyUnits[unit].setStrategy(1);
+			return;
+		}
+
+		// Force Zealots to avoid mines
+		if (target && target->exists() && enemyUnits[target].getType() == UnitTypes::Terran_Vulture_Spider_Mine)
+		{
+			allyUnits[unit].setStrategy(0);
 			return;
 		}
 
@@ -443,7 +454,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 		}
 	}
 
-	// Specific Dragoon commands for early defense
+	// Specific ranged commands for early defense
 	else if (globalStrategy == 2 && allyUnits[unit].getGroundRange() > 32)
 	{
 		if (target && target->exists() && ((Terrain().isInAllyTerritory(unit) && unit->getDistance(target) <= allyUnits[unit].getGroundRange()) || (Terrain().isInAllyTerritory(target) && !target->getType().isWorker())))

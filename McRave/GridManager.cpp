@@ -2,13 +2,14 @@
 
 void GridTrackerClass::update()
 {
+	Display().startClock();
 	reset();
 	updateMobilityGrids();
 	updateAllyGrids();
 	updateEnemyGrids();
 	updateNeutralGrids();
 	updateGroundDistanceGrid();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 

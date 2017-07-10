@@ -10,6 +10,10 @@
 // Critical TODOS:
 // Fix HT storming ally units and merging
 // Secondary scout, see what sort of tech we are against
+// Fix reserve path (all mini tile check)
+// Secondary scout delayed since previous one died
+// Scout improvements
+// Mine grid
 
 // TODOS:
 // Move production buildings to the front of the base, tech to the back

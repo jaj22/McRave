@@ -2,8 +2,9 @@
 
 void CommandTrackerClass::update()
 {	
+	Display().startClock();
 	updateAlliedUnits();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -12,6 +13,8 @@ void CommandTrackerClass::updateAlliedUnits()
 	for (auto &u : Units().getMyUnits())
 	{
 		UnitInfo unit = u.second;
+
+		Broodwar->drawTextMap(unit.getPosition(), "%.2f", unit.getLocal());
 
 		// Special units have their own commands
 		if (unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Shuttle)
@@ -22,11 +25,11 @@ void CommandTrackerClass::updateAlliedUnits()
 		// Ignore the unit if it no longer exists, is locked down, maelstrommed, stassised, or not completed
 		if (!unit.unit() || (unit.unit() && !unit.unit()->exists()))
 		{
-			return;
+			continue;
 		}
 		if (unit.unit()->exists() && (unit.unit()->isLockedDown() || unit.unit()->isMaelstrommed() || unit.unit()->isStasised() || !unit.unit()->isCompleted()))
 		{
-			return;
+			continue;
 		}
 
 		// If the unit is ready to perform an action after an attack (certain units have minimum frames after an attack before they can receive a new command)
@@ -42,18 +45,18 @@ void CommandTrackerClass::updateAlliedUnits()
 					if (unit.getStrategy() == 1 && unit.getTarget()->exists())
 					{
 						attackTarget(unit);
-						return;
+						continue;
 					}
 					// Else flee
 					else if (unit.getStrategy() == 0)
 					{
 						fleeTarget(unit);
-						return;
+						continue;
 					}
 				}
 				// Else defend
 				defend(unit);
-				return;
+				continue;
 			}
 
 			// If globally ahead
@@ -66,25 +69,25 @@ void CommandTrackerClass::updateAlliedUnits()
 					if (unit.getStrategy() == 0 || unit.getStrategy() == 2)
 					{
 						fleeTarget(unit);
-						return;
+						continue;
 					}
 					// Else attack
 					else if (unit.getStrategy() == 1 && unit.getTarget()->exists())
 					{
 						attackTarget(unit);
-						return;
+						continue;
 					}
 					// Else attack move best location
 					else
 					{
 						attackMove(unit);
-						return;
+						continue;
 					}
 				}
 			}
 			// Else attack move
 			attackMove(unit);
-			return;
+			continue;
 		}		
 	}
 	return;

@@ -2,12 +2,13 @@
 
 void SpecialUnitTrackerClass::update()
 {
+	Display().startClock();
 	updateArbiters();
 	updateObservers();
 	updateTemplars();
 	updateReavers();
 	updateMedics();
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 

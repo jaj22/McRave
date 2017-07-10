@@ -3,9 +3,9 @@
 double UtilTrackerClass::getStrength(UnitType unitType, Player who)
 {
 	// Some hardcoded values that don't have attacks but should still be considered for strength
-	if (unitType == UnitTypes::Terran_Bunker)
+	if (unitType == UnitTypes::Terran_Bunker || unitType == UnitTypes::Zerg_Sunken_Colony || unitType == UnitTypes::Protoss_Photon_Cannon)
 	{
-		return 50.0;
+		return 25.0;
 	}
 	if (unitType == UnitTypes::Terran_Medic)
 	{
@@ -31,24 +31,10 @@ double UtilTrackerClass::getStrength(UnitType unitType, Player who)
 	if (!unitType.isWorker() && unitType != UnitTypes::Protoss_Scarab && unitType != UnitTypes::Terran_Vulture_Spider_Mine && unitType.groundWeapon().damageAmount() > 0)
 	{
 		double range, damage, hp, speed;
-		// Range upgrade check (applies to enemy Dragoons, not a big issue currently)
-		if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
-		{
-			range = 192.0;
-		}
-
-		// Enemy ranged upgrade check
-		else if ((unitType == UnitTypes::Terran_Marine && who->getUpgradeLevel(UpgradeTypes::U_238_Shells)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Grooved_Spines)))
-		{
-			range = 160.0;
-		}
-		else
-		{
-			range = double(unitType.groundWeapon().maxRange());
-		}
+		range = getTrueGroundDamage(unitType, who);
 
 		// Damage
-		damage = double(unitType.groundWeapon().damageAmount()) / double(unitType.groundWeapon().damageCooldown());
+		damage = getTrueGroundDamage(unitType, who) / unitType.groundWeapon().damageCooldown();
 
 		// Speed
 		speed = 1.0 + double(unitType.topSpeed());
@@ -159,6 +145,10 @@ double UtilTrackerClass::getTrueRange(UnitType unitType, Player who)
 			return 160.0;
 		}
 	}
+	else if (unitType == UnitTypes::Protoss_High_Templar)
+	{
+		return 288.0;
+	}
 
 	// Correct range of Reavers
 	else if (unitType == UnitTypes::Protoss_Reaver)
@@ -192,6 +182,10 @@ double UtilTrackerClass::getTrueAirRange(UnitType unitType, Player who)
 	else if (unitType == UnitTypes::Terran_Goliath && who->getUpgradeLevel(UpgradeTypes::Charon_Boosters))
 	{
 		return 256.0;
+	}
+	else if (unitType == UnitTypes::Protoss_High_Templar)
+	{
+		return 288.0;
 	}
 	return double(unitType.airWeapon().maxRange());
 }

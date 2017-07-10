@@ -2,9 +2,10 @@
 
 void TerrainTrackerClass::update()
 {
+	Display().startClock();
 	updateAreas();
 	updateChokes();	
-	Display().performanceTest(__func__);
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -15,6 +16,11 @@ void TerrainTrackerClass::updateAreas()
 	{
 		for (auto &base : area.Bases())
 		{
+			if (Broodwar->getFrameCount() > 100)
+			{
+				Broodwar->drawCircleMap(Position(base.Location()), 16, Colors::Red);
+			}
+
 			if (area.AccessibleNeighbours().size() == 0)
 			{
 				islandRegions.emplace(area.Id());
@@ -105,11 +111,13 @@ void TerrainTrackerClass::updateChokes()
 		}
 		if (closestA)
 		{
+			double largest = 0.0;
 			for (auto &choke : closestA->ChokePoints())
 			{
-				if (choke && Grids().getDistanceHome(choke->Center()) > furthestChokeDistance)
+				if (choke && Grids().getDistanceHome(choke->Center()) > furthestChokeDistance && choke->Pos(choke->end1).getDistance(choke->Pos(choke->end2)) > largest)
 				{
 					secondChoke = TilePosition(choke->Center());
+					largest = choke->Pos(choke->end1).getDistance(choke->Pos(choke->end2));
 					furthestChokeDistance = Grids().getDistanceHome(choke->Center());
 				}
 				if (choke && (Grids().getDistanceHome(choke->Center()) < closestChokeDistance || closestChokeDistance == 0.0))

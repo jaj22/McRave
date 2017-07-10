@@ -38,9 +38,20 @@ void InterfaceTrackerClass::update()
 
 void InterfaceTrackerClass::performanceTest(string function)
 {
-	double duration = (double(clock() - globalClock));
-	Broodwar->drawTextScreen(200, screenOffset,"%s : %d", function, duration);
-	screenOffset += 10;
+	clock_t duration = clock() - globalClock;
+	myTest[function] = myTest[function] * 0.99 + duration*0.01;
+	if (myTest[function] > 0.0)
+	{
+		Broodwar->drawTextScreen(200, screenOffset, "%s", function);
+		Broodwar->drawTextScreen(400, screenOffset, "%d ms", myTest[function]);
+		screenOffset += 10;
+	}
+	return;
+}
+
+void InterfaceTrackerClass::startClock()
+{
+	globalClock = clock();
 	return;
 }
 

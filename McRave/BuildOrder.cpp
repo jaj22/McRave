@@ -3,8 +3,8 @@
 void BuildOrderTrackerClass::update()
 {
 	updateBuildDecision();
-	updateBaseBuild();
-	Display().performanceTest(__func__);
+	updateBaseBuild();	
+	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
@@ -177,9 +177,9 @@ void BuildOrderTrackerClass::protossSituational()
 			}
 		}
 	}
-	if (Strategy().isBust())
+	if (Strategy().globalEnemy() * 4 > Strategy().globalAlly() + Strategy().getAllyDefense())
 	{
-		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 6;
+		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 1 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Photon_Cannon);
 	}
 }
 

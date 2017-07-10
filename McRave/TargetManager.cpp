@@ -39,6 +39,12 @@ Unit TargetTrackerClass::singleTarget(Unit unit)
 			continue;
 		}
 
+		// If the unit has higher range and is faster
+		if (u.second.getGroundRange() > Units().getMyUnits()[unit].getGroundRange() && u.second.getSpeed() > Units().getMyUnits()[unit].getSpeed())
+		{
+			continue;
+		}
+
 		// If the enemy is stasised, ignore it
 		if (u.first->exists() && u.first->isStasised())
 		{
