@@ -43,6 +43,7 @@ void McRaveModule::onEnd(bool isWinner)
 
 void McRaveModule::onFrame()
 {
+	//Players().update();
 	Terrain().update();
 	Grids().update();
 	Resources().update();

@@ -360,11 +360,11 @@ void GridTrackerClass::updateEnemyGrids()
 
 						if (enemy.getGroundDamage() > 0.0 && distance < enemy.getGroundRange())
 						{
-							eGroundGrid[x][y] += enemy.getMaxStrength();
+							eGroundGrid[x][y] += enemy.getMaxGroundStrength();
 						}
 						if (enemy.getGroundDamage() > 0.0 && distance < enemy.getGroundRange() + (enemy.getSpeed() / 8))
 						{
-							eGroundDistanceGrid[x][y] += enemy.getMaxStrength() / distance;
+							eGroundDistanceGrid[x][y] += enemy.getMaxGroundStrength() / distance;
 						}
 					}
 				}
@@ -381,11 +381,11 @@ void GridTrackerClass::updateEnemyGrids()
 
 						if (enemy.getAirDamage() > 0.0 && distance < enemy.getAirRange())
 						{
-							eAirGrid[x][y] += enemy.getMaxStrength();
+							eAirGrid[x][y] += enemy.getMaxAirStrength();
 						}
 						if (enemy.getAirDamage() > 0.0 && distance < enemy.getAirRange() + (enemy.getSpeed() / 8))
 						{
-							eAirDistanceGrid[x][y] += enemy.getMaxStrength() / distance;
+							eAirDistanceGrid[x][y] += enemy.getMaxAirStrength() / distance;
 						}
 					}
 				}

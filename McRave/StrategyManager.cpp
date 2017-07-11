@@ -28,7 +28,7 @@ void StrategyTrackerClass::updateAlly()
 			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
 				// Add strength				
-				globalAllyStrength += u.second.getStrength();
+				globalAllyStrength += u.second.getVisibleGroundStrength();
 
 				// Set last command frame
 				if (u.first->isAttackFrame())
@@ -38,12 +38,12 @@ void StrategyTrackerClass::updateAlly()
 			}
 			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
 			{
-				allyDefense += u.second.getStrength();
+				allyDefense += u.second.getVisibleGroundStrength();
 			}
 		}
 		else
 		{
-			globalAllyStrength += u.second.getMaxStrength() * 0.5 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			globalAllyStrength += u.second.getMaxGroundStrength() * 0.5 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 		}
 	}
 }
@@ -109,11 +109,11 @@ void StrategyTrackerClass::updateEnemy()
 			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
 				// Add strength	
-				globalEnemyStrength += u.second.getStrength();
+				globalEnemyStrength += u.second.getVisibleGroundStrength();
 			}
 			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
 			{
-				enemyDefense += u.second.getStrength();
+				enemyDefense += u.second.getVisibleGroundStrength();
 			}
 		}
 
@@ -121,7 +121,7 @@ void StrategyTrackerClass::updateEnemy()
 		else if (u.second.getDeadFrame() != 0)
 		{
 			// Add a portion of the strength to ally strength
-			globalAllyStrength += u.second.getMaxStrength() * 1 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			globalAllyStrength += u.second.getMaxGroundStrength() * 1 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 		}
 	}
 }

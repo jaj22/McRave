@@ -22,7 +22,7 @@ void BuildOrderTrackerClass::updateDecision()
 		// If we have our tech unit, set to none
 		if (Broodwar->self()->completedUnitCount(techUnit) > 0)
 		{
-			techUnit == UnitTypes::None;
+			techUnit = UnitTypes::None;
 		}
 
 		// If production is saturated and none are idle, choose a tech
@@ -326,4 +326,19 @@ void BuildOrderTrackerClass::terranSituational()
 	{
 		buildingDesired[UnitTypes::Terran_Command_Center] = 2;
 	}
+}
+
+void BuildOrderTrackerClass::zergOpener()
+{
+
+}
+
+void BuildOrderTrackerClass::zergTech()
+{
+
+}
+
+void BuildOrderTrackerClass::zergSituational()
+{
+
 }

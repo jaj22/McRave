@@ -6,8 +6,8 @@ using namespace std;
 
 // Class for storing information about all units
 class UnitInfo {
-	double strength, maxStrength, local, groundRange, airRange, priority, groundDamage, airDamage, speed;
-	int deadFrame, strategy, lastAttackFrame, minStopFrame;	
+	double visibleGroundStrength, visibleAirStrength, maxGroundStrength, maxAirStrength, local, groundRange, airRange, priority, groundDamage, airDamage, speed;
+	int deadFrame, strategy, lastAttackFrame, minStopFrame;
 
 	Unit target, thisUnit, transport;
 	UnitType unitType;
@@ -21,11 +21,17 @@ public:
 	UnitInfo();
 	~UnitInfo();
 
-	// Returns the units current strength based on: (%hp * dps * range * speed)
-	double getStrength() { return strength; }
+	// Returns the units visible ground strength based on: (%hp * ground dps * range * speed)
+	double getVisibleGroundStrength() { return visibleGroundStrength; }
 
-	// Returns the units max strength based on: (dps * range * speed)
-	double getMaxStrength() { return maxStrength; }
+	// Returns the units max ground strength based on: (ground dps * range * speed)
+	double getMaxGroundStrength() { return maxGroundStrength; }
+
+	// Returns the units visible air strength based on: (%hp * air dps * range * speed)
+	double getVisibleAirStrength() { return visibleAirStrength; }
+
+	// Returns the units max air strength based on: (air dps * range * speed)
+	double getMaxAirStrength() { return maxAirStrength; }
 
 	// Returns the units current local calculation based on: (allyLocalStrength - enemyLocalStrength)
 	double getLocal() { return local; }
@@ -53,30 +59,32 @@ public:
 
 	// Returns the units strategy, see StrategyManager for details on what each correspond to
 	int getStrategy() { return strategy; }
-	
+
 	// Returns the frame on which isStartingAttack was last true for purposes of avoiding moving before a shot has fired
 	// This is important for units with a minStopFrame > 0 such as Dragoons, where moving before the shot is fully off will result in a dud
-	int getLastAttackFrame() { return lastAttackFrame; }	
+	int getLastAttackFrame() { return lastAttackFrame; }
 
 	// Returns the minimum number of frames that the unit needs after a shot before another command can be issued
 	int getMinStopFrame() { return minStopFrame; }
 
 	Unit unit() { return thisUnit; }
 	Unit getTarget() { return target; }
-	Unit getTransport() { return transport; }	
+	Unit getTransport() { return transport; }
 	UnitType getType(){ return unitType; }
 	UnitCommandType getCommand() { return command; }
 	Player getPlayer() { return who; }
 
 	Position getPosition(){ return position; }
-	Position getTargetPosition() { return targetPosition; }	
+	Position getTargetPosition() { return targetPosition; }
 	WalkPosition getWalkPosition() { return walkPosition; }
 	WalkPosition getTargetWalkPosition() { return targetWalkPosition; }
 	TilePosition getTilePosition() { return tilePosition; }
 	TilePosition getTargetTilePosition() { return targetTilePosition; }
-	
-	void setStrength(double newStrength) { strength = newStrength; }
-	void setMaxStrength(double newMaxStrength){ maxStrength = newMaxStrength; }
+
+	void setVisibleGroundStrength(double newStrength) { visibleGroundStrength = newStrength; }
+	void setMaxGroundStrength(double newMaxStrength) { maxGroundStrength = newMaxStrength; }
+	void setVisibleAirStrength(double newStrength) { visibleAirStrength = newStrength; }
+	void setMaxAirStrength(double newMaxStrength) { maxAirStrength = newMaxStrength; }
 	void setLocal(double newLocal) { local = newLocal; }
 	void setGroundRange(double newGroundRange) { groundRange = newGroundRange; }
 	void setAirRange(double newAirRange) { airRange = newAirRange; }
@@ -97,9 +105,9 @@ public:
 	void setPlayer(Player newOwner) { who = newOwner; }
 
 	void setPosition(Position newPosition){ position = newPosition; }
-	void setTargetPosition(Position newPosition) { targetPosition = newPosition; }	
+	void setTargetPosition(Position newPosition) { targetPosition = newPosition; }
 	void setWalkPosition(WalkPosition newWalkPosition) { walkPosition = newWalkPosition; }
 	void setTargetWalkPosition(WalkPosition newWalkPosition) { targetWalkPosition = newWalkPosition; }
 	void setTilePosition(TilePosition newTilePosition) { tilePosition = newTilePosition; }
-	void setTargetTilePosition(TilePosition newTilePosition) { targetTilePosition = newTilePosition; }	
+	void setTargetTilePosition(TilePosition newTilePosition) { targetTilePosition = newTilePosition; }
 };

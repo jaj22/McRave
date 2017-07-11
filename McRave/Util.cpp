@@ -1,6 +1,6 @@
 #include "McRave.h"
 
-double UtilTrackerClass::getStrength(UnitInfo& unit, Player who)
+double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 {
 	// Some hardcoded values that don't have attacks but should still be considered for strength
 	if (unit.getType() == UnitTypes::Terran_Medic)
@@ -47,7 +47,38 @@ double UtilTrackerClass::getStrength(UnitInfo& unit, Player who)
 	return 0.0;
 }
 
-double UtilTrackerClass::getAirStrength(UnitInfo& unit, Player who)
+double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
+{
+	if (unit.unit()->isMaelstrommed() || unit.unit()->isStasised())
+	{
+		return 0;
+	}
+
+	double effectiveness = 1.0;
+	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields())) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields()));
+
+	/*int aLarge = Units().getMySizes()[UnitSizeTypes::Large];
+	int aMedium = Units().getMySizes()[UnitSizeTypes::Medium];
+	int aSmall = Units().getMySizes()[UnitSizeTypes::Small];
+
+	int eLarge = Units().getEnSizes()[UnitSizeTypes::Large];
+	int eMedium = Units().getEnSizes()[UnitSizeTypes::Medium];
+	int eSmall = Units().getEnSizes()[UnitSizeTypes::Small];
+
+
+	if (unit.getType().groundWeapon().damageType() == DamageTypes::Explosive)
+	{
+		effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / double(eLarge + eMedium + eSmall);
+	}*/
+
+	if (unit.unit()->isCloaked() && !unit.unit()->isDetected())
+	{
+		return 4.0 * hp * getMaxGroundStrength(unit, who) * effectiveness;
+	}
+	return hp * getMaxGroundStrength(unit, who) * effectiveness;
+}
+
+double UtilTrackerClass::getMaxAirStrength(UnitInfo& unit, Player who)
 {
 	double range, damage, speed;
 	range = unit.getAirRange();
@@ -68,7 +99,7 @@ double UtilTrackerClass::getAirStrength(UnitInfo& unit, Player who)
 	return 0.0;
 }
 
-double UtilTrackerClass::getVisibleStrength(UnitInfo& unit, Player who)
+double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 {
 	if (unit.unit()->isMaelstrommed() || unit.unit()->isStasised())
 	{
@@ -79,9 +110,9 @@ double UtilTrackerClass::getVisibleStrength(UnitInfo& unit, Player who)
 
 	if (unit.unit()->isCloaked() && !unit.unit()->isDetected())
 	{
-		return 4.0 * hp * getStrength(unit, who);
+		return 4.0 * hp * getMaxAirStrength(unit, who);
 	}
-	return hp * getStrength(unit, who);
+	return hp * getMaxAirStrength(unit, who);
 }
 
 double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
@@ -97,7 +128,7 @@ double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
 	}
 	else
 	{
-		return unit.getMaxStrength();
+		return max(unit.getMaxGroundStrength(), unit.getMaxAirStrength());
 	}
 }
 

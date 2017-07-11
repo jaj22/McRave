@@ -86,7 +86,7 @@ void InterfaceTrackerClass::drawAllyInfo()
 					Broodwar->drawBoxMap(unit.getTargetPosition() + Position(-2, -2), unit.getTargetPosition() + Position(2, 2), Broodwar->self()->getColor());
 				}
 
-				Broodwar->drawTextMap(unit.getPosition() + Position(-5, -2), "%.2f", unit.getStrength());
+				Broodwar->drawTextMap(unit.getPosition() + Position(-5, -2), "%.2f", unit.getVisibleGroundStrength());
 				Broodwar->drawTextMap(unit.getPosition() + Position(-10, 5), "%.2f, %.2f, %.2f", unit.getGroundDamage(), unit.getGroundRange(), unit.getSpeed());
 			}
 		}
@@ -103,9 +103,9 @@ void InterfaceTrackerClass::drawEnemyInfo()
 			UnitInfo unit = u.second;
 			if (unit.getDeadFrame() == 0)
 			{
-				if (unit.getStrength() > 0.0)
+				if (unit.getVisibleGroundStrength() > 0.0)
 				{
-					Broodwar->drawTextMap(unit.getPosition() + Position(5, 0), "%c %.2f", unit.getPlayer()->getTextColor(), unit.getStrength());
+					Broodwar->drawTextMap(unit.getPosition() + Position(5, 0), "%c %.2f", unit.getPlayer()->getTextColor(), unit.getVisibleGroundStrength());
 				}
 			}
 		}

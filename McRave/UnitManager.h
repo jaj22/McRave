@@ -31,8 +31,8 @@ public:
 	void storeAllyUnit(Unit);
 	void decayUnit(Unit);
 
-	void getLocalCalculation(Unit, Unit);
-	void getGlobalCalculation(Unit, Unit);
+	void getLocalCalculation(UnitInfo&);
+	void getGlobalCalculation(UnitInfo&);
 	int getGlobalStrategy() { return globalStrategy; }
 };
 

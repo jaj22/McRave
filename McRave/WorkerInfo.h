@@ -14,6 +14,7 @@ class WorkerInfo{
 public:
 	WorkerInfo();
 
+	// Returns the last frame on which isGathering is true
 	int getLastGatherFrame() { return lastGatherFrame; }
 
 	Unit unit() { return thisUnit; }
@@ -28,6 +29,7 @@ public:
 	TilePosition getTilePosition() { return tilePosition; }
 	TilePosition getBuildPosition() { return buildPosition; }
 
+	
 	void setLastGatherFrame(int newFrame) { lastGatherFrame = newFrame; }
 
 	void setUnit(Unit newUnit) { thisUnit = newUnit; }
