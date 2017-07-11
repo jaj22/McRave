@@ -8,6 +8,15 @@
 
 // --- AUTHOR NOTES ---
 // Critical TODO:
+// Test these:
+// Targeting, strength changes
+// Size/damage type
+// Unit scoring
+// Tech/Build stuff
+
+// Then some other tests:
+// Bullets if working, use for unit scoring of performance
+
 
 // TODO in testing before CIG 2017:
 // Archon merging

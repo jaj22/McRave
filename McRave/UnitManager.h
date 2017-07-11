@@ -13,6 +13,9 @@ class UnitTrackerClass
 	map <UnitSizeType, int> allySizes;
 	map <UnitSizeType, int> enemySizes;
 
+	set <Bullet> myBullets;
+	map <UnitType, double> unitPerformance;
+
 	int supply;
 	int globalStrategy;
 public:

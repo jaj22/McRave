@@ -125,6 +125,51 @@ void UnitTrackerClass::storeUnits()
 			}
 		}
 	}
+
+	// TESTING -- Calculate how a unit is performing
+	for (auto& bullet : Broodwar->getBullets())
+	{
+		if (bullet->exists() && bullet->getSource() && bullet->getSource()->exists() && bullet->getTarget() && bullet->getTarget()->exists())
+		{
+			if (bullet->getSource()->getPlayer() == Broodwar->self() && myBullets.find(bullet) == myBullets.end())
+			{
+				myBullets[bullet] = bullet->getSource();
+				double typeMod = 1.0;
+				
+				if (!bullet->getTarget()->getType().isFlyer())
+				{
+					if (bullet->getSource()->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+					{
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Small)
+						{
+							typeMod = 0.5;
+						}
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Medium)
+						{
+							typeMod = 0.75;
+						}
+					}
+					if (bullet->getSource()->getType().groundWeapon().damageType() == DamageTypes::Concussive)
+					{
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Large)
+						{
+							typeMod = 0.25;
+						}
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Medium)
+						{
+							typeMod = 0.5;
+						}
+					}
+
+					unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().groundWeapon().damageAmount()) * typeMod;
+				}
+			}
+			else
+			{
+				unitPerformance[bullet->getSource()->getType()] += bullet->getSource()->getType().airWeapon().damageAmount();
+			}
+		}
+	}
 }
 
 void UnitTrackerClass::removeUnits()
@@ -248,7 +293,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 	// Time to reach target
 	if (unit.getPosition().getDistance(unit.getTargetPosition()) > unit.getGroundRange() && unit.getSpeed() > 0)
 	{
-		timeToTarget = (unit.getPosition().getDistance(unit.getTargetPosition()) -unit.getGroundRange()) /unit.getSpeed();
+		timeToTarget = (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed();
 	}
 
 	if (unit.getPosition().getDistance(unit.getTargetPosition()) > 640)
@@ -269,7 +314,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 
 		// If a unit is within range of the target, add to local strength
 		if (enemy.getPosition().getDistance(unit.getTargetPosition()) < enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget))
-		{			
+		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
 			{
@@ -290,7 +335,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 		if (ally.getType().isWorker() || ally.getType().isBuilding())
 		{
 			continue;
-		}	
+		}
 
 		// If a unit is within the range of the ally unit, add to local strength
 		if (ally.getPosition().getDistance(unit.getPosition()) < ally.getGroundRange() + (ally.getSpeed() * timeToTarget))
@@ -390,9 +435,9 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 
 	// Specific ranged strategy
 
-	else if (globalStrategy == 2 &&unit.getGroundRange() > 32)
+	else if (globalStrategy == 2 && unit.getGroundRange() > 32)
 	{
-		if (unit.getTarget() && unit.getTarget()->exists() && ((Terrain().isInAllyTerritory(unit.unit()) && unit.getPosition().getDistance(unit.getTargetPosition()) <=unit.getGroundRange()) || (Terrain().isInAllyTerritory(unit.getTarget()) && !unit.getTarget()->getType().isWorker())))
+		if (unit.getTarget() && unit.getTarget()->exists() && ((Terrain().isInAllyTerritory(unit.unit()) && unit.getPosition().getDistance(unit.getTargetPosition()) <= unit.getGroundRange()) || (Terrain().isInAllyTerritory(unit.getTarget()) && !unit.getTarget()->getType().isWorker())))
 		{
 			unit.setStrategy(1);
 			return;
