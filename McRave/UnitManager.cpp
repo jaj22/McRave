@@ -133,7 +133,7 @@ void UnitTrackerClass::storeUnits()
 		{
 			if (bullet->getSource()->getPlayer() == Broodwar->self() && myBullets.find(bullet) == myBullets.end())
 			{
-				myBullets[bullet] = bullet->getSource();
+				myBullets.emplace(bullet);
 				double typeMod = 1.0;
 				
 				if (!bullet->getTarget()->getType().isFlyer())

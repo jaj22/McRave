@@ -43,7 +43,7 @@ void StrategyTrackerClass::updateAlly()
 		}
 		else
 		{
-			globalAllyStrength += u.second.getMaxGroundStrength() * 0.5 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			globalEnemyStrength += u.second.getMaxGroundStrength() * 0.5 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 		}
 	}
 }
@@ -175,7 +175,7 @@ void StrategyTrackerClass::protossStrategy()
 	if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 	{
 		// Ramp holding logic
-		if (eZerg > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3 || (eProtoss > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
+		if ((!fastExpand && eZerg > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3) || (eProtoss > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
 		{
 			holdRamp = true;
 		}
