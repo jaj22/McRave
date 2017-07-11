@@ -15,8 +15,6 @@
 // New distance grid
 // New priority
 // New strength
-// New reserve path
-// Delayed second scout
 // Spider mine removal from expansions
 
 // TODO:

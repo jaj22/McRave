@@ -244,7 +244,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	// Time to reach target
 	if (unit->getDistance(targetPosition) > allyUnits[unit].getGroundRange() && allyUnits[unit].getSpeed() > 0)
 	{
-		timeToTarget = (allyUnits[unit].getGroundRange() - unit->getDistance(targetPosition)) / allyUnits[unit].getSpeed();
+		timeToTarget = (unit->getDistance(targetPosition) - allyUnits[unit].getGroundRange()) / allyUnits[unit].getSpeed();
 	}
 
 	int aLarge = getMySizes()[UnitSizeTypes::Large];

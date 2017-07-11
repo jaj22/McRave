@@ -51,8 +51,24 @@ void TerrainTrackerClass::updateAreas()
 
 void TerrainTrackerClass::updateChokes()
 {
+	// Store non island bases	
+	for (auto &area : theMap.Areas())
+	{
+		if (area.AccessibleNeighbours().size() > 0)
+		{
+			for (auto &base : area.Bases())
+			{
+				allBaseLocations.emplace(base.Location());
+			}
+		}
+	}
+
+	// Start location
+	playerStartingTilePosition = Broodwar->self()->getStartLocation();
+	playerStartingPosition = Position(playerStartingTilePosition);
+
 	// Establish FFE position	
-	if (!FFEPosition.isValid() && Broodwar->getFrameCount() > 100)
+	if (Broodwar->getFrameCount() > 100)
 	{
 		int x = 0;
 		int y = 0;
@@ -103,21 +119,7 @@ void TerrainTrackerClass::updateChokes()
 
 void TerrainTrackerClass::onStart()
 {
-	// Store non island bases	
-	for (auto &area : theMap.Areas())
-	{
-		if (area.AccessibleNeighbours().size() > 0)
-		{
-			for (auto &base : area.Bases())
-			{
-				allBaseLocations.emplace(base.Location());
-			}
-		}
-	}
-
-	// Start location
-	playerStartingTilePosition = Broodwar->self()->getStartLocation();
-	playerStartingPosition = Position(playerStartingTilePosition);	
+		
 }
 
 void TerrainTrackerClass::removeTerritory(Unit base)

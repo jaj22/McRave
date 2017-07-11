@@ -2,7 +2,7 @@
 
 void CommandTrackerClass::update()
 {
-  Display().startClock();
+	Display().startClock();
 	updateAlliedUnits();
 	Display().performanceTest(__FUNCTION__);
 	return;
@@ -13,8 +13,6 @@ void CommandTrackerClass::updateAlliedUnits()
 	for (auto &u : Units().getMyUnits())
 	{
 		UnitInfo unit = u.second;
-
-		Broodwar->drawTextMap(unit.getPosition(), "%.2f", unit.getLocal());
 
 		// Special units have their own commands
 		if (unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Shuttle)
@@ -88,7 +86,7 @@ void CommandTrackerClass::updateAlliedUnits()
 			// Else attack move
 			attackMove(unit);
 			continue;
-    }
+		}
 	}
 	return;
 }
@@ -184,7 +182,6 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 		{
 			unit.unit()->useTech(TechTypes::Healing, unit.getTarget());
 		}
-		Broodwar->drawLineMap(unit.getPosition(), unit.getTargetPosition(), Colors::Red);
 		return;
 	}
 
@@ -240,10 +237,10 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 	else if (unit.getType() == UnitTypes::Protoss_Reaver && Units().getEnUnits()[unit.getTarget()].getGroundRange() < unit.getGroundRange())
 	{
 		kite = true;
-	}
+	}	
 
 	// If kiting is a good idea, enable
-	else if (unit.getTarget()->getType() == UnitTypes::Terran_Vulture_Spider_Mine || (unit.getGroundRange() > 32 && unit.unit()->isUnderAttack()) || (Units().getEnUnits()[unit.getTarget()].getGroundRange() <= unit.getGroundRange() && (unit.unit()->getDistance(unit.getTarget()) <= unit.getGroundRange() - Units().getEnUnits()[unit.getTarget()].getGroundRange() && Units().getEnUnits()[unit.getTarget()].getGroundRange() > 0 && unit.getGroundRange() > 32 || unit.unit()->getHitPoints() < 40)))
+	else if ((unit.getGroundRange() > 32 && unit.unit()->isUnderAttack()) || (Units().getEnUnits()[unit.getTarget()].getGroundRange() <= unit.getGroundRange() && (unit.unit()->getDistance(unit.getTargetPosition()) <= unit.getGroundRange() - Units().getEnUnits()[unit.getTarget()].getGroundRange() && Units().getEnUnits()[unit.getTarget()].getGroundRange() > 0 && unit.getGroundRange() > 32 || unit.unit()->getHitPoints() < 40)))
 	{
 		kite = true;
 	}
@@ -288,7 +285,7 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 	int offset = int(unit.getSpeed()) / 8;
 
 	// Specific High Templar flee
-	if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || unit.unit()->isUnderAttack()))
+	/*if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || unit.unit()->isUnderAttack()))
 	{
 		for (auto templar : SpecialUnits().getMyTemplars())
 		{
@@ -298,14 +295,18 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 				return;
 			}
 		}
-	}
+	}*/
 
 	// Search a circle around the target based on the speed of the unit in one second of game time
-	for (int x = start.x - offset; x <= start.x + offset + (unit.getType().tileWidth() * 4); x++)
+	for (int x = start.x - 20; x <= start.x + 20 + (unit.getType().tileWidth() * 4); x++)
 	{
-		for (int y = start.y - offset; y <= start.y + offset + (unit.getType().tileHeight() * 4); y++)
+		for (int y = start.y - 20; y <= start.y + 20 + (unit.getType().tileHeight() * 4); y++)
 		{
-			if (WalkPosition(x, y).isValid() && unit.getPosition().getDistance(Position(WalkPosition(x, y))) < offset)
+			if (!WalkPosition(x, y).isValid())
+			{
+				continue;
+			}
+			if (unit.getPosition().getDistance(Position(WalkPosition(x, y))) < 80)
 			{
 				if (unit.getType() == UnitTypes::Protoss_Dragoon && Grids().getResourceGrid(x / 4, y / 4) > 0)
 				{
@@ -317,7 +318,7 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 				double distance = Grids().getEGroundDistanceGrid(x, y);
 				double distanceHome = double(pow(Grids().getDistanceHome(x, y), 0.1));
 
-				if (Grids().getAntiMobilityGrid(x, y) == 0 && (mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility && Util().isSafe(start, WalkPosition(x, y), unit.getType(), false, false, true))
+				if ((mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility && Util().isSafe(start, WalkPosition(x, y), unit.getType(), false, false, true))
 				{
 					highestMobility = (mobility / (1.0 + (distance * threat))) / distanceHome;
 					finalPosition = WalkPosition(x, y);
@@ -331,14 +332,10 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 	{
 		Grids().updateAllyMovement(unit.unit(), finalPosition);
 		unit.setTargetPosition(Position(finalPosition));
-		if (unit.unit()->getOrderTargetPosition() != Position(finalPosition) || unit.unit()->isStuck())
+		if (unit.unit()->getLastCommand().getTargetPosition() != Position(finalPosition) || unit.unit()->isStuck())
 		{
 			unit.unit()->move(Position(finalPosition));
 		}
-	}
-	else
-	{
-		attackTarget(unit);
 	}
 	return;
 }

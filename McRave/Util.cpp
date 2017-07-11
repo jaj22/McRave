@@ -3,9 +3,7 @@
 double UtilTrackerClass::getStrength(UnitInfo& unit, Player who)
 {
 	// Some hardcoded values that don't have attacks but should still be considered for strength
-
 	if (unit.getType() == UnitTypes::Terran_Medic)
-
 	{
 		return 10.0;
 	}
@@ -20,12 +18,18 @@ double UtilTrackerClass::getStrength(UnitInfo& unit, Player who)
 
 	double range, damage, speed;
 	range = unit.getGroundRange();
-	damage = unit.getGroundDamage() / double(unit.getType().groundWeapon().damageCooldown());
+	if (unit.getType().groundWeapon().damageCooldown() > 0)
+	{
+		damage = unit.getGroundDamage() / double(unit.getType().groundWeapon().damageCooldown());
+	}
+	else
+	{
+		damage = unit.getGroundDamage();
+	}
 	speed = unit.getSpeed();
 
 	if (!unit.getType().isWorker() && unit.getGroundDamage() > 0)
 	{
-
 		// Check for Zergling attack speed upgrade
 		if (unit.getType() == UnitTypes::Zerg_Zergling && who->getUpgradeLevel(UpgradeTypes::Adrenal_Glands))
 		{
@@ -33,12 +37,11 @@ double UtilTrackerClass::getStrength(UnitInfo& unit, Player who)
 		}
 		if (speed > 0)
 		{
-			return range * damage * speed;
+			return range * damage * speed / 1000.0;
 		}
 		else
 		{
-			return range * damage;
-
+			return range * damage / 1000;
 		}
 	}
 	return 0.0;
@@ -49,11 +52,18 @@ double UtilTrackerClass::getAirStrength(UnitInfo& unit, Player who)
 	double range, damage, speed;
 	range = unit.getAirRange();
 	damage = unit.getAirDamage() / double(unit.getType().airWeapon().damageCooldown());
-	speed = 1.0 + unit.getSpeed();
+	speed = unit.getSpeed();
 
 	if (!unit.getType().isWorker() && damage > 0)
 	{
-		return range * damage * speed;
+		if (speed > 0)
+		{
+			return range * damage * speed / 1000.0;
+		}
+		else
+		{
+			return range * damage / 1000.0;
+		}
 	}
 	return 0.0;
 }
@@ -65,7 +75,7 @@ double UtilTrackerClass::getVisibleStrength(UnitInfo& unit, Player who)
 		return 0;
 	}
 
-	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields() / 2)) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields() / 2));
+	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields())) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields()));
 
 	if (unit.unit()->isCloaked() && !unit.unit()->isDetected())
 	{
@@ -87,7 +97,7 @@ double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
 	}
 	else
 	{
-		return unit.getStrength();
+		return unit.getMaxStrength();
 	}
 }
 
@@ -190,7 +200,7 @@ double UtilTrackerClass::getTrueAirDamage(UnitType unitType, Player who)
 {
 	if (unitType == UnitTypes::Terran_Bunker)
 	{
-		return 25;
+		return 25.0;
 	}
 	return unitType.airWeapon().damageAmount();
 }
@@ -260,11 +270,11 @@ set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
 	return returnValues;
 }
 
-bool UtilTrackerClass::isSafe(WalkPosition start, WalkPosition end, UnitType unitType, bool groundCheck = false, bool airCheck = false, bool mobilityCheck = false)
+bool UtilTrackerClass::isSafe(WalkPosition start, WalkPosition end, UnitType unitType, bool groundCheck, bool airCheck, bool mobilityCheck)
 {
 	for (int i = end.x - (unitType.width() / 16); i < end.x + (unitType.width() / 16); i++)
 	{
-		for (int j = end.y - (unitType.height() / 16); j < end.y + (unitType.height()) / 16; j++)
+		for (int j = end.y - (unitType.height() / 16); j < end.y + (unitType.height() / 16); j++)
 		{
 			if (WalkPosition(i, j).isValid())
 			{

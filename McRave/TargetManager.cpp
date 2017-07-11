@@ -62,8 +62,11 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 				continue;
 			}			
 
+
+			thisUnit = enemy.getPriority() / (1.0 + (unit.getPosition().getDistance(enemy.getPosition())));
+
 			// Cluster targeting
-			if (unit.getType() == UnitTypes::Protoss_Reaver || unit.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
+			/*if (unit.getType() == UnitTypes::Protoss_Reaver || unit.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
 			{
 				thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition())) / (1.0 + (unit.getPosition().getDistance(enemy.getPosition()) * Grids().getEGroundDistanceGrid(enemy.getWalkPosition())));
 			}
@@ -80,8 +83,8 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 			}
 			else
 			{
-				thisUnit = enemy.getPriority() / (1.0 + (unit.getPosition().getDistance(enemy.getPosition()) * Grids().getEGroundDistanceGrid(enemy.getWalkPosition())));
-			}
+				thisUnit = enemy.getPriority() / (1.0 + (unit.getPosition().getDistance(enemy.getPosition())));
+			}*/
 		}
 
 		// If this is the strongest enemy around, target it

@@ -29,10 +29,10 @@ void GridTrackerClass::reset()
 					armyCenter = Position(WalkPosition(x, y));
 				}
 
-				/*if ()
+				if (eGroundDistanceGrid[x][y] > 0)
 				{
-				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
-				}*/
+					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
+				}
 
 				// Reset WalkPosition grids
 				aClusterGrid[x][y] = 0;
@@ -518,7 +518,7 @@ void GridTrackerClass::updateMobilityGrids()
 				}
 
 				// Setup what is possible to check ground distances on
-				if (mobilityGrid[x][y] <= 0 || theMap.GetArea(TilePosition(WalkPosition(x, y)))->AccessibleNeighbours().size() == 0)
+				if (mobilityGrid[x][y] <= 0)
 				{
 					distanceGridHome[x][y] = -1;
 				}
@@ -544,10 +544,14 @@ void GridTrackerClass::updateMobilityGrids()
 			{
 				for (int y = start.y - 1; y <= start.y + 1; y++)
 				{
-					if (!TilePosition(x, y).isValid() && TilePosition(x, y).getDistance(start) > 1)
+					if (!TilePosition(x, y).isValid())
 					{
 						continue;
 					}
+					/*if ((x == start.x - 1 && y == start.y - 1) || (x == start.x - 1 && y == start.y + 1) || (x == start.x + 1 && y == start.y - 1) || (x == start.x + 1 && y == start.y + 1))
+					{
+					continue;
+					}*/
 					if (Grids().getDistanceHome(WalkPosition(TilePosition(x, y))) < closestD || closestD == 0.0)
 					{
 						bool bestTile = true;
@@ -555,7 +559,7 @@ void GridTrackerClass::updateMobilityGrids()
 						{
 							for (int j = 0; j <= 1; j++)
 							{
-								if (Grids().getMobilityGrid(WalkPosition((x * 4) + i, (y * 4) + j)) == 0)
+								if (Grids().getMobilityGrid(WalkPosition((x * 4) + i, (y * 4) + j)) <= 0)
 								{
 									bestTile = false;
 								}
@@ -564,9 +568,16 @@ void GridTrackerClass::updateMobilityGrids()
 						if (bestTile)
 						{
 							closestD = Grids().getDistanceHome(WalkPosition(TilePosition(x, y)));
+							//closestD = TilePosition(x, y).getDistance(end) < closestD;
 							closestT = TilePosition(x, y);
 						}
 					}
+
+					/*if (TilePosition(x, y).getDistance(end) < closestD || closestD == 0.0)
+					{
+					closestD = TilePosition(x, y).getDistance(end);
+					closestT = TilePosition(x, y);
+					}*/
 				}
 			}
 
