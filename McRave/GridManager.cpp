@@ -31,7 +31,7 @@ void GridTrackerClass::reset()
 
 				if (eGroundDistanceGrid[x][y] > 0)
 				{
-					Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
+					//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
 				}
 
 				// Reset WalkPosition grids

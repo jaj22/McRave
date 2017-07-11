@@ -239,8 +239,7 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0, thisUnit = 0.0;
 	Position targetPosition = allyUnits[unit].getTargetPosition();
 	double timeToTarget = 0.0;
-
-
+	
 	// Time to reach target
 	if (unit->getDistance(targetPosition) > allyUnits[unit].getGroundRange() && allyUnits[unit].getSpeed() > 0)
 	{

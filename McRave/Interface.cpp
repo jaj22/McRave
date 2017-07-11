@@ -45,6 +45,12 @@ void InterfaceTrackerClass::drawInformation()
 	// Display global strength calculations	
 	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Strategy().globalAlly(), Strategy().globalEnemy());
 
+	// Display gateway production comparison
+	double goon = Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
+	double zealot = Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
+	Broodwar->drawTextScreen(500, 30, "%.2f", goon);
+	Broodwar->drawTextScreen(500, 40, "%.2f", zealot);
+
 	// Display remaining minerals on each mineral patch that is near our Nexus
 	for (auto &r : Resources().getMyMinerals())
 	{
@@ -66,16 +72,17 @@ void InterfaceTrackerClass::drawAllyInfo()
 		for (auto &u : Units().getMyUnits())
 		{
 			UnitInfo unit = u.second;
-
-			if (unit.getTargetPosition().isValid())
+			if (unit.getDeadFrame() == 0)
 			{
-				Broodwar->drawLineMap(unit.getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
-				Broodwar->drawBoxMap(unit.getTargetPosition() + Position(-2, -2), unit.getTargetPosition() + Position(2, 2), Broodwar->self()->getColor());
+				if (unit.getTargetPosition().isValid())
+				{
+					Broodwar->drawLineMap(unit.getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
+					Broodwar->drawBoxMap(unit.getTargetPosition() + Position(-2, -2), unit.getTargetPosition() + Position(2, 2), Broodwar->self()->getColor());
+				}
+
+				Broodwar->drawTextMap(unit.getPosition() + Position(-5, -2), "%.2f", unit.getStrength());
+				Broodwar->drawTextMap(unit.getPosition() + Position(-10, 5), "%.2f, %.2f, %.2f", unit.getGroundDamage(), unit.getGroundRange(), unit.getSpeed());
 			}
-
-			Broodwar->drawTextMap(unit.getPosition() + Position(-5, -2), "%.2f", unit.getStrength());
-			Broodwar->drawTextMap(unit.getPosition() + Position(-10, 5), "%.2f, %.2f, %.2f", unit.getGroundDamage(), unit.getGroundRange(), unit.getSpeed());
-
 		}
 	}
 	return;
