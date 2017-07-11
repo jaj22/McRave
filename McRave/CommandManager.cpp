@@ -201,7 +201,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 		}
 	}
 
-	// If we need to use static defenses
+	// If we can use a Shield Battery
 	if (Grids().getBatteryGrid(unit.getTilePosition()) > 0 && ((unit.unit()->getLastCommand().getType() == UnitCommandTypes::Right_Click_Unit && unit.unit()->getShields() < 40) || unit.unit()->getShields() < 10))
 	{
 		if (unit.unit()->getLastCommand().getType() != UnitCommandTypes::Right_Click_Unit)
@@ -218,12 +218,14 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 		return;
 	}
 
+	// If we can use a bunker
 	if (Grids().getBunkerGrid(unit.getTilePosition()) > 0)
 	{
 		Unit bunker = unit.unit()->getClosestUnit(Filter::GetType == UnitTypes::Terran_Bunker && Filter::SpaceRemaining > 0);
 		if (bunker)
 		{
 			unit.unit()->rightClick(bunker);
+			return;
 		}
 	}
 
@@ -246,12 +248,12 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 	}
 
 	// If kite is true and weapon on cooldown, move
-	if (kite && unit.unit()->getGroundWeaponCooldown() > 0)
+	if (kite && (!unit.getTarget()->getType().isFlyer() && unit.unit()->getGroundWeaponCooldown() > 0) || (unit.getTarget()->getType().isFlyer() && unit.unit()->getAirWeaponCooldown() > 0))
 	{
 		fleeTarget(unit);
 		return;
 	}
-	else if (unit.unit()->getGroundWeaponCooldown() <= 0)
+	else if ((!unit.getTarget()->getType().isFlyer() && unit.unit()->getGroundWeaponCooldown() <= 0) || (unit.getTarget()->getType().isFlyer() && unit.unit()->getAirWeaponCooldown() <= 0))
 	{
 		// If unit receieved an attack command on the target already, don't give another order
 		if (unit.unit()->getLastCommand().getType() == UnitCommandTypes::Attack_Unit && unit.unit()->getLastCommand().getTarget() == unit.getTarget())
@@ -285,17 +287,17 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 	int offset = int(unit.getSpeed()) / 8;
 
 	// Specific High Templar flee
-	/*if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || unit.unit()->isUnderAttack()))
+	if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(unit.getWalkPosition()) > 0.0))
 	{
 		for (auto templar : SpecialUnits().getMyTemplars())
 		{
-			if (templar.second.unit()->getEnergy() < 75 || templar.second.unit()->isUnderAttack())
+			if (templar.second.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(templar.second.getWalkPosition()) > 0.0)
 			{
 				unit.unit()->useTech(TechTypes::Archon_Warp, templar.second.unit());
 				return;
 			}
 		}
-	}*/
+	}
 
 	// Search a circle around the target based on the speed of the unit in one second of game time
 	for (int x = start.x - 20; x <= start.x + 20 + (unit.getType().tileWidth() * 4); x++)

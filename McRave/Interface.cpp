@@ -15,7 +15,7 @@ void InterfaceTrackerClass::performanceTest(string function)
 	if (myTest[function] > 0.0)
 	{
 		Broodwar->drawTextScreen(200, screenOffset, "%s", function);
-		Broodwar->drawTextScreen(400, screenOffset, "%d ms", myTest[function]);
+		Broodwar->drawTextScreen(350, screenOffset, "%d ms", myTest[function]);
 		screenOffset += 10;
 	}
 	return;
@@ -38,7 +38,7 @@ void InterfaceTrackerClass::drawInformation()
 		if (b.second > 0)
 		{
 			Broodwar->drawTextScreen(0, offset, "%s : %d", b.first.toString().c_str(), b.second);
-			offset = offset + 10;
+			offset += 10;
 		}
 	}
 
@@ -46,10 +46,16 @@ void InterfaceTrackerClass::drawInformation()
 	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Strategy().globalAlly(), Strategy().globalEnemy());
 
 	// Display gateway production comparison
-	double goon = Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
-	double zealot = Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
-	Broodwar->drawTextScreen(500, 30, "%.2f", goon);
-	Broodwar->drawTextScreen(500, 40, "%.2f", zealot);
+	//double goon = Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
+	//double zealot = Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
+	//Broodwar->drawTextScreen(500, 30, "%.2f", goon);
+	//Broodwar->drawTextScreen(500, 40, "%.2f", zealot);
+
+	for (auto &unit : Strategy().getUnitScore())
+	{
+		Broodwar->drawTextScreen(0, offset, "%s: %.2f", unit.first, unit.second);
+		offset += 10;
+	}
 
 	// Display remaining minerals on each mineral patch that is near our Nexus
 	for (auto &r : Resources().getMyMinerals())

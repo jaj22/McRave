@@ -18,7 +18,7 @@ void SpecialUnitTrackerClass::updateArbiters()
 		int bestCluster = 0;
 		double closestD = 0.0;
 		Position bestPosition = Grids().getArmyCenter();
-		WalkPosition start = u.second.getMiniTile();
+		WalkPosition start = u.second.getWalkPosition();
 		for (int x = start.x - 20; x <= start.x + 20; x++)
 		{
 			for (int y = start.y - 20; y <= start.y + 20; y++)
@@ -77,7 +77,7 @@ void SpecialUnitTrackerClass::updateObservers()
 		// Move towards lowest enemy air threat, no enemy detection and closest to enemy starting position	
 		double closestD = 0.0;
 		Position newDestination = Grids().getArmyCenter();
-		WalkPosition start = u.second.getMiniTile();
+		WalkPosition start = u.second.getWalkPosition();
 		for (int x = start.x - 20; x <= start.x + 20; x++)
 		{
 			for (int y = start.y - 20; y <= start.y + 20; y++)

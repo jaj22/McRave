@@ -35,7 +35,7 @@ static bool adjoins8SomeLakeOrNeutral(WalkPosition p, const MapImpl * pMap)
 		if (pMap->Valid(next))
 		{
 			if (pMap->GetTile(TilePosition(next), check_t::no_check).GetNeutral()) return true;
-			if (pMap->GetMiniTile(next, check_t::no_check).Lake()) return true;
+			if (pMap->getWalkPosition(next, check_t::no_check).Lake()) return true;
 		}
 	}
 
@@ -134,7 +134,7 @@ void MapImpl::LoadData()
 			{
 				WalkPosition w(x+dx, y+dy);
 				if (Valid(w))
-					GetMiniTile_(w, check_t::no_check).SetWalkable(false);
+					getWalkPosition_(w, check_t::no_check).SetWalkable(false);
 			}
 
 	// Mark buildable tiles (tiles are unbuildable by default)
@@ -149,7 +149,7 @@ void MapImpl::LoadData()
 			// Ensures buildable ==> walkable:
 			for (int dy = 0 ; dy < 4 ; ++dy)
 			for (int dx = 0 ; dx < 4 ; ++dx)
-				GetMiniTile_(WalkPosition(t) + WalkPosition(dx, dy), check_t::no_check).SetWalkable(true);
+				getWalkPosition_(WalkPosition(t) + WalkPosition(dx, dy), check_t::no_check).SetWalkable(true);
 		}
 
 		// Add groundHeight and doodad information:
@@ -167,7 +167,7 @@ void MapImpl::DecideSeasOrLakes()
 	for (int x = 0 ; x < WalkSize().x ; ++x)
 	{
 		WalkPosition origin = WalkPosition(x, y);
-		MiniTile & Origin = GetMiniTile_(origin, check_t::no_check);
+		MiniTile & Origin = getWalkPosition_(origin, check_t::no_check);
 		if (Origin.SeaOrLake())
 		{
 			vector<WalkPosition> ToSearch{origin};
@@ -189,7 +189,7 @@ void MapImpl::DecideSeasOrLakes()
 					WalkPosition next = current + delta;
 					if (Valid(next))
 					{
-						MiniTile & Next = GetMiniTile_(next, check_t::no_check);
+						MiniTile & Next = getWalkPosition_(next, check_t::no_check);
 						if (Next.SeaOrLake())
 						{
 							ToSearch.push_back(next);
@@ -252,7 +252,7 @@ void MapImpl::InitializeNeutrals()
 
 void MapImpl::ReplaceAreaIds(BWAPI::WalkPosition p, Area::id newAreaId)
 {
-	MiniTile & Origin = GetMiniTile_(p, check_t::no_check);
+	MiniTile & Origin = getWalkPosition_(p, check_t::no_check);
 	Area::id oldAreaId = Origin.AreaId();
 	Origin.ReplaceAreaId(newAreaId);
 
@@ -267,7 +267,7 @@ void MapImpl::ReplaceAreaIds(BWAPI::WalkPosition p, Area::id newAreaId)
 			WalkPosition next = current + delta;
 			if (Valid(next))
 			{
-				MiniTile & Next = GetMiniTile_(next, check_t::no_check);
+				MiniTile & Next = getWalkPosition_(next, check_t::no_check);
 				if (Next.AreaId() == oldAreaId)
 				{
 					ToSearch.push_back(next);
@@ -339,7 +339,7 @@ void MapImpl::ComputeAltitude()
 					WalkPosition w = Current.origin + delta;
 					if (Valid(w))
 					{
-						auto & miniTile = GetMiniTile_(w, check_t::no_check);
+						auto & miniTile = getWalkPosition_(w, check_t::no_check);
 						if (miniTile.AltitudeMissing())
 							miniTile.SetAltitude(m_maxAltitude = Current.lastAltitudeGenerated = altitude);
 					}
@@ -361,7 +361,7 @@ void MapImpl::ProcessBlockingNeutrals()
 			// 1)  Retreave the Border: the outer border of pCandidate
 			vector<WalkPosition> Border = outerMiniTileBorder(pCandidate->TopLeft(), pCandidate->Size());
 			really_remove_if(Border, [this](WalkPosition w)	{
-				return !Valid(w) || !GetMiniTile(w, check_t::no_check).Walkable() ||
+				return !Valid(w) || !getWalkPosition(w, check_t::no_check).Walkable() ||
 					GetTile(TilePosition(w), check_t::no_check).GetNeutral(); });
 
 			// 2)  Find the doors in Border: one door for each connected set of walkable, neighbouring miniTiles.
@@ -380,7 +380,7 @@ void MapImpl::ProcessBlockingNeutrals()
 					{
 						WalkPosition next = current + delta;
 						if (Valid(next) && !contains(Visited, next))
-							if (GetMiniTile(next, check_t::no_check).Walkable())
+							if (getWalkPosition(next, check_t::no_check).Walkable())
 								if (!GetTile(TilePosition(next), check_t::no_check).GetNeutral())
 									if (adjoins8SomeLakeOrNeutral(next, this))
 									{
@@ -407,7 +407,7 @@ void MapImpl::ProcessBlockingNeutrals()
 						{
 							WalkPosition next = current + delta;
 							if (Valid(next) && !contains(Visited, next))
-								if (GetMiniTile(next, check_t::no_check).Walkable())
+								if (getWalkPosition(next, check_t::no_check).Walkable())
 									if (!GetTile(TilePosition(next), check_t::no_check).GetNeutral())
 									{
 										ToVisit.push_back(next);
@@ -430,7 +430,7 @@ void MapImpl::ProcessBlockingNeutrals()
 				for (int dy = 0 ; dy < WalkPosition(pCandidate->Size()).y ; ++dy)
 				for (int dx = 0 ; dx < WalkPosition(pCandidate->Size()).x ; ++dx)
 				{
-					auto & miniTile = GetMiniTile_(WalkPosition(pCandidate->TopLeft()) + WalkPosition(dx, dy));
+					auto & miniTile = getWalkPosition_(WalkPosition(pCandidate->TopLeft()) + WalkPosition(dx, dy));
 					if (miniTile.Walkable()) miniTile.SetBlocked();
 				}
 			}
@@ -504,7 +504,7 @@ vector<pair<WalkPosition, MiniTile *>> MapImpl::SortMiniTiles()
 	for (int x = 0 ; x < WalkSize().x ; ++x)
 	{
 		WalkPosition w = WalkPosition(x, y);
-		MiniTile & miniTile = GetMiniTile_(w, check_t::no_check);
+		MiniTile & miniTile = getWalkPosition_(w, check_t::no_check);
 		if (miniTile.AreaIdMissing())
 			MiniTilesByDescendingAltitude.emplace_back(w, &miniTile);
 	}
@@ -523,7 +523,7 @@ static pair<Area::id, Area::id> findNeighboringAreas(WalkPosition p, const MapIm
 	for (WalkPosition delta : {WalkPosition(0, -1), WalkPosition(-1, 0), WalkPosition(+1, 0), WalkPosition(0, +1)})
 		if (pMap->Valid(p + delta))
 		{
-			Area::id areaId = pMap->GetMiniTile(p + delta, check_t::no_check).AreaId();
+			Area::id areaId = pMap->getWalkPosition(p + delta, check_t::no_check).AreaId();
 			if (areaId > 0)
 				if (!result.first) result.first = areaId;
 				else if (result.first != areaId)
@@ -640,7 +640,7 @@ void MapImpl::SetAreaIdInTile(TilePosition t)
 
 	for (int dy = 0 ; dy < 4 ; ++dy)
 	for (int dx = 0 ; dx < 4 ; ++dx)
-		if (Area::id id = GetMiniTile(WalkPosition(t) + WalkPosition(dx, dy), check_t::no_check).AreaId())
+		if (Area::id id = getWalkPosition(WalkPosition(t) + WalkPosition(dx, dy), check_t::no_check).AreaId())
 			if (tile.AreaId() == 0) tile.SetAreaId(id);
 			else if (tile.AreaId() != id)
 			{
@@ -657,7 +657,7 @@ void MapImpl::SetAltitudeInTile(TilePosition t)
 	for (int dy = 0 ; dy < 4 ; ++dy)
 	for (int dx = 0 ; dx < 4 ; ++dx)
 	{
-		altitude_t altitude = GetMiniTile(WalkPosition(t) + WalkPosition(dx, dy), check_t::no_check).Altitude();
+		altitude_t altitude = getWalkPosition(WalkPosition(t) + WalkPosition(dx, dy), check_t::no_check).Altitude();
 		if (altitude < minAltitude)	minAltitude = altitude;
 	}
 
@@ -731,7 +731,7 @@ void MapImpl::OnBlockingNeutralDestroyed(const Neutral * pBlocking)
 	for (int dy = 0 ; dy < WalkPosition(pBlocking->Size()).y ; ++dy)
 	for (int dx = 0 ; dx < WalkPosition(pBlocking->Size()).x ; ++dx)
 	{
-		auto & miniTile = GetMiniTile_(WalkPosition(pBlocking->TopLeft()) + WalkPosition(dx, dy));
+		auto & miniTile = getWalkPosition_(WalkPosition(pBlocking->TopLeft()) + WalkPosition(dx, dy));
 		if (miniTile.Walkable()) miniTile.ReplaceBlockedAreaId(newId);
 	}
 

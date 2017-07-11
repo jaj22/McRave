@@ -10,11 +10,7 @@
 // Critical TODO:
 
 // TODO in testing before CIG 2017:
-// Make micro and threat grids relative to speed using 1 second intervals (if a unit moves at 8 pixels/second, they can look at 8 pixels left and right)
 // Archon merging
-// New distance grid
-// New priority
-// New strength
 // Spider mine removal from expansions
 
 // TODO:

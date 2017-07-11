@@ -72,6 +72,7 @@ void BuildingTrackerClass::storeBuilding(Unit building)
 	myBuildings[building].setTilePosition(building->getTilePosition());
 	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBuildings[building].setEnergy(building->getEnergy());
+	return;
 }
 
 void BuildingTrackerClass::storeBattery(Unit building)
@@ -83,11 +84,13 @@ void BuildingTrackerClass::storeBattery(Unit building)
 	myBatteries[building].setTilePosition(building->getTilePosition());
 	myBatteries[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBatteries[building].setEnergy(building->getEnergy());
+	return;
 }
 
 void BuildingTrackerClass::removeBuilding(Unit building)
 {
 	myBuildings.erase(building);
+	return;
 }
 
 TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TilePosition buildTilePosition, bool ignoreCond = false)

@@ -16,7 +16,7 @@ public:
 	Unit unit() { return storedUnit; }
 	Position getPosition() { return position; }
 	Position getDestination() { return destination; }
-	WalkPosition getMiniTile() { return walkPosition; }
+	WalkPosition getWalkPosition() { return walkPosition; }
 
 	// Mutators
 	void setUnit(Unit newUnit) { storedUnit = newUnit; }

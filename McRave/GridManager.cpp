@@ -17,65 +17,89 @@ void GridTrackerClass::reset()
 {
 	// Reset all tiles to 0
 	int center = 0;
-	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
-	{
-		for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
-		{
-			if (WalkPosition(x, y).isValid())
-			{
-				if (aClusterGrid[x][y] > center)
-				{
-					center = aClusterGrid[x][y];
-					armyCenter = Position(WalkPosition(x, y));
-				}
 
-				if (eGroundDistanceGrid[x][y] > 0)
-				{
-					//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
-				}
 
-				// Reset WalkPosition grids
-				aClusterGrid[x][y] = 0;
-				antiMobilityGrid[x][y] = 0;
-				eGroundGrid[x][y] = 0.0;
-				eAirGrid[x][y] = 0.0;
-				eGroundDistanceGrid[x][y] = 0.0;
-				eAirDistanceGrid[x][y] = 0.0;
-				observerGrid[x][y] = 0;
-				arbiterGrid[x][y] = 0;
-				eDetectorGrid[x][y] = 0;
+	// TEMP - Testing memset to reset grids if drawing is not needed for performance
+	memset(aClusterGrid, 0, sizeof(aClusterGrid[0][0]) * 1024 * 1024);
+	memset(antiMobilityGrid, 0, sizeof(antiMobilityGrid[0][0]) * 1024 * 1024);
+	memset(eGroundGrid, 0, sizeof(eGroundGrid[0][0]) * 1024 * 1024);
+	memset(eAirGrid, 0, sizeof(eAirGrid[0][0]) * 1024 * 1024);
+	memset(eGroundDistanceGrid, 0, sizeof(eGroundDistanceGrid[0][0]) * 1024 * 1024);
+	memset(eAirDistanceGrid	, 0, sizeof(eAirDistanceGrid[0][0]) * 1024 * 1024);
+	memset(observerGrid, 0, sizeof(observerGrid[0][0]) * 1024 * 1024);
+	memset(arbiterGrid, 0, sizeof(arbiterGrid[0][0]) * 1024 * 1024);
+	memset(eDetectorGrid, 0, sizeof(eDetectorGrid[0][0]) * 1024 * 1024);
 
-				// Reset TilePosition grids
-				if (x % 4 == 0 && y % 4 == 0 && TilePosition(x / 4, y / 4).isValid())
-				{
-					// Debug test
-					if (reservePathHome[x / 4][y / 4] > 0)
-					{
-						//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
-					}
+	memset(eGroundClusterGrid, 0, sizeof(eGroundClusterGrid[0][0]) * 256 * 256);
+	memset(eAirClusterGrid, 0, sizeof(eAirClusterGrid[0][0]) * 256 * 256);
+	memset(reserveGrid, 0, sizeof(reserveGrid[0][0]) * 256 * 256);
+	memset(baseGrid, 0, sizeof(baseGrid[0][0]) * 256 * 256);
+	memset(pylonGrid, 0, sizeof(pylonGrid[0][0]) * 256 * 256);
+	memset(batteryGrid, 0, sizeof(batteryGrid[0][0]) * 256 * 256);
+	memset(defenseGrid, 0, sizeof(defenseGrid[0][0]) * 256 * 256);
+	memset(bunkerGrid, 0, sizeof(bunkerGrid[0][0]) * 256 * 256);
+	memset(resourceGrid, 0, sizeof(resourceGrid[0][0]) * 256 * 256);
 
-					// Reset cluster grids
-					eGroundClusterGrid[x / 4][y / 4] = 0;
-					eAirClusterGrid[x / 4][y / 4] = 0;
 
-					// Reset other grids
-					reserveGrid[x / 4][y / 4] = 0;
-					baseGrid[x / 4][y / 4] = 0;
-					pylonGrid[x / 4][y / 4] = 0;
-					batteryGrid[x / 4][y / 4] = 0;
-					defenseGrid[x / 4][y / 4] = 0;
-					bunkerGrid[x / 4][y / 4] = 0;
-					resourceGrid[x / 4][y / 4] = 0;
-				}
-			}
+	//for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
+	//{
+	//	for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
+	//	{
+	//		if (WalkPosition(x, y).isValid())
+	//		{
+	//			if (aClusterGrid[x][y] > center)
+	//			{
+	//				center = aClusterGrid[x][y];
+	//				armyCenter = Position(WalkPosition(x, y));
+	//			}
 
-			// Temp path home stuff
-			if (reservePathHome[x / 4][y / 4] == 1)
-			{
-				reserveGrid[x / 4][y / 4] = 1;
-			}
-		}
-	}
+	//			if (eGroundDistanceGrid[x][y] > 0)
+	//			{
+	//				//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
+	//			}
+
+	//			// Reset WalkPosition grids
+	//			aClusterGrid[x][y] = 0;
+	//			antiMobilityGrid[x][y] = 0;
+	//			eGroundGrid[x][y] = 0.0;
+	//			eAirGrid[x][y] = 0.0;
+	//			eGroundDistanceGrid[x][y] = 0.0;
+	//			eAirDistanceGrid[x][y] = 0.0;
+	//			observerGrid[x][y] = 0;
+	//			arbiterGrid[x][y] = 0;
+	//			eDetectorGrid[x][y] = 0;
+
+	//			// Reset TilePosition grids
+	//			if (x % 4 == 0 && y % 4 == 0 && TilePosition(x / 4, y / 4).isValid())
+	//			{
+	//				// Debug test
+	//				if (reservePathHome[x / 4][y / 4] > 0)
+	//				{
+	//					//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
+	//				}
+
+	//				// Reset cluster grids
+	//				eGroundClusterGrid[x / 4][y / 4] = 0;
+	//				eAirClusterGrid[x / 4][y / 4] = 0;
+
+	//				// Reset other grids
+	//				reserveGrid[x / 4][y / 4] = 0;
+	//				baseGrid[x / 4][y / 4] = 0;
+	//				pylonGrid[x / 4][y / 4] = 0;
+	//				batteryGrid[x / 4][y / 4] = 0;
+	//				defenseGrid[x / 4][y / 4] = 0;
+	//				bunkerGrid[x / 4][y / 4] = 0;
+	//				resourceGrid[x / 4][y / 4] = 0;
+	//			}
+	//		}
+
+	//		// Temp path home stuff
+	//		if (reservePathHome[x / 4][y / 4] == 1)
+	//		{
+	//			reserveGrid[x / 4][y / 4] = 1;
+	//		}
+	//	}
+	//}
 	return;
 }
 
@@ -471,14 +495,14 @@ void GridTrackerClass::updateMobilityGrids()
 		{
 			for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 			{
-				if (WalkPosition(x, y).isValid() && theMap.GetMiniTile(WalkPosition(x, y)).Walkable())
+				if (WalkPosition(x, y).isValid() && theMap.getWalkPosition(WalkPosition(x, y)).Walkable())
 				{
 					for (int i = -12; i <= 12; i++)
 					{
 						for (int j = -12; j <= 12; j++)
 						{
 							// The more tiles around x,y that are walkable, the more mobility x,y has				
-							if (WalkPosition(x + i, y + j).isValid() && theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
+							if (WalkPosition(x + i, y + j).isValid() && theMap.getWalkPosition(WalkPosition(x + i, y + j)).Walkable())
 							{
 								mobilityGrid[x][y] += 1;
 							}
@@ -498,7 +522,7 @@ void GridTrackerClass::updateMobilityGrids()
 								{
 									for (int j = 0 - startRatio; j <= 0 - startRatio; j++)
 									{
-										if (WalkPosition(x + i, y + j).isValid() && !theMap.GetMiniTile(WalkPosition(x + i, y + j)).Walkable())
+										if (WalkPosition(x + i, y + j).isValid() && !theMap.getWalkPosition(WalkPosition(x + i, y + j)).Walkable())
 										{
 											notCorner = false;
 										}
@@ -703,7 +727,7 @@ void GridTrackerClass::updateGroundDistanceGrid()
 				for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 				{
 					// If any of the grid is 0, we're not done yet
-					if (distanceGridHome[x][y] == 0 && theMap.GetMiniTile(WalkPosition(x, y)).AreaId() > 0)
+					if (distanceGridHome[x][y] == 0 && theMap.getWalkPosition(WalkPosition(x, y)).AreaId() > 0)
 					{
 						done = false;
 					}
