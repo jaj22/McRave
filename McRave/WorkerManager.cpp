@@ -22,9 +22,7 @@ void WorkerTrackerClass::updateWorkers()
 void WorkerTrackerClass::updateScout()
 {
 	// Update scout probes decision if we are above 9 supply
-
 	if (Units().getSupply() >= 18 && (Broodwar->getFrameCount() - deadScoutFrame > 3000 && (!scout || (scout && !scout->exists()))))
-
 	{
 		scout = getClosestWorker(Position(Terrain().getSecondChoke()));
 	}

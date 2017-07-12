@@ -7,7 +7,9 @@
 #include "McRave.h"
 
 // --- AUTHOR NOTES ---
-// Critical TODO:
+// TODO in testing before CIG 2017:
+// Archon merging
+// Spider mine removal from expansions
 // Test these:
 // Targeting, strength changes
 // Size/damage type
@@ -16,13 +18,13 @@
 
 // Then some other tests:
 // Bullets if working, use for unit scoring of performance
-
-
-// TODO in testing before CIG 2017:
-// Archon merging
-// Spider mine removal from expansions
+// Test FFE against random
+// Move update of units in StrategyManager to UnitManager (less iterations)
+// IsSelected to display information
 
 // TODO:
+// Move special units into their own area, separate command manager
+// Make target position stuff based on units current command target position
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
@@ -33,6 +35,7 @@
 // Building idle status stored
 // Unit idle status stored?
 // Update commands to remove any latency components
+
 void McRaveModule::onStart()
 {
 	Broodwar->enableFlag(Flag::UserInput);	
@@ -109,7 +112,7 @@ void McRaveModule::onUnitCreate(BWAPI::Unit unit)
 
 void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 {
-	Units().decayUnit(unit);
+	Units().removeUnit(unit);
 	Buildings().removeBuilding(unit);
 	SpecialUnits().removeUnit(unit);
 	Workers().removeWorker(unit);

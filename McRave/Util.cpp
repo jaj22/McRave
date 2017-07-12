@@ -71,9 +71,9 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 		effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / double(eLarge + eMedium + eSmall);
 	}*/
 
-	if (unit.unit()->isCloaked() && !unit.unit()->isDetected())
+	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
-		return 4.0 * hp * getMaxGroundStrength(unit, who) * effectiveness;
+		return 10.0 * hp * getMaxGroundStrength(unit, who) * effectiveness;
 	}
 	return hp * getMaxGroundStrength(unit, who) * effectiveness;
 }

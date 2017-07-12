@@ -31,26 +31,31 @@ void BuildOrderTrackerClass::updateDecision()
 			getTech = true;
 		}
 
-		// PvZ
-		if (Strategy().getNumberZerg() > 0)
+		// If an opening has not been chosen, we can choose FFE, otherwise we never should choose it (to prevent PvR 2 gate into FFE)
+		if (opening == 0)
 		{
-			opening = 0;
+			// PvZ
+			if (Strategy().getNumberZerg() > 0)
+			{
+				opening = 1;
+			}			
 		}
 		// PvP
-		else if (Strategy().getNumberProtoss() > 0)
+		if (Strategy().getNumberProtoss() > 0)
 		{
-			opening = 1;
+			opening = 2;
 		}
 		// PvT
 		else if (Strategy().getNumberTerran() > 0)
 		{
-			opening = 2;
+			opening = 3;
 		}
 		// PvR
 		else
 		{
-			opening = 3;
+			opening = 4;
 		}
+
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
@@ -103,7 +108,7 @@ void BuildOrderTrackerClass::protossOpener()
 	if (getOpening)
 	{
 		// FFE
-		if (opening == 0)
+		if (opening == 1)
 		{
 			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 20;
 			buildingDesired[UnitTypes::Protoss_Nexus] = 2 * (Units().getSupply() >= 28);
@@ -113,14 +118,14 @@ void BuildOrderTrackerClass::protossOpener()
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 42;
 		}
 		// 1 Gate Core
-		else if (opening == 1)
+		else if (opening == 2)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 36);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 24;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 28;
 		}
 		// 14 Nexus
-		else if (opening == 2)
+		else if (opening == 3)
 		{
 			buildingDesired[UnitTypes::Protoss_Nexus] = 2 * (Units().getSupply() >= 28);
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 32);
@@ -128,7 +133,7 @@ void BuildOrderTrackerClass::protossOpener()
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 30;
 		}
 		// 2 Gate Core
-		else if (opening == 3)
+		else if (opening == 4)
 		{
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 24);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;

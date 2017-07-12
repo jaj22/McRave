@@ -3,13 +3,14 @@
 void UnitTrackerClass::update()
 {
 	Display().startClock();
-	storeUnits();
-	removeUnits();
+	updateAliveUnits();
+	updateDeadUnits();
+	updateGlobalCalculations();
 	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
-void UnitTrackerClass::storeUnits()
+void UnitTrackerClass::updateAliveUnits()
 {
 	// Reset sizes and supply
 	for (auto &size : allySizes)
@@ -55,7 +56,7 @@ void UnitTrackerClass::storeUnits()
 			}
 			else if (u->getType() == UnitTypes::Protoss_Photon_Cannon)
 			{
-				storeAllyUnit(u);
+				updateAlly(u);
 			}
 		}
 
@@ -73,7 +74,7 @@ void UnitTrackerClass::storeUnits()
 		// Store units
 		else
 		{
-			storeAllyUnit(u);
+			updateAlly(u);
 			if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Terran_Medic)
 			{
 				SpecialUnits().storeUnit(u);
@@ -93,7 +94,7 @@ void UnitTrackerClass::storeUnits()
 			// Store if exists
 			if (u && u->exists())
 			{
-				storeEnemyUnit(u);
+				updateEnemy(u);
 			}
 		}
 	}
@@ -172,7 +173,7 @@ void UnitTrackerClass::storeUnits()
 	}
 }
 
-void UnitTrackerClass::removeUnits()
+void UnitTrackerClass::updateDeadUnits()
 {
 	// Check for decayed ally units
 	for (map<Unit, UnitInfo>::iterator itr = allyUnits.begin(); itr != allyUnits.end();)
@@ -200,7 +201,7 @@ void UnitTrackerClass::removeUnits()
 	}
 }
 
-void UnitTrackerClass::storeEnemyUnit(Unit unit)
+void UnitTrackerClass::updateEnemy(Unit unit)
 {
 	// Update units
 	auto &u = enemyUnits[unit];
@@ -233,7 +234,7 @@ void UnitTrackerClass::storeEnemyUnit(Unit unit)
 	return;
 }
 
-void UnitTrackerClass::storeAllyUnit(Unit unit)
+void UnitTrackerClass::updateAlly(Unit unit)
 {
 	auto &u = allyUnits[unit];
 	auto t = unit->getType();
@@ -265,12 +266,11 @@ void UnitTrackerClass::storeAllyUnit(Unit unit)
 
 	// Update calculations
 	u.setTarget(Targets().getTarget(u));
-	getGlobalCalculation(u);
 	getLocalCalculation(u);
 	return;
 }
 
-void UnitTrackerClass::decayUnit(Unit unit)
+void UnitTrackerClass::removeUnit(Unit unit)
 {
 	if (allyUnits.find(unit) != allyUnits.end())
 	{
@@ -282,7 +282,7 @@ void UnitTrackerClass::decayUnit(Unit unit)
 	}
 }
 
-void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
+void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be moved to UTIL as a double function, to be accesible to SpecialUnitManager too
 {
 	// Variables for calculating local strengths
 	double enemyLocalGroundStrength = 0.0, allyLocalGroundStrength = 0.0, timeToTarget = 0.0;
@@ -318,7 +318,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
-			{
+			{				
 				enemyLocalGroundStrength += enemy.getVisibleGroundStrength();
 			}
 			else
@@ -331,11 +331,11 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
 			{
-				enemyLocalAirStrength += enemy.getVisibleGroundStrength();
+				enemyLocalAirStrength += enemy.getVisibleAirStrength();
 			}
 			else
 			{
-				allyLocalAirStrength += enemy.getMaxGroundStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(enemy.getDeadFrame())));
+				allyLocalAirStrength += enemy.getMaxAirStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(enemy.getDeadFrame())));
 			}
 		}
 
@@ -369,17 +369,20 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (ally.getDeadFrame() == 0)
 			{
-				allyLocalAirStrength += ally.getVisibleGroundStrength();
+				allyLocalAirStrength += ally.getVisibleAirStrength();
 			}
 			else
 			{
-				enemyLocalAirStrength += ally.getMaxGroundStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(ally.getDeadFrame())));
+				enemyLocalAirStrength += ally.getMaxAirStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(ally.getDeadFrame())));
 			}
 		}
 	}
 
+	// Future position of allySpecialUnits iterator
+
 	// Store the difference of strengths 
 	unit.setGroundLocal(allyLocalGroundStrength - enemyLocalGroundStrength);
+	unit.setAirLocal(allyLocalAirStrength - enemyLocalAirStrength);
 
 	// Specific High Templar strategy
 	if (unit.getType() == UnitTypes::Protoss_High_Templar)
@@ -474,21 +477,21 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 				return;
 			}
 		}
-	}
 
-	// If an enemy is within ally territory, engage
-	if (unit.getTarget() && unit.getTarget()->exists() && theMap.GetArea(unit.getTarget()->getTilePosition()) && Terrain().isInAllyTerritory(unit.getTarget()))
-	{
-		unit.setStrategy(1);
-		return;
-	}
+		// If an enemy is within ally territory, engage
+		if (unit.getTarget() && unit.getTarget()->exists() && theMap.GetArea(unit.getTarget()->getTilePosition()) && Terrain().isInAllyTerritory(unit.getTarget()))
+		{
+			unit.setStrategy(1);
+			return;
+		}
 
-	// If a Reaver is in range of something, engage it
-	if (unit.getType() == UnitTypes::Protoss_Reaver && unit.getGroundRange() > unit.getPosition().getDistance(unit.getTargetPosition()))
-	{
-		unit.setStrategy(1);
-		return;
-	}
+		// If a Reaver is in range of something, engage it
+		if (unit.getType() == UnitTypes::Protoss_Reaver && unit.getGroundRange() > unit.getPosition().getDistance(unit.getTargetPosition()))
+		{
+			unit.setStrategy(1);
+			return;
+		}
+	}	
 
 	// If last command was engage
 	if (unit.getStrategy() == 1)
@@ -524,7 +527,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit)
 	return;
 }
 
-void UnitTrackerClass::getGlobalCalculation(UnitInfo& unit)
+void UnitTrackerClass::updateGlobalCalculations()
 {
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{

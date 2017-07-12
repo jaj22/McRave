@@ -255,7 +255,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 	}
 
 	// If kite is true and weapon on cooldown, move
-	if (kite && (!unit.getTarget()->getType().isFlyer() && unit.unit()->getGroundWeaponCooldown() > 0) || (unit.getTarget()->getType().isFlyer() && unit.unit()->getAirWeaponCooldown() > 0))
+	if (kite && ((!unit.getTarget()->getType().isFlyer() && unit.unit()->getGroundWeaponCooldown() > 0) || (unit.getTarget()->getType().isFlyer() && unit.unit()->getAirWeaponCooldown() > 0)))
 	{
 		fleeTarget(unit);
 		return;

@@ -27,15 +27,13 @@ public:
 
 class TransportInfo
 {
-	Position position, destination, drop;
+	int loadState, cargoSize;
+	bool harassing;
 	Unit storedUnit, target;
 	UnitType transportType;
-	WalkPosition walkPosition;
 	set <Unit> assignedCargo;
-	int loadState;
-	int cargoSize;
-	bool harassing;
-
+	Position position, destination, drop;
+	WalkPosition walkPosition;
 public:
 	TransportInfo();
 	~TransportInfo();

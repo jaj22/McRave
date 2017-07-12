@@ -11,8 +11,7 @@ class ProductionTrackerClass
 	map <Unit, UnitType> idleHighProduction;
 	map <Unit, TechType> idleTech;
 	map <Unit, UpgradeType> idleUpgrade;
-	int reservedMineral, reservedGas;
-	bool noZealots = false;
+	int reservedMineral, reservedGas;	
 	bool gateSat = false;
 	bool partiallySat = false;
 	bool barracksSat = false;

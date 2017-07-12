@@ -27,7 +27,7 @@ void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
 		// See if any Reavers need a shuttle
 		for (auto &reaver : SpecialUnits().getMyReavers())
 		{
-			if ((!Units().getMyUnits()[reaver.first].getTransport() || !Units().getMyUnits()[reaver.first].getTransport()->exists()) && shuttle.getCargoSize() + 2 < 4)
+			if (reaver.first && reaver.first->exists() && (!Units().getMyUnits()[reaver.first].getTransport() || !Units().getMyUnits()[reaver.first].getTransport()->exists()) && shuttle.getCargoSize() + 2 < 4)
 			{
 				Units().getMyUnits()[reaver.first].setTransport(shuttle.unit());
 				shuttle.assignCargo(reaver.first);
@@ -36,7 +36,7 @@ void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
 		// See if any High Templars need a shuttle
 		for (auto &templar : SpecialUnits().getMyTemplars())
 		{
-			if ((!Units().getMyUnits()[templar.first].getTransport() || !Units().getMyUnits()[templar.first].getTransport()->exists()) && shuttle.getCargoSize() + 1 < 4)
+			if (templar.first && templar.first->exists() && (!Units().getMyUnits()[templar.first].getTransport() || !Units().getMyUnits()[templar.first].getTransport()->exists()) && shuttle.getCargoSize() + 1 < 4)
 			{
 				Units().getMyUnits()[templar.first].setTransport(shuttle.unit());
 				shuttle.assignCargo(templar.first);
@@ -216,9 +216,18 @@ void TransportTrackerClass::removeUnit(Unit unit)
 			return;
 		}
 	}
+
+	// Delete if it's the shuttle
 	if (myShuttles.find(unit) != myShuttles.end())
 	{
 		myShuttles.erase(unit);
+		for (auto &cargo : myShuttles[unit].getAssignedCargo())
+		{
+			if (Units().getMyUnits().find(cargo) != Units().getMyUnits().end())
+			{
+				Units().getMyUnits()[cargo].setTransport(nullptr);
+			}
+		}
 	}
 	return;
 }

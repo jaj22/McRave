@@ -18,6 +18,9 @@ class StrategyTrackerClass
 	bool holdRamp = false;
 	bool walledOff = false;
 	bool bust = false;
+	bool zealotsLocked = false;
+
+	set <UnitType> lockedType;
 public:
 	double globalAlly() { return globalAllyStrength; }
 	double globalEnemy() {	return globalEnemyStrength;	}
@@ -31,6 +34,9 @@ public:
 	bool isHoldRamp() { return holdRamp; }
 	bool isWalled() { return walledOff; }
 	bool isBust() { return bust; }
+
+	bool isZealotsLocked() { return zealotsLocked; }
+
 	int getNumberZerg() { return eZerg; }
 	int getNumberProtoss() { return eProtoss; }
 	int getNumberTerran() { return eTerran; }
@@ -48,6 +54,9 @@ public:
 
 	void increaseGlobalAlly(int increase) { globalAllyStrength += increase; }
 	void increaseGlobalEnemy(int increase) { globalEnemyStrength += increase; }
+
+	// Check if we have locked a unit out of being allowed
+	bool isLocked(UnitType);
 };
 
 typedef Singleton<StrategyTrackerClass> StrategyTracker;

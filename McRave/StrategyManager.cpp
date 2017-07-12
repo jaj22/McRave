@@ -195,14 +195,14 @@ void StrategyTrackerClass::protossStrategy()
 			rush = true;
 		}
 
-		// If we are being BBS'd
-		else if (eTerran > 0 && enemyComposition[UnitTypes::Terran_Barracks] == 0 && enemyComposition[UnitTypes::Terran_Command_Center] == 1)
+		// If we are being BBS'd, unlock Zealots
+		if (eTerran > 0 && (enemyComposition[UnitTypes::Terran_Barracks] == 0 || enemyComposition[UnitTypes::Terran_Barracks] == 2) && enemyComposition[UnitTypes::Terran_Command_Center] == 1 && enemyComposition[UnitTypes::Terran_Refinery] == 0)
 		{
-			rush = true;
+			zealotsLocked = false;
 		}
 		else
 		{
-			rush = false;
+			zealotsLocked = true;
 		}
 
 		// Fast expand Logic
@@ -231,6 +231,7 @@ void StrategyTrackerClass::protossStrategy()
 		fastExpand = false;
 		bust = false;
 		holdRamp = false;
+		zealotsLocked = false;
 	}
 }
 

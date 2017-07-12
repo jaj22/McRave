@@ -53,7 +53,7 @@ void InterfaceTrackerClass::drawInformation()
 
 	for (auto &unit : Strategy().getUnitScore())
 	{
-		//Broodwar->drawTextScreen(0, offset, "%s: %.2f", unit.first, unit.second);
+		Broodwar->drawTextScreen(0, offset, "%s: %.2f", unit.first.c_str(), unit.second);
 		offset += 10;
 	}
 

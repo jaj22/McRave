@@ -16,6 +16,52 @@ void GridTrackerClass::update()
 void GridTrackerClass::reset()
 {
 	// Reset all tiles to 0
+
+	// TEMP - Testing re-initialize 
+	//aClusterGrid[1024][1024] = {};
+	//aClusterGrid[1024][1024] = {};
+	//antiMobilityGrid[1024][1024] = {};
+	//eGroundGrid[1024][1024] = {};
+	//eAirGrid[1024][1024] = {};
+	//eGroundDistanceGrid[1024][1024] = {};
+	//eAirDistanceGrid[1024][1024] = {};
+	//observerGrid[1024][1024] = {};
+	//arbiterGrid[1024][1024] = {};
+	//eDetectorGrid[1024][1024] = {};
+
+	//eGroundClusterGrid[256][256] = {};
+	//eAirClusterGrid[256][256] = {};
+	//reserveGrid[256][256] = {};
+	//baseGrid[256][256] = {};
+	//pylonGrid[256][256] = {};
+	//batteryGrid[256][256] = {};
+	//defenseGrid[256][256] = {};
+	//bunkerGrid[256][256] = {};
+	//resourceGrid[256][256] = {};
+
+
+	// TEMP - Testing memset to reset grids if drawing is not needed for performance
+	//memset(aClusterGrid, 0, sizeof aClusterGrid);
+	//memset(antiMobilityGrid, 0, sizeof antiMobilityGrid);
+	//memset(eGroundGrid, 0, sizeof eGroundGrid);
+	//memset(eAirGrid, 0, sizeof eAirGrid);
+	//memset(eGroundDistanceGrid, 0, sizeof eGroundDistanceGrid);
+	//memset(eAirDistanceGrid, 0, sizeof eAirDistanceGrid);
+	//memset(observerGrid, 0, sizeof observerGrid);
+	//memset(arbiterGrid, 0, sizeof arbiterGrid);
+	//memset(eDetectorGrid, 0, sizeof eDetectorGrid);
+
+	//memset(eGroundClusterGrid, 0, sizeof eGroundClusterGrid);
+	//memset(eAirClusterGrid, 0, sizeof eAirClusterGrid);
+	//memset(reserveGrid, 0, sizeof reserveGrid);
+	//memset(baseGrid, 0, sizeof baseGrid);
+	//memset(pylonGrid, 0, sizeof pylonGrid);
+	//memset(batteryGrid, 0, sizeof batteryGrid);
+	//memset(defenseGrid, 0, sizeof defenseGrid);
+	//memset(bunkerGrid, 0, sizeof bunkerGrid);
+	//memset(resourceGrid, 0, sizeof resourceGrid);
+
+
 	int center = 0;
 	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
 	{
