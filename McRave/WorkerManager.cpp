@@ -32,7 +32,7 @@ void WorkerTrackerClass::updateScout()
 void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 {
 	WalkPosition start = worker.getWalkPosition();
-	Position bestPosition;
+	Position bestPosition = Position(start);
 	double closestD = 0.0;
 
 	Unit closest = worker.unit()->getClosestUnit(Filter::IsEnemy && Filter::CanAttack);
@@ -63,7 +63,7 @@ void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 			{
 				continue;
 			}
-			if (WalkPosition(x, y).isValid() && Grids().getAntiMobilityGrid(x, y) == 0 && Grids().getMobilityGrid(x, y) > 0 && Grids().getEGroundDistanceGrid(x, y) == 0.0 && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 500 && (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0.0))
+			if (WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 500 && (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0.0))
 			{
 				if (Util().isSafe(start, WalkPosition(x, y), worker.getType(), true, false, true))
 				{
@@ -73,7 +73,7 @@ void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 			}
 		}
 	}
-	if (bestPosition.isValid())
+	if (bestPosition.isValid() && bestPosition != Position(start))
 	{
 		worker.unit()->move(bestPosition);
 	}
@@ -194,21 +194,21 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	// If we are fast expanding and enemy is rushing, we need to defend with workers
 	if (Strategy().isFastExpand() && BuildOrder().isOpener() && (Strategy().globalAlly() + Strategy().getAllyDefense()) < Strategy().globalEnemy())
 	{
-		Unit cannon = worker.unit()->getClosestUnit(Filter::GetType == UnitTypes::Protoss_Photon_Cannon);
-		if (cannon && cannon->exists())
+		Strategy().increaseGlobalAlly(2);
+		if (Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0.0)
 		{
-			Strategy().increaseGlobalAlly(2);
-			Unit target = cannon->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer);
-			if (target && target->exists())
+			Unit target = worker.unit()->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer, 320);
+			if (target && target->exists() && target->getDistance(Position(Terrain().getFFEPosition())) < 64)
 			{
 				worker.unit()->attack(target);
 			}
 			else
 			{
-				worker.unit()->attack(cannon->getPosition());
+				worker.unit()->move(Position(Terrain().getFFEPosition()));
 			}
-			return;
 		}
+		return;
+
 	}
 
 	// Defending logic

@@ -10,11 +10,14 @@
 // TODO in testing before CIG 2017:
 // Archon merging
 // Spider mine removal from expansions
+
 // Test these:
 // Targeting, strength changes
 // Size/damage type
 // Unit scoring
 // Tech/Build stuff
+// Worker defense
+// Scouting
 
 // Then some other tests:
 // Bullets if working, use for unit scoring of performance

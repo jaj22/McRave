@@ -85,7 +85,7 @@ void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 		if (!cargo->isLoaded())
 		{
 			// If it's requesting a pickup
-			if ((Units().getMyUnits()[cargo].getTargetPosition().getDistance(Units().getMyUnits()[cargo].getPosition()) > 360) || (cargo->getType() == UnitTypes::Protoss_Reaver && cargo->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()) || (cargo->getType() == UnitTypes::Protoss_High_Templar && cargo->getEnergy() < 75))
+			if ((Units().getMyUnits()[cargo].getTargetPosition().getDistance(Units().getMyUnits()[cargo].getPosition()) > 320) || (cargo->getType() == UnitTypes::Protoss_Reaver && cargo->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()) || (cargo->getType() == UnitTypes::Protoss_High_Templar && cargo->getEnergy() < 75))
 			{
 				shuttle.unit()->load(cargo);
 				shuttle.setLoadState(1);
