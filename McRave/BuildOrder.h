@@ -14,6 +14,8 @@ class BuildOrderTrackerClass
 
 public:
 	map <UnitType, int>& getBuildingDesired() { return buildingDesired; }
+	bool isOpener() { return getOpening; }
+
 	void update();
 	void updateDecision();
 	void updateBuild();

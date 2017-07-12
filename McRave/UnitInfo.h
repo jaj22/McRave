@@ -6,7 +6,7 @@ using namespace std;
 
 // Class for storing information about all units
 class UnitInfo {
-	double visibleGroundStrength, visibleAirStrength, maxGroundStrength, maxAirStrength, local, groundRange, airRange, priority, groundDamage, airDamage, speed;
+	double visibleGroundStrength, visibleAirStrength, maxGroundStrength, maxAirStrength, groundLocal, airLocal, groundRange, airRange, priority, groundDamage, airDamage, speed;
 	int deadFrame, strategy, lastAttackFrame, minStopFrame;
 
 	Unit target, thisUnit, transport;
@@ -33,8 +33,11 @@ public:
 	// Returns the units max air strength based on: (air dps * range * speed)
 	double getMaxAirStrength() { return maxAirStrength; }
 
-	// Returns the units current local calculation based on: (allyLocalStrength - enemyLocalStrength)
-	double getLocal() { return local; }
+	// Returns the units current ground local calculation based on: (allyLocalGroundStrength - enemyLocalGroundStrength)
+	double getGroundLocal() { return groundLocal; }
+
+	// Returns the units current airlocal calculation based on: (allyLocalAirStrength - enemyLocalAirStrength)
+	double getAirLocal() { return airLocal; }
 
 	// Returns the units ground range including upgrades
 	double getGroundRange() { return groundRange; }
@@ -85,7 +88,8 @@ public:
 	void setMaxGroundStrength(double newMaxStrength) { maxGroundStrength = newMaxStrength; }
 	void setVisibleAirStrength(double newStrength) { visibleAirStrength = newStrength; }
 	void setMaxAirStrength(double newMaxStrength) { maxAirStrength = newMaxStrength; }
-	void setLocal(double newLocal) { local = newLocal; }
+	void setGroundLocal(double newLocal) { groundLocal = newLocal; }
+	void setAirLocal(double newLocal) { airLocal = newLocal; }
 	void setGroundRange(double newGroundRange) { groundRange = newGroundRange; }
 	void setAirRange(double newAirRange) { airRange = newAirRange; }
 	void setPriority(double newPriority) { priority = newPriority; }

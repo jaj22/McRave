@@ -26,7 +26,7 @@ void BuildOrderTrackerClass::updateDecision()
 		}
 
 		// If production is saturated and none are idle, choose a tech
-		if (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleLowProduction().size() == 0 && Production().getIdleHighProduction().size() == 0)
+		if (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleHighProduction().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 3)
 		{
 			getTech = true;
 		}

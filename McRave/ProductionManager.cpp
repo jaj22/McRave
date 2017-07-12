@@ -255,25 +255,29 @@ void ProductionTrackerClass::updateProtoss()
 				// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
 				if (Strategy().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
 				{
-					if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && building.unit()->isTraining())
+					if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0)
 					{
-						for (auto &unit : building.unit()->getTrainingQueue())
+						if (building.unit()->isTraining())
 						{
-							if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
+							for (auto &unit : building.unit()->getTrainingQueue())
 							{
-								building.unit()->cancelTrain();
+								if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
+								{
+									building.unit()->cancelTrain();
+								}
 							}
 						}
-					}
-					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
-					{
-						building.unit()->train(UnitTypes::Protoss_Observer);
-						idleHighProduction.erase(building.unit());
-						return;
-					}
-					else
-					{
-						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
+
+						if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
+						{
+							building.unit()->train(UnitTypes::Protoss_Observer);
+							idleHighProduction.erase(building.unit());
+							return;
+						}
+						else
+						{
+							idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
+						}
 					}
 				}
 
@@ -395,7 +399,7 @@ void ProductionTrackerClass::updateProtoss()
 					{
 						idleTech.emplace(building.unit(), TechTypes::Recall);
 					}
-				}				
+				}
 			}
 		}
 	}

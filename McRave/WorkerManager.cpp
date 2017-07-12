@@ -194,7 +194,7 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	}
 
 	// If we are fast expanding and enemy is rushing, we need to defend with workers
-	if (Strategy().isFastExpand() && (Strategy().globalAlly() + Strategy().getAllyDefense()) < Strategy().globalEnemy())
+	if (Strategy().isFastExpand() && BuildOrder().isOpener() && (Strategy().globalAlly() + Strategy().getAllyDefense()) < Strategy().globalEnemy())
 	{
 		Unit cannon = worker.unit()->getClosestUnit(Filter::GetType == UnitTypes::Protoss_Photon_Cannon);
 		if (cannon && cannon->exists())
@@ -350,7 +350,7 @@ void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
 	// Assign a task if none
 	int cnt = 1;
 
-	if (!Strategy().isRush() || Resources().isMinSaturated())
+	if ((!Strategy().isRush() && BuildOrder().isOpener()) || Resources().isMinSaturated())
 	{
 		for (auto &gas : Resources().getMyGas())
 		{

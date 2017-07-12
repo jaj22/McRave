@@ -96,17 +96,21 @@ void TerrainTrackerClass::updateChokes()
 		{
 			double largest = 0.0;
 			for (auto &choke : closestA->ChokePoints())
-			{
-				if (choke && Grids().getDistanceHome(choke->Center()) > furthestChokeDistance && choke->Pos(choke->end1).getDistance(choke->Pos(choke->end2)) > largest)
-				{
-					secondChoke = TilePosition(choke->Center());
-					largest = choke->Pos(choke->end1).getDistance(choke->Pos(choke->end2));
-					furthestChokeDistance = Grids().getDistanceHome(choke->Center());
-				}
+			{				
 				if (choke && (Grids().getDistanceHome(choke->Center()) < closestChokeDistance || closestChokeDistance == 0.0))
 				{
 					firstChoke = TilePosition(choke->Center());
 					closestChokeDistance = Grids().getDistanceHome(choke->Center());
+				}				
+			}
+
+			for (auto &choke : closestA->ChokePoints())
+			{
+				if (choke && TilePosition(choke->Center()) != firstChoke && (Position(choke->Center()).getDistance(playerStartingPosition) < furthestChokeDistance || furthestChokeDistance == 0) && choke->Pos(choke->end1).getDistance(choke->Pos(choke->end2)) >= largest)
+				{
+					secondChoke = TilePosition(choke->Center());
+					largest = choke->Pos(choke->end1).getDistance(choke->Pos(choke->end2));
+					furthestChokeDistance = Position(choke->Center()).getDistance(playerStartingPosition);
 				}
 			}
 			FFEPosition = TilePosition(int(secondChoke.x*0.35 + natural.x*0.65), int(secondChoke.y*0.35 + natural.y*0.65));

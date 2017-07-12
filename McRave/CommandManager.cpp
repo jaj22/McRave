@@ -12,7 +12,13 @@ void CommandTrackerClass::updateAlliedUnits()
 {
 	for (auto &u : Units().getMyUnits())
 	{
+
 		UnitInfo unit = u.second;
+
+		if (unit.getType().isBuilding())
+		{
+			continue;
+		}
 
 		// Special units have their own commands
 		if (unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Shuttle)
@@ -127,6 +133,7 @@ void CommandTrackerClass::attackMove(UnitInfo& unit)
 					unit.unit()->move(here);
 				}
 			}
+			return;
 		}
 	}
 
@@ -239,7 +246,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 	else if (unit.getType() == UnitTypes::Protoss_Reaver && Units().getEnUnits()[unit.getTarget()].getGroundRange() < unit.getGroundRange())
 	{
 		kite = true;
-	}	
+	}
 
 	// If kiting is a good idea, enable
 	else if ((unit.getGroundRange() > 32 && unit.unit()->isUnderAttack()) || (Units().getEnUnits()[unit.getTarget()].getGroundRange() <= unit.getGroundRange() && (unit.unit()->getDistance(unit.getTargetPosition()) <= unit.getGroundRange() - Units().getEnUnits()[unit.getTarget()].getGroundRange() && Units().getEnUnits()[unit.getTarget()].getGroundRange() > 0 && unit.getGroundRange() > 32 || unit.unit()->getHitPoints() < 40)))
@@ -287,17 +294,17 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 	int offset = int(unit.getSpeed()) / 8;
 
 	// Specific High Templar flee
-	if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(unit.getWalkPosition()) > 0.0))
+	/*if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(unit.getWalkPosition()) > 0.0))
 	{
-		for (auto templar : SpecialUnits().getMyTemplars())
-		{
-			if (templar.second.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(templar.second.getWalkPosition()) > 0.0)
-			{
-				unit.unit()->useTech(TechTypes::Archon_Warp, templar.second.unit());
-				return;
-			}
-		}
+	for (auto templar : SpecialUnits().getMyTemplars())
+	{
+	if (templar.second.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(templar.second.getWalkPosition()) > 0.0)
+	{
+	unit.unit()->useTech(TechTypes::Archon_Warp, templar.second.unit());
+	return;
 	}
+	}
+	}*/
 
 	// Search a circle around the target based on the speed of the unit in one second of game time
 	for (int x = start.x - 20; x <= start.x + 20 + (unit.getType().tileWidth() * 4); x++)
@@ -362,7 +369,7 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 	int max = 320;
 	double closestD = 0.0;
 	WalkPosition start = unit.getWalkPosition();
-	WalkPosition bestPosition;
+	WalkPosition bestPosition = start;
 	if (unit.getGroundRange() <= 32)
 	{
 		min = 64;
@@ -370,24 +377,10 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 	}
 
 	// Find closest chokepoint
-	WalkPosition choke;
-	for (auto &base : Bases().getMyBases())
+	WalkPosition choke = WalkPosition(Terrain().getFirstChoke());
+	if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] == 2)
 	{
-		if (base.second.getTilePosition().isValid() && theMap.GetArea(base.second.getTilePosition()))
-		{
-			for (auto &chokepoint : theMap.GetArea(base.second.getTilePosition())->ChokePoints())
-			{
-				if (chokepoint->BlockingNeutral())
-				{
-					continue;
-				}
-				if (Grids().getDistanceHome(chokepoint->Center()) > closestD || closestD == 0.0)
-				{
-					closestD = Grids().getDistanceHome(chokepoint->Center());
-					choke = chokepoint->Center();
-				}
-			}
-		}
+		choke = WalkPosition(Terrain().getSecondChoke());
 	}
 
 	// Find suitable position to hold at chokepoint
@@ -406,10 +399,14 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 			}
 		}
 	}
-	if (bestPosition.isValid() && (unit.unit()->getOrderTargetPosition() != Position(bestPosition) || unit.unit()->getLastCommand().getType() != UnitCommandTypes::Move || unit.unit()->isStuck()))
+	if (bestPosition.isValid() && bestPosition != start)
 	{
+		if ((unit.unit()->getOrderTargetPosition() != Position(bestPosition) || unit.unit()->getLastCommand().getType() != UnitCommandTypes::Move || unit.unit()->isStuck()))
+		{
+			unit.unit()->move(Position(bestPosition));
+		}
+		Broodwar->drawLineMap(unit.getPosition(), Position(bestPosition), Colors::Red);
 		unit.setTargetPosition(Position(bestPosition));
-		unit.unit()->move(Position(bestPosition));
 		Grids().updateAllyMovement(unit.unit(), bestPosition);
 	}
 	return;

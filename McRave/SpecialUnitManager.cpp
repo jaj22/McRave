@@ -89,9 +89,12 @@ void SpecialUnitTrackerClass::updateObservers()
 				}
 			}
 		}
-		u.second.setDestination(newDestination);
-		u.first->move(newDestination);
-		Grids().updateObserverMovement(u.first);
+		if (newDestination.isValid())
+		{
+			u.second.setDestination(newDestination);
+			u.first->move(newDestination);
+			Grids().updateObserverMovement(u.first);
+		}
 		//Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
 		//Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 		continue;

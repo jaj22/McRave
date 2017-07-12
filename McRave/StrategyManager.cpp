@@ -175,7 +175,7 @@ void StrategyTrackerClass::protossStrategy()
 	if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 	{
 		// Ramp holding logic
-		if ((!fastExpand && eZerg > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 3) || (eProtoss > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
+		if ((fastExpand && eZerg > 0) || (eProtoss > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
 		{
 			holdRamp = true;
 		}

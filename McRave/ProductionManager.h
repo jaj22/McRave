@@ -14,6 +14,7 @@ class ProductionTrackerClass
 	int reservedMineral, reservedGas;
 	bool noZealots = false;
 	bool gateSat = false;
+	bool partiallySat = false;
 	bool barracksSat = false;
 	bool hatchSat = false;
 public:

@@ -26,7 +26,7 @@ double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 	{
 		damage = unit.getGroundDamage();
 	}
-	speed = unit.getSpeed();
+	speed = unit.getSpeed()/128.0;
 
 	if (!unit.getType().isWorker() && unit.getGroundDamage() > 0)
 	{
@@ -37,11 +37,11 @@ double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 		}
 		if (speed > 0)
 		{
-			return range * damage * speed / 1000.0;
+			return range * damage * speed ;
 		}
 		else
 		{
-			return range * damage / 1000;
+			return range * damage;
 		}
 	}
 	return 0.0;
@@ -83,17 +83,17 @@ double UtilTrackerClass::getMaxAirStrength(UnitInfo& unit, Player who)
 	double range, damage, speed;
 	range = unit.getAirRange();
 	damage = unit.getAirDamage() / double(unit.getType().airWeapon().damageCooldown());
-	speed = unit.getSpeed();
+	speed = unit.getSpeed()/128.0;
 
 	if (!unit.getType().isWorker() && damage > 0)
 	{
 		if (speed > 0)
 		{
-			return range * damage * speed / 1000.0;
+			return range * damage * speed;
 		}
 		else
 		{
-			return range * damage / 1000.0;
+			return range * damage;
 		}
 	}
 	return 0.0;
@@ -126,9 +126,13 @@ double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
 	{
 		return 1.0;
 	}
+	else if (unit.getType().isBuilding() && unit.getMaxGroundStrength() == 0 && unit.getMaxAirStrength() == 0)
+	{
+		return 0.5;
+	}
 	else
 	{
-		return max(unit.getMaxGroundStrength(), unit.getMaxAirStrength());
+		return unit.getMaxGroundStrength();
 	}
 }
 
@@ -303,15 +307,15 @@ set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
 
 bool UtilTrackerClass::isSafe(WalkPosition start, WalkPosition end, UnitType unitType, bool groundCheck, bool airCheck, bool mobilityCheck)
 {
-	for (int i = end.x - (unitType.width() / 16); i < end.x + (unitType.width() / 16); i++)
+	for (int i = end.x - (unitType.tileWidth() * 2); i < end.x + (unitType.tileWidth() * 2); i++)
 	{
-		for (int j = end.y - (unitType.height() / 16); j < end.y + (unitType.height() / 16); j++)
+		for (int j = end.y - (unitType.tileHeight() * 2); j < end.y + (unitType.tileHeight() * 2); j++)
 		{
 			if (WalkPosition(i, j).isValid())
-			{
+			{				
 				// If mini tile exists on top of unit, ignore it
-				if (i >= start.x && i < start.x + (unitType.tileWidth() * 4) && j >= start.y && j < start.y + (unitType.tileHeight() * 4))
-				{
+				if (i >= start.x && i <= (start.x + (unitType.tileWidth() * 4)) && j >= start.y && j <= (start.y + (unitType.tileHeight() * 4)))
+				{					
 					continue;
 				}
 				if ((groundCheck && Grids().getEGroundDistanceGrid(i, j) != 0.0) || (airCheck && Grids().getEAirDistanceGrid(i, j) != 0.0) || (mobilityCheck && (Grids().getMobilityGrid(i, j) == 0 || Grids().getAntiMobilityGrid(i, j) == 1)))

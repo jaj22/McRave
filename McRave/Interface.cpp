@@ -53,7 +53,7 @@ void InterfaceTrackerClass::drawInformation()
 
 	for (auto &unit : Strategy().getUnitScore())
 	{
-		Broodwar->drawTextScreen(0, offset, "%s: %.2f", unit.first, unit.second);
+		//Broodwar->drawTextScreen(0, offset, "%s: %.2f", unit.first, unit.second);
 		offset += 10;
 	}
 
@@ -67,6 +67,7 @@ void InterfaceTrackerClass::drawInformation()
 	for (auto &r : Resources().getMyGas())
 	{
 		Broodwar->drawTextMap(r.second.getPosition() + Position(-8, 32), "%c%d", Text::Green, r.second.getRemainingResources());
+		Broodwar->drawTextMap(r.second.getPosition(), "%d", r.second.getGathererCount());
 	}
 	return;
 }

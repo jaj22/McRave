@@ -6,7 +6,8 @@ UnitInfo::UnitInfo()
 	visibleGroundStrength = 0.0;
 	maxAirStrength = 0.0;
 	visibleAirStrength = 0.0;
-	local = 0.0;
+	groundLocal = 0.0;
+	airLocal = 0.0;
 	groundRange = 0.0;
 	airRange = 0.0;
 	priority = 0.0;

@@ -39,7 +39,7 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 		
 		if (unit.getType().isFlyer())
 		{
-			thisUnit = enemy.getPriority() / (1.0 + (unit.getPosition().getDistance(enemy.getPosition()) * Grids().getEAirDistanceGrid(enemy.getWalkPosition())));
+			thisUnit = enemy.getPriority() / (1.0 + (unit.getPosition().getDistance(enemy.getPosition())));
 		}
 		else
 		{
@@ -64,8 +64,13 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 			double distance = (1.0 + unit.getPosition().getDistance(enemy.getPosition()));
 			double threat = Grids().getEGroundDistanceGrid(enemy.getWalkPosition());
 
+			thisUnit = enemy.getPriority() / pow(1.0 + distance, 2.0);
 
-			thisUnit = enemy.getPriority() / sqrt(distance*threat);
+			if (!enemy.unit()->exists())
+			{
+				thisUnit = thisUnit * 0.1;
+			}
+			//thisUnit = enemy.getPriority() / sqrt(distance*threat);
 
 			// Cluster targeting
 			/*if (unit.getType() == UnitTypes::Protoss_Reaver || unit.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
