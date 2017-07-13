@@ -40,8 +40,8 @@ void ProductionTrackerClass::updateReservedResources()
 
 void ProductionTrackerClass::updateProtoss()
 {
-	// Gateway saturation
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)))
+	// Gateway saturation - max of 12 so the bot can exceed 4 bases
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= min(12, (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
 	{
 		gateSat = true;
 	}

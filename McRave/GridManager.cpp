@@ -134,8 +134,6 @@ void GridTrackerClass::updateAllyGrids()
 		if (unit.getDeadFrame() == 0)
 		{
 			WalkPosition start = unit.getWalkPosition();
-			int offsetX = unit.getPosition().x % 32;
-			int offsetY = unit.getPosition().y % 32;
 
 			// Clusters and Anti-mobility don't need flying units currently
 			if (!unit.getType().isFlyer())
@@ -609,7 +607,7 @@ void GridTrackerClass::updateMobilityGrids()
 						{
 							for (int j = 0; j <= 1; j++)
 							{
-								if (Grids().getMobilityGrid(WalkPosition(TilePosition(x,y)) + WalkPosition(i,j)) <= 0)
+								if (Grids().getMobilityGrid(WalkPosition(TilePosition(x, y)) + WalkPosition(i, j)) <= 0)
 								{
 									bestTile = false;
 								}
@@ -617,7 +615,7 @@ void GridTrackerClass::updateMobilityGrids()
 						}
 						if (bestTile)
 						{
-							closestD = Grids().getDistanceHome(WalkPosition(TilePosition(x, y)));						
+							closestD = Grids().getDistanceHome(WalkPosition(TilePosition(x, y)));
 							closestT = TilePosition(x, y);
 						}
 					}
@@ -642,14 +640,14 @@ void GridTrackerClass::updateMobilityGrids()
 
 void GridTrackerClass::updateObserverMovement(Unit observer)
 {
-	WalkPosition destination = WalkPosition(SpecialUnits().getMyObservers()[observer].getDestination());
+	WalkPosition destination = WalkPosition(SpecialUnits().getMyDetectors()[observer].getDestination());
 
 	for (int x = destination.x - 40; x <= destination.x + 40; x++)
 	{
 		for (int y = destination.y - 40; y <= destination.y + 40; y++)
 		{
 			// Create a circle of detection rather than a square
-			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyObservers()[observer].getDestination().getDistance(Position(WalkPosition(x, y))) < 320)
+			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyDetectors()[observer].getDestination().getDistance(Position(WalkPosition(x, y))) < 320)
 			{
 				observerGrid[x][y] = 1;
 			}

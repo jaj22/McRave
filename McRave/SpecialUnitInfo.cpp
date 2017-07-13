@@ -5,7 +5,7 @@ SupportUnitInfo::SupportUnitInfo()
 	position = Positions::None;
 	destination = Positions::None;
 	walkPosition = WalkPositions::None;
-	storedUnit = nullptr;
+	thisUnit = nullptr;
 	target = nullptr;
 }
 
@@ -15,7 +15,7 @@ TransportInfo::TransportInfo()
 	destination = Positions::None;
 	drop = Positions::None;
 	walkPosition = WalkPositions::None;
-	storedUnit = nullptr;
+	thisUnit = nullptr;
 	target = nullptr;
 	loadState = 0;
 	cargoSize = 0;

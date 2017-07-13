@@ -12,18 +12,22 @@
 // Spider mine removal from expansions
 // Expansion positioning (distances)
 // Scouting
-
-// Test these:
+// Cannons for each expansion
 // Size/damage type
 // Invis strength increase
 
-// Then some other tests:
+// TODO in testing after CIG 2017:
 // Bullets if working, use for unit scoring of performance
 // Test FFE against random
-// Move update of units in StrategyManager to UnitManager (less iterations)
-// IsSelected to display information
+// Set frame skip
+// Disable GUI
+// Camera center on army center
+// Check shuttles
+// Remove exists check from target aquisition?
 
 // TODO:
+// Move update of units in StrategyManager to UnitManager (less iterations)
+// IsSelected to display information
 // Move special units into their own area, separate command manager
 // Make target position stuff based on units current command target position
 // Move production buildings to the front of the base, tech to the back
@@ -43,6 +47,7 @@ void McRaveModule::onStart()
 	Broodwar->setCommandOptimizationLevel(0);
 	Broodwar->setLatCom(true);
 	Broodwar->setLocalSpeed(0);
+	//Broodwar->setFrameSkip(6);
 	theMap.Initialize();
 	theMap.EnableAutomaticPathAnalysis();
 	bool startingLocationsOK = theMap.FindBasesForStartingLocations();

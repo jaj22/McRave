@@ -4,7 +4,7 @@ void SpecialUnitTrackerClass::update()
 {
 	Display().startClock();
 	updateArbiters();
-	updateObservers();
+	updateDetectors();
 	updateReavers();
 	Display().performanceTest(__FUNCTION__);
 	return;
@@ -49,9 +49,9 @@ void SpecialUnitTrackerClass::updateArbiters()
 	return;
 }
 
-void SpecialUnitTrackerClass::updateObservers()
+void SpecialUnitTrackerClass::updateDetectors()
 {
-	for (auto &u : myObservers)
+	for (auto &u : myDetectors)
 	{
 		// First check if any expansions need detection on them
 		if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
@@ -95,8 +95,6 @@ void SpecialUnitTrackerClass::updateObservers()
 			u.first->move(newDestination);
 			Grids().updateObserverMovement(u.first);
 		}
-		//Broodwar->drawLineMap(u.second.getPosition(), u.second.getDestination(), Broodwar->self()->getColor());
-		//Broodwar->drawBoxMap(u.second.getDestination() - Position(4, 4), u.second.getDestination() + Position(4, 4), Broodwar->self()->getColor(), true);
 		continue;
 	}
 	return;
@@ -112,6 +110,7 @@ void SpecialUnitTrackerClass::updateReavers()
 			u.first->train(UnitTypes::Protoss_Scarab);
 		}
 	}
+	return;
 }
 
 void SpecialUnitTrackerClass::storeUnit(Unit unit)
@@ -123,8 +122,8 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Observer)
 	{
-		myObservers[unit].setPosition(unit->getPosition());
-		myObservers[unit].setWalkPosition(Util().getWalkPosition(unit));
+		myDetectors[unit].setPosition(unit->getPosition());
+		myDetectors[unit].setWalkPosition(Util().getWalkPosition(unit));
 	}
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
@@ -136,11 +135,6 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 		myReavers[unit].setPosition(unit->getPosition());
 		myReavers[unit].setWalkPosition(Util().getWalkPosition(unit));
 	}
-	else if (unit->getType() == UnitTypes::Terran_Medic)
-	{
-		myMedics[unit].setPosition(unit->getPosition());
-		myMedics[unit].setWalkPosition(Util().getWalkPosition(unit));
-	}
 	return;
 }
 
@@ -150,9 +144,9 @@ void SpecialUnitTrackerClass::removeUnit(Unit unit)
 	{
 		myArbiters.erase(unit);
 	}
-	else if (myObservers.find(unit) != myObservers.end())
+	else if (myDetectors.find(unit) != myDetectors.end())
 	{
-		myObservers.erase(unit);
+		myDetectors.erase(unit);
 	}
 	else if (myTemplars.find(unit) != myTemplars.end())
 	{

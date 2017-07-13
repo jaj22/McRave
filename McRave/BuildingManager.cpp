@@ -145,22 +145,46 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 {
 	// If we are expanding, it must be on an expansion area
-	int closestD = 0;
+	double closestD = 0.0;
 	TilePosition closestP;
 	if (building.isResourceDepot())
 	{
-		for (auto &area : theMap.Areas())
+		// Fast expands must be as close to home and have a gas geyser
+		if (Strategy().isFastExpand())
 		{
-			for (auto &base : area.Bases())
+			for (auto &area : theMap.Areas())
 			{
-				if ((Strategy().isFastExpand() && base.Geysers().size() == 0) || area.AccessibleNeighbours().size() == 0)
+				for (auto &base : area.Bases())
 				{
-					continue;
+					if ((base.Geysers().size() == 0) || area.AccessibleNeighbours().size() == 0)
+					{
+						continue;
+					}
+					if (Grids().getReserveGrid(base.Location()) == 0 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
+					{
+						closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
+						closestP = base.Location();
+					}
 				}
-				if (Grids().getReserveGrid(base.Location()) == 0 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
+			}
+		}
+
+		// Other expansions must be as close to home but as far away from the opponent
+		else
+		{
+			for (auto &area : theMap.Areas())
+			{
+				for (auto &base : area.Bases())
 				{
-					closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
-					closestP = base.Location();
+					if (area.AccessibleNeighbours().size() == 0 || base.Center() == Terrain().getEnemyStartingPosition())
+					{
+						continue;
+					}
+					if (Grids().getReserveGrid(base.Location()) == 0 && (Grids().getDistanceHome(WalkPosition(base.Location())) / base.Center().getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0))
+					{
+						closestD = Grids().getDistanceHome(WalkPosition(base.Location())) / base.Center().getDistance(Terrain().getEnemyStartingPosition());
+						closestP = base.Location();
+					}
 				}
 			}
 		}
@@ -207,7 +231,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 		if (building == UnitTypes::Protoss_Photon_Cannon)
 		{
-			if (Grids().getDefenseGrid(base.second.getTilePosition()) < Grids().getDistanceHome(base.second.getWalkPosition()) / 100)
+			if (Grids().getDefenseGrid(base.second.getTilePosition()) < 2)
 			{
 				return getBuildLocationNear(building, base.second.getResourcesPosition());
 			}
