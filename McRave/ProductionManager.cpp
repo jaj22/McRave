@@ -4,7 +4,6 @@ void ProductionTrackerClass::update()
 {
 	Display().startClock();
 	updateReservedResources();
-	updatePriorities();
 	updateProtoss();
 	updateTerran();
 	updateZerg();
@@ -12,8 +11,23 @@ void ProductionTrackerClass::update()
 	return;
 }
 
-void ProductionTrackerClass::updatePriorities()
+bool ProductionTrackerClass::canAfford(UnitType unit)
 {
+	if (unit == UnitTypes::Protoss_Dragoon || unit == UnitTypes::Protoss_Zealot)
+	{
+		if (Broodwar->self()->minerals() >= unit.mineralPrice() + reservedMineral + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= unit.gasPrice() + reservedGas + Buildings().getQueuedGas())
+		{
+			return true;
+		}
+	}
+	else
+	{
+		if (Broodwar->self()->minerals() >= unit.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= unit.gasPrice() + Buildings().getQueuedGas())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void ProductionTrackerClass::updateReservedResources()
@@ -61,22 +75,33 @@ void ProductionTrackerClass::updateProtoss()
 			{
 				for (auto &unit : building.getType().buildsWhat())
 				{
+					if (Strategy().getUnitScore()[unit] > highestPriority)
+					{
+						highestPriority = Strategy().getUnitScore()[unit];
+						highestType = unit;
+					}
 					// Setup a high/med/low priority for units and reserved minerals
-					// Make a function that checks for canBuild first (tech requirements)
-					// If canBuild is true, check to see the priority of the unit based on its score and whether we can afford it
-					// Store the highest priority unit
+					// Make a function that checks for canBuild first (tech requirements)					
+				}
+
+				if (canAfford(highestType))
+				{
+					building.unit()->train(highestType);
 				}
 				// If a unit is desired and we can afford it, train it, else, emplace
+
 
 				for (auto &research : building.getType().researchesWhat())
 				{
 					// Researches
 				}
 
+
 				for (auto &upgrade : building.getType().upgradesWhat())
 				{
 					// Upgrades
 				}
+
 			}
 		}
 	}

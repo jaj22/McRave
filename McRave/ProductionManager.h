@@ -28,7 +28,7 @@ public:
 	bool isBarracksSat() { return barracksSat; }
 
 	void update();
-	void updatePriorities();
+	bool canAfford(UnitType);
 	void updateProtoss();
 	void updateTerran();
 	void updateZerg();
