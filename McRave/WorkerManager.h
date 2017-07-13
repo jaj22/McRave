@@ -12,6 +12,7 @@ class WorkerTrackerClass
 	map <WalkPosition, int> recentExplorations;
 	Unit scout;
 	bool scouting = true;
+	int deadScoutFrame = 0;
 public:
 
 	bool isScouting() { return scouting; }
@@ -25,10 +26,11 @@ public:
 	void updateGathering(WorkerInfo&);
 	void assignWorker(WorkerInfo&);
 	void reAssignWorker(WorkerInfo&);
+	void exploreArea(WorkerInfo&);
 
 	void storeWorker(Unit);
 	void removeWorker(Unit);
-	void exploreArea(Unit);
+
 
 	Unit getClosestWorker(Position);
 };

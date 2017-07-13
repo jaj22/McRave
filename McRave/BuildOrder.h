@@ -8,28 +8,29 @@ using namespace std;
 class BuildOrderTrackerClass
 {
 	map <UnitType, int> buildingDesired;
-	int earlyBuild, midBuild, lateBuild;
-	bool getEarlyBuild = true, getMidBuild = false, getLateBuild = false;
+	int opening;
+	bool getOpening = true, getTech = false;
+	UnitType techUnit;
 
 public:
 	map <UnitType, int>& getBuildingDesired() { return buildingDesired; }
-	
-	bool isEarlyBuild() { return getEarlyBuild; }
-	bool isMidBuild() { return getMidBuild; }
-	bool isLateBuild() { return getLateBuild; }
+	bool isOpener() { return getOpening; }
 
 	void update();
-	void updateBuildDecision();
-	void updateBaseBuild();
-	void updateSituationalBuild();
+	void updateDecision();
+	void updateBuild();
 
+	void protossOpener();
+	void protossTech();
 	void protossSituational();
-	void terranSituational();
-	void zergSituational();
 
-	void earlyBuilds();
-	void midBuilds();
-	void lateBuilds();
+	void terranOpener();
+	void terranTech();
+	void terranSituational();
+
+	void zergOpener();
+	void zergTech();
+	void zergSituational();
 };
 
 typedef Singleton<BuildOrderTrackerClass> BuildOrderTracker;

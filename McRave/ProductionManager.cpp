@@ -40,20 +40,6 @@ void ProductionTrackerClass::updateReservedResources()
 
 void ProductionTrackerClass::updateProtoss()
 {
-	// Specifically no Zealots early against Terran
-	if (Strategy().getNumberTerran() > 0)
-	{
-		if (Strategy().isRush() || Broodwar->self()->isUpgrading(UpgradeTypes::Leg_Enhancements) || Broodwar->self()->getUpgradeLevel(UpgradeTypes::Leg_Enhancements))
-		{
-			noZealots = false;
-		}
-		else
-		{
-			noZealots = true;
-		}
-	}
-
-
 	// Gateway saturation
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)))
 	{
@@ -69,7 +55,7 @@ void ProductionTrackerClass::updateProtoss()
 		for (auto &b : Buildings().getMyBuildings())
 		{
 			BuildingInfo building = b.second;
-			double highestPriority;
+			double highestPriority = 0.0;
 			UnitType highestType;
 			if (building.unit()->isIdle())
 			{
@@ -195,7 +181,7 @@ void ProductionTrackerClass::updateProtoss()
 						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_High_Templar);
 					}
 				}
-				if ((noZealots || Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] >= Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
+				if ((Strategy().isZealotsLocked() || Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] >= Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) > 0)
 				{
 					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Dragoon.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UnitTypes::Protoss_Dragoon.gasPrice() + Buildings().getQueuedGas() + reservedGas && Units().getSupply() + UnitTypes::Protoss_Dragoon.supplyRequired() <= Broodwar->self()->supplyTotal())
 					{
@@ -207,7 +193,7 @@ void ProductionTrackerClass::updateProtoss()
 						idleLowProduction.emplace(building.unit(), UnitTypes::Protoss_Dragoon);
 					}
 				}
-				if (!noZealots && (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] < Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] || ((Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1) || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice() + Buildings().getQueuedGas() + reservedGas)))
+				if (!Strategy().isZealotsLocked() && (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] < Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] || ((Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Cybernetics_Core) < 1) || Broodwar->self()->gas() < UnitTypes::Protoss_Dragoon.gasPrice() + Buildings().getQueuedGas() + reservedGas)))
 				{
 					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Zealot.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Units().getSupply() + UnitTypes::Protoss_Zealot.supplyRequired() <= Broodwar->self()->supplyTotal())
 					{
@@ -255,25 +241,29 @@ void ProductionTrackerClass::updateProtoss()
 				// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
 				if (Strategy().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
 				{
-					if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && building.unit()->isTraining())
+					if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0)
 					{
-						for (auto &unit : building.unit()->getTrainingQueue())
+						if (building.unit()->isTraining())
 						{
-							if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
+							for (auto &unit : building.unit()->getTrainingQueue())
 							{
-								building.unit()->cancelTrain();
+								if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
+								{
+									building.unit()->cancelTrain();
+								}
 							}
 						}
-					}
-					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
-					{
-						building.unit()->train(UnitTypes::Protoss_Observer);
-						idleHighProduction.erase(building.unit());
-						return;
-					}
-					else
-					{
-						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
+
+						if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
+						{
+							building.unit()->train(UnitTypes::Protoss_Observer);
+							idleHighProduction.erase(building.unit());
+							return;
+						}
+						else
+						{
+							idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
+						}
 					}
 				}
 
@@ -395,7 +385,7 @@ void ProductionTrackerClass::updateProtoss()
 					{
 						idleTech.emplace(building.unit(), TechTypes::Recall);
 					}
-				}				
+				}
 			}
 		}
 	}

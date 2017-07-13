@@ -101,9 +101,9 @@ void ResourceTrackerClass::removeResource(Unit resource)
 	// Any workers that targeted that resource now have no target
 	for (auto &worker : Workers().getMyWorkers())
 	{
-		if (worker.second.getTarget() == resource)
+		if (worker.second.getResource() == resource)
 		{
-			worker.second.setTarget(nullptr);
+			worker.second.setResource(nullptr);
 		}
 	}
 	return;

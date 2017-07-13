@@ -27,20 +27,13 @@ void BaseTrackerClass::storeBase(Unit base)
 	myBases[base].setWalkPosition(Util().getWalkPosition(base));
 	myBases[base].setTilePosition(base->getTilePosition());
 	myBases[base].setPosition(base->getPosition());
-
-	if (Grids().isAnalyzed())
-	{
-		myOrderedBases[base->getPosition().getDistance(Terrain().getPlayerStartingPosition())] = base->getTilePosition();
-	}
+	myOrderedBases[base->getPosition().getDistance(Terrain().getPlayerStartingPosition())] = base->getTilePosition();
 	return;
 }
 
 void BaseTrackerClass::removeBase(Unit base)
 {
-	if (myBases.find(base) != myBases.end())
-	{
-		myBases.erase(base);
-	}
+	myBases.erase(base);
 	return;
 }
 
@@ -48,20 +41,28 @@ void BaseTrackerClass::trainWorkers(BaseInfo& base)
 {
 	if (base.unit() && (!Resources().isMinSaturated() || !Resources().isGasSaturated()) && base.unit()->isIdle())
 	{
-		if (base.getType() == UnitTypes::Protoss_Nexus && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+		for (auto &worker : base.getType().buildsWhat())
 		{
+			if (Broodwar->self()->completedUnitCount(worker) < 60 && (Broodwar->self()->minerals() >= worker.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+			{
+				base.unit()->train(worker);
+			}
+		}
+		/*	if (base.getType() == UnitTypes::Protoss_Nexus && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+			{
 			base.unit()->train(UnitTypes::Protoss_Probe);
-		}
-		else if (base.getType() == UnitTypes::Terran_Command_Center && Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Terran_SCV.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
-		{
+			}
+			else if (base.getType() == UnitTypes::Terran_Command_Center && Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Terran_SCV.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+			{
 			base.unit()->train(UnitTypes::Terran_SCV);
-		}
+			}*/
 	}
 	return;
 }
 
 void BaseTrackerClass::updateDefenses(BaseInfo& base)
 {
+	// Update defenses got gutted, this can be merged somewhere else
 	Terrain().getAllyTerritory().emplace(theMap.GetArea(base.getTilePosition())->Id());
 	return;
 }

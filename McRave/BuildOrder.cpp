@@ -2,125 +2,229 @@
 
 void BuildOrderTrackerClass::update()
 {
-	updateBuildDecision();
-	updateBaseBuild();	
+	Display().startClock();
+	updateDecision();
+	updateBuild();
 	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
-void BuildOrderTrackerClass::updateBuildDecision()
+void BuildOrderTrackerClass::updateDecision()
 {
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		// Done opening book
-		if (buildingDesired[UnitTypes::Protoss_Cybernetics_Core] >= 1 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && getEarlyBuild)
+		// If we have a Core and 2 Gates, opener is done
+		if (buildingDesired[UnitTypes::Protoss_Cybernetics_Core] >= 1 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && getOpening)
 		{
-			getEarlyBuild = false;
+			getOpening = false;
 		}
 
-		// If we have stabilized and have 4 dragoons, time to tech to mid game
-		if (!getEarlyBuild && (Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 6) || (!Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 2 && Production().getIdleLowProduction().size() == 0))
+		// If we have our tech unit, set to none
+		if (Broodwar->self()->completedUnitCount(techUnit) > 0)
 		{
-			getMidBuild = true;
+			techUnit = UnitTypes::None;
 		}
 
-		// If we have our robo tech choice, mid build is over
-		if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Reaver) >= 1 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) >= 1 && getMidBuild)
+		// If production is saturated and none are idle, choose a tech
+		if (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleHighProduction().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 3)
 		{
-			getMidBuild = false;
+			getTech = true;
 		}
 
-		// If we are in mid game builds and we hit at least 4 gates, chances are we need to tech again
-		if (!getMidBuild && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 4 && Production().getIdleLowProduction().size() == 0)
+		// If an opening has not been chosen, we can choose FFE, otherwise we never should choose it (to prevent PvR 2 gate into FFE)
+		if (opening != 1)
 		{
-			getLateBuild = true;
+			// PvZ
+			if (Strategy().getNumberZerg() > 0)
+			{
+				opening = 1;
+			}	
+			// PvP
+			else if (Strategy().getNumberProtoss() > 0)
+			{
+				opening = 2;
+			}
+			// PvT
+			else if (Strategy().getNumberTerran() > 0)
+			{
+				opening = 3;
+			}
+			// PvR
+			else
+			{
+				opening = 4;
+			}
 		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		// Done opening book
+		// If we have an Academy, opener is done
 		if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) >= 1)
 		{
-			getEarlyBuild = false;
+			getOpening = false;
 		}
 
 		if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Command_Center) >= 2)
 		{
-			getMidBuild = true;
+			getTech = true;
 		}
+
+		// Only one opener for now
+		opening = 0;
 	}
 	return;
 }
 
-void BuildOrderTrackerClass::updateBaseBuild()
+void BuildOrderTrackerClass::updateBuild()
 {
 	// Protoss
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		// PvZ
-		if (Strategy().getNumberZerg() > 0)
-		{
-			earlyBuild = 4;
-			midBuild = 4;
-			lateBuild = 1;
-		}
-		// PvP
-		else if (Strategy().getNumberProtoss() > 0)
-		{
-			earlyBuild = 1;
-			midBuild = Strategy().needDetection();
-			lateBuild = 1;
-		}
-		// PvT
-		else if (Strategy().getNumberTerran() > 0)
-		{
-			earlyBuild = 3;
-			midBuild = 5;
-			lateBuild = 0;
-		}
-		// PvR
-		else
-		{
-			earlyBuild = 0;
-			midBuild = Strategy().needDetection();
-			lateBuild = 1;
-		}
-
-		// Check situational build
 		protossSituational();
+		protossTech();
+		protossOpener();
 	}
 
 	// Terran
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
-		// TvA
-		buildingDesired[UnitTypes::Terran_Supply_Depot] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Terran_Supply_Depot))))));
-		earlyBuild = 0;
-		midBuild = 0;
-		lateBuild = 0;
-
-		// Check situational build
 		terranSituational();
+		terranTech();
+		terranOpener();
 	}
 
 	// Zerg
 	else if (Broodwar->self()->getRace() == Races::Zerg)
 	{
-		
+		zergSituational();
+		zergTech();
+		zergOpener();
 	}
+}
 
-	if (getEarlyBuild)
+void BuildOrderTrackerClass::protossOpener()
+{
+	if (getOpening)
 	{
-		earlyBuilds();
+		// FFE
+		if (opening == 1)
+		{
+			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 18;
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1 + (Units().getSupply() >= 28);
+			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24);
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 30) + (Units().getSupply() >= 46);
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 36;
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 42;
+		}
+		// 1 Gate Core
+		else if (opening == 2)
+		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1;
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 36);
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 24;
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 28;
+		}
+		// 14 Nexus
+		else if (opening == 3)
+		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1 + (Units().getSupply() >= 28);
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 32);
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 30;
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 30;
+		}
+		// 2 Gate Core
+		else if (opening == 4)
+		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1;
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 24);
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 4;
+		}
 	}
-	else if (getMidBuild)
+	return;
+}
+
+void BuildOrderTrackerClass::protossTech()
+{
+	if (getTech && techUnit == UnitTypes::None)
 	{
-		midBuilds();
+		// No longer need to choose a tech
+		getTech = false;
+
+		// PvT Tech
+		if (Strategy().getNumberTerran() > 0)
+		{
+			if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] > Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter])
+			{
+				techUnit = UnitTypes::Protoss_Reaver;
+			}
+			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] <= Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter])
+			{
+				techUnit = UnitTypes::Protoss_Arbiter;
+			}
+			else
+			{
+				techUnit = UnitTypes::Protoss_Carrier;
+			}
+		}
+
+		// PvZ Tech
+		else if (Strategy().getNumberZerg() > 0)
+		{
+			if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] > Strategy().getUnitScore()[UnitTypes::Protoss_High_Templar])
+			{
+				techUnit = UnitTypes::Protoss_Corsair;
+			}
+			else
+			{
+				techUnit = UnitTypes::Protoss_High_Templar;
+			}
+		}
+
+		// PvP Tech
+		else if (Strategy().getNumberProtoss() > 0)
+		{
+			if (Strategy().needDetection())
+			{
+				techUnit = UnitTypes::Protoss_Observer;
+			}
+			else
+			{
+				techUnit = UnitTypes::Protoss_Reaver;
+			}
+		}
 	}
-	else if (getLateBuild)
+	if (techUnit == UnitTypes::Protoss_Reaver)
 	{
-		lateBuilds();
+		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = 1;
+		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, buildingDesired[UnitTypes::Protoss_Observatory] + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
 	}
+	else if (techUnit == UnitTypes::Protoss_Observer)
+	{
+		buildingDesired[UnitTypes::Protoss_Robotics_Facility] = 1;
+		buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
+		buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer));
+	}
+	else if (techUnit == UnitTypes::Protoss_Corsair)
+	{
+		buildingDesired[UnitTypes::Protoss_Stargate] = 1;
+		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
+		buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
+	}
+	else if (techUnit == UnitTypes::Protoss_Arbiter)
+	{
+		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = 1;
+		buildingDesired[UnitTypes::Protoss_Stargate] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun);
+		buildingDesired[UnitTypes::Protoss_Templar_Archives] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun);
+		buildingDesired[UnitTypes::Protoss_Arbiter_Tribunal] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives);
+	}
+	else if (techUnit == UnitTypes::Protoss_High_Templar)
+	{
+		buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = 1;
+		buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
+	}
+	return;
 }
 
 void BuildOrderTrackerClass::protossSituational()
@@ -136,7 +240,7 @@ void BuildOrderTrackerClass::protossSituational()
 	}
 
 	// Expansion logic
-	if (!Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && ((Broodwar->self()->minerals() > 300 && Resources().isMinSaturated() && Production().isGateSat() && Production().getIdleLowProduction().size() == 0) || (Strategy().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)))
+	if (!getOpening && !Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && ((Broodwar->self()->minerals() > 300 && Resources().isMinSaturated() && Production().isGateSat() && Production().getIdleLowProduction().size() == 0) || (Strategy().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)))
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
 	}
@@ -171,20 +275,42 @@ void BuildOrderTrackerClass::protossSituational()
 		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 0;
 		for (auto &base : Bases().getMyBases())
 		{
-			if (Grids().getDefenseGrid(base.second.getTilePosition()) < Grids().getDistanceHome(base.second.getWalkPosition()) / 100)
+			if (base.second.unit()->isCompleted() && Grids().getDefenseGrid(base.second.getTilePosition()) < Grids().getDistanceHome(base.second.getWalkPosition()) / 100)
 			{
 				buildingDesired[UnitTypes::Protoss_Photon_Cannon] += Grids().getDistanceHome(base.second.getWalkPosition()) / 100;
 			}
 		}
 	}
-	if (Strategy().globalEnemy() * 4 > Strategy().globalAlly() + Strategy().getAllyDefense())
+
+	// Additional cannon for FFE logic (add on at most 2 at a time)
+	if (Strategy().isFastExpand() && Strategy().globalEnemy() > Strategy().globalAlly() + Strategy().getAllyDefense())
 	{
-		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 1 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Photon_Cannon);
+		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = min(2 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Photon_Cannon), 1 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Photon_Cannon));
 	}
+}
+
+void BuildOrderTrackerClass::terranOpener()
+{
+	if (getOpening)
+	{
+		buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 18) + (Units().getSupply() >= 20) + (Units().getSupply() >= 42);
+		buildingDesired[UnitTypes::Terran_Engineering_Bay] = (Units().getSupply() >= 36);
+		buildingDesired[UnitTypes::Terran_Refinery] = (Units().getSupply() >= 36);
+		buildingDesired[UnitTypes::Terran_Academy] = (Units().getSupply() >= 48);
+	}
+	return;
+}
+
+void BuildOrderTrackerClass::terranTech()
+{
+
 }
 
 void BuildOrderTrackerClass::terranSituational()
 {
+	// Supply Depot logic
+	buildingDesired[UnitTypes::Terran_Supply_Depot] = min(22, (int)floor((Units().getSupply() / max(14, (16 - Broodwar->self()->allUnitCount(UnitTypes::Terran_Supply_Depot))))));
+
 	// Bunker logic
 	if (Strategy().isRush())
 	{
@@ -210,141 +336,17 @@ void BuildOrderTrackerClass::terranSituational()
 	}
 }
 
-void BuildOrderTrackerClass::earlyBuilds()
+void BuildOrderTrackerClass::zergOpener()
 {
-	if (Broodwar->self()->getRace() == Races::Protoss)
-	{
-		// Two gate core
-		if (earlyBuild == 0)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 24);
-			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;
-			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 4;
-		}
-		// One gate core - 2 Zealot
-		else if (earlyBuild == 1)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 38);
-			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 24;
-			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 36;
-		}
-		// One gate core - no Zealot
-		else if (earlyBuild == 2)
-		{
-			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 36);
-			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 24;
-			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 26;
-		}
-		// 14 Nexus
-		else if (earlyBuild == 3)
-		{
-			buildingDesired[UnitTypes::Protoss_Nexus] = 2 * (Units().getSupply() >= 28);
-			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 32);
-			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 30;
-			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 30;
-		}
-		// FFE
-		else if (earlyBuild == 4)
-		{
-			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 20;
-			buildingDesired[UnitTypes::Protoss_Nexus] = 2 * (Units().getSupply() >= 28);
-			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24);
-			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 30) + (Units().getSupply() >= 46);
-			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 36;
-			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 42;
-		}
-	}
-	else if (Broodwar->self()->getRace() == Races::Terran)
-	{
-		buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 18) + (Units().getSupply() >= 20) + (Units().getSupply() >= 42);
-		buildingDesired[UnitTypes::Terran_Engineering_Bay] = (Units().getSupply() >= 36);
-		buildingDesired[UnitTypes::Terran_Refinery] = (Units().getSupply() >= 36);
-		buildingDesired[UnitTypes::Terran_Academy] = (Units().getSupply() >= 48);
-	}
-	return;
+
 }
 
-void BuildOrderTrackerClass::midBuilds()
+void BuildOrderTrackerClass::zergTech()
 {
-	if (Broodwar->self()->getRace() == Races::Protoss)
-	{
-		if (midBuild == 0)
-		{	// Robo tech - Reavers first	
-			buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 2);
-			buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-			buildingDesired[UnitTypes::Protoss_Observatory] = min(1, buildingDesired[UnitTypes::Protoss_Observatory] + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
-		}
-		if (midBuild == 1)
-		{
-			// Robo tech - Observers First
-			buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) / 2);
-			buildingDesired[UnitTypes::Protoss_Observatory] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-			buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer));
-		}
-		if (midBuild == 2)
-		{
-			// Robo tech - Nexus first
-			buildingDesired[UnitTypes::Protoss_Nexus] = max(2, buildingDesired[UnitTypes::Protoss_Nexus]);
-			if (Broodwar->self()->supplyUsed() >= 60)
-			{
-				buildingDesired[UnitTypes::Protoss_Robotics_Facility] = min(1, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) / 2);
-			}
-			buildingDesired[UnitTypes::Protoss_Robotics_Support_Bay] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Facility));
-			buildingDesired[UnitTypes::Protoss_Observatory] = min(1, buildingDesired[UnitTypes::Protoss_Observatory] + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver));
-		}
-		if (midBuild == 3)
-		{
-			// Corsair and DT
-			buildingDesired[UnitTypes::Protoss_Stargate] = 1;
-			buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
-			buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
-		}
-		if (midBuild == 4)
-		{
-			// Templar tech
-			buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-			buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
-		}
-		if (midBuild == 5)
-		{
-			// Arbiter tech
-			buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-			buildingDesired[UnitTypes::Protoss_Stargate] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
-			buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
-			buildingDesired[UnitTypes::Protoss_Arbiter_Tribunal] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
-		}
-	}
-	else if (Broodwar->self()->getRace() == Races::Terran)
-	{
-		buildingDesired[UnitTypes::Terran_Factory] = 2 + Broodwar->self()->hasResearched(TechTypes::Tank_Siege_Mode);
-	}
-	return;
+
 }
 
-void BuildOrderTrackerClass::lateBuilds()
+void BuildOrderTrackerClass::zergSituational()
 {
-	if (Broodwar->self()->getRace() == Races::Protoss)
-	{ 
-		if (lateBuild == 0)
-		{
-			// Arbiter
-			buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-			buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
-			buildingDesired[UnitTypes::Protoss_Stargate] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
-			buildingDesired[UnitTypes::Protoss_Arbiter_Tribunal] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Templar_Archives));
-		}
-		if (lateBuild == 1)
-		{
-			// Templar tech
-			buildingDesired[UnitTypes::Protoss_Citadel_of_Adun] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus));
-			buildingDesired[UnitTypes::Protoss_Templar_Archives] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Citadel_of_Adun));
-		}
-		if (lateBuild == 2)
-		{
-			// Carrier tech	
-			buildingDesired[UnitTypes::Protoss_Stargate] = min(2, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Fleet_Beacon));
-			buildingDesired[UnitTypes::Protoss_Fleet_Beacon] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
-		}
-	}
-	return;
+
 }

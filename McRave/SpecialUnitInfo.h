@@ -16,7 +16,7 @@ public:
 	Unit unit() { return storedUnit; }
 	Position getPosition() { return position; }
 	Position getDestination() { return destination; }
-	WalkPosition getMiniTile() { return walkPosition; }
+	WalkPosition getWalkPosition() { return walkPosition; }
 
 	// Mutators
 	void setUnit(Unit newUnit) { storedUnit = newUnit; }
@@ -27,15 +27,13 @@ public:
 
 class TransportInfo
 {
-	Position position, destination, drop;
+	int loadState, cargoSize;
+	bool harassing;
 	Unit storedUnit, target;
 	UnitType transportType;
-	WalkPosition walkPosition;
 	set <Unit> assignedCargo;
-	int loadState;
-	int cargoSize;
-	bool harassing;
-
+	Position position, destination, drop;
+	WalkPosition walkPosition;
 public:
 	TransportInfo();
 	~TransportInfo();

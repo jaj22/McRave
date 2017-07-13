@@ -13,27 +13,33 @@ class UnitTrackerClass
 	map <UnitSizeType, int> allySizes;
 	map <UnitSizeType, int> enemySizes;
 
-	int supply;
-	int globalStrategy;
+	// Testing stuff
+	set <Bullet> myBullets;
+	map <UnitType, double> unitPerformance;
+
+	int supply, globalStrategy;
 public:
 	// Accessors
 	map<Unit, UnitInfo>& getMyUnits() { return allyUnits; }
 	map<Unit, UnitInfo>& getEnUnits() { return enemyUnits; }
 	map<UnitSizeType, int>& getMySizes() { return allySizes; }
 	map<UnitSizeType, int>& getEnSizes() { return enemySizes; }
-	int getSupply() { return supply; }
 
 	// Updating
 	void update();
-	void storeUnits();
-	void removeUnits();
-	void storeEnemyUnit(Unit);
-	void storeAllyUnit(Unit);
-	void decayUnit(Unit);
+	void updateAliveUnits();
+	void updateDeadUnits();
+	void updateEnemy(Unit);
+	void updateAlly(Unit);
+	void removeUnit(Unit);
+	void getLocalCalculation(UnitInfo&);
+	void updateGlobalCalculations();
 
-	void getLocalCalculation(Unit, Unit);
-	void getGlobalCalculation(Unit, Unit);
+	// Returns the global strategy
 	int getGlobalStrategy() { return globalStrategy; }
+
+	// Returns the non BWAPI based supply count
+	int getSupply() { return supply; }
 };
 
 typedef Singleton<UnitTrackerClass> UnitTracker;

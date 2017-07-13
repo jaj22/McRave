@@ -5,6 +5,8 @@ SupportUnitInfo::SupportUnitInfo()
 	position = Positions::None;
 	destination = Positions::None;
 	walkPosition = WalkPositions::None;
+	storedUnit = nullptr;
+	target = nullptr;
 }
 
 TransportInfo::TransportInfo()

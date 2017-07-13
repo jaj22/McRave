@@ -7,6 +7,7 @@ A Broodwar AI Developed in C++ using Visual Studio Express 2013, BWAPI and BWEM.
 **BWEM Differences:**
 - Removed all map drawings
 - Applied map instance fix (found by jaj22 on SSCAIT)
+- Renamed MiniTiles to WalkPosition for consistency
 
 **Information:**
 - Stores all useful unit information of enemy, neutral and ally units.

@@ -22,29 +22,30 @@ void WorkerTrackerClass::updateWorkers()
 void WorkerTrackerClass::updateScout()
 {
 	// Update scout probes decision if we are above 9 supply
-	if (Units().getSupply() >= 18 && (!scout || (scout && !scout->exists())))
+	if (Units().getSupply() >= 18 && (Broodwar->getFrameCount() - deadScoutFrame > 1000 && (!scout || (scout && !scout->exists()))))
 	{
 		scout = getClosestWorker(Position(Terrain().getSecondChoke()));
 	}
 	return;
 }
 
-void WorkerTrackerClass::exploreArea(Unit worker)
+void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 {
-	WalkPosition start = myWorkers[worker].getWalkPosition();
-	Position bestPosition;
+	WalkPosition start = worker.getWalkPosition();
+	Position bestPosition = Position(start);
 	double closestD = 0.0;
 
-	Unit closest = worker->getClosestUnit(Filter::IsEnemy && Filter::CanAttack);
-	if (!closest || (closest && closest->exists() && worker->getDistance(closest) > 640))
+	Unit closest = worker.unit()->getClosestUnit(Filter::IsEnemy && Filter::CanAttack);
+	if (!closest || (closest && closest->exists() && worker.unit()->getDistance(closest) > 640))
 	{
-		worker->move(Terrain().getEnemyStartingPosition());
+		worker.unit()->move(Terrain().getEnemyStartingPosition());
 		return;
 	}
 
-	for (int x = start.x - 4; x < start.x + 4 + worker->getType().tileWidth() * 4; x++)
+	// All walkpositions in a 4x4 walkposition grid are set as scouted already to prevent overlapping
+	for (int x = start.x - 4; x < start.x + 4 + worker.getType().tileWidth() * 4; x++)
 	{
-		for (int y = start.y - 4; y < start.y + 4 + worker->getType().tileHeight() * 4; y++)
+		for (int y = start.y - 4; y < start.y + 4 + worker.getType().tileHeight() * 4; y++)
 		{
 			if (WalkPosition(x, y).isValid())
 			{
@@ -53,18 +54,18 @@ void WorkerTrackerClass::exploreArea(Unit worker)
 		}
 	}
 
-
-	for (int x = start.x - 10; x < start.x + 10 + worker->getType().tileWidth() * 4; x++)
+	// Check a 10x10 walkposition grid for a potential new place to scout
+	for (int x = start.x - 10; x < start.x + 10 + worker.getType().tileWidth() * 4; x++)
 	{
-		for (int y = start.y - 10; y < start.y + 10 + worker->getType().tileHeight() * 4; y++)
+		for (int y = start.y - 10; y < start.y + 10 + worker.getType().tileHeight() * 4; y++)
 		{
 			if (Grids().getDistanceHome(start) - Grids().getDistanceHome(WalkPosition(x, y)) > 10)
 			{
 				continue;
 			}
-			if (WalkPosition(x, y).isValid() && Grids().getAntiMobilityGrid(x, y) == 0 && Grids().getMobilityGrid(x, y) > 0 && Grids().getEGroundDistanceGrid(x, y) == 0.0 && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 500)
+			if (WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 500 && (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0.0))
 			{
-				if (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0.0)
+				if (Util().isSafe(start, WalkPosition(x, y), worker.getType(), true, false, true))
 				{
 					bestPosition = Position(WalkPosition(x, y));
 					closestD = Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition());
@@ -72,9 +73,9 @@ void WorkerTrackerClass::exploreArea(Unit worker)
 			}
 		}
 	}
-	if (bestPosition.isValid())
+	if (bestPosition.isValid() && bestPosition != Position(start))
 	{
-		worker->move(bestPosition);
+		worker.unit()->move(bestPosition);
 	}
 	return;
 }
@@ -105,13 +106,13 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 		}
 		if (Terrain().getEnemyBasePositions().size() > 0)
 		{
-			exploreArea(worker.unit());
+			exploreArea(worker);
 			return;
 		}
 	}
-
+	
 	// Reassignment logic
-	if (Resources().getGasNeeded() > 0 && (!Strategy().isRush() || Broodwar->self()->getRace() == Races::Terran))
+	if (Resources().getGasNeeded() > 0 && (!Strategy().isRush() || !BuildOrder().isOpener() || Broodwar->self()->getRace() == Races::Terran))
 	{
 		reAssignWorker(worker);
 		Resources().setGasNeeded(Resources().getGasNeeded() - 1);
@@ -191,27 +192,27 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	}
 
 	// If we are fast expanding and enemy is rushing, we need to defend with workers
-	if (Strategy().isFastExpand() && (Strategy().globalAlly() + Strategy().getAllyDefense()) < Strategy().globalEnemy())
+	if (Strategy().isFastExpand() && BuildOrder().isOpener() && (Strategy().globalAlly() + Strategy().getAllyDefense()) < Strategy().globalEnemy())
 	{
-		Unit cannon = worker.unit()->getClosestUnit(Filter::GetType == UnitTypes::Protoss_Photon_Cannon);
-		if (cannon && cannon->exists())
+		Strategy().increaseGlobalAlly(2);
+		if (Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0.0)
 		{
-			Strategy().increaseGlobalAlly(2);
-			Unit target = cannon->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer);
-			if (target && target->exists())
+			Unit target = worker.unit()->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer, 320);
+			if (target && target->exists() && target->getDistance(Position(Terrain().getFFEPosition())) < 64)
 			{
 				worker.unit()->attack(target);
 			}
 			else
 			{
-				worker.unit()->attack(cannon->getPosition());
+				worker.unit()->move(Position(Terrain().getFFEPosition()));
 			}
-			return;
 		}
+		return;
+
 	}
 
 	// Defending logic
-	if (Broodwar->getFrameCount() - worker.getLastGatherFrame() <= 25 && Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0)
+	if (/*Broodwar->getFrameCount() - worker.getLastGatherFrame() <= 25 &&*/ Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0)
 	{
 		if (!worker.getTarget() || (worker.getTarget() && !worker.getTarget()->exists()))
 		{
@@ -335,6 +336,10 @@ void WorkerTrackerClass::removeWorker(Unit worker)
 	{
 		Resources().getMyMinerals()[myWorkers[worker].getResource()].setGathererCount(Resources().getMyMinerals()[myWorkers[worker].getResource()].getGathererCount() - 1);
 	}
+	if (worker == scout)
+	{
+		deadScoutFrame = Broodwar->getFrameCount();
+	}
 	myWorkers.erase(worker);
 }
 
@@ -343,7 +348,7 @@ void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
 	// Assign a task if none
 	int cnt = 1;
 
-	if (!Strategy().isRush() || Resources().isMinSaturated())
+	if ((!Strategy().isRush() && BuildOrder().isOpener()) || Resources().isMinSaturated())
 	{
 		for (auto &gas : Resources().getMyGas())
 		{
@@ -377,16 +382,14 @@ void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
 
 void WorkerTrackerClass::reAssignWorker(WorkerInfo& worker)
 {
-	if (worker.getResource())
+
+	if (Resources().getMyGas().find(worker.getResource()) != Resources().getMyGas().end())
 	{
-		if (Resources().getMyGas().find(worker.getResource()) != Resources().getMyGas().end())
-		{
-			Resources().getMyGas()[worker.getResource()].setGathererCount(Resources().getMyGas()[worker.getResource()].getGathererCount() - 1);
-		}
-		if (Resources().getMyMinerals().find(worker.getResource()) != Resources().getMyMinerals().end())
-		{
-			Resources().getMyMinerals()[worker.getResource()].setGathererCount(Resources().getMyMinerals()[worker.getResource()].getGathererCount() - 1);
-		}
+		Resources().getMyGas()[worker.getResource()].setGathererCount(Resources().getMyGas()[worker.getResource()].getGathererCount() - 1);
+	}
+	if (Resources().getMyMinerals().find(worker.getResource()) != Resources().getMyMinerals().end())
+	{
+		Resources().getMyMinerals()[worker.getResource()].setGathererCount(Resources().getMyMinerals()[worker.getResource()].getGathererCount() - 1);
 	}
 	assignWorker(worker);
 }

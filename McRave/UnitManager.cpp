@@ -3,13 +3,14 @@
 void UnitTrackerClass::update()
 {
 	Display().startClock();
-	storeUnits();
-	removeUnits();
+	updateAliveUnits();
+	updateDeadUnits();
+	updateGlobalCalculations();
 	Display().performanceTest(__FUNCTION__);
 	return;
 }
 
-void UnitTrackerClass::storeUnits()
+void UnitTrackerClass::updateAliveUnits()
 {
 	// Reset sizes and supply
 	for (auto &size : allySizes)
@@ -55,7 +56,7 @@ void UnitTrackerClass::storeUnits()
 			}
 			else if (u->getType() == UnitTypes::Protoss_Photon_Cannon)
 			{
-				storeAllyUnit(u);
+				updateAlly(u);
 			}
 		}
 
@@ -73,7 +74,7 @@ void UnitTrackerClass::storeUnits()
 		// Store units
 		else
 		{
-			storeAllyUnit(u);
+			updateAlly(u);
 			if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Terran_Medic)
 			{
 				SpecialUnits().storeUnit(u);
@@ -93,7 +94,7 @@ void UnitTrackerClass::storeUnits()
 			// Store if exists
 			if (u && u->exists())
 			{
-				storeEnemyUnit(u);
+				updateEnemy(u);
 			}
 		}
 	}
@@ -125,9 +126,54 @@ void UnitTrackerClass::storeUnits()
 			}
 		}
 	}
+
+	// TESTING -- Calculate how a unit is performing
+	for (auto& bullet : Broodwar->getBullets())
+	{
+		if (bullet->exists() && bullet->getSource() && bullet->getSource()->exists() && bullet->getTarget() && bullet->getTarget()->exists())
+		{
+			if (bullet->getSource()->getPlayer() == Broodwar->self() && myBullets.find(bullet) == myBullets.end())
+			{
+				myBullets.emplace(bullet);
+				double typeMod = 1.0;
+
+				if (!bullet->getTarget()->getType().isFlyer())
+				{
+					if (bullet->getSource()->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+					{
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Small)
+						{
+							typeMod = 0.5;
+						}
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Medium)
+						{
+							typeMod = 0.75;
+						}
+					}
+					if (bullet->getSource()->getType().groundWeapon().damageType() == DamageTypes::Concussive)
+					{
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Large)
+						{
+							typeMod = 0.25;
+						}
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Medium)
+						{
+							typeMod = 0.5;
+						}
+					}
+
+					unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().groundWeapon().damageAmount()) * typeMod;
+				}
+			}
+			else
+			{
+				unitPerformance[bullet->getSource()->getType()] += bullet->getSource()->getType().airWeapon().damageAmount();
+			}
+		}
+	}
 }
 
-void UnitTrackerClass::removeUnits()
+void UnitTrackerClass::updateDeadUnits()
 {
 	// Check for decayed ally units
 	for (map<Unit, UnitInfo>::iterator itr = allyUnits.begin(); itr != allyUnits.end();)
@@ -155,70 +201,81 @@ void UnitTrackerClass::removeUnits()
 	}
 }
 
-void UnitTrackerClass::storeEnemyUnit(Unit unit)
+void UnitTrackerClass::updateEnemy(Unit unit)
 {
 	// Update units
 	auto &u = enemyUnits[unit];
 	auto t = unit->getType();
 	auto p = unit->getPlayer();
-	u.setUnit(unit);
 
-	u.setStrength(Util().getVisibleStrength(unit, p));
-	u.setMaxStrength(Util().getStrength(t, p));
+	// Update information
+	u.setUnit(unit);
+	u.setUnitType(t);
+	u.setPosition(unit->getPosition());
+	u.setWalkPosition(Util().getWalkPosition(unit));
+	u.setTilePosition(unit->getTilePosition());
+	u.setPlayer(unit->getPlayer());
+
+	// Update statistics
 	u.setGroundRange(Util().getTrueRange(t, p));
 	u.setAirRange(Util().getTrueAirRange(t, p));
-	u.setPriority(Util().getPriority(t, p));
 	u.setGroundDamage(Util().getTrueGroundDamage(t, p));
 	u.setAirDamage(Util().getTrueAirDamage(t, p));
 	u.setSpeed(Util().getTrueSpeed(t, p));
 	u.setMinStopFrame(Util().getMinStopFrame(t));
-	u.setUnitType(t);
 
-	u.setPosition(unit->getPosition());
-	u.setWalkPosition(Util().getWalkPosition(unit));
-	u.setTilePosition(unit->getTilePosition());
-
-	// Update sizes
+	// Update sizes and strength
+	u.setVisibleGroundStrength(Util().getVisibleGroundStrength(u, p));
+	u.setMaxGroundStrength(Util().getMaxGroundStrength(u, p));
+	u.setVisibleAirStrength(Util().getVisibleAirStrength(u, p));
+	u.setMaxAirStrength(Util().getMaxAirStrength(u, p));
+	u.setPriority(Util().getPriority(u, p));
 	enemySizes[t.size()] += 1;
 	return;
 }
 
-void UnitTrackerClass::storeAllyUnit(Unit unit)
+void UnitTrackerClass::updateAlly(Unit unit)
 {
 	auto &u = allyUnits[unit];
 	auto t = unit->getType();
 	auto p = unit->getPlayer();
-	u.setUnit(unit);
 
-	// Update units
-	u.setStrength(Util().getVisibleStrength(unit, p));
-	u.setMaxStrength(Util().getStrength(t, p));
+	// Update information
+	u.setUnit(unit);
+	u.setUnitType(t);
+	u.setPosition(unit->getPosition());
+	u.setTilePosition(unit->getTilePosition());
+	u.setWalkPosition(Util().getWalkPosition(unit));
+	u.setPlayer(unit->getPlayer());
+
+	// Update statistics
 	u.setGroundRange(Util().getTrueRange(t, p));
 	u.setAirRange(Util().getTrueAirRange(t, p));
-	u.setPriority(Util().getPriority(t, p));
 	u.setGroundDamage(Util().getTrueGroundDamage(t, p));
 	u.setAirDamage(Util().getTrueAirDamage(t, p));
 	u.setSpeed(Util().getTrueSpeed(t, p));
 	u.setMinStopFrame(Util().getMinStopFrame(t));
 
-
-	u.setUnitType(t);
-	u.setPosition(unit->getPosition());
-	u.setTilePosition(unit->getTilePosition());
-
-	u.setCommand(unit->getLastCommand().getType());
-	u.setWalkPosition(Util().getWalkPosition(unit));
-	u.setTarget(Targets().getTarget(unit));
-
-
-	// Update sizes and calculations
+	// Update sizes and strength
+	u.setVisibleGroundStrength(Util().getVisibleGroundStrength(u, p));
+	u.setMaxGroundStrength(Util().getMaxGroundStrength(u, p));
+	u.setVisibleAirStrength(Util().getVisibleAirStrength(u, p));
+	u.setMaxAirStrength(Util().getMaxAirStrength(u, p));
+	u.setPriority(Util().getPriority(u, p));
 	allySizes[t.size()] += 1;
-	getGlobalCalculation(unit, allyUnits[unit].getTarget());
-	getLocalCalculation(unit, allyUnits[unit].getTarget());
+
+	if (unit->getLastCommand().getTargetPosition().isValid())
+	{
+		u.setTargetPosition(unit->getLastCommand().getTargetPosition());
+	}
+
+	// Update calculations
+	u.setTarget(Targets().getTarget(u));
+	getLocalCalculation(u);
 	return;
 }
 
-void UnitTrackerClass::decayUnit(Unit unit)
+void UnitTrackerClass::removeUnit(Unit unit)
 {
 	if (allyUnits.find(unit) != allyUnits.end())
 	{
@@ -230,32 +287,25 @@ void UnitTrackerClass::decayUnit(Unit unit)
 	}
 }
 
-void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
+void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be moved to UTIL as a double function, to be accesible to SpecialUnitManager too
 {
 	// Variables for calculating local strengths
-	double enemyLocalStrength = 0.0, allyLocalStrength = 0.0, thisUnit = 0.0;
-	Position targetPosition = allyUnits[unit].getTargetPosition();
-	double timeToTarget = 0.0;
-
-	if (unit->getDistance(targetPosition) > allyUnits[unit].getGroundRange() && allyUnits[unit].getSpeed() > 0)
-	{
-		timeToTarget = (allyUnits[unit].getGroundRange() - unit->getDistance(targetPosition)) / allyUnits[unit].getSpeed();
-	}
-
-	int aLarge = getMySizes()[UnitSizeTypes::Large];
-	int aMedium = getMySizes()[UnitSizeTypes::Medium];
-	int aSmall = getMySizes()[UnitSizeTypes::Small];
-
-	int eLarge = getEnSizes()[UnitSizeTypes::Large];
-	int eMedium = getEnSizes()[UnitSizeTypes::Medium];
-	int eSmall = getEnSizes()[UnitSizeTypes::Small];
+	double enemyLocalGroundStrength = 0.0, allyLocalGroundStrength = 0.0, timeToTarget = 0.0;
+	double enemyLocalAirStrength = 0.0, allyLocalAirStrength = 0.0;
+	Position engagementPosition = unit.getPosition();
 
 	// Reset local
-	allyUnits[unit].setLocal(0);
+	unit.setGroundLocal(0);
 
-	if (unit->getDistance(targetPosition) > 640)
+	// Time to reach target
+	if (unit.getPosition().getDistance(unit.getTargetPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
 	{
-		allyUnits[unit].setStrategy(3);
+		timeToTarget = (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed();		
+	}
+
+	if (unit.getPosition().getDistance(unit.getTargetPosition()) > 640.0)
+	{
+		unit.setStrategy(3);
 		return;
 	}
 
@@ -269,47 +319,32 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 			continue;
 		}
 
-		// Reset unit strength
-		thisUnit = 0.0;
-		double threatRange = 32.0 + enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget);
-
-		// If a unit is within range of the target, add to local strength
-		if (enemy.getPosition().getDistance(targetPosition) < threatRange)
+		// If a unit is within threat range of the target, add to local strength		
+		if (enemy.getGroundDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) < max(160.0, enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget)))
 		{
-			if (aLarge > 0 || aMedium > 0 || aSmall > 0)
-			{
-				// If unit is cloaked or burrowed and not detected, drastically increase strength
-				if ((enemy.unit()->isCloaked() || enemy.unit()->isBurrowed()) && !enemy.unit()->isDetected())
-				{
-					thisUnit = 20 * enemy.getMaxStrength();
-				}
-				else if (enemy.getType().groundWeapon().damageType() == DamageTypes::Explosive)
-				{
-					thisUnit = enemy.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
-				}
-				else if (enemy.getType().groundWeapon().damageType() == DamageTypes::Concussive)
-				{
-					thisUnit = enemy.getStrength() * ((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / (aLarge + aMedium + aSmall);
-				}
-				else
-				{
-					thisUnit = enemy.getStrength();
-				}
+			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
+			if (enemy.getDeadFrame() == 0)
+			{				
+				enemyLocalGroundStrength += enemy.getVisibleGroundStrength();
 			}
 			else
 			{
-				thisUnit = enemy.getStrength();
+				allyLocalGroundStrength += enemy.getMaxGroundStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(enemy.getDeadFrame())));
 			}
+		}
+		if (enemy.getAirDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) < max(160.0, enemy.getAirRange() + (enemy.getSpeed() * timeToTarget)))
+		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
 			{
-				enemyLocalStrength += thisUnit;
+				enemyLocalAirStrength += enemy.getVisibleAirStrength();
 			}
 			else
 			{
-				allyLocalStrength += enemy.getMaxStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(enemy.getDeadFrame())));
+				allyLocalAirStrength += enemy.getMaxAirStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(enemy.getDeadFrame())));
 			}
 		}
+
 	}
 
 	// Check every ally being in range of the target
@@ -317,179 +352,160 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	{
 		UnitInfo ally = a.second;
 		// Ignore workers and buildings
-		if (ally.getType().isWorker() || ally.getType().isBuilding())
+		if (ally.getType().isWorker() || ally.getType().isBuilding() || ally.unit() == unit.unit())
 		{
 			continue;
 		}
 
-		// Reset unit strength
-		thisUnit = 0.0;
-		double threatRange = 32.0 + ally.getGroundRange() + (ally.getSpeed() * timeToTarget);
-
-		// If a unit is within the range of the ally unit, add to local strength
-		if (ally.getPosition().getDistance(unit->getPosition()) < threatRange)
+		// If a unit is within threat range of the ally unit, add to local strength
+		if (ally.getGroundDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <  max(160.0, ally.getGroundRange() + (ally.getSpeed() * timeToTarget)))
 		{
-			if (eLarge > 0 || eMedium > 0 || eSmall > 0)
-			{
-				// If shuttle, add units inside
-				if (ally.getType() == UnitTypes::Protoss_Shuttle && ally.unit()->getLoadedUnits().size() > 0)
-				{
-					// Assume reaver for damage type calculations
-					for (Unit loadedUnit : ally.unit()->getLoadedUnits())
-					{
-						thisUnit = allyUnits[loadedUnit].getStrength();
-					}
-				}
-				else
-				{
-					// Damage type calculations
-					if (ally.getType().groundWeapon().damageType() == DamageTypes::Explosive)
-					{
-						thisUnit = ally.getStrength() * ((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / (eLarge + eMedium + eSmall);
-					}
-					else if (ally.getType().groundWeapon().damageType() == DamageTypes::Concussive)
-					{
-						thisUnit = ally.getStrength() * ((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / (eLarge + eMedium + eSmall);
-					}
-					else
-					{
-						thisUnit = ally.getStrength();
-					}
-				}
-			}
-			else
-			{
-				thisUnit = ally.getStrength();
-			}
-
 			// If ally hasn't died, add to ally. Otherwise, partially add to enemy local
 			if (ally.getDeadFrame() == 0)
 			{
-				allyLocalStrength += thisUnit;
+				allyLocalGroundStrength += ally.getVisibleGroundStrength();
 			}
 			else
 			{
-				enemyLocalStrength += ally.getMaxStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(ally.getDeadFrame())));
+				enemyLocalGroundStrength += ally.getMaxGroundStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(ally.getDeadFrame())));
+			}
+		}
+		if (ally.getAirDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <  max(160.0, ally.getAirRange() + (ally.getSpeed() * timeToTarget)))
+		{
+			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
+			if (ally.getDeadFrame() == 0)
+			{
+				allyLocalAirStrength += ally.getVisibleAirStrength();
+			}
+			else
+			{
+				enemyLocalAirStrength += ally.getMaxAirStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(ally.getDeadFrame())));
 			}
 		}
 	}
 
+	// Future position of allySpecialUnits iterator
+
 	// Store the difference of strengths 
-	allyUnits[unit].setLocal(allyLocalStrength - enemyLocalStrength);
+	unit.setGroundLocal(allyLocalGroundStrength - enemyLocalGroundStrength);
+	unit.setAirLocal(allyLocalAirStrength - enemyLocalAirStrength);
 
 	// Specific High Templar strategy
-	if (unit->getType() == UnitTypes::Protoss_High_Templar)
+	if (unit.getType() == UnitTypes::Protoss_High_Templar)
 	{
-		if (unit->getEnergy() > 75)
+		if (unit.unit()->getEnergy() < 75)
 		{
-			allyUnits[unit].setStrategy(1);
-			return;
-		}
-		else
-		{
-			allyUnits[unit].setStrategy(0);
+			unit.setStrategy(0);
 			return;
 		}
 	}
 
 	// Specific Medic strategy
-	if (unit->getType() == UnitTypes::Terran_Medic)
+	if (unit.getType() == UnitTypes::Terran_Medic)
 	{
-		if (unit->getEnergy() > 0 && allyUnits[unit].getTarget())
+		if (unit.unit()->getEnergy() <= 0)
 		{
-			allyUnits[unit].setStrategy(1);
+			unit.setStrategy(0);
 			return;
 		}
 	}
 
-	// Specific melee Commands
-	if (allyUnits[unit].getGroundRange() <= 32)
+	// Specific ground unit strategy
+	if (!unit.getType().isFlyer())
 	{
-		// Force Zealots to stay on Tanks and Reavers to shoot if units are near it
-		if (target && target->exists() && (enemyUnits[target].getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemyUnits[target].getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit->getDistance(targetPosition) < 128)
+		// Specific melee strategy
+		if (unit.getGroundRange() <= 32)
 		{
-			allyUnits[unit].setStrategy(1);
-			return;
-		}
-
-		// Force Zealots to avoid mines
-		if (target && target->exists() && enemyUnits[target].getType() == UnitTypes::Terran_Vulture_Spider_Mine)
-		{
-			allyUnits[unit].setStrategy(0);
-			return;
-		}
-
-		// Check if we are still in defensive mode
-		if (globalStrategy == 2)
-		{
-			// If against rush and not ready to wall up, fight in mineral line
-			if (Strategy().isRush() && !Strategy().isHoldRamp())
+			// Force to stay on tanks
+			if (unit.getTarget() && unit.getTarget()->exists())
 			{
-				if (target && target->exists() && (Grids().getResourceGrid(target->getTilePosition()) > 0 || Grids().getResourceGrid(unit->getTilePosition()) > 0))
+				if ((unit.getTarget()->getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || unit.getTarget()->getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode) && unit.getPosition().getDistance(unit.getTargetPosition()) < 128)
 				{
-					allyUnits[unit].setStrategy(1);
+					unit.setStrategy(1);
 					return;
 				}
-				else
+
+
+				// Avoid attacking mines
+				if (unit.getTarget()->getType() == UnitTypes::Terran_Vulture_Spider_Mine)
 				{
-					allyUnits[unit].setStrategy(2);
+					unit.setStrategy(0);
 					return;
 				}
 			}
 
-			// Else hold ramp and attack anything within range
-			else if (Strategy().isHoldRamp())
+			// Check if we are still in defensive mode
+			if (globalStrategy == 2)
 			{
-				if (target && target->exists() && unit->getDistance(target) < 16 && Terrain().isInAllyTerritory(target) && Terrain().isInAllyTerritory(unit) && !target->getType().isWorker())
+				// If against rush and not ready to wall up, fight in mineral line
+				if (Strategy().isRush() && !Strategy().isHoldRamp())
 				{
-					allyUnits[unit].setStrategy(1);
-					return;
+					if (unit.getTarget() && unit.getTarget()->exists() && (Grids().getResourceGrid(unit.getTarget()->getTilePosition()) > 0 || Grids().getResourceGrid(unit.getTilePosition()) > 0))
+					{
+						unit.setStrategy(1);
+						return;
+					}
+					else
+					{
+						unit.setStrategy(2);
+						return;
+					}
 				}
-				else
+
+				// Else hold ramp and attack anything within range
+				else if (Strategy().isHoldRamp())
 				{
-					allyUnits[unit].setStrategy(2);
-					return;
+					if (unit.getTarget() && unit.getTarget()->exists() && unit.getPosition().getDistance(unit.getTargetPosition()) < 16 && Terrain().isInAllyTerritory(unit.getTarget()) && Terrain().isInAllyTerritory(unit.unit()) && !unit.getTarget()->getType().isWorker())
+					{
+						unit.setStrategy(1);
+						return;
+					}
+					else
+					{
+						unit.setStrategy(2);
+						return;
+					}
 				}
 			}
 		}
-	}
 
-	// Specific ranged commands for early defense
-	else if (globalStrategy == 2 && allyUnits[unit].getGroundRange() > 32)
-	{
-		if (target && target->exists() && ((Terrain().isInAllyTerritory(unit) && unit->getDistance(target) <= allyUnits[unit].getGroundRange()) || (Terrain().isInAllyTerritory(target) && !target->getType().isWorker())))
+		// Specific ranged strategy
+		else if (globalStrategy == 2 && unit.getGroundRange() > 32)
 		{
-			allyUnits[unit].setStrategy(1);
+			if (unit.getTarget() && unit.getTarget()->exists() && ((Terrain().isInAllyTerritory(unit.unit()) && unit.getPosition().getDistance(unit.getTargetPosition()) <= unit.getGroundRange()) || (Terrain().isInAllyTerritory(unit.getTarget()) && !unit.getTarget()->getType().isWorker())))
+			{
+				unit.setStrategy(1);
+				return;
+			}
+			else
+			{
+				unit.setStrategy(2);
+				return;
+			}
+		}
+
+		// If an enemy is within ally territory, engage
+		if (unit.getTarget() && unit.getTarget()->exists() && theMap.GetArea(unit.getTarget()->getTilePosition()) && Terrain().isInAllyTerritory(unit.getTarget()))
+		{
+			unit.setStrategy(1);
 			return;
 		}
-		else
+
+		// If a Reaver is in range of something, engage it
+		if (unit.getType() == UnitTypes::Protoss_Reaver && unit.getGroundRange() > unit.getPosition().getDistance(unit.getTargetPosition()))
 		{
-			allyUnits[unit].setStrategy(2);
+			unit.setStrategy(1);
 			return;
 		}
-	}
-
-	// If an enemy is within ally territory, engage
-	if (target && target->exists() && theMap.GetArea(target->getTilePosition()) && Terrain().isInAllyTerritory(target))
-	{
-		allyUnits[unit].setStrategy(1);
-		return;
-	}
-
-	// If a Reaver is in range of something, engage it
-	if (unit->getType() == UnitTypes::Protoss_Reaver && allyUnits[unit].getGroundRange() > unit->getDistance(targetPosition))
-	{
-		allyUnits[unit].setStrategy(1);
-		return;
-	}
+	}	
 
 	// If last command was engage
-	if (allyUnits[unit].getStrategy() == 1)
+	if (unit.getStrategy() == 1)
 	{
 		// Latch based system for at least 80% disadvantage to disengage
-		if (allyLocalStrength < enemyLocalStrength*0.8)
+		if ((!unit.getType().isFlyer() && allyLocalGroundStrength < enemyLocalGroundStrength*0.8) || (unit.getType().isFlyer() && allyLocalAirStrength < enemyLocalAirStrength*0.8))
 		{
-			allyUnits[unit].setStrategy(0);
+			unit.setStrategy(0);
 			return;
 		}
 		else
@@ -501,23 +517,23 @@ void UnitTrackerClass::getLocalCalculation(Unit unit, Unit target)
 	else
 	{
 		// Latch based system for at least 120% advantage to engage
-		if (allyLocalStrength >= enemyLocalStrength*1.2)
+		if ((!unit.getType().isFlyer() && allyLocalGroundStrength > enemyLocalGroundStrength*1.2) || (unit.getType().isFlyer() && allyLocalAirStrength > enemyLocalAirStrength*1.2))
 		{
-			allyUnits[unit].setStrategy(1);
+			unit.setStrategy(1);
 			return;
 		}
 		else
 		{
-			allyUnits[unit].setStrategy(0);
+			unit.setStrategy(0);
 			return;
 		}
 	}
 	// Disregard local if no target, no recent local calculation and not within ally region
-	allyUnits[unit].setStrategy(3);
+	unit.setStrategy(3);
 	return;
 }
 
-void UnitTrackerClass::getGlobalCalculation(Unit unit, Unit target)
+void UnitTrackerClass::updateGlobalCalculations()
 {
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
@@ -526,12 +542,14 @@ void UnitTrackerClass::getGlobalCalculation(Unit unit, Unit target)
 			globalStrategy = 0;
 			return;
 		}
+
 		// If Zerg, wait for a larger army before moving out
 		if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 		{
 			globalStrategy = 2;
 			return;
 		}
+
 		// If Toss, wait for Dragoon range upgrade against rushes
 		if (Broodwar->enemy()->getRace() == Races::Protoss && Strategy().isRush() && Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 		{

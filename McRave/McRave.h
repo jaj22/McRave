@@ -7,6 +7,12 @@
 // Namespaces
 using namespace BWAPI;
 using namespace std;
+using namespace BWEM;
+
+namespace
+{
+	auto & theMap = Map::Instance();
+}
 
 // Include standard libraries that are needed
 #include <Windows.h>
@@ -23,6 +29,7 @@ class UnitInfo;
 #include "Interface.h"
 #include "BaseManager.h"
 #include "WorkerManager.h"
+#include "PlayerManager.h"
 #include "ProductionManager.h"
 #include "PylonManager.h"
 #include "ResourceManager.h"
@@ -43,6 +50,7 @@ namespace McRave
 	inline GridTrackerClass& Grids() { return GridTracker::Instance(); }
 	inline InterfaceTrackerClass& Display() { return InterfaceTracker::Instance(); }
 	inline BaseTrackerClass& Bases() { return BaseTracker::Instance(); }
+	inline PlayerTrackerClass& Players() { return PlayerTracker::Instance(); }
 	inline ProductionTrackerClass& Production() { return ProductionTracker::Instance(); }
 	inline PylonTrackerClass& Pylons() { return PylonTracker::Instance(); }
 	inline ResourceTrackerClass& Resources() { return ResourceTracker::Instance(); }

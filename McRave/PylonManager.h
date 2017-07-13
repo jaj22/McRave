@@ -10,6 +10,7 @@ class PylonTrackerClass
 	map<TilePosition, int> smallLocations;
 	map<TilePosition, int> mediumLocations;
 	map<TilePosition, int> largeLocations;
+	set<Unit> myPylons;
 public:
 	void storePylon(Unit);
 	void storePower(Unit);

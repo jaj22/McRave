@@ -3,19 +3,12 @@
 #include "Singleton.h"
 
 using namespace BWAPI;
-using namespace BWEM;
 using namespace std;
-
-namespace 
-{
-	auto & theMap = BWEM::Map::Instance(); 
-}
 
 class TerrainTrackerClass
 {
 	CPPath path;
 	set <int> allyTerritory;
-	set <int> islandRegions;
 	vector<Position> defendHere;
 	set<Position> enemyBasePositions;
 	set<TilePosition> allBaseLocations;
@@ -24,6 +17,7 @@ class TerrainTrackerClass
 	TilePosition secondChoke, firstChoke;
 
 public:
+	void onStart();
 	void update();
 	void updateAreas();
 	void updateChokes();
@@ -34,7 +28,6 @@ public:
 	
 	CPPath getPath() { return path; }
 	set <int>& getAllyTerritory() { return allyTerritory; }	
-	set <int>& getIslandRegions() { return islandRegions; }
 	vector<Position>& getDefendHere() { return defendHere; }
 	set<Position>& getEnemyBasePositions() { return enemyBasePositions; }
 	set<TilePosition>& getAllBaseLocations() { return allBaseLocations; }

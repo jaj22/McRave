@@ -72,6 +72,7 @@ void BuildingTrackerClass::storeBuilding(Unit building)
 	myBuildings[building].setTilePosition(building->getTilePosition());
 	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBuildings[building].setEnergy(building->getEnergy());
+	return;
 }
 
 void BuildingTrackerClass::storeBattery(Unit building)
@@ -83,11 +84,13 @@ void BuildingTrackerClass::storeBattery(Unit building)
 	myBatteries[building].setTilePosition(building->getTilePosition());
 	myBatteries[building].setIdleStatus(building->getRemainingTrainTime() == 0);
 	myBatteries[building].setEnergy(building->getEnergy());
+	return;
 }
 
 void BuildingTrackerClass::removeBuilding(Unit building)
 {
 	myBuildings.erase(building);
+	return;
 }
 
 TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TilePosition buildTilePosition, bool ignoreCond = false)
@@ -226,13 +229,13 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
 	// Attempt to place Cannons in a concave around the second choke on a fast expansion
-	if (Strategy().isFastExpand())
+	/*if (Strategy().isFastExpand())
 	{		
-		if (building == UnitTypes::Protoss_Photon_Cannon && (Position(Terrain().getSecondChoke()).getDistance(Position(buildTilePosition)) < 160 || Grids().getDistanceHome(WalkPosition(buildTilePosition)) > Grids().getDistanceHome(WalkPosition(Terrain().getSecondChoke()))))
+		if (building == UnitTypes::Protoss_Photon_Cannon)
 		{
 			return false;
 		}
-	}
+	}*/
 
 	// Production buildings that create ground units require spacing so they don't trap units -- TEMP: Supply depot to not block SCVs (need to find solution)
 	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
