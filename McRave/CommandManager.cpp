@@ -12,7 +12,6 @@ void CommandTrackerClass::updateAlliedUnits()
 {
 	for (auto &u : Units().getMyUnits())
 	{
-
 		UnitInfo unit = u.second;
 
 		if (unit.getType().isBuilding())
@@ -117,7 +116,7 @@ void CommandTrackerClass::attackMove(UnitInfo& unit)
 	}
 
 	// Else if no target, attack closest enemy base if there is any
-	else if (Terrain().getEnemyBasePositions().size() > 0)
+	else if (Terrain().getEnemyBasePositions().size() > 0 && !unit.getType().isFlyer())
 	{
 		Position here = Terrain().getClosestEnemyBase(unit.getPosition());
 		if (here.isValid())
@@ -135,7 +134,7 @@ void CommandTrackerClass::attackMove(UnitInfo& unit)
 			}
 			return;
 		}
-	}
+	}	
 
 	// Else attack a random base location
 	else
@@ -378,7 +377,7 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 
 	// Find closest chokepoint
 	WalkPosition choke = WalkPosition(Terrain().getFirstChoke());
-	if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] == 2)
+	if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] >= 2)
 	{
 		choke = WalkPosition(Terrain().getSecondChoke());
 	}
@@ -404,8 +403,7 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 		if ((unit.unit()->getOrderTargetPosition() != Position(bestPosition) || unit.unit()->getLastCommand().getType() != UnitCommandTypes::Move || unit.unit()->isStuck()))
 		{
 			unit.unit()->move(Position(bestPosition));
-		}
-		Broodwar->drawLineMap(unit.getPosition(), Position(bestPosition), Colors::Red);
+		}		
 		unit.setTargetPosition(Position(bestPosition));
 		Grids().updateAllyMovement(unit.unit(), bestPosition);
 	}

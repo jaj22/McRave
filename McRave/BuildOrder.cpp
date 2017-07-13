@@ -32,30 +32,29 @@ void BuildOrderTrackerClass::updateDecision()
 		}
 
 		// If an opening has not been chosen, we can choose FFE, otherwise we never should choose it (to prevent PvR 2 gate into FFE)
-		if (opening == 0)
+		if (opening != 1)
 		{
 			// PvZ
 			if (Strategy().getNumberZerg() > 0)
 			{
 				opening = 1;
-			}			
+			}	
+			// PvP
+			else if (Strategy().getNumberProtoss() > 0)
+			{
+				opening = 2;
+			}
+			// PvT
+			else if (Strategy().getNumberTerran() > 0)
+			{
+				opening = 3;
+			}
+			// PvR
+			else
+			{
+				opening = 4;
+			}
 		}
-		// PvP
-		if (Strategy().getNumberProtoss() > 0)
-		{
-			opening = 2;
-		}
-		// PvT
-		else if (Strategy().getNumberTerran() > 0)
-		{
-			opening = 3;
-		}
-		// PvR
-		else
-		{
-			opening = 4;
-		}
-
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
@@ -110,8 +109,8 @@ void BuildOrderTrackerClass::protossOpener()
 		// FFE
 		if (opening == 1)
 		{
-			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 20;
-			buildingDesired[UnitTypes::Protoss_Nexus] = 2 * (Units().getSupply() >= 28);
+			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 18;
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1 + (Units().getSupply() >= 28);
 			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24);
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 30) + (Units().getSupply() >= 46);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 36;
@@ -120,6 +119,7 @@ void BuildOrderTrackerClass::protossOpener()
 		// 1 Gate Core
 		else if (opening == 2)
 		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1;
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 36);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 24;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 28;
@@ -127,7 +127,7 @@ void BuildOrderTrackerClass::protossOpener()
 		// 14 Nexus
 		else if (opening == 3)
 		{
-			buildingDesired[UnitTypes::Protoss_Nexus] = 2 * (Units().getSupply() >= 28);
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1 + (Units().getSupply() >= 28);
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 32);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 30;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 30;
@@ -135,6 +135,7 @@ void BuildOrderTrackerClass::protossOpener()
 		// 2 Gate Core
 		else if (opening == 4)
 		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1;
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 24);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 4;
@@ -239,7 +240,7 @@ void BuildOrderTrackerClass::protossSituational()
 	}
 
 	// Expansion logic
-	if (!Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && ((Broodwar->self()->minerals() > 300 && Resources().isMinSaturated() && Production().isGateSat() && Production().getIdleLowProduction().size() == 0) || (Strategy().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)))
+	if (!getOpening && !Strategy().isRush() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) && ((Broodwar->self()->minerals() > 300 && Resources().isMinSaturated() && Production().isGateSat() && Production().getIdleLowProduction().size() == 0) || (Strategy().isFastExpand() && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) == 1)))
 	{
 		buildingDesired[UnitTypes::Protoss_Nexus] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus) + 1;
 	}
@@ -280,9 +281,11 @@ void BuildOrderTrackerClass::protossSituational()
 			}
 		}
 	}
+
+	// Additional cannon for FFE logic (add on at most 2 at a time)
 	if (Strategy().isFastExpand() && Strategy().globalEnemy() > Strategy().globalAlly() + Strategy().getAllyDefense())
 	{
-		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 1 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Photon_Cannon);
+		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = min(2 + Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Photon_Cannon), 1 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Photon_Cannon));
 	}
 }
 

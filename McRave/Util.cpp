@@ -17,7 +17,7 @@ double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 	}
 
 	double range, damage, speed;
-	range = unit.getGroundRange();
+	range = cbrt(unit.getGroundRange());
 	if (unit.getType().groundWeapon().damageCooldown() > 0)
 	{
 		damage = unit.getGroundDamage() / double(unit.getType().groundWeapon().damageCooldown());
@@ -73,15 +73,15 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
-		return 10.0 * hp * getMaxGroundStrength(unit, who) * effectiveness;
+		return 10.0 * unit.getMaxGroundStrength() * effectiveness;
 	}
-	return hp * getMaxGroundStrength(unit, who) * effectiveness;
+	return hp * unit.getMaxGroundStrength() * effectiveness;
 }
 
 double UtilTrackerClass::getMaxAirStrength(UnitInfo& unit, Player who)
 {
 	double range, damage, speed;
-	range = unit.getAirRange();
+	range = cbrt(unit.getAirRange());
 	damage = unit.getAirDamage() / double(unit.getType().airWeapon().damageCooldown());
 	speed = unit.getSpeed()/128.0;
 
@@ -108,11 +108,12 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 
 	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields())) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields()));
 
-	if (unit.unit()->isCloaked() && !unit.unit()->isDetected())
+
+	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
-		return 4.0 * hp * getMaxAirStrength(unit, who);
+		return 10.0 * unit.getMaxAirStrength();
 	}
-	return hp * getMaxAirStrength(unit, who);
+	return hp * unit.getMaxAirStrength();
 }
 
 double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
@@ -129,6 +130,10 @@ double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
 	else if (unit.getType().isBuilding() && unit.getMaxGroundStrength() == 0 && unit.getMaxAirStrength() == 0)
 	{
 		return 0.5;
+	}
+	else if (unit.getType() == UnitTypes::Zerg_Overlord)
+	{
+		return 1.0;
 	}
 	else
 	{

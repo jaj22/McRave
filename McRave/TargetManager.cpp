@@ -61,37 +61,33 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 				continue;
 			}			
 
-			double distance = (1.0 + unit.getPosition().getDistance(enemy.getPosition()));
+			double distance = pow(1.0 + unit.getPosition().getDistance(enemy.getPosition()), 2.0);
 			double threat = Grids().getEGroundDistanceGrid(enemy.getWalkPosition());
-
-			thisUnit = enemy.getPriority() / pow(1.0 + distance, 2.0);
-
-			if (!enemy.unit()->exists())
+			
+			if (unit.getType() == UnitTypes::Protoss_Reaver || unit.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
 			{
-				thisUnit = thisUnit * 0.1;
-			}
-			//thisUnit = enemy.getPriority() / sqrt(distance*threat);
-
-			// Cluster targeting
-			/*if (unit.getType() == UnitTypes::Protoss_Reaver || unit.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
-			{
-				thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition())) / (1.0 + (unit.getPosition().getDistance(enemy.getPosition()) * Grids().getEGroundDistanceGrid(enemy.getWalkPosition())));
+				thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition())) / distance;
 			}
 			else if (unit.getType() == UnitTypes::Protoss_Arbiter)
 			{
-				thisUnit = (enemy.getPriority() * Grids().getStasisCluster(enemy.getTilePosition())) / (1.0 + (unit.getPosition().getDistance(enemy.getPosition()) * Grids().getEGroundDistanceGrid(enemy.getWalkPosition())));
+				thisUnit = (enemy.getPriority() * Grids().getStasisCluster(enemy.getTilePosition())) / distance;
 			}
 			else if (unit.getType() == UnitTypes::Protoss_High_Templar)
 			{
 				if (Grids().getACluster(enemy.getWalkPosition()) == 0)
 				{
-					thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition()) * Grids().getEAirCluster(enemy.getTilePosition())) / (1.0 + (unit.getPosition().getDistance(enemy.getPosition()) * Grids().getEGroundDistanceGrid(enemy.getWalkPosition())));
+					thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition()) * Grids().getEAirCluster(enemy.getTilePosition())) / distance;
 				}
 			}
 			else
 			{
-				thisUnit = enemy.getPriority() / (1.0 + (unit.getPosition().getDistance(enemy.getPosition())));
-			}*/
+				thisUnit = enemy.getPriority() / distance;
+			}
+
+			if (!enemy.unit()->exists())
+			{
+				thisUnit = thisUnit * 0.1;
+			}
 		}
 
 		// If this is the strongest enemy around, target it

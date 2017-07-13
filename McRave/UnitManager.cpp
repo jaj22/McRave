@@ -264,6 +264,11 @@ void UnitTrackerClass::updateAlly(Unit unit)
 	u.setPriority(Util().getPriority(u, p));
 	allySizes[t.size()] += 1;
 
+	if (unit->getLastCommand().getTargetPosition().isValid())
+	{
+		u.setTargetPosition(unit->getLastCommand().getTargetPosition());
+	}
+
 	// Update calculations
 	u.setTarget(Targets().getTarget(u));
 	getLocalCalculation(u);
@@ -287,6 +292,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	// Variables for calculating local strengths
 	double enemyLocalGroundStrength = 0.0, allyLocalGroundStrength = 0.0, timeToTarget = 0.0;
 	double enemyLocalAirStrength = 0.0, allyLocalAirStrength = 0.0;
+	Position engagementPosition = unit.getPosition();
 
 	// Reset local
 	unit.setGroundLocal(0);
@@ -294,7 +300,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	// Time to reach target
 	if (unit.getPosition().getDistance(unit.getTargetPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
 	{
-		timeToTarget = (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed();
+		timeToTarget = (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed();		
 	}
 
 	if (unit.getPosition().getDistance(unit.getTargetPosition()) > 640.0)
@@ -346,7 +352,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	{
 		UnitInfo ally = a.second;
 		// Ignore workers and buildings
-		if (ally.getType().isWorker() || ally.getType().isBuilding())
+		if (ally.getType().isWorker() || ally.getType().isBuilding() || ally.unit() == unit.unit())
 		{
 			continue;
 		}

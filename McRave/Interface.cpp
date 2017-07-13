@@ -50,7 +50,8 @@ void InterfaceTrackerClass::drawInformation()
 	//double zealot = Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
 	//Broodwar->drawTextScreen(500, 30, "%.2f", goon);
 	//Broodwar->drawTextScreen(500, 40, "%.2f", zealot);
-
+	
+	offset += 50;
 	for (auto &unit : Strategy().getUnitScore())
 	{
 		Broodwar->drawTextScreen(0, offset, "%s: %.2f", unit.first.c_str(), unit.second);
@@ -80,9 +81,8 @@ void InterfaceTrackerClass::drawAllyInfo()
 		{
 			UnitInfo unit = u.second;
 			if (unit.getDeadFrame() == 0)
-			{
-				Broodwar->drawLineMap(unit.unit()->getLastCommand().getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
-
+			{				
+				Broodwar->drawLineMap(unit.getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
 				/*if (unit.getTargetPosition().isValid())
 				{
 					Broodwar->drawLineMap(unit.getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
@@ -95,7 +95,7 @@ void InterfaceTrackerClass::drawAllyInfo()
 					if (unit.getVisibleGroundStrength() > 0.0 || unit.getVisibleAirStrength() > 0.0)
 					{
 						Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());
-						Broodwar->drawTextMap(unit.getPosition() + Position(5, -5), "Air: %c %.2f", Text::Blue, unit.getVisibleAirStrength());
+						Broodwar->drawTextMap(unit.getPosition() + Position(5, 2), "Air: %c %.2f", Text::Blue, unit.getVisibleAirStrength());
 					}
 				}
 

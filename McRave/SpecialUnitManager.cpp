@@ -40,10 +40,10 @@ void SpecialUnitTrackerClass::updateArbiters()
 		Grids().updateArbiterMovement(u.first);
 
 		// If there's a stasis target, cast stasis on it
-		UnitInfo target = Units().getEnUnits()[u.first];
-		if (target.unit() && target.unit()->exists() && u.first->getEnergy() >= 100)
+		Unit target = Units().getMyUnits()[u.first].getTarget();
+		if (target && target->exists() && u.first->getEnergy() >= 100)
 		{
-			u.first->useTech(TechTypes::Stasis_Field, target.unit());
+			u.first->useTech(TechTypes::Stasis_Field, target);
 		}
 	}
 	return;

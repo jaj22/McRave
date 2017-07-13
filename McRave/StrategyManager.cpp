@@ -192,17 +192,20 @@ void StrategyTrackerClass::protossStrategy()
 		// If we are being 4/5 pooled, make a shield battery
 		else if (eZerg > 0 && enemyComposition[UnitTypes::Zerg_Zergling] >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
 		{
-			rush = true;
+			//rush = true;
 		}
 
 		// If we are being BBS'd, unlock Zealots
-		if (eTerran > 0 && (enemyComposition[UnitTypes::Terran_Barracks] == 0 || enemyComposition[UnitTypes::Terran_Barracks] == 2) && enemyComposition[UnitTypes::Terran_Command_Center] == 1 && enemyComposition[UnitTypes::Terran_Refinery] == 0)
+		if (eTerran > 0)
 		{
-			zealotsLocked = false;
-		}
-		else
-		{
-			zealotsLocked = true;
+			if ((enemyComposition[UnitTypes::Terran_Barracks] == 0 || enemyComposition[UnitTypes::Terran_Barracks] == 2) && enemyComposition[UnitTypes::Terran_Command_Center] == 1 && enemyComposition[UnitTypes::Terran_Refinery] == 0)
+			{
+				zealotsLocked = false;
+			}
+			else
+			{
+				zealotsLocked = true;
+			}
 		}
 
 		// Fast expand Logic

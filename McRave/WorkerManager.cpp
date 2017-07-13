@@ -22,7 +22,7 @@ void WorkerTrackerClass::updateWorkers()
 void WorkerTrackerClass::updateScout()
 {
 	// Update scout probes decision if we are above 9 supply
-	if (Units().getSupply() >= 18 && (Broodwar->getFrameCount() - deadScoutFrame > 3000 && (!scout || (scout && !scout->exists()))))
+	if (Units().getSupply() >= 18 && (Broodwar->getFrameCount() - deadScoutFrame > 1000 && (!scout || (scout && !scout->exists()))))
 	{
 		scout = getClosestWorker(Position(Terrain().getSecondChoke()));
 	}
@@ -110,9 +110,9 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 			return;
 		}
 	}
-
+	
 	// Reassignment logic
-	if (Resources().getGasNeeded() > 0 && (!Strategy().isRush() || Broodwar->self()->getRace() == Races::Terran))
+	if (Resources().getGasNeeded() > 0 && (!Strategy().isRush() || !BuildOrder().isOpener() || Broodwar->self()->getRace() == Races::Terran))
 	{
 		reAssignWorker(worker);
 		Resources().setGasNeeded(Resources().getGasNeeded() - 1);
@@ -212,7 +212,7 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	}
 
 	// Defending logic
-	if (Broodwar->getFrameCount() - worker.getLastGatherFrame() <= 25 && Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0)
+	if (/*Broodwar->getFrameCount() - worker.getLastGatherFrame() <= 25 &&*/ Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0)
 	{
 		if (!worker.getTarget() || (worker.getTarget() && !worker.getTarget()->exists()))
 		{
@@ -382,16 +382,14 @@ void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
 
 void WorkerTrackerClass::reAssignWorker(WorkerInfo& worker)
 {
-	if (worker.getResource())
+
+	if (Resources().getMyGas().find(worker.getResource()) != Resources().getMyGas().end())
 	{
-		if (Resources().getMyGas().find(worker.getResource()) != Resources().getMyGas().end())
-		{
-			Resources().getMyGas()[worker.getResource()].setGathererCount(Resources().getMyGas()[worker.getResource()].getGathererCount() - 1);
-		}
-		if (Resources().getMyMinerals().find(worker.getResource()) != Resources().getMyMinerals().end())
-		{
-			Resources().getMyMinerals()[worker.getResource()].setGathererCount(Resources().getMyMinerals()[worker.getResource()].getGathererCount() - 1);
-		}
+		Resources().getMyGas()[worker.getResource()].setGathererCount(Resources().getMyGas()[worker.getResource()].getGathererCount() - 1);
+	}
+	if (Resources().getMyMinerals().find(worker.getResource()) != Resources().getMyMinerals().end())
+	{
+		Resources().getMyMinerals()[worker.getResource()].setGathererCount(Resources().getMyMinerals()[worker.getResource()].getGathererCount() - 1);
 	}
 	assignWorker(worker);
 }
