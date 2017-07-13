@@ -15,6 +15,8 @@
 // Cannons for each expansion
 // Size/damage type
 // Invis strength increase
+// Check shuttles
+// Remove exists check from target aquisition?
 
 // TODO in testing after CIG 2017:
 // Bullets if working, use for unit scoring of performance
@@ -22,8 +24,6 @@
 // Set frame skip
 // Disable GUI
 // Camera center on army center
-// Check shuttles
-// Remove exists check from target aquisition?
 
 // TODO:
 // Move update of units in StrategyManager to UnitManager (less iterations)

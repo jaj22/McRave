@@ -81,7 +81,8 @@ void ProductionTrackerClass::updateProtoss()
 						highestType = unit;
 					}
 					// Setup a high/med/low priority for units and reserved minerals
-					// Make a function that checks for canBuild first (tech requirements)					
+					// Make a function that checks for canBuild first (tech requirements)
+					//	-- After rethinking this, storing "unlock" for a type is probably best
 				}
 
 				if (canAfford(highestType))
