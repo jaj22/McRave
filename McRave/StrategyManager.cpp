@@ -113,7 +113,8 @@ void StrategyTrackerClass::updateEnemy()
 			}
 			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
 			{
-				enemyDefense += u.second.getVisibleGroundStrength();
+				enemyDefense += u.second.getVisibleGroundStrength(); 
+
 			}
 		}
 
