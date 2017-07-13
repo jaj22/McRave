@@ -11,6 +11,10 @@ double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 	{
 		return 20.0;
 	}
+	if (unit.getType() == UnitTypes::Protoss_Arbiter)
+	{
+		return 50.0;
+	}
 	if (unit.getType() == UnitTypes::Protoss_Scarab || unit.getType() == UnitTypes::Terran_Vulture_Spider_Mine || unit.getType() == UnitTypes::Zerg_Egg || unit.getType() == UnitTypes::Zerg_Larva || unit.getType() == UnitTypes::Protoss_Interceptor)
 	{
 		return 0.0;
@@ -55,7 +59,7 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 	}
 
 	double effectiveness = 1.0;
-	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields())) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields()));
+	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields() / 2)) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields() / 2));
 
 	/*int aLarge = Units().getMySizes()[UnitSizeTypes::Large];
 	int aMedium = Units().getMySizes()[UnitSizeTypes::Medium];
@@ -118,33 +122,46 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 
 double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
 {
-	// Low strength units with high threat	
+	// If an enemy detector is within range of an Arbiter, give it higher priority
+	if (Grids().getArbiterGrid(unit.getWalkPosition()) > 0 && unit.getType().isDetector() && unit.getPlayer()->isEnemy(Broodwar->self()))
+	{
+		return 10.0;
+	}
+
+	// Support units gain higher priority due to their capabilities
 	if (unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Shuttle || unit.getType() == UnitTypes::Terran_Science_Vessel || unit.getType() == UnitTypes::Terran_Dropship || unit.getType() == UnitTypes::Terran_Vulture_Spider_Mine)
 	{
 		return 50.0;
 	}
+
+	// Workers get a fairly low priority
 	else if (unit.getType().isWorker())
 	{
 		return 1.0;
 	}
+
+	// Buildings with no attack have the lowest priority
 	else if (unit.getType().isBuilding() && unit.getMaxGroundStrength() == 0 && unit.getMaxAirStrength() == 0)
 	{
 		return 0.5;
 	}
+
+	// Overlords have low priority but are worthwhile to pick off
 	else if (unit.getType() == UnitTypes::Zerg_Overlord)
 	{
-		return 1.0;
+		return 2.0;
 	}
+
+	// Else return the units max strength
 	else
 	{
-		return unit.getMaxGroundStrength();
+		return max(unit.getMaxGroundStrength(), unit.getMaxAirStrength());
 	}
 }
 
 double UtilTrackerClass::getTrueRange(UnitType unitType, Player who)
 {
-	// Ranged upgrade check for Dragoons, Marines, Hydralisks and Bunkers
-
+	// Range upgrade check for Dragoons, Marines and Hydralisks ground attack
 	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 	{
 		return 192.0;
@@ -153,6 +170,8 @@ double UtilTrackerClass::getTrueRange(UnitType unitType, Player who)
 	{
 		return 160.0;
 	}
+
+	// Range upgrade check and correction of initial range for Bunkers ground attack
 	else if (unitType == UnitTypes::Terran_Bunker)
 	{
 		if (who->getUpgradeLevel(UpgradeTypes::U_238_Shells))
@@ -164,12 +183,14 @@ double UtilTrackerClass::getTrueRange(UnitType unitType, Player who)
 			return 160.0;
 		}
 	}
+
+	// Range assumption for High Templars
 	else if (unitType == UnitTypes::Protoss_High_Templar)
 	{
 		return 288.0;
 	}
 
-	// Correct range of Reavers
+	// Correction of initial range for Reavers 
 	else if (unitType == UnitTypes::Protoss_Reaver)
 	{
 		return 256.0;
@@ -179,6 +200,7 @@ double UtilTrackerClass::getTrueRange(UnitType unitType, Player who)
 
 double UtilTrackerClass::getTrueAirRange(UnitType unitType, Player who)
 {
+	// Range upgrade check for Dragoons, Marines and Hydralisks air attack
 	if (unitType == UnitTypes::Protoss_Dragoon && who->getUpgradeLevel(UpgradeTypes::Singularity_Charge))
 	{
 		return 192.0;
@@ -187,6 +209,8 @@ double UtilTrackerClass::getTrueAirRange(UnitType unitType, Player who)
 	{
 		return 160.0;
 	}
+
+	// Range upgrade check and correction of initial range for Bunkers air attack
 	else if (unitType == UnitTypes::Terran_Bunker)
 	{
 		if (who->getUpgradeLevel(UpgradeTypes::U_238_Shells))
@@ -198,19 +222,26 @@ double UtilTrackerClass::getTrueAirRange(UnitType unitType, Player who)
 			return 160.0;
 		}
 	}
+
+	// Range upgrade check for Goliaths air attack
 	else if (unitType == UnitTypes::Terran_Goliath && who->getUpgradeLevel(UpgradeTypes::Charon_Boosters))
 	{
 		return 256.0;
 	}
+
+	// Range assumption for High Templars
 	else if (unitType == UnitTypes::Protoss_High_Templar)
 	{
 		return 288.0;
 	}
+
+	// Else return the Units base range for air weapons
 	return double(unitType.airWeapon().maxRange());
 }
 
 double UtilTrackerClass::getTrueGroundDamage(UnitType unitType, Player who)
 {
+	// Damage upgrade check for Reavers and correction of initial damage
 	if (unitType == UnitTypes::Protoss_Reaver)
 	{
 		if (who->getUpgradeLevel(UpgradeTypes::Scarab_Damage))
@@ -222,26 +253,37 @@ double UtilTrackerClass::getTrueGroundDamage(UnitType unitType, Player who)
 			return 100.00;
 		}
 	}
+
+	// Damage assumption for Bunkers ground attack
 	else if (unitType == UnitTypes::Terran_Bunker)
 	{
 		return 25.0;
 	}
+
+	// Damage correction for Zealots and Firebats which attack twice for 8 damage
 	else if (unitType == UnitTypes::Terran_Firebat || unitType == UnitTypes::Protoss_Zealot)
 	{
 		return 16.0;
 	}
+
+	// Else return the Units base ground weapon damage
 	else
 	{
 		return unitType.groundWeapon().damageAmount();
 	}
+
+	return 0.0;
 }
 
 double UtilTrackerClass::getTrueAirDamage(UnitType unitType, Player who)
 {
+	// Damage assumption for Bunkers air attack
 	if (unitType == UnitTypes::Terran_Bunker)
 	{
 		return 25.0;
 	}
+	
+	// Else return the Units base air weapon damage
 	return unitType.airWeapon().damageAmount();
 }
 
@@ -275,22 +317,22 @@ int UtilTrackerClass::getMinStopFrame(UnitType unitType)
 
 WalkPosition UtilTrackerClass::getWalkPosition(Unit unit)
 {
-	int x = unit->getPosition().x;
-	int y = unit->getPosition().y;
+	int pixelX = unit->getPosition().x;
+	int pixelY = unit->getPosition().y;
 
 	// If it's a unit, we want to find the closest mini tile with the highest resolution (actual pixel width/height)
 	if (!unit->getType().isBuilding())
 	{
-		int mini_x = int((x - (0.5*unit->getType().width())) / 8);
-		int mini_y = int((y - (0.5*unit->getType().height())) / 8);
-		return WalkPosition(mini_x, mini_y);
+		int walkX = int((pixelX - (0.5*unit->getType().width())) / 8);
+		int walkY = int((pixelY - (0.5*unit->getType().height())) / 8);
+		return WalkPosition(walkX, walkY);
 	}
 	// For buildings, we want the actual tile size resolution (convert half the tile size to pixels by 0.5*tile*32 = 16.0)
 	else
 	{
-		int mini_x = int((x - (16.0*unit->getType().tileWidth())) / 8);
-		int mini_y = int((y - (16.0*unit->getType().tileHeight())) / 8);
-		return WalkPosition(mini_x, mini_y);
+		int walkX = int((pixelX - (16.0*unit->getType().tileWidth())) / 8);
+		int walkY = int((pixelY - (16.0*unit->getType().tileHeight())) / 8);
+		return WalkPosition(walkX, walkY);
 	}
 	return WalkPositions::None;
 }
@@ -318,8 +360,8 @@ bool UtilTrackerClass::isSafe(WalkPosition start, WalkPosition end, UnitType uni
 		{
 			if (WalkPosition(i, j).isValid())
 			{				
-				// If mini tile exists on top of unit, ignore it
-				if (i >= start.x && i <= (start.x + (unitType.tileWidth() * 4)) && j >= start.y && j <= (start.y + (unitType.tileHeight() * 4)))
+				// If WalkPosition shared with WalkPositions under unit, ignore
+				if (i >= start.x && i <= (start.x + (unitType.tileWidth() * 2)) && j >= start.y && j <= (start.y + (unitType.tileHeight() * 2)))
 				{					
 					continue;
 				}

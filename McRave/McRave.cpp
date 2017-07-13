@@ -11,6 +11,7 @@
 // Archon merging
 // Spider mine removal from expansions
 // Expansion positioning (distances)
+// Scouting
 
 // Test these:
 // Size/damage type
