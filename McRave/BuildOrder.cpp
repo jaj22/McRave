@@ -162,10 +162,10 @@ void BuildOrderTrackerClass::protossTech()
 			{
 				techUnit = UnitTypes::Protoss_Arbiter;
 			}
-			else
+		/*	else
 			{
 				techUnit = UnitTypes::Protoss_Carrier;
-			}
+			}*/
 		}
 
 		// PvZ Tech
@@ -275,9 +275,9 @@ void BuildOrderTrackerClass::protossSituational()
 		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 0;
 		for (auto &base : Bases().getMyBases())
 		{
-			if (base.second.unit()->isCompleted() && Grids().getDefenseGrid(base.second.getTilePosition()) < Grids().getDistanceHome(base.second.getWalkPosition()) / 100)
+			if (base.second.unit()->isCompleted() && Grids().getDefenseGrid(base.second.getTilePosition()) < 2)
 			{
-				buildingDesired[UnitTypes::Protoss_Photon_Cannon] += Grids().getDistanceHome(base.second.getWalkPosition()) / 100;
+				buildingDesired[UnitTypes::Protoss_Photon_Cannon] += 2 - Grids().getDefenseGrid(base.second.getTilePosition());
 			}
 		}
 	}

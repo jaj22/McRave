@@ -28,7 +28,7 @@ void StrategyTrackerClass::updateAlly()
 			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
 				// Add strength				
-				globalAllyStrength += u.second.getVisibleGroundStrength();
+				globalAllyStrength += max(u.second.getVisibleGroundStrength(), u.second.getVisibleAirStrength());
 
 				// Set last command frame
 				if (u.first->isAttackFrame())
@@ -43,7 +43,7 @@ void StrategyTrackerClass::updateAlly()
 		}
 		else
 		{
-			globalEnemyStrength += u.second.getMaxGroundStrength() * 0.5 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			globalEnemyStrength += max(u.second.getMaxGroundStrength(), u.second.getMaxAirStrength()) * 0.5 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 		}
 	}
 }
@@ -109,7 +109,7 @@ void StrategyTrackerClass::updateEnemy()
 			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
 				// Add strength	
-				globalEnemyStrength += u.second.getVisibleGroundStrength();
+				globalEnemyStrength += max(u.second.getVisibleGroundStrength(), u.second.getVisibleAirStrength());
 			}
 			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
 			{
@@ -121,7 +121,7 @@ void StrategyTrackerClass::updateEnemy()
 		else if (u.second.getDeadFrame() != 0)
 		{
 			// Add a portion of the strength to ally strength
-			globalAllyStrength += u.second.getMaxGroundStrength() * 1 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
+			globalAllyStrength += max(u.second.getMaxGroundStrength(), u.second.getMaxAirStrength()) * 1 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
 		}
 	}
 }

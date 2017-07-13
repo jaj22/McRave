@@ -320,7 +320,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 		}
 
 		// If a unit is within threat range of the target, add to local strength		
-		if (enemy.getGroundDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) < max(160.0, enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget)))
+		if (enemy.getGroundDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) < max(unit.getGroundRange(), enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget)))
 		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
@@ -332,7 +332,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 				allyLocalGroundStrength += enemy.getMaxGroundStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(enemy.getDeadFrame())));
 			}
 		}
-		if (enemy.getAirDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) < max(160.0, enemy.getAirRange() + (enemy.getSpeed() * timeToTarget)))
+		if (enemy.getAirDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) < max(unit.getAirRange(), enemy.getAirRange() + (enemy.getSpeed() * timeToTarget)))
 		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
@@ -358,7 +358,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 		}
 
 		// If a unit is within threat range of the ally unit, add to local strength
-		if (ally.getGroundDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <  max(160.0, ally.getGroundRange() + (ally.getSpeed() * timeToTarget)))
+		if (ally.getGroundDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <  max(unit.getGroundRange(), ally.getGroundRange() + (ally.getSpeed() * timeToTarget)))
 		{
 			// If ally hasn't died, add to ally. Otherwise, partially add to enemy local
 			if (ally.getDeadFrame() == 0)
@@ -370,7 +370,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 				enemyLocalGroundStrength += ally.getMaxGroundStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(ally.getDeadFrame())));
 			}
 		}
-		if (ally.getAirDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <  max(160.0, ally.getAirRange() + (ally.getSpeed() * timeToTarget)))
+		if (ally.getAirDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <  max(unit.getAirRange(), ally.getAirRange() + (ally.getSpeed() * timeToTarget)))
 		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (ally.getDeadFrame() == 0)
