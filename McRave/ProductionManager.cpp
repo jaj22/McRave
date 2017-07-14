@@ -252,7 +252,7 @@ void ProductionTrackerClass::updateProtoss()
 					}
 				}
 				// Only build corsairs against Zerg
-				if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Corsair) < 5)
+				if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Corsair) < 6)
 				{
 					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Corsair.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Corsair.gasPrice() + Buildings().getQueuedGas())
 					{
@@ -264,34 +264,34 @@ void ProductionTrackerClass::updateProtoss()
 			// Robotics Facility
 			else if (building.getType() == UnitTypes::Protoss_Robotics_Facility)
 			{
-				// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
-				if (Strategy().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
-				{
-					if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0)
-					{
-						if (building.unit()->isTraining())
-						{
-							for (auto &unit : building.unit()->getTrainingQueue())
-							{
-								if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
-								{
-									building.unit()->cancelTrain();
-								}
-							}
-						}
+				//// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
+				//if (Strategy().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
+				//{
+				//	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0)
+				//	{
+				//		if (building.unit()->isTraining())
+				//		{
+				//			for (auto &unit : building.unit()->getTrainingQueue())
+				//			{
+				//				if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
+				//				{
+				//					building.unit()->cancelTrain();
+				//				}
+				//			}
+				//		}
 
-						if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
-						{
-							building.unit()->train(UnitTypes::Protoss_Observer);
-							idleHighProduction.erase(building.unit());
-							return;
-						}
-						else
-						{
-							idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
-						}
-					}
-				}
+				//		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
+				//		{
+				//			building.unit()->train(UnitTypes::Protoss_Observer);
+				//			idleHighProduction.erase(building.unit());
+				//			return;
+				//		}
+				//		else
+				//		{
+				//			idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
+				//		}
+				//	}
+				//}
 
 				// If we need an Observer
 				if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1))

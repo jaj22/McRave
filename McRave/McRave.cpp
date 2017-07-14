@@ -10,8 +10,10 @@
 // TODO in testing before CIG 2017:
 // Test size/damage type
 // Melee unit bouncing - trying min TTT of 2.0 seconds
+// Anti-stone check
 
 // TODO in testing after CIG 2017:
+// Use global ally / globaly enemy as local latching
 // Archon merging
 // Spider mine removal from expansions
 // Cannons for each expansion

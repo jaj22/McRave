@@ -175,17 +175,13 @@ void BuildOrderTrackerClass::protossTech()
 		// PvZ Tech
 		else if (Strategy().getNumberZerg() > 0)
 		{
-			if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] > Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate) == 0)
+			if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] > Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) >= 1)
 			{
 				techUnit = UnitTypes::Protoss_Corsair;
 			}
-			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] <= Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) == 0)
+			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] <= Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate) >= 1)
 			{
 				techUnit = UnitTypes::Protoss_Reaver;
-			}
-			else
-			{
-				techUnit = UnitTypes::Protoss_High_Templar;
 			}
 		}
 
