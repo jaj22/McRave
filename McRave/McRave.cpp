@@ -47,7 +47,6 @@ void McRaveModule::onStart()
 	Broodwar->setCommandOptimizationLevel(0);
 	Broodwar->setLatCom(true);
 	Broodwar->setLocalSpeed(0);
-	//Broodwar->setFrameSkip(6);
 	theMap.Initialize();
 	theMap.EnableAutomaticPathAnalysis();
 	bool startingLocationsOK = theMap.FindBasesForStartingLocations();

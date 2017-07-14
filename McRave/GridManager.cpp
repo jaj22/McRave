@@ -75,7 +75,7 @@ void GridTrackerClass::reset()
 					armyCenter = Position(WalkPosition(x, y));
 				}
 
-				if (mobilityGrid[x][y] > 0)
+				if (eGroundDistanceGrid[x][y] > 0.0)
 				{
 					//Broodwar->drawBoxMap(Position(WalkPosition(x,y)), Position(WalkPosition(x+1,y+1)), Colors::Black);
 				}
@@ -384,7 +384,7 @@ void GridTrackerClass::updateEnemyGrids()
 						}
 						if (enemy.getGroundDamage() > 0.0 && distance < enemy.getGroundRange() + (enemy.getSpeed() / 8))
 						{
-							eGroundDistanceGrid[x][y] += enemy.getMaxGroundStrength() / distance;
+							eGroundDistanceGrid[x][y] += max(0.1, enemy.getMaxGroundStrength() / distance);
 						}
 					}
 				}
@@ -405,7 +405,7 @@ void GridTrackerClass::updateEnemyGrids()
 						}
 						if (enemy.getAirDamage() > 0.0 && distance < enemy.getAirRange() + (enemy.getSpeed() / 8))
 						{
-							eAirDistanceGrid[x][y] += enemy.getMaxAirStrength() / distance;
+							eAirDistanceGrid[x][y] += max(0.1, enemy.getMaxAirStrength() / distance);
 						}
 					}
 				}
@@ -632,6 +632,21 @@ void GridTrackerClass::updateMobilityGrids()
 			{
 				start = closestT;
 				reservePathHome[closestT.x][closestT.y] = 1;
+			}
+		}
+
+		start = Terrain().getSecondChoke();
+		for (int i = start.x - 3; i <= start.x + 3; i++)
+		{
+			for (int j = start.y - 3; j <= start.y + 3; j++)
+			{
+				if (WalkPosition(i, j).isValid())
+				{
+					if (Grids().getDistanceHome(WalkPosition(TilePosition(i,j))) >= Grids().getDistanceHome(WalkPosition(start)))
+					{
+						reservePathHome[i][j] = 1;
+					}
+				}
 			}
 		}
 	}

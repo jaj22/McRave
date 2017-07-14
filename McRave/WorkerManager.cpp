@@ -37,11 +37,11 @@ void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 
 	Unit closest = worker.unit()->getClosestUnit(Filter::IsEnemy && Filter::CanAttack);
 	if (!closest || (closest && closest->exists() && worker.unit()->getDistance(closest) > 640))
-	{
+	{		
 		worker.unit()->move(Terrain().getEnemyStartingPosition());
 		return;
 	}
-
+	
 	// All walkpositions in a 4x4 walkposition grid are set as scouted already to prevent overlapping
 	for (int x = start.x - 4; x < start.x + 4 + worker.getType().tileWidth() * 4; x++)
 	{
@@ -55,18 +55,18 @@ void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 	}
 
 	// Check a 10x10 walkposition grid for a potential new place to scout
-	for (int x = start.x - 10; x < start.x + 10 + worker.getType().tileWidth() * 4; x++)
+	for (int x = start.x - 10; x < start.x + 20 + worker.getType().tileWidth() * 4; x++)
 	{
-		for (int y = start.y - 10; y < start.y + 10 + worker.getType().tileHeight() * 4; y++)
+		for (int y = start.y - 10; y < start.y + 20 + worker.getType().tileHeight() * 4; y++)
 		{
-			if (Grids().getDistanceHome(start) - Grids().getDistanceHome(WalkPosition(x, y)) > 10)
+			if (Grids().getDistanceHome(start) - Grids().getDistanceHome(WalkPosition(x, y)) > 20)
 			{
 				continue;
 			}
 			if (WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 500 && (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0.0))
 			{
 				if (Util().isSafe(start, WalkPosition(x, y), worker.getType(), true, false, true))
-				{
+				{					
 					bestPosition = Position(WalkPosition(x, y));
 					closestD = Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition());
 				}

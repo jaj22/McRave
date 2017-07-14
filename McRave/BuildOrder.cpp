@@ -55,6 +55,10 @@ void BuildOrderTrackerClass::updateDecision()
 				opening = 4;
 			}
 		}
+		if (Strategy().isRush())
+		{
+			opening = 4;
+		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
@@ -111,8 +115,8 @@ void BuildOrderTrackerClass::protossOpener()
 		{
 			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 18;
 			buildingDesired[UnitTypes::Protoss_Nexus] = 1 + (Units().getSupply() >= 28);
-			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24);
-			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 30) + (Units().getSupply() >= 46);
+			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24) + (Units().getSupply() >= 30);
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 32) + (Units().getSupply() >= 46);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 36;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 42;
 		}
@@ -154,26 +158,30 @@ void BuildOrderTrackerClass::protossTech()
 		// PvT Tech
 		if (Strategy().getNumberTerran() > 0)
 		{
-			if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] > Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter])
+			if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] > Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) == 0)
 			{
 				techUnit = UnitTypes::Protoss_Reaver;
 			}
-			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] <= Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter])
+			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] <= Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) == 0)
 			{
 				techUnit = UnitTypes::Protoss_Arbiter;
 			}
-		/*	else
+			else
 			{
-				techUnit = UnitTypes::Protoss_Carrier;
-			}*/
+				//optional 3rd tech here? (maybe carrier switch)
+			}
 		}
 
 		// PvZ Tech
 		else if (Strategy().getNumberZerg() > 0)
 		{
-			if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] > Strategy().getUnitScore()[UnitTypes::Protoss_High_Templar])
+			if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] > Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate) == 0)
 			{
 				techUnit = UnitTypes::Protoss_Corsair;
+			}
+			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] <= Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) == 0)
+			{
+				techUnit = UnitTypes::Protoss_Reaver;
 			}
 			else
 			{
