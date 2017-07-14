@@ -8,24 +8,21 @@
 
 // --- AUTHOR NOTES ---
 // TODO in testing before CIG 2017:
-// Archon merging
-// Spider mine removal from expansions
-// Expansion positioning (distances)
-// Scouting
-// Cannons for each expansion
-// Size/damage type
-// Invis strength increase
-// Check shuttles
-// Remove exists check from target aquisition?
+// Test size/damage type
+// Melee unit bouncing - trying min TTT of 2.0 seconds
 
 // TODO in testing after CIG 2017:
+// Archon merging
+// Spider mine removal from expansions
+// Cannons for each expansion
 // Bullets if working, use for unit scoring of performance
 // Test FFE against random
-// Set frame skip
 // Disable GUI
 // Camera center on army center
+// Check shuttles
 
 // TODO:
+// Remove exists check from target aquisition?
 // Move update of units in StrategyManager to UnitManager (less iterations)
 // IsSelected to display information
 // Move special units into their own area, separate command manager

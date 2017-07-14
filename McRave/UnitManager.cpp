@@ -292,7 +292,6 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	// Variables for calculating local strengths
 	double enemyLocalGroundStrength = 0.0, allyLocalGroundStrength = 0.0, timeToTarget = 0.0;
 	double enemyLocalAirStrength = 0.0, allyLocalAirStrength = 0.0;
-	Position engagementPosition = unit.getPosition();
 
 	// Reset local
 	unit.setGroundLocal(0);
@@ -300,7 +299,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	// Time to reach target
 	if (unit.getPosition().getDistance(unit.getTargetPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
 	{
-		timeToTarget = (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed();		
+		timeToTarget = max(2.0, (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed());		
 	}
 
 	if (unit.getPosition().getDistance(unit.getTargetPosition()) > 640.0)
@@ -319,8 +318,8 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 			continue;
 		}
 
-		// If a unit is within threat range of the target, add to local strength		
-		if (enemy.getGroundDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) <= max(unit.getGroundRange(), enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget)))
+		// If a unit is within threat range of the target, add to local strength
+		if (enemy.getGroundDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) <= enemy.getGroundRange() + (enemy.getSpeed() * timeToTarget))
 		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
@@ -332,7 +331,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 				allyLocalGroundStrength += enemy.getMaxGroundStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(enemy.getDeadFrame())));
 			}
 		}
-		if (enemy.getAirDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) <= max(unit.getAirRange(), enemy.getAirRange() + (enemy.getSpeed() * timeToTarget)))
+		if (enemy.getAirDamage() > 0 && enemy.getPosition().getDistance(unit.getTargetPosition()) <= enemy.getAirRange() + (enemy.getSpeed() * timeToTarget))
 		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
@@ -358,7 +357,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 		}
 
 		// If a unit is within threat range of the ally unit, add to local strength
-		if (ally.getGroundDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <=  max(unit.getGroundRange(), ally.getGroundRange() + (ally.getSpeed() * timeToTarget)))
+		if (ally.getGroundDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <= ally.getGroundRange() + (ally.getSpeed() * timeToTarget))
 		{
 			// If ally hasn't died, add to ally. Otherwise, partially add to enemy local
 			if (ally.getDeadFrame() == 0)
@@ -370,7 +369,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 				enemyLocalGroundStrength += ally.getMaxGroundStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(ally.getDeadFrame())));
 			}
 		}
-		if (ally.getAirDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <=  max(unit.getAirRange(), ally.getAirRange() + (ally.getSpeed() * timeToTarget)))
+		if (ally.getAirDamage() > 0 && ally.getPosition().getDistance(unit.getPosition()) <= ally.getAirRange() + (ally.getSpeed() * timeToTarget))
 		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (ally.getDeadFrame() == 0)
@@ -383,8 +382,6 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 			}
 		}
 	}
-
-	// Future position of allySpecialUnits iterator
 
 	// Store the difference of strengths 
 	unit.setGroundLocal(allyLocalGroundStrength - enemyLocalGroundStrength);
@@ -424,7 +421,6 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 					unit.setStrategy(1);
 					return;
 				}
-
 
 				// Avoid attacking mines
 				if (unit.getTarget()->getType() == UnitTypes::Terran_Vulture_Spider_Mine)
