@@ -160,7 +160,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 					{
 						continue;
 					}
-					if (Grids().getReserveGrid(base.Location()) == 0 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
+					if (Broodwar->isBuildable(base.Location(), true) && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
 					{
 						closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
 						closestP = base.Location();

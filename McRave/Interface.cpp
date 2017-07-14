@@ -45,12 +45,7 @@ void InterfaceTrackerClass::drawInformation()
 	// Display global strength calculations	
 	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Strategy().globalAlly(), Strategy().globalEnemy());
 
-	// Display gateway production comparison
-	//double goon = Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
-	//double zealot = Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
-	//Broodwar->drawTextScreen(500, 30, "%.2f", goon);
-	//Broodwar->drawTextScreen(500, 40, "%.2f", zealot);
-	
+	// Display unit scoring
 	offset += 50;
 	for (auto &unit : Strategy().getUnitScore())
 	{
@@ -81,26 +76,13 @@ void InterfaceTrackerClass::drawAllyInfo()
 		{
 			UnitInfo unit = u.second;
 			if (unit.getDeadFrame() == 0)
-			{				
+			{
 				Broodwar->drawLineMap(unit.getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
-				/*if (unit.getTargetPosition().isValid())
+				if (unit.getVisibleGroundStrength() > 0.0 || unit.getVisibleAirStrength() > 0.0)
 				{
-					Broodwar->drawLineMap(unit.getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
-					Broodwar->drawBoxMap(unit.getTargetPosition() + Position(-2, -2), unit.getTargetPosition() + Position(2, 2), Broodwar->self()->getColor());
-				}*/
-
-				UnitInfo unit = u.second;
-				if (unit.getDeadFrame() == 0)
-				{
-					if (unit.getVisibleGroundStrength() > 0.0 || unit.getVisibleAirStrength() > 0.0)
-					{
-						Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());
-						Broodwar->drawTextMap(unit.getPosition() + Position(5, 2), "Air: %c %.2f", Text::Blue, unit.getVisibleAirStrength());
-					}
+					Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());
+					Broodwar->drawTextMap(unit.getPosition() + Position(5, 2), "Air: %c %.2f", Text::Blue, unit.getVisibleAirStrength());
 				}
-
-				//Broodwar->drawTextMap(unit.getPosition() + Position(-5, -2), "%.2f", unit.getVisibleGroundStrength());
-				//Broodwar->drawTextMap(unit.getPosition() + Position(-10, 5), "%.2f, %.2f, %.2f", unit.getGroundDamage(), unit.getGroundRange(), unit.getSpeed());
 			}
 		}
 	}
@@ -118,7 +100,7 @@ void InterfaceTrackerClass::drawEnemyInfo()
 			{
 				if (unit.getVisibleGroundStrength() > 0.0 || unit.getVisibleAirStrength() > 0.0)
 				{
-					Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());	
+					Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());
 					Broodwar->drawTextMap(unit.getPosition() + Position(5, -5), "Air: %c %.2f", Text::Blue, unit.getVisibleAirStrength());
 				}
 			}

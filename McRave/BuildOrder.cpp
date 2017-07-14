@@ -16,6 +16,7 @@ void BuildOrderTrackerClass::updateDecision()
 		// If we have a Core and 2 Gates, opener is done
 		if (buildingDesired[UnitTypes::Protoss_Cybernetics_Core] >= 1 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && getOpening)
 		{
+			// Put opener function here instead
 			getOpening = false;
 		}
 
@@ -28,6 +29,7 @@ void BuildOrderTrackerClass::updateDecision()
 		// If production is saturated and none are idle, choose a tech
 		if (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleHighProduction().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 3)
 		{
+			// Put tech function here instead
 			getTech = true;
 		}
 
@@ -58,6 +60,11 @@ void BuildOrderTrackerClass::updateDecision()
 		if (Strategy().isRush())
 		{
 			opening = 4;
+		}
+		if (Broodwar->mapName() == "Alchemist")
+		{
+			Broodwar << "Why are we playing this map?" << endl;
+			opening = 5; // Aka fuck you I'm 9/9 gating because this map is fucking stupid
 		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
@@ -143,6 +150,14 @@ void BuildOrderTrackerClass::protossOpener()
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 24);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 4;
+		}
+		// 9/9 Gates
+		else if (opening == 5)
+		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1;
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 18) * 2;
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 6;
 		}
 	}
 	return;

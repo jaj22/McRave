@@ -11,6 +11,7 @@
 // Test size/damage type
 // Melee unit bouncing - trying min TTT of 2.0 seconds
 // Anti-stone check
+// Worker pull with FFE
 
 // TODO in testing after CIG 2017:
 // Use global ally / globaly enemy as local latching

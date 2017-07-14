@@ -194,7 +194,7 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	// If we are fast expanding and enemy is rushing, we need to defend with workers
 	if (Strategy().isFastExpand() && BuildOrder().isOpener() && (Strategy().globalAlly() + Strategy().getAllyDefense()) < Strategy().globalEnemy())
 	{
-		Strategy().increaseGlobalAlly(2);
+		Strategy().increaseGlobalAlly(1);
 		if (Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0.0)
 		{
 			Unit target = worker.unit()->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer, 320);
@@ -212,7 +212,7 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	}
 
 	// Defending logic
-	if (/*Broodwar->getFrameCount() - worker.getLastGatherFrame() <= 25 &&*/ Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0)
+	if (/*Broodwar->getFrameCount() - worker.getLastGatherFrame() <= 25 &&*/ Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0.0)
 	{
 		if (!worker.getTarget() || (worker.getTarget() && !worker.getTarget()->exists()))
 		{

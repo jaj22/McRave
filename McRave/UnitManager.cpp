@@ -343,7 +343,6 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 				allyLocalAirStrength += enemy.getMaxAirStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(enemy.getDeadFrame())));
 			}
 		}
-
 	}
 
 	// Check every ally being in range of the target
@@ -351,7 +350,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	{
 		UnitInfo ally = a.second;
 		// Ignore workers and buildings
-		if (ally.getType().isWorker() || ally.getType().isBuilding() || ally.unit() == unit.unit())
+		if (ally.getType().isWorker() || ally.getType().isBuilding())
 		{
 			continue;
 		}
@@ -509,6 +508,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 			return;
 		}
 	}
+
 	// If last command was disengage/no command
 	else
 	{
@@ -524,6 +524,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 			return;
 		}
 	}
+
 	// Disregard local if no target, no recent local calculation and not within ally region
 	unit.setStrategy(3);
 	return;
