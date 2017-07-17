@@ -28,7 +28,7 @@ double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 	}
 	else
 	{
-		damage = unit.getGroundDamage();
+		damage = unit.getGroundDamage() / 24.0;
 	}
 	speed = unit.getSpeed()/128.0;
 
@@ -61,18 +61,35 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 	double effectiveness = 1.0;
 	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields() / 2)) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields() / 2));
 
-	/*int aLarge = Units().getMySizes()[UnitSizeTypes::Large];
-	int aMedium = Units().getMySizes()[UnitSizeTypes::Medium];
-	int aSmall = Units().getMySizes()[UnitSizeTypes::Small];
+	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
+	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
+	double aSmall = double(Units().getMySizes()[UnitSizeTypes::Small]);
 
-	int eLarge = Units().getEnSizes()[UnitSizeTypes::Large];
-	int eMedium = Units().getEnSizes()[UnitSizeTypes::Medium];
-	int eSmall = Units().getEnSizes()[UnitSizeTypes::Small];
+	double eLarge = double(Units().getEnSizes()[UnitSizeTypes::Large]);
+	double eMedium = double(Units().getEnSizes()[UnitSizeTypes::Medium]);
+	double eSmall = double(Units().getEnSizes()[UnitSizeTypes::Small]);
 
-
-	if (unit.getType().groundWeapon().damageType() == DamageTypes::Explosive)
+	if (unit.unit()->getPlayer() == Broodwar->enemy())
 	{
-		effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / double(eLarge + eMedium + eSmall);
+		if (unit.getType().groundWeapon().damageType() == DamageTypes::Explosive)
+		{
+			effectiveness = double((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / max(1.0, double(aLarge + aMedium + aSmall));
+		}
+		else if (unit.getType().groundWeapon().damageType() == DamageTypes::Concussive)
+		{
+			effectiveness = double((aLarge*0.25) + (aMedium*0.5) + (aSmall*1.0)) / max(1.0, double(aLarge + aMedium + aSmall));
+		}
+	}
+	else
+	{
+		if (unit.getType().groundWeapon().damageType() == DamageTypes::Explosive)
+		{
+			effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / max(1.0, double(eLarge + eMedium + eSmall));
+		}
+		else if (unit.getType().groundWeapon().damageType() == DamageTypes::Concussive)
+		{
+			effectiveness = double((eLarge*0.25) + (eMedium*0.5) + (eSmall*1.0)) / max(1.0, double(eLarge + eMedium + eSmall));
+		}
 	}*/
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
@@ -87,6 +104,16 @@ double UtilTrackerClass::getMaxAirStrength(UnitInfo& unit, Player who)
 	double range, damage, speed;
 	range = cbrt(unit.getAirRange());
 	damage = unit.getAirDamage() / double(unit.getType().airWeapon().damageCooldown());
+
+	if (unit.getType().airWeapon().damageCooldown() > 0)
+	{
+		damage = unit.getAirDamage() / double(unit.getType().airWeapon().damageCooldown());
+	}
+	else
+	{
+		damage = unit.getAirDamage() / 24.0;
+	}
+
 	speed = unit.getSpeed()/128.0;
 
 	if (!unit.getType().isWorker() && damage > 0)
@@ -109,15 +136,47 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 	{
 		return 0;
 	}
-
+	
+	double effectiveness = 1.0;
 	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields())) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields()));
+	
+	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
+	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
+	double aSmall = double(Units().getMySizes()[UnitSizeTypes::Small]);
+
+	double eLarge = double(Units().getEnSizes()[UnitSizeTypes::Large]);
+	double eMedium = double(Units().getEnSizes()[UnitSizeTypes::Medium]);
+	double eSmall = double(Units().getEnSizes()[UnitSizeTypes::Small]);
+
+	if (unit.unit()->getPlayer() == Broodwar->enemy())
+	{
+		if (unit.getType().airWeapon().damageType() == DamageTypes::Explosive)
+		{
+			effectiveness = double((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / max(1.0, double(aLarge + aMedium + aSmall));
+		}
+		else if (unit.getType().airWeapon().damageType() == DamageTypes::Concussive)
+		{
+			effectiveness = double((aLarge*0.25) + (aMedium*0.5) + (aSmall*1.0)) / max(1.0, double(aLarge + aMedium + aSmall));
+		}		
+	}
+	else
+	{
+		if (unit.getType().airWeapon().damageType() == DamageTypes::Explosive)
+		{
+			effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / max(1.0, double(eLarge + eMedium + eSmall));
+		}
+		else if (unit.getType().airWeapon().damageType() == DamageTypes::Concussive)
+		{
+			effectiveness = double((eLarge*0.25) + (eMedium*0.5) + (eSmall*1.0)) / max(1.0, double(eLarge + eMedium + eSmall));
+		}
+	}*/
 
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
-		return 10.0 * unit.getMaxAirStrength();
+		return 10.0 * unit.getMaxAirStrength() * effectiveness;
 	}
-	return hp * unit.getMaxAirStrength();
+	return hp * unit.getMaxAirStrength() * effectiveness;
 }
 
 double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
@@ -289,7 +348,7 @@ double UtilTrackerClass::getTrueAirDamage(UnitType unitType, Player who)
 
 double UtilTrackerClass::getTrueSpeed(UnitType unitType, Player who)
 {
-	double speed = unitType.topSpeed() * 32.0;
+	double speed = unitType.topSpeed() * 24.0;
 
 	if ((unitType == UnitTypes::Zerg_Zergling && who->getUpgradeLevel(UpgradeTypes::Metabolic_Boost)) || (unitType == UnitTypes::Zerg_Hydralisk && who->getUpgradeLevel(UpgradeTypes::Muscular_Augments)) || (unitType == UnitTypes::Zerg_Ultralisk && who->getUpgradeLevel(UpgradeTypes::Anabolic_Synthesis)) || (unitType == UnitTypes::Protoss_Shuttle && who->getUpgradeLevel(UpgradeTypes::Gravitic_Drive)) || (unitType == UnitTypes::Protoss_Observer && who->getUpgradeLevel(UpgradeTypes::Gravitic_Boosters)) || (unitType == UnitTypes::Protoss_Zealot && who->getUpgradeLevel(UpgradeTypes::Leg_Enhancements)) || (unitType == UnitTypes::Terran_Vulture && who->getUpgradeLevel(UpgradeTypes::Ion_Thrusters)))
 	{
@@ -354,18 +413,18 @@ set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
 
 bool UtilTrackerClass::isSafe(WalkPosition start, WalkPosition end, UnitType unitType, bool groundCheck, bool airCheck, bool mobilityCheck)
 {
-	for (int i = end.x - (unitType.tileWidth() * 2); i < end.x + (unitType.tileWidth() * 2); i++)
+	for (int i = end.x - (unitType.tileWidth() * 2); i <= end.x + (unitType.tileWidth() * 2); i++)
 	{
-		for (int j = end.y - (unitType.tileHeight() * 2); j < end.y + (unitType.tileHeight() * 2); j++)
+		for (int j = end.y - (unitType.tileHeight() * 2); j <= end.y + (unitType.tileHeight() * 2); j++)
 		{
 			if (WalkPosition(i, j).isValid())
 			{				
 				// If WalkPosition shared with WalkPositions under unit, ignore
-				if (i >= start.x && i <= (start.x + (unitType.tileWidth() * 2)) && j >= start.y && j <= (start.y + (unitType.tileHeight() * 2)))
+				if (i >= start.x && i <= (start.x + (unitType.tileWidth() * 4)) && j >= start.y && j <= (start.y + (unitType.tileHeight() * 4)))
 				{					
 					continue;
 				}
-				if ((groundCheck && Grids().getEGroundDistanceGrid(i, j) != 0.0) || (airCheck && Grids().getEAirDistanceGrid(i, j) != 0.0) || (mobilityCheck && (Grids().getMobilityGrid(i, j) == 0 || Grids().getAntiMobilityGrid(i, j) == 1)))
+				if ((groundCheck && Grids().getEGroundDistanceGrid(i, j) != 0.0) || (airCheck && Grids().getEAirDistanceGrid(i, j) != 0.0) || (mobilityCheck && (Grids().getMobilityGrid(i, j) == 0 || Grids().getAntiMobilityGrid(i, j) > 0)))
 				{
 					return false;
 				}

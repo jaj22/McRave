@@ -8,22 +8,26 @@ using namespace std;
 class SpecialUnitTrackerClass
 {
 	map <Unit, SupportUnitInfo> myArbiters;
-	map <Unit, SupportUnitInfo> myObservers;
+	map <Unit, SupportUnitInfo> myDarchons;
+	map <Unit, SupportUnitInfo> myDetectors;
 	map <Unit, SupportUnitInfo> myTemplars;
 	map <Unit, SupportUnitInfo> myReavers;
-	map <Unit, SupportUnitInfo> myMedics;
 public:
 	void update();
 	void updateArbiters();
-	void updateObservers();
+	void updateDarchons();
+	void updateDefilers();
+	void updateDetectors();
+	void updateQueens();
 	void updateReavers();
 	void storeUnit(Unit);
 	void removeUnit(Unit);
 
 	map <Unit, SupportUnitInfo>& getMyArbiters() { return myArbiters; }
-	map <Unit, SupportUnitInfo>& getMyObservers() { return myObservers; }
+	map <Unit, SupportUnitInfo>& getMyDetectors() { return myDetectors; }
 	map <Unit, SupportUnitInfo>& getMyTemplars() { return myTemplars; }
 	map <Unit, SupportUnitInfo>& getMyReavers() { return myReavers; }
+	map <Unit, SupportUnitInfo>& getMyDarchons() { return myDarchons; }
 };
 
 typedef Singleton<SpecialUnitTrackerClass> SpecialUnitTracker;

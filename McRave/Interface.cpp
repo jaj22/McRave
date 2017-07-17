@@ -10,7 +10,19 @@ void InterfaceTrackerClass::update()
 
 void InterfaceTrackerClass::performanceTest(string function)
 {
-	clock_t duration = clock() - globalClock;
+	double dur = std::chrono::duration <double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+	myTest[function] = myTest[function] * 0.99 + dur*0.01;
+	if (myTest[function] > 1.00)
+	{
+		Broodwar->drawTextScreen(200, screenOffset, "%s", function);
+		Broodwar->drawTextScreen(350, screenOffset, "%.2f ms", myTest[function]);
+		screenOffset += 10;
+	}
+	return;
+
+
+
+	/*clock_t duration = clock() - globalClock;
 	myTest[function] = myTest[function] * 0.99 + duration*0.01;
 	if (myTest[function] > 0.0)
 	{
@@ -18,12 +30,12 @@ void InterfaceTrackerClass::performanceTest(string function)
 		Broodwar->drawTextScreen(350, screenOffset, "%d ms", myTest[function]);
 		screenOffset += 10;
 	}
-	return;
+	return;*/
 }
 
 void InterfaceTrackerClass::startClock()
 {
-	globalClock = clock();
+	start = chrono::high_resolution_clock::now();
 	return;
 }
 
@@ -45,12 +57,7 @@ void InterfaceTrackerClass::drawInformation()
 	// Display global strength calculations	
 	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Strategy().globalAlly(), Strategy().globalEnemy());
 
-	// Display gateway production comparison
-	//double goon = Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
-	//double zealot = Strategy().getUnitScore()[UnitTypes::Protoss_Zealot] / (Strategy().getUnitScore()[UnitTypes::Protoss_Dragoon] + Strategy().getUnitScore()[UnitTypes::Protoss_Zealot]);
-	//Broodwar->drawTextScreen(500, 30, "%.2f", goon);
-	//Broodwar->drawTextScreen(500, 40, "%.2f", zealot);
-	
+	// Display unit scoring
 	offset += 50;
 	for (auto &unit : Strategy().getUnitScore())
 	{
@@ -81,26 +88,13 @@ void InterfaceTrackerClass::drawAllyInfo()
 		{
 			UnitInfo unit = u.second;
 			if (unit.getDeadFrame() == 0)
-			{				
+			{
 				Broodwar->drawLineMap(unit.getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
-				/*if (unit.getTargetPosition().isValid())
+				if (unit.getVisibleGroundStrength() > 0.0 || unit.getVisibleAirStrength() > 0.0)
 				{
-					Broodwar->drawLineMap(unit.getTargetPosition(), unit.getPosition(), Broodwar->self()->getColor());
-					Broodwar->drawBoxMap(unit.getTargetPosition() + Position(-2, -2), unit.getTargetPosition() + Position(2, 2), Broodwar->self()->getColor());
-				}*/
-
-				UnitInfo unit = u.second;
-				if (unit.getDeadFrame() == 0)
-				{
-					if (unit.getVisibleGroundStrength() > 0.0 || unit.getVisibleAirStrength() > 0.0)
-					{
-						Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());
-						Broodwar->drawTextMap(unit.getPosition() + Position(5, 2), "Air: %c %.2f", Text::Blue, unit.getVisibleAirStrength());
-					}
+					Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());
+					Broodwar->drawTextMap(unit.getPosition() + Position(5, 2), "Air: %c %.2f", Text::Blue, unit.getVisibleAirStrength());
 				}
-
-				//Broodwar->drawTextMap(unit.getPosition() + Position(-5, -2), "%.2f", unit.getVisibleGroundStrength());
-				//Broodwar->drawTextMap(unit.getPosition() + Position(-10, 5), "%.2f, %.2f, %.2f", unit.getGroundDamage(), unit.getGroundRange(), unit.getSpeed());
 			}
 		}
 	}
@@ -118,7 +112,7 @@ void InterfaceTrackerClass::drawEnemyInfo()
 			{
 				if (unit.getVisibleGroundStrength() > 0.0 || unit.getVisibleAirStrength() > 0.0)
 				{
-					Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());	
+					Broodwar->drawTextMap(unit.getPosition() + Position(5, -10), "Grd: %c %.2f", Text::Brown, unit.getVisibleGroundStrength());
 					Broodwar->drawTextMap(unit.getPosition() + Position(5, -5), "Air: %c %.2f", Text::Blue, unit.getVisibleAirStrength());
 				}
 			}

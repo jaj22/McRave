@@ -8,22 +8,26 @@
 
 // --- AUTHOR NOTES ---
 // TODO in testing before CIG 2017:
+// Test size/damage type
+// Melee unit bouncing - trying min TTT of 2.0 seconds
+// Anti-stone check
+// Worker pull with FFE
+
+// TODO in testing after CIG 2017:
+// Use global ally / globaly enemy as local latching
 // Archon merging
 // Spider mine removal from expansions
-// Expansion positioning (distances)
-// Scouting
-
-// Test these:
-// Size/damage type
-// Invis strength increase
-
-// Then some other tests:
+// Cannons for each expansion
 // Bullets if working, use for unit scoring of performance
 // Test FFE against random
-// Move update of units in StrategyManager to UnitManager (less iterations)
-// IsSelected to display information
+// Disable GUI
+// Camera center on army center
+// Check shuttles
 
 // TODO:
+// Remove exists check from target aquisition?
+// Move update of units in StrategyManager to UnitManager (less iterations)
+// IsSelected to display information
 // Move special units into their own area, separate command manager
 // Make target position stuff based on units current command target position
 // Move production buildings to the front of the base, tech to the back
@@ -109,10 +113,12 @@ void McRaveModule::onUnitHide(BWAPI::Unit unit)
 
 void McRaveModule::onUnitCreate(BWAPI::Unit unit)
 {
+	Buildings().storeBuilding(unit);
 }
 
 void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 {
+	Bases().removeBase(unit);
 	Units().removeUnit(unit);
 	Buildings().removeBuilding(unit);
 	SpecialUnits().removeUnit(unit);
@@ -123,6 +129,7 @@ void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 
 void McRaveModule::onUnitMorph(BWAPI::Unit unit)
 {
+	Buildings().storeBuilding(unit);
 }
 
 void McRaveModule::onUnitRenegade(BWAPI::Unit unit)
@@ -135,4 +142,5 @@ void McRaveModule::onSaveGame(std::string gameName)
 
 void McRaveModule::onUnitComplete(BWAPI::Unit unit)
 {
+	Units().storeUnit(unit);
 }

@@ -1,5 +1,18 @@
 #include "McRave.h"
 
+// NOTES: Transitioning to One Shot Update for Grids
+
+// Disable: updateReservedLocation for building placement
+// Completed and verified:
+// Reserve Grid
+// Pylon Grid
+// Battery Grid (?)
+// Defense Grid (?)
+// Bunker Grid (?)
+
+// Testing:
+// Anti mobility from buildings - not working until units/workers are oneshotted
+
 void GridTrackerClass::update()
 {
 	Display().startClock();
@@ -15,113 +28,68 @@ void GridTrackerClass::update()
 
 void GridTrackerClass::reset()
 {
-	// Reset all tiles to 0
-
-	// TEMP - Testing re-initialize 
-	//aClusterGrid[1024][1024] = {};
-	//aClusterGrid[1024][1024] = {};
-	//antiMobilityGrid[1024][1024] = {};
-	//eGroundGrid[1024][1024] = {};
-	//eAirGrid[1024][1024] = {};
-	//eGroundDistanceGrid[1024][1024] = {};
-	//eAirDistanceGrid[1024][1024] = {};
-	//observerGrid[1024][1024] = {};
-	//arbiterGrid[1024][1024] = {};
-	//eDetectorGrid[1024][1024] = {};
-
-	//eGroundClusterGrid[256][256] = {};
-	//eAirClusterGrid[256][256] = {};
-	//reserveGrid[256][256] = {};
-	//baseGrid[256][256] = {};
-	//pylonGrid[256][256] = {};
-	//batteryGrid[256][256] = {};
-	//defenseGrid[256][256] = {};
-	//bunkerGrid[256][256] = {};
-	//resourceGrid[256][256] = {};
-
-
-	// TEMP - Testing memset to reset grids if drawing is not needed for performance
-	//memset(aClusterGrid, 0, sizeof aClusterGrid);
-	//memset(antiMobilityGrid, 0, sizeof antiMobilityGrid);
-	//memset(eGroundGrid, 0, sizeof eGroundGrid);
-	//memset(eAirGrid, 0, sizeof eAirGrid);
-	//memset(eGroundDistanceGrid, 0, sizeof eGroundDistanceGrid);
-	//memset(eAirDistanceGrid, 0, sizeof eAirDistanceGrid);
-	//memset(observerGrid, 0, sizeof observerGrid);
-	//memset(arbiterGrid, 0, sizeof arbiterGrid);
-	//memset(eDetectorGrid, 0, sizeof eDetectorGrid);
-
-	//memset(eGroundClusterGrid, 0, sizeof eGroundClusterGrid);
-	//memset(eAirClusterGrid, 0, sizeof eAirClusterGrid);
-	//memset(reserveGrid, 0, sizeof reserveGrid);
-	//memset(baseGrid, 0, sizeof baseGrid);
-	//memset(pylonGrid, 0, sizeof pylonGrid);
-	//memset(batteryGrid, 0, sizeof batteryGrid);
-	//memset(defenseGrid, 0, sizeof defenseGrid);
-	//memset(bunkerGrid, 0, sizeof bunkerGrid);
-	//memset(resourceGrid, 0, sizeof resourceGrid);
-
-
-	int center = 0;
 	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
 	{
 		for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 		{
-			if (WalkPosition(x, y).isValid())
+			if (resourceGrid[x / 4][y / 4] > 0)
 			{
-				if (aClusterGrid[x][y] > center)
-				{
-					center = aClusterGrid[x][y];
-					armyCenter = Position(WalkPosition(x, y));
-				}
-
-				if (mobilityGrid[x][y] > 0)
-				{
-					//Broodwar->drawBoxMap(Position(WalkPosition(x,y)), Position(WalkPosition(x+1,y+1)), Colors::Black);
-				}
-
-				// Reset WalkPosition grids
-				aClusterGrid[x][y] = 0;
-				antiMobilityGrid[x][y] = 0;
-				eGroundGrid[x][y] = 0.0;
-				eAirGrid[x][y] = 0.0;
-				eGroundDistanceGrid[x][y] = 0.0;
-				eAirDistanceGrid[x][y] = 0.0;
-				observerGrid[x][y] = 0;
-				arbiterGrid[x][y] = 0;
-				eDetectorGrid[x][y] = 0;
-
-				// Reset TilePosition grids
-				if (x % 4 == 0 && y % 4 == 0 && TilePosition(x / 4, y / 4).isValid())
-				{
-					// Debug test
-					if (reservePathHome[x / 4][y / 4] > 0)
-					{
-						//Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
-					}
-
-					// Reset cluster grids
-					eGroundClusterGrid[x / 4][y / 4] = 0;
-					eAirClusterGrid[x / 4][y / 4] = 0;
-
-					// Reset other grids
-					reserveGrid[x / 4][y / 4] = 0;
-					baseGrid[x / 4][y / 4] = 0;
-					pylonGrid[x / 4][y / 4] = 0;
-					batteryGrid[x / 4][y / 4] = 0;
-					defenseGrid[x / 4][y / 4] = 0;
-					bunkerGrid[x / 4][y / 4] = 0;
-					resourceGrid[x / 4][y / 4] = 0;
-				}
-			}
-
-			// Temp path home stuff
-			if (reservePathHome[x / 4][y / 4] == 1)
-			{
-				reserveGrid[x / 4][y / 4] = 1;
+				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
 			}
 		}
 	}
+
+
+	// Reset all tiles to 0
+	for (auto &tile : resetTiles)
+	{
+		int x = tile.x;
+		int y = tile.y;
+
+		// Debugging
+		if (resourceGrid[x][y] > 0)
+		{
+			Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
+		}
+
+		// Reset cluster grids
+		eGroundClusterGrid[x][y] = 0;
+		eAirClusterGrid[x][y] = 0;
+	}
+
+	int center = 0;
+	for (auto &walk : resetWalks)
+	{
+		int x = walk.x;
+		int y = walk.y;
+
+		// Find army center
+		if (aClusterGrid[x][y] > center)
+		{
+			center = aClusterGrid[x][y];
+			armyCenter = Position(WalkPosition(x, y));
+		}
+
+		// Debugging 
+		if (eGroundDistanceGrid[x][y] > 0.0)
+		{
+			Broodwar->drawBoxMap(Position(WalkPosition(x, y)), Position(WalkPosition(x + 1, y + 1)), Colors::Black);
+		}
+
+		// Reset WalkPosition grids
+		aClusterGrid[x][y] = 0;
+		antiMobilityGrid[x][y] = 0;
+		eGroundGrid[x][y] = 0.0;
+		eAirGrid[x][y] = 0.0;
+		eGroundDistanceGrid[x][y] = 0.0;
+		eAirDistanceGrid[x][y] = 0.0;
+		observerGrid[x][y] = 0;
+		arbiterGrid[x][y] = 0;
+		eDetectorGrid[x][y] = 0;
+	}
+
+	resetTiles.clear();
+	resetWalks.clear();
 	return;
 }
 
@@ -134,9 +102,6 @@ void GridTrackerClass::updateAllyGrids()
 		if (unit.getDeadFrame() == 0)
 		{
 			WalkPosition start = unit.getWalkPosition();
-			int offsetX = unit.getPosition().x % 32;
-			int offsetY = unit.getPosition().y % 32;
-
 			// Clusters and Anti-mobility don't need flying units currently
 			if (!unit.getType().isFlyer())
 			{
@@ -146,17 +111,12 @@ void GridTrackerClass::updateAllyGrids()
 					{
 						if (WalkPosition(x, y).isValid() && unit.getPosition().getDistance(Position((x * 8), (y * 8))) <= 160)
 						{
+							resetWalks.insert(WalkPosition(x, y));
 							aClusterGrid[x][y] += 1;
 						}
-					}
-				}
-
-				for (int x = start.x; x <= start.x + unit.getType().tileWidth() * 4; x++)
-				{
-					for (int y = start.y; y <= start.y + unit.getType().tileHeight() * 4; y++)
-					{
-						if (WalkPosition(x, y).isValid())
+						if (x >= start.x && x <= start.x + unit.getType().tileWidth() * 4 && y >= start.y && y <= start.y + unit.getType().tileHeight() * 4)
 						{
+							resetWalks.insert(WalkPosition(x, y));
 							antiMobilityGrid[x][y] = 1;
 						}
 					}
@@ -165,113 +125,19 @@ void GridTrackerClass::updateAllyGrids()
 		}
 	}
 
-	// Building Grid update
 	for (auto &b : Buildings().getMyBuildings())
 	{
 		BuildingInfo &building = b.second;
-		if (building.unit() && building.unit()->exists())
+		// Anti Mobility Grid
+		WalkPosition start = building.getWalkPosition();
+		for (int x = start.x - 2; x < 2 + start.x + building.getType().tileWidth() * 4; x++)
 		{
-			// Anti Mobility Grid
-			WalkPosition start = building.getWalkPosition();
-			for (int x = start.x - 2; x < 2 + start.x + building.getType().tileWidth() * 4; x++)
+			for (int y = start.y - 2; y < 2 + start.y + building.getType().tileHeight() * 4; y++)
 			{
-				for (int y = start.y - 2; y < 2 + start.y + building.getType().tileHeight() * 4; y++)
+				if (WalkPosition(x, y).isValid())
 				{
-					if (WalkPosition(x, y).isValid())
-					{
-						antiMobilityGrid[x][y] = 1;
-					}
-				}
-			}
-
-			// Reserve Grid for Buildings
-			TilePosition tile = building.getTilePosition();
-			int offset = 0;
-			if (building.getType() == UnitTypes::Protoss_Gateway || building.getType() == UnitTypes::Protoss_Robotics_Facility || building.getType() == UnitTypes::Terran_Barracks || building.getType() == UnitTypes::Terran_Factory)
-			{
-				offset = 1;
-			}
-			for (int x = tile.x - offset; x < tile.x + building.getType().tileWidth() + offset; x++)
-			{
-				for (int y = tile.y - offset; y < tile.y + building.getType().tileHeight() + offset; y++)
-				{
-					if (TilePosition(x, y).isValid())
-					{
-						reserveGrid[x][y] = 1;
-					}
-				}
-			}
-
-			// Reserve Grid for Addons
-			if (building.getType().canBuildAddon())
-			{
-				for (int x = tile.x + building.getType().tileWidth(); x < tile.x + building.getType().tileWidth() + 2; x++)
-				{
-					for (int y = tile.y + 1; y < tile.y + 3; y++)
-					{
-						if (TilePosition(x, y).isValid())
-						{
-							reserveGrid[x][y] = 1;
-						}
-					}
-				}
-			}
-
-			// Pylon Grid
-			if (building.getType() == UnitTypes::Protoss_Pylon)
-			{
-				for (int x = building.getTilePosition().x - 4; x < building.getTilePosition().x + building.getType().tileWidth() + 4; x++)
-				{
-					for (int y = building.getTilePosition().y - 4; y < building.getTilePosition().y + building.getType().tileHeight() + 4; y++)
-					{
-						if (TilePosition(x, y).isValid())
-						{
-							pylonGrid[x][y] += 1;
-						}
-					}
-				}
-			}
-			// Shield Battery Grid
-			if (building.getType() == UnitTypes::Protoss_Shield_Battery)
-			{
-				for (int x = building.getTilePosition().x - 10; x < building.getTilePosition().x + building.getType().tileWidth() + 10; x++)
-				{
-					for (int y = building.getTilePosition().y - 10; y < building.getTilePosition().y + building.getType().tileHeight() + 10; y++)
-					{
-						if (TilePosition(x, y).isValid() && building.getPosition().getDistance(Position(TilePosition(x, y))) < 320)
-						{
-							batteryGrid[x][y] += 1;
-						}
-					}
-				}
-			}
-			// Bunker Grid
-			if (building.getType() == UnitTypes::Terran_Bunker)
-			{
-				for (int x = building.getTilePosition().x - 10; x < building.getTilePosition().x + building.getType().tileWidth() + 10; x++)
-				{
-					for (int y = building.getTilePosition().y - 10; y < building.getTilePosition().y + building.getType().tileHeight() + 10; y++)
-					{
-						if (TilePosition(x, y).isValid() && building.getPosition().getDistance(Position(TilePosition(x, y))) < 320)
-						{
-							bunkerGrid[x][y] += 1;
-						}
-					}
-				}
-			}
-
-			// Defense Grid
-			if (building.getType() == UnitTypes::Protoss_Photon_Cannon || building.getType() == UnitTypes::Terran_Bunker || building.getType() == UnitTypes::Zerg_Sunken_Colony)
-			{
-				for (int x = building.getTilePosition().x - 7; x < building.getTilePosition().x + building.getType().tileWidth() + 7; x++)
-				{
-					for (int y = building.getTilePosition().y - 7; y < building.getTilePosition().y + building.getType().tileHeight() + 7; y++)
-					{
-						if (TilePosition(x, y).isValid() && building.getPosition().getDistance(Position(TilePosition(x, y))) < 224)
-						{
-							defenseGrid[x][y] += 1;
-						}
-					}
+					resetWalks.insert(WalkPosition(x, y));
+					antiMobilityGrid[x][y] = 1;
 				}
 			}
 		}
@@ -289,30 +155,8 @@ void GridTrackerClass::updateAllyGrids()
 			{
 				if (WalkPosition(x, y).isValid())
 				{
+					resetWalks.insert(WalkPosition(x, y));
 					antiMobilityGrid[x][y] = 1;
-				}
-			}
-		}
-	}
-
-	// Base Grid
-	for (auto &b : Bases().getMyBases())
-	{
-		BaseInfo &base = b.second;
-		for (int x = base.getTilePosition().x - 8; x < base.getTilePosition().x + 12; x++)
-		{
-			for (int y = base.getTilePosition().y - 8; y < base.getTilePosition().y + 11; y++)
-			{
-				if (TilePosition(x, y).isValid())
-				{
-					if (base.unit()->isCompleted())
-					{
-						baseGrid[x][y] = 2;
-					}
-					else
-					{
-						baseGrid[x][y] = 1;
-					}
 				}
 			}
 		}
@@ -341,14 +185,17 @@ void GridTrackerClass::updateEnemyGrids()
 						{
 							if (!enemy.getType().isFlyer())
 							{
+								resetTiles.insert(TilePosition(x, y));
 								eGroundClusterGrid[x][y] += 1;
 							}
 							else
 							{
+								resetTiles.insert(TilePosition(x, y));
 								eAirClusterGrid[x][y] += 1;
 							}
 							if (enemy.getType() == UnitTypes::Terran_Siege_Tank_Tank_Mode || enemy.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
 							{
+								resetTiles.insert(TilePosition(x, y));
 								stasisClusterGrid[x][y] += 1;
 							}
 						}
@@ -365,6 +212,7 @@ void GridTrackerClass::updateEnemyGrids()
 					{
 						if (WalkPosition(x, y).isValid() && Position(WalkPosition(x, y)).getDistance(enemy.getPosition()) < enemy.getType().sightRange())
 						{
+							resetWalks.insert(WalkPosition(x, y));
 							eDetectorGrid[x][y] = 1;
 						}
 					}
@@ -382,11 +230,13 @@ void GridTrackerClass::updateEnemyGrids()
 
 						if (enemy.getGroundDamage() > 0.0 && distance < enemy.getGroundRange())
 						{
+							resetWalks.insert(WalkPosition(x, y));
 							eGroundGrid[x][y] += enemy.getMaxGroundStrength();
 						}
 						if (enemy.getGroundDamage() > 0.0 && distance < enemy.getGroundRange() + (enemy.getSpeed() / 8))
 						{
-							eGroundDistanceGrid[x][y] += enemy.getMaxGroundStrength() / distance;
+							resetWalks.insert(WalkPosition(x, y));
+							eGroundDistanceGrid[x][y] += max(0.1, enemy.getMaxGroundStrength() / distance);
 						}
 					}
 				}
@@ -403,11 +253,13 @@ void GridTrackerClass::updateEnemyGrids()
 
 						if (enemy.getAirDamage() > 0.0 && distance < enemy.getAirRange())
 						{
+							resetWalks.insert(WalkPosition(x, y));
 							eAirGrid[x][y] += enemy.getMaxAirStrength();
 						}
 						if (enemy.getAirDamage() > 0.0 && distance < enemy.getAirRange() + (enemy.getSpeed() / 8))
 						{
-							eAirDistanceGrid[x][y] += enemy.getMaxAirStrength() / distance;
+							resetWalks.insert(WalkPosition(x, y));
+							eAirDistanceGrid[x][y] += max(0.1, enemy.getMaxAirStrength() / distance);
 						}
 					}
 				}
@@ -422,6 +274,7 @@ void GridTrackerClass::updateEnemyGrids()
 					{
 						if (WalkPosition(x, y).isValid())
 						{
+							resetWalks.insert(WalkPosition(x, y));
 							antiMobilityGrid[x][y] = 1;
 						}
 					}
@@ -435,6 +288,7 @@ void GridTrackerClass::updateEnemyGrids()
 					{
 						if (WalkPosition(x, y).isValid())
 						{
+							resetWalks.insert(WalkPosition(x, y));
 							antiMobilityGrid[x][y] = 1;
 						}
 					}
@@ -445,66 +299,282 @@ void GridTrackerClass::updateEnemyGrids()
 	return;
 }
 
+void GridTrackerClass::updateBuildingGrid(BuildingInfo& building)
+{
+	int buildingOffset;
+	if (building.getType() == UnitTypes::Terran_Supply_Depot || building.getType() == UnitTypes::Protoss_Gateway || building.getType() == UnitTypes::Protoss_Robotics_Facility || building.getType() == UnitTypes::Terran_Barracks || building.getType() == UnitTypes::Terran_Factory)
+	{
+		buildingOffset = 1;
+	}
+	else
+	{
+		buildingOffset = 0;
+	}
+
+	// Add/remove building to/from grid
+	TilePosition tile = building.getTilePosition();
+	if (building.unit() && tile.isValid())
+	{
+		// Reserve Grid
+		for (int x = tile.x - buildingOffset; x < tile.x + building.getType().tileWidth() + buildingOffset; x++)
+		{
+			for (int y = tile.y - buildingOffset; y < tile.y + building.getType().tileHeight() + buildingOffset; y++)
+			{
+				if (TilePosition(x, y).isValid())
+				{
+					if (building.unit()->exists())
+					{
+						reserveGrid[x][y] += 1;
+					}
+					else
+					{
+						reserveGrid[x][y] -= 1;
+					}
+				}
+			}
+		}
+
+		// Base Grid - Not a one-shot
+		if (building.getType().isResourceDepot())
+		{
+			for (int x = tile.x - 8; x < tile.x + 12; x++)
+			{
+				for (int y = tile.y - 8; y < tile.y + 11; y++)
+				{
+					if (TilePosition(x, y).isValid())
+					{
+						if (building.unit()->isCompleted())
+						{
+							baseGrid[x][y] = 2;
+						}
+						else if (building.unit()->exists())
+						{
+							baseGrid[x][y] = 1;
+						}
+						else
+						{
+							baseGrid[x][y] = 0;
+						}
+					}
+				}
+			}
+		}
+
+		// Pylon Grid
+		if (building.getType() == UnitTypes::Protoss_Pylon)
+		{
+			for (int x = building.getTilePosition().x - 4; x < building.getTilePosition().x + building.getType().tileWidth() + 4; x++)
+			{
+				for (int y = building.getTilePosition().y - 4; y < building.getTilePosition().y + building.getType().tileHeight() + 4; y++)
+				{
+					if (TilePosition(x, y).isValid())
+					{
+						if (building.unit()->exists())
+						{
+							pylonGrid[x][y] += 1;
+						}
+						else
+						{
+							pylonGrid[x][y] -= 1;
+						}
+					}
+				}
+			}
+		}
+		// Shield Battery Grid
+		if (building.getType() == UnitTypes::Protoss_Shield_Battery)
+		{
+			for (int x = building.getTilePosition().x - 10; x < building.getTilePosition().x + building.getType().tileWidth() + 10; x++)
+			{
+				for (int y = building.getTilePosition().y - 10; y < building.getTilePosition().y + building.getType().tileHeight() + 10; y++)
+				{
+					if (TilePosition(x, y).isValid() && building.getPosition().getDistance(Position(TilePosition(x, y))) < 320)
+					{
+						if (building.unit()->exists())
+						{
+							batteryGrid[x][y] += 1;
+						}
+						else
+						{
+							batteryGrid[x][y] -= 1;
+						}
+					}
+				}
+			}
+		}
+		// Bunker Grid
+		if (building.getType() == UnitTypes::Terran_Bunker)
+		{
+			for (int x = building.getTilePosition().x - 10; x < building.getTilePosition().x + building.getType().tileWidth() + 10; x++)
+			{
+				for (int y = building.getTilePosition().y - 10; y < building.getTilePosition().y + building.getType().tileHeight() + 10; y++)
+				{
+					if (TilePosition(x, y).isValid() && building.getPosition().getDistance(Position(TilePosition(x, y))) < 320)
+					{
+						if (building.unit()->exists())
+						{
+							bunkerGrid[x][y] += 1;
+						}
+						else
+						{
+							bunkerGrid[x][y] -= 1;
+						}
+					}
+				}
+			}
+		}
+
+		// Defense Grid
+		if (building.getType() == UnitTypes::Protoss_Photon_Cannon || building.getType() == UnitTypes::Terran_Bunker || building.getType() == UnitTypes::Zerg_Sunken_Colony)
+		{
+			for (int x = building.getTilePosition().x - 7; x < building.getTilePosition().x + building.getType().tileWidth() + 7; x++)
+			{
+				for (int y = building.getTilePosition().y - 7; y < building.getTilePosition().y + building.getType().tileHeight() + 7; y++)
+				{
+					if (TilePosition(x, y).isValid() && building.getPosition().getDistance(Position(TilePosition(x, y))) < 224)
+					{
+						if (building.unit()->exists())
+						{
+							defenseGrid[x][y] += 1;
+						}
+						else
+						{
+							defenseGrid[x][y] -= 1;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void GridTrackerClass::updateResourceGrid(ResourceInfo& resource)
+{
+	// When a base is created, update this
+	// When a base finishes, update this
+	// When a base is destroyed, update this
+	// Resource Grid for Minerals
+
+	TilePosition tile = resource.getTilePosition();
+	if (resource.getType().isMineralField())
+	{
+		for (int x = tile.x - 5; x < tile.x + resource.getType().tileWidth() + 5; x++)
+		{
+			for (int y = tile.y - 5; y < tile.y + resource.getType().tileHeight() + 5; y++)
+			{
+				if (TilePosition(x, y).isValid())
+				{
+					/*if (Position(Bases().getMyBases()[resource.getClosestBase()].getResourcesPosition()).getDistance(Position(TilePosition(x, y))) <= 192 && resource.getPosition().getDistance(resource.getClosestBase()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(resource.getClosestBase()->getPosition()))
+					{
+						Broodwar << "Test" << endl;
+
+						if (!resource.getClosestBase() || (resource.getClosestBase() && !resource.getClosestBase()->exists()) || (resource.unit() && !resource.unit()->exists()))
+						{
+							resourceGrid[x][y] -= 1;
+						}
+						else
+						{
+							resourceGrid[x][y] += 1;
+						}
+					}*/
+					if (resource.getClosestBase() && resource.getClosestBase()->exists() && resource.getPosition().getDistance(resource.getClosestBase()->getPosition()) > Position(x * 32, y * 32).getDistance(resource.getClosestBase()->getPosition()))
+					{
+						resourceGrid[x][y] += 1;
+					}
+				}
+			}
+		}
+	}
+	else
+	{
+		for (int x = tile.x - 5; x < tile.x + resource.getType().tileWidth() + 5; x++)
+		{
+			for (int y = tile.y - 5; y < tile.y + resource.getType().tileHeight() + 5; y++)
+			{
+				if (TilePosition(x, y).isValid() && Position(Bases().getMyBases()[resource.getClosestBase()].getResourcesPosition()).getDistance(Position(TilePosition(x, y))) <= 320 && resource.getPosition().getDistance(resource.getClosestBase()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(resource.getClosestBase()->getPosition()))
+				{
+					if (resource.getClosestBase() && resource.getClosestBase()->exists() && resource.getPosition().getDistance(resource.getClosestBase()->getPosition()) > Position(x * 32, y * 32).getDistance(resource.getClosestBase()->getPosition()))
+					{
+						if (resource.unit()->exists())
+						{
+							resourceGrid[x][y] += 1;
+						}
+						else
+						{
+							resourceGrid[x][y] -= 1;
+						}
+					}					
+				}
+			}
+		}
+	}
+}
+
 void GridTrackerClass::updateNeutralGrids()
 {
-	// Resource Grid for Minerals
-	for (auto &m : Resources().getMyMinerals())
-	{
-		for (int x = m.second.getTilePosition().x - 5; x < m.second.getTilePosition().x + m.second.getType().tileWidth() + 5; x++)
-		{
-			for (int y = m.second.getTilePosition().y - 5; y < m.second.getTilePosition().y + m.second.getType().tileHeight() + 5; y++)
-			{
-				if (!m.second.getClosestBase())
-				{
-					continue;
-				}
-				if (TilePosition(x, y).isValid() && Position(Bases().getMyBases()[m.second.getClosestBase()].getResourcesPosition()).getDistance(Position(TilePosition(x, y))) <= 192 && m.second.getPosition().getDistance(m.second.getClosestBase()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(m.second.getClosestBase()->getPosition()))
-				{
-					resourceGrid[x][y] = 1;
-				}
-			}
-		}
-	}
+	//for (auto &m : Resources().getMyMinerals())
+	//{
+	//	for (int x = m.second.getTilePosition().x - 5; x < m.second.getTilePosition().x + m.second.getType().tileWidth() + 5; x++)
+	//	{
+	//		for (int y = m.second.getTilePosition().y - 5; y < m.second.getTilePosition().y + m.second.getType().tileHeight() + 5; y++)
+	//		{
+	//			if (TilePosition(x, y).isValid())
+	//			{
+	//				if (!m.second.getClosestBase() || (m.second.getClosestBase() && m.second.getClosestBase()->exists()))
+	//				{
+	//					resourceGrid[x][y] -= 1;
+	//					continue;
+	//				}
+	//				if (Position(Bases().getMyBases()[m.second.getClosestBase()].getResourcesPosition()).getDistance(Position(TilePosition(x, y))) <= 192 && m.second.getPosition().getDistance(m.second.getClosestBase()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(m.second.getClosestBase()->getPosition()))
+	//				{
+	//					resourceGrid[x][y] += 1;
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 
-	// Resource Grid for Gas
-	for (auto &g : Resources().getMyGas())
-	{
-		for (int x = g.second.getTilePosition().x - 5; x < g.second.getTilePosition().x + g.second.getType().tileWidth() + 5; x++)
-		{
-			for (int y = g.second.getTilePosition().y - 5; y < g.second.getTilePosition().y + g.second.getType().tileHeight() + 5; y++)
-			{
-				if (!g.second.getClosestBase())
-				{
-					continue;
-				}
-				if (TilePosition(x, y).isValid() && Position(Bases().getMyBases()[g.second.getClosestBase()].getResourcesPosition()).getDistance(Position(TilePosition(x, y))) <= 320 && g.second.getPosition().getDistance(g.second.getClosestBase()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(g.second.getClosestBase()->getPosition()))
-				{
-					resourceGrid[x][y] = 1;
-				}
-			}
-		}
-	}
+	//// Resource Grid for Gas
+	//for (auto &g : Resources().getMyGas())
+	//{
+	//	for (int x = g.second.getTilePosition().x - 5; x < g.second.getTilePosition().x + g.second.getType().tileWidth() + 5; x++)
+	//	{
+	//		for (int y = g.second.getTilePosition().y - 5; y < g.second.getTilePosition().y + g.second.getType().tileHeight() + 5; y++)
+	//		{
+	//			if (!g.second.getClosestBase() || (g.second.getClosestBase() && g.second.getClosestBase()->exists()))
+	//			{
+	//				resourceGrid[x][y] -= 1;
+	//				continue;
+	//			}
+	//			if (TilePosition(x, y).isValid() && Position(Bases().getMyBases()[g.second.getClosestBase()].getResourcesPosition()).getDistance(Position(TilePosition(x, y))) <= 320 && g.second.getPosition().getDistance(g.second.getClosestBase()->getPosition()) + 64 > Position(x * 32, y * 32).getDistance(g.second.getClosestBase()->getPosition()))
+	//			{
+	//				resourceGrid[x][y] += 1;
+	//			}
+	//		}
+	//	}
+	//}
 
-	// Anti Mobility Grid -- TODO: Improve by storing the units
-	for (auto &u : Broodwar->neutral()->getUnits())
-	{
-		if (u->getType().isFlyer())
-		{
-			continue;
-		}
-		int startX = (u->getTilePosition().x * 4);
-		int startY = (u->getTilePosition().y * 4);
-		for (int x = startX - 2; x < 2 + startX + u->getType().tileWidth() * 4; x++)
-		{
-			for (int y = startY - 2; y < 2 + startY + u->getType().tileHeight() * 4; y++)
-			{
-				if (WalkPosition(x, y).isValid())
-				{
-					antiMobilityGrid[x][y] = 1;
-				}
-			}
-		}
-	}
+	//// Anti Mobility Grid -- TODO: Improve by storing the units
+	//for (auto &u : Broodwar->neutral()->getUnits())
+	//{
+	//	if (u->getType().isFlyer())
+	//	{
+	//		continue;
+	//	}
+	//	int startX = (u->getTilePosition().x * 4);
+	//	int startY = (u->getTilePosition().y * 4);
+	//	for (int x = startX - 2; x < 2 + startX + u->getType().tileWidth() * 4; x++)
+	//	{
+	//		for (int y = startY - 2; y < 2 + startY + u->getType().tileHeight() * 4; y++)
+	//		{
+	//			if (WalkPosition(x, y).isValid())
+	//			{
+	//				resetWalks.insert(WalkPosition(x, y));
+	//				antiMobilityGrid[x][y] = 1;
+	//			}
+	//		}
+	//	}
+	//}
 	return;
 }
 
@@ -582,7 +652,7 @@ void GridTrackerClass::updateMobilityGrids()
 		// Create reserve path home
 		TilePosition end = Terrain().getPlayerStartingTilePosition();
 		TilePosition start = Terrain().getSecondChoke();
-		while (reservePathHome[end.x][end.y] == 0)
+		for (int i = 0; i <= 100; i++)
 		{
 			double closestD = 0.0;
 			TilePosition closestT;
@@ -609,7 +679,7 @@ void GridTrackerClass::updateMobilityGrids()
 						{
 							for (int j = 0; j <= 1; j++)
 							{
-								if (Grids().getMobilityGrid(WalkPosition(TilePosition(x,y)) + WalkPosition(i,j)) <= 0)
+								if (Grids().getMobilityGrid(WalkPosition(TilePosition(x, y)) + WalkPosition(i, j)) <= 0)
 								{
 									bestTile = false;
 								}
@@ -617,7 +687,7 @@ void GridTrackerClass::updateMobilityGrids()
 						}
 						if (bestTile)
 						{
-							closestD = Grids().getDistanceHome(WalkPosition(TilePosition(x, y)));						
+							closestD = Grids().getDistanceHome(WalkPosition(TilePosition(x, y)));
 							closestT = TilePosition(x, y);
 						}
 					}
@@ -633,7 +703,22 @@ void GridTrackerClass::updateMobilityGrids()
 			if (closestT.isValid())
 			{
 				start = closestT;
-				reservePathHome[closestT.x][closestT.y] = 1;
+				reserveGrid[closestT.x][closestT.y] = 1;
+			}
+		}
+
+		start = Terrain().getSecondChoke();
+		for (int i = start.x - 3; i <= start.x + 3; i++)
+		{
+			for (int j = start.y - 3; j <= start.y + 3; j++)
+			{
+				if (WalkPosition(i, j).isValid())
+				{
+					if (Grids().getDistanceHome(WalkPosition(TilePosition(i, j))) >= Grids().getDistanceHome(WalkPosition(start)))
+					{
+						reserveGrid[i][j] = 1;
+					}
+				}
 			}
 		}
 	}
@@ -642,15 +727,16 @@ void GridTrackerClass::updateMobilityGrids()
 
 void GridTrackerClass::updateObserverMovement(Unit observer)
 {
-	WalkPosition destination = WalkPosition(SpecialUnits().getMyObservers()[observer].getDestination());
+	WalkPosition destination = WalkPosition(SpecialUnits().getMyDetectors()[observer].getDestination());
 
 	for (int x = destination.x - 40; x <= destination.x + 40; x++)
 	{
 		for (int y = destination.y - 40; y <= destination.y + 40; y++)
 		{
 			// Create a circle of detection rather than a square
-			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyObservers()[observer].getDestination().getDistance(Position(WalkPosition(x, y))) < 320)
+			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyDetectors()[observer].getDestination().getDistance(Position(WalkPosition(x, y))) < 320)
 			{
+				resetWalks.insert(WalkPosition(x, y));
 				observerGrid[x][y] = 1;
 			}
 		}
@@ -669,6 +755,7 @@ void GridTrackerClass::updateArbiterMovement(Unit arbiter)
 			// Create a circle of detection rather than a square
 			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyArbiters()[arbiter].getDestination().getDistance(Position(WalkPosition(x, y))) < 160)
 			{
+				resetWalks.insert(WalkPosition(x, y));
 				arbiterGrid[x][y] = 1;
 			}
 		}
@@ -684,6 +771,7 @@ void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
 		{
 			if (WalkPosition(x, y).isValid())
 			{
+				resetWalks.insert(WalkPosition(x, y));
 				antiMobilityGrid[x][y] = 1;
 			}
 		}
@@ -693,31 +781,33 @@ void GridTrackerClass::updateAllyMovement(Unit unit, WalkPosition here)
 
 void GridTrackerClass::updateReservedLocation(UnitType building, TilePosition here)
 {
-	// When placing a building, reserve the tiles so no further locations are placed there
-	for (int x = here.x; x < here.x + building.tileWidth(); x++)
-	{
-		for (int y = here.y; y < here.y + building.tileHeight(); y++)
-		{
-			if (TilePosition(x, y).isValid())
-			{
-				reserveGrid[x][y] = 1;
-			}
-		}
-	}
+	//// When placing a building, reserve the tiles so no further locations are placed there
+	//for (int x = here.x; x < here.x + building.tileWidth(); x++)
+	//{
+	//	for (int y = here.y; y < here.y + building.tileHeight(); y++)
+	//	{
+	//		if (TilePosition(x, y).isValid())
+	//		{
+	//			resetTiles.insert(TilePosition(x, y));
+	//			reserveGrid[x][y] = 1;
+	//		}
+	//	}
+	//}
 
-	if (building.canBuildAddon())
-	{
-		for (int x = here.x + building.tileWidth(); x < here.x + building.tileWidth() + 2; x++)
-		{
-			for (int y = here.y + 1; y < here.y + 3; y++)
-			{
-				if (TilePosition(x, y).isValid())
-				{
-					reserveGrid[x][y] = 1;
-				}
-			}
-		}
-	}
+	//if (building.canBuildAddon())
+	//{
+	//	for (int x = here.x + building.tileWidth(); x < here.x + building.tileWidth() + 2; x++)
+	//	{
+	//		for (int y = here.y + 1; y < here.y + 3; y++)
+	//		{
+	//			if (TilePosition(x, y).isValid())
+	//			{
+	//				resetTiles.insert(TilePosition(x, y));
+	//				reserveGrid[x][y] = 1;
+	//			}
+	//		}
+	//	}
+	//}
 	return;
 }
 

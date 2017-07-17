@@ -16,6 +16,7 @@ void BuildOrderTrackerClass::updateDecision()
 		// If we have a Core and 2 Gates, opener is done
 		if (buildingDesired[UnitTypes::Protoss_Cybernetics_Core] >= 1 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && getOpening)
 		{
+			// Put opener function here instead
 			getOpening = false;
 		}
 
@@ -28,6 +29,7 @@ void BuildOrderTrackerClass::updateDecision()
 		// If production is saturated and none are idle, choose a tech
 		if (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleHighProduction().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 3)
 		{
+			// Put tech function here instead
 			getTech = true;
 		}
 
@@ -54,6 +56,14 @@ void BuildOrderTrackerClass::updateDecision()
 			{
 				opening = 4;
 			}
+		}
+		if (Strategy().isRush())
+		{
+			opening = 4;
+		}
+		if (Broodwar->mapFileName().find("Alchemist") != Broodwar->mapName().npos)
+		{
+			opening = 5; // Aka fuck you I'm 9/9 gating because this map is fucking stupid
 		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
@@ -111,8 +121,8 @@ void BuildOrderTrackerClass::protossOpener()
 		{
 			buildingDesired[UnitTypes::Protoss_Forge] = Units().getSupply() >= 18;
 			buildingDesired[UnitTypes::Protoss_Nexus] = 1 + (Units().getSupply() >= 28);
-			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24);
-			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 30) + (Units().getSupply() >= 46);
+			buildingDesired[UnitTypes::Protoss_Photon_Cannon] = (Units().getSupply() >= 22) + (Units().getSupply() >= 24) + (Units().getSupply() >= 30);
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 32) + (Units().getSupply() >= 46);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 36;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Units().getSupply() >= 42;
 		}
@@ -140,6 +150,14 @@ void BuildOrderTrackerClass::protossOpener()
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;
 			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 4;
 		}
+		// 9/9 Gates
+		else if (opening == 5)
+		{
+			buildingDesired[UnitTypes::Protoss_Nexus] = 1;
+			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 18) * 2;
+			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;
+			buildingDesired[UnitTypes::Protoss_Cybernetics_Core] = Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Zealot) >= 6;
+		}
 	}
 	return;
 }
@@ -154,30 +172,30 @@ void BuildOrderTrackerClass::protossTech()
 		// PvT Tech
 		if (Strategy().getNumberTerran() > 0)
 		{
-			if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] > Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter])
+			if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] > Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) == 0)
 			{
 				techUnit = UnitTypes::Protoss_Reaver;
 			}
-			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] <= Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter])
+			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] <= Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) == 0)
 			{
 				techUnit = UnitTypes::Protoss_Arbiter;
 			}
-		/*	else
+			else
 			{
-				techUnit = UnitTypes::Protoss_Carrier;
-			}*/
+				//optional 3rd tech here? (maybe carrier switch)
+			}
 		}
 
 		// PvZ Tech
 		else if (Strategy().getNumberZerg() > 0)
 		{
-			if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] > Strategy().getUnitScore()[UnitTypes::Protoss_High_Templar])
+			if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] > Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) >= 1)
 			{
 				techUnit = UnitTypes::Protoss_Corsair;
 			}
-			else
+			else if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] <= Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate) >= 1)
 			{
-				techUnit = UnitTypes::Protoss_High_Templar;
+				techUnit = UnitTypes::Protoss_Reaver;
 			}
 		}
 

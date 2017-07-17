@@ -35,6 +35,9 @@ public:
 	void getLocalCalculation(UnitInfo&);
 	void updateGlobalCalculations();
 
+	// One shot storage
+	void storeUnit(Unit);
+
 	// Returns the global strategy
 	int getGlobalStrategy() { return globalStrategy; }
 

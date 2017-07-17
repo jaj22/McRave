@@ -4,7 +4,6 @@ void ProductionTrackerClass::update()
 {
 	Display().startClock();
 	updateReservedResources();
-	updatePriorities();
 	updateProtoss();
 	updateTerran();
 	updateZerg();
@@ -12,8 +11,23 @@ void ProductionTrackerClass::update()
 	return;
 }
 
-void ProductionTrackerClass::updatePriorities()
+bool ProductionTrackerClass::canAfford(UnitType unit)
 {
+	if (unit == UnitTypes::Protoss_Dragoon || unit == UnitTypes::Protoss_Zealot)
+	{
+		if (Broodwar->self()->minerals() >= unit.mineralPrice() + reservedMineral + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= unit.gasPrice() + reservedGas + Buildings().getQueuedGas())
+		{
+			return true;
+		}
+	}
+	else
+	{
+		if (Broodwar->self()->minerals() >= unit.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= unit.gasPrice() + Buildings().getQueuedGas())
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 void ProductionTrackerClass::updateReservedResources()
@@ -40,8 +54,8 @@ void ProductionTrackerClass::updateReservedResources()
 
 void ProductionTrackerClass::updateProtoss()
 {
-	// Gateway saturation
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus)))
+	// Gateway saturation - max of 12 so the bot can exceed 4 bases
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= min(12, (2 * Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Nexus))))
 	{
 		gateSat = true;
 	}
@@ -61,22 +75,34 @@ void ProductionTrackerClass::updateProtoss()
 			{
 				for (auto &unit : building.getType().buildsWhat())
 				{
+					if (Strategy().getUnitScore()[unit] > highestPriority)
+					{
+						highestPriority = Strategy().getUnitScore()[unit];
+						highestType = unit;
+					}
 					// Setup a high/med/low priority for units and reserved minerals
 					// Make a function that checks for canBuild first (tech requirements)
-					// If canBuild is true, check to see the priority of the unit based on its score and whether we can afford it
-					// Store the highest priority unit
+					//	-- After rethinking this, storing "unlock" for a type is probably best
+				}
+
+				if (canAfford(highestType))
+				{
+					building.unit()->train(highestType);
 				}
 				// If a unit is desired and we can afford it, train it, else, emplace
+
 
 				for (auto &research : building.getType().researchesWhat())
 				{
 					// Researches
 				}
 
+
 				for (auto &upgrade : building.getType().upgradesWhat())
 				{
 					// Upgrades
 				}
+
 			}
 		}
 	}
@@ -226,7 +252,7 @@ void ProductionTrackerClass::updateProtoss()
 					}
 				}
 				// Only build corsairs against Zerg
-				if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Corsair) < 5)
+				if (Broodwar->enemy()->getRace() == Races::Zerg && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Corsair) < 6)
 				{
 					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Corsair.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Corsair.gasPrice() + Buildings().getQueuedGas())
 					{
@@ -238,34 +264,34 @@ void ProductionTrackerClass::updateProtoss()
 			// Robotics Facility
 			else if (building.getType() == UnitTypes::Protoss_Robotics_Facility)
 			{
-				// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
-				if (Strategy().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
-				{
-					if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0)
-					{
-						if (building.unit()->isTraining())
-						{
-							for (auto &unit : building.unit()->getTrainingQueue())
-							{
-								if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
-								{
-									building.unit()->cancelTrain();
-								}
-							}
-						}
+				//// If detection is absolutely needed, cancel anything in queue and get the Observer immediately
+				//if (Strategy().needDetection() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observer) == 0)
+				//{
+				//	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0)
+				//	{
+				//		if (building.unit()->isTraining())
+				//		{
+				//			for (auto &unit : building.unit()->getTrainingQueue())
+				//			{
+				//				if (unit == UnitTypes::Protoss_Reaver || unit == UnitTypes::Protoss_Shuttle)
+				//				{
+				//					building.unit()->cancelTrain();
+				//				}
+				//			}
+				//		}
 
-						if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
-						{
-							building.unit()->train(UnitTypes::Protoss_Observer);
-							idleHighProduction.erase(building.unit());
-							return;
-						}
-						else
-						{
-							idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
-						}
-					}
-				}
+				//		if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Observer.mineralPrice() && Broodwar->self()->gas() >= UnitTypes::Protoss_Observer.gasPrice())
+				//		{
+				//			building.unit()->train(UnitTypes::Protoss_Observer);
+				//			idleHighProduction.erase(building.unit());
+				//			return;
+				//		}
+				//		else
+				//		{
+				//			idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Observer);
+				//		}
+				//	}
+				//}
 
 				// If we need an Observer
 				if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Observer) < (floor(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 3) + 1))
@@ -283,20 +309,20 @@ void ProductionTrackerClass::updateProtoss()
 					}
 				}
 
-				// If we need a Shuttle
-				else if ((Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 2 > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle)) || (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) <= 0))
-				{
-					// If we can afford a Shuttle, train, otherwise, add to priority
-					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + Buildings().getQueuedMineral())
-					{
-						building.unit()->train(UnitTypes::Protoss_Shuttle);
-						idleHighProduction.erase(building.unit());
-					}
-					else
-					{
-						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Shuttle);
-					}
-				}
+				//// If we need a Shuttle
+				//else if ((Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) / 2 > Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle)) || (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Shuttle) <= 0))
+				//{
+				//	// If we can afford a Shuttle, train, otherwise, add to priority
+				//	if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Shuttle.mineralPrice() + Buildings().getQueuedMineral())
+				//	{
+				//		building.unit()->train(UnitTypes::Protoss_Shuttle);
+				//		idleHighProduction.erase(building.unit());
+				//	}
+				//	else
+				//	{
+				//		idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Shuttle);
+				//	}
+				//}
 
 				// If we need a Reaver			
 				else if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) > 0 && Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver) < 10)

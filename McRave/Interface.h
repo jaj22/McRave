@@ -7,9 +7,9 @@ using namespace std;
 
 class InterfaceTrackerClass
 {
-	clock_t globalClock;
+	chrono::steady_clock::time_point start;
 	int screenOffset = 0;
-	map <string, clock_t> myTest;
+	map <string, double> myTest;
 	bool debugging = false;
 public:
 	void update();

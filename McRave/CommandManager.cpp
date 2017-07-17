@@ -134,7 +134,7 @@ void CommandTrackerClass::attackMove(UnitInfo& unit)
 			}
 			return;
 		}
-	}	
+	}
 
 	// Else attack a random base location
 	else
@@ -293,17 +293,17 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 	int offset = int(unit.getSpeed()) / 8;
 
 	// Specific High Templar flee
-	/*if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(unit.getWalkPosition()) > 0.0))
+	if (unit.getType() == UnitTypes::Protoss_High_Templar && (unit.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(unit.getWalkPosition()) > 0.0))
 	{
-	for (auto templar : SpecialUnits().getMyTemplars())
-	{
-	if (templar.second.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(templar.second.getWalkPosition()) > 0.0)
-	{
-	unit.unit()->useTech(TechTypes::Archon_Warp, templar.second.unit());
-	return;
+		for (auto templar : SpecialUnits().getMyTemplars())
+		{
+			if (templar.second.unit() && templar.second.unit()->exists() && (templar.second.unit()->getEnergy() < 75 || Grids().getEGroundDistanceGrid(templar.second.getWalkPosition()) > 0.0))
+			{
+				unit.unit()->useTech(TechTypes::Archon_Warp, templar.second.unit());
+				return;
+			}
+		}
 	}
-	}
-	}*/
 
 	// Search a circle around the target based on the speed of the unit in one second of game time
 	for (int x = start.x - 20; x <= start.x + 20 + (unit.getType().tileWidth() * 4); x++)
@@ -314,24 +314,23 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 			{
 				continue;
 			}
-			if (unit.getPosition().getDistance(Position(WalkPosition(x, y))) < 80)
+
+			if (unit.getType() == UnitTypes::Protoss_Dragoon && Grids().getResourceGrid(x / 4, y / 4) > 0)
 			{
-				if (unit.getType() == UnitTypes::Protoss_Dragoon && Grids().getResourceGrid(x / 4, y / 4) > 0)
-				{
-					continue;
-				}
-
-				double mobility = double(Grids().getMobilityGrid(x, y));
-				double threat = Grids().getEGroundGrid(x, y);
-				double distance = Grids().getEGroundDistanceGrid(x, y);
-				double distanceHome = double(pow(Grids().getDistanceHome(x, y), 0.1));
-
-				if ((mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility && Util().isSafe(start, WalkPosition(x, y), unit.getType(), false, false, true))
-				{
-					highestMobility = (mobility / (1.0 + (distance * threat))) / distanceHome;
-					finalPosition = WalkPosition(x, y);
-				}
+				continue;
 			}
+
+			double mobility = double(Grids().getMobilityGrid(x, y));
+			double threat = Grids().getEGroundGrid(x, y);
+			double distance = Grids().getEGroundDistanceGrid(x, y);
+			double distanceHome = double(pow(Grids().getDistanceHome(x, y), 0.1));
+
+			if ((mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility && Util().isSafe(start, WalkPosition(x, y), unit.getType(), false, false, true))
+			{
+				highestMobility = (mobility / (1.0 + (distance * threat))) / distanceHome;
+				finalPosition = WalkPosition(x, y);
+			}
+
 		}
 	}
 
@@ -403,7 +402,7 @@ void CommandTrackerClass::defend(UnitInfo& unit)
 		if ((unit.unit()->getOrderTargetPosition() != Position(bestPosition) || unit.unit()->getLastCommand().getType() != UnitCommandTypes::Move || unit.unit()->isStuck()))
 		{
 			unit.unit()->move(Position(bestPosition));
-		}		
+		}
 		unit.setTargetPosition(Position(bestPosition));
 		Grids().updateAllyMovement(unit.unit(), bestPosition);
 	}

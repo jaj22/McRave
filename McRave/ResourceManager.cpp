@@ -33,7 +33,7 @@ void ResourceTrackerClass::updateResources()
 			g.second.setUnitType(g.first->getType());
 			g.second.setRemainingResources(g.first->getResources());
 		}
-		if (g.second.getGathererCount() < 3 && g.second.getType() != UnitTypes::Resource_Vespene_Geyser)
+		if (g.second.getGathererCount() < 3 && g.second.getType() != UnitTypes::Resource_Vespene_Geyser && g.second.unit()->isCompleted())
 		{
 			gasNeeded = 3 - g.second.getGathererCount();
 			gasSat = false;
@@ -53,6 +53,7 @@ void ResourceTrackerClass::storeMineral(Unit resource)
 	myMinerals[resource].setPosition(resource->getPosition());
 	myMinerals[resource].setWalkPosition(Util().getWalkPosition(resource));
 	myMinerals[resource].setTilePosition(resource->getTilePosition());
+	Grids().updateResourceGrid(myMinerals[resource]);
 	return;
 }
 
@@ -66,6 +67,7 @@ void ResourceTrackerClass::storeGas(Unit resource)
 	myGas[resource].setPosition(resource->getPosition());
 	myGas[resource].setWalkPosition(Util().getWalkPosition(resource));
 	myGas[resource].setTilePosition(resource->getTilePosition());
+	Grids().updateResourceGrid(myGas[resource]);
 	return;
 }
 
@@ -79,6 +81,7 @@ void ResourceTrackerClass::storeBoulder(Unit resource)
 	myBoulders[resource].setPosition(resource->getPosition());
 	myBoulders[resource].setWalkPosition(Util().getWalkPosition(resource));
 	myBoulders[resource].setTilePosition(resource->getTilePosition());
+	Grids().updateResourceGrid(myBoulders[resource]);
 	return;
 }
 
@@ -87,14 +90,18 @@ void ResourceTrackerClass::removeResource(Unit resource)
 	// Remove dead resources
 	if (myMinerals.find(resource) != myMinerals.end())
 	{
-		myMinerals.erase(resource);		
+		Grids().updateResourceGrid(myMinerals[resource]);
+		myMinerals.erase(resource);	
+		
 	}
 	else if (myGas.find(resource) != myGas.end())
 	{
-		myGas.erase(resource);
+		Grids().updateResourceGrid(myGas[resource]);
+		myGas.erase(resource);		
 	}
 	else if (myBoulders.find(resource) != myBoulders.end())
 	{
+		Grids().updateResourceGrid(myBoulders[resource]);
 		myBoulders.erase(resource);
 	}
 

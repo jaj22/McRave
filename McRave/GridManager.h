@@ -5,6 +5,13 @@
 using namespace BWAPI;
 using namespace std;
 
+struct myHash {
+	template <int scale>
+	size_t operator()(const BWAPI::Point<int, scale> &p) const {
+		return std::hash <int>()(p.x << 16 | p.y);
+	}
+};
+
 class GridTrackerClass
 {
 	// Ally grids
@@ -40,6 +47,12 @@ class GridTrackerClass
 	int arbiterGrid[1024][1024];
 	int templarGrid[256][256];
 
+	unordered_set<TilePosition, myHash> resetTiles;
+	unordered_set<WalkPosition, myHash> resetWalks;
+
+	//set<TilePosition> resetTiles;
+	//set<WalkPosition> resetWalks;
+
 	// Other
 	bool distanceAnalysis = false;
 	bool mobilityAnalysis = false;
@@ -59,6 +72,12 @@ public:
 	void updateReservedLocation(UnitType, TilePosition);
 	void updateGroundDistanceGrid();
 	bool isAnalyzed() { return distanceAnalysis; }
+
+	// Updates a resource if it is destroyed or removed from my control
+	void updateResourceGrid(ResourceInfo&);
+
+	// Updates a building if it is destroyed or completed
+	void updateBuildingGrid(BuildingInfo&);
 
 	// Returns the number of allied ground and air units within range of most area of effect abilities
 	int getACluster(int x, int y) { return aClusterGrid[x][y]; }
