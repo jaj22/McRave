@@ -14,11 +14,12 @@ void ResourceTrackerClass::updateResources()
 	minSat = true;
 	for (auto &m : myMinerals)
 	{
-		if (m.first->exists())
+		ResourceInfo& resource = m.second;
+		if (resource.unit()->exists())
 		{
-			m.second.setRemainingResources(m.first->getResources());
+			resource.setRemainingResources(resource.unit()->getResources());
 		}
-		if (minSat && m.second.getGathererCount() < 2)
+		if (minSat && resource.getGathererCount() < 2)
 		{
 			minSat = false;
 		}
@@ -37,51 +38,72 @@ void ResourceTrackerClass::updateResources()
 		{
 			gasNeeded = 3 - g.second.getGathererCount();
 			gasSat = false;
-			break;
 		}
 	}
 	return;
 }
 
+void ResourceTrackerClass::storeResource(Unit resource)
+{
+	if (resource->getInitialResources() > 0)
+	{
+		if (resource->getType().isMineralField())
+		{
+			storeMineral(resource);
+		}
+		else
+		{
+			storeGas(resource);
+		}
+	}
+	else
+	{
+		storeBoulder(resource);
+	}
+}
+
 void ResourceTrackerClass::storeMineral(Unit resource)
-{	
-	myMinerals[resource].setGathererCount(0);
-	myMinerals[resource].setRemainingResources(resource->getResources());
-	myMinerals[resource].setUnit(resource);
-	myMinerals[resource].setClosestBase(resource->getClosestUnit(Filter::IsAlly && Filter::IsResourceDepot));
-	myMinerals[resource].setUnitType(resource->getType());
-	myMinerals[resource].setPosition(resource->getPosition());
-	myMinerals[resource].setWalkPosition(Util().getWalkPosition(resource));
-	myMinerals[resource].setTilePosition(resource->getTilePosition());
-	Grids().updateResourceGrid(myMinerals[resource]);
+{
+	ResourceInfo& m = myMinerals[resource];
+	m.setGathererCount(0);
+	m.setRemainingResources(resource->getResources());
+	m.setUnit(resource);
+	m.setResourceClusterPosition(resourceClusterCenter(resource));
+	m.setClosestBasePosition(Terrain().getClosestBaseCenter(resource));
+	m.setUnitType(resource->getType());
+	m.setPosition(resource->getPosition());
+	m.setWalkPosition(Util().getWalkPosition(resource));
+	m.setTilePosition(resource->getTilePosition());
+	Grids().updateResourceGrid(m);
 	return;
 }
 
 void ResourceTrackerClass::storeGas(Unit resource)
 {
-	myGas[resource].setGathererCount(0);
-	myGas[resource].setRemainingResources(resource->getResources());
-	myGas[resource].setUnit(resource);
-	myGas[resource].setClosestBase(resource->getClosestUnit(Filter::IsAlly && Filter::IsResourceDepot));
-	myGas[resource].setUnitType(resource->getType());
-	myGas[resource].setPosition(resource->getPosition());
-	myGas[resource].setWalkPosition(Util().getWalkPosition(resource));
-	myGas[resource].setTilePosition(resource->getTilePosition());
-	Grids().updateResourceGrid(myGas[resource]);
+	ResourceInfo& g = myGas[resource];
+	g.setGathererCount(0);
+	g.setRemainingResources(resource->getResources());
+	g.setUnit(resource);
+	g.setResourceClusterPosition(resourceClusterCenter(resource));
+	g.setClosestBasePosition(Terrain().getClosestBaseCenter(resource));
+	g.setUnitType(resource->getType());
+	g.setPosition(resource->getPosition());
+	g.setWalkPosition(Util().getWalkPosition(resource));
+	g.setTilePosition(resource->getTilePosition());
+	Grids().updateResourceGrid(g);
 	return;
 }
 
 void ResourceTrackerClass::storeBoulder(Unit resource)
 {
-	myBoulders[resource].setGathererCount(0);
-	myBoulders[resource].setRemainingResources(resource->getResources());
-	myBoulders[resource].setUnit(resource);
-	myBoulders[resource].setClosestBase(resource->getClosestUnit(Filter::IsAlly && Filter::IsResourceDepot));
-	myBoulders[resource].setUnitType(resource->getType());
-	myBoulders[resource].setPosition(resource->getPosition());
-	myBoulders[resource].setWalkPosition(Util().getWalkPosition(resource));
-	myBoulders[resource].setTilePosition(resource->getTilePosition());
-	Grids().updateResourceGrid(myBoulders[resource]);
+	ResourceInfo& b = myBoulders[resource];
+	b.setGathererCount(0);
+	b.setRemainingResources(resource->getResources());
+	b.setUnit(resource);
+	b.setUnitType(resource->getType());
+	b.setPosition(resource->getPosition());
+	b.setWalkPosition(Util().getWalkPosition(resource));
+	b.setTilePosition(resource->getTilePosition());
 	return;
 }
 
@@ -91,13 +113,13 @@ void ResourceTrackerClass::removeResource(Unit resource)
 	if (myMinerals.find(resource) != myMinerals.end())
 	{
 		Grids().updateResourceGrid(myMinerals[resource]);
-		myMinerals.erase(resource);	
-		
+		myMinerals.erase(resource);
+
 	}
 	else if (myGas.find(resource) != myGas.end())
 	{
 		Grids().updateResourceGrid(myGas[resource]);
-		myGas.erase(resource);		
+		myGas.erase(resource);
 	}
 	else if (myBoulders.find(resource) != myBoulders.end())
 	{
@@ -114,4 +136,27 @@ void ResourceTrackerClass::removeResource(Unit resource)
 		}
 	}
 	return;
+}
+
+Position ResourceTrackerClass::resourceClusterCenter(Unit resource)
+{
+	// Get average of minerals	
+	int avgX = 0, avgY = 0, size = 0;
+	for (auto &m : Broodwar->getUnitsInRadius(resource->getPosition(), 320, Filter::IsMineralField))
+	{
+		avgX = avgX + m->getPosition().x;
+		avgY = avgY + m->getPosition().y;
+		size++;
+	}
+	Position base = Terrain().getClosestBaseCenter(resource);
+
+	if (size == 0 || !base.isValid())
+	{
+		return Positions::None;
+	}
+
+	avgX = avgX / size;
+	avgY = avgY / size;
+
+	return (Position(avgX, avgY) + base) / 2;
 }

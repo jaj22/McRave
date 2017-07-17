@@ -11,6 +11,7 @@ class ResourceTrackerClass
 	map <Unit, ResourceInfo> myMinerals;
 	map <Unit, ResourceInfo> myGas;
 	map <Unit, ResourceInfo> myBoulders;
+	set <Position> myMineralLines;
 	bool minSat, gasSat;
 	int gasNeeded;
 public:
@@ -21,11 +22,13 @@ public:
 	
 	void update();
 	void updateResources();
+	void storeResource(Unit);
 	void storeMineral(Unit);
 	void storeGas(Unit);
 	void storeBoulder(Unit);
 	void removeResource(Unit);
 
+	Position resourceClusterCenter(Unit);
 
 	int getGasNeeded() { return gasNeeded; }
 	bool isMinSaturated() { return minSat; }

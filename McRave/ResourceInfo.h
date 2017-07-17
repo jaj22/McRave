@@ -8,11 +8,12 @@ class ResourceInfo
 {
 private:
 	int gathererCount, remainingResources;
-	Unit storedUnit, base;
+	Unit storedUnit;
 	UnitType unitType;
-	Position position;
+	Position position, resourceClusterPosition, baseCenter;
 	TilePosition tilePosition;
-	WalkPosition walkPosition;	
+	WalkPosition walkPosition;
+
 public:
 	ResourceInfo();
 	~ResourceInfo();
@@ -21,21 +22,23 @@ public:
 	int getRemainingResources() { return remainingResources; }
 
 	Unit unit() { return storedUnit; }
-	Unit getClosestBase() { return base; }
 	UnitType getType() { return unitType; }
 
 	Position getPosition() { return position; }
-	WalkPosition getWalkPosition() { return walkPosition; }
+	Position getResourceClusterPosition() { return resourceClusterPosition; }
+	Position getClosestBasePosition() { return baseCenter; }
+	WalkPosition getWalkPosition() { return walkPosition; }	
 	TilePosition getTilePosition() { return tilePosition; }
 
 	void setGathererCount(int newGathererCount) { gathererCount = newGathererCount; }
 	void setRemainingResources(int newRemainingResources) { remainingResources = newRemainingResources; }
 
 	void setUnit(Unit newUnit) { storedUnit = newUnit; }
-	void setClosestBase(Unit newBase) { base = newBase; }
 	void setUnitType(UnitType newType) { unitType = newType; }
 
 	void setPosition(Position newPosition) { position = newPosition; }
-	void setWalkPosition(WalkPosition newPosition) { walkPosition = newPosition; }
+	void setResourceClusterPosition(Position newPosition) { resourceClusterPosition = newPosition; }
+	void setClosestBasePosition(Position newPosition) { baseCenter = newPosition; }
+	void setWalkPosition(WalkPosition newPosition) { walkPosition = newPosition; }	
 	void setTilePosition(TilePosition newTilePosition) { tilePosition = newTilePosition; }
 };

@@ -1,17 +1,13 @@
 #include "McRave.h"
 
 void PylonTrackerClass::storePylon(Unit unit)
-{	
-	storePower(unit);
+{
+	updatePower(unit);
 	return;
 }
 
-void PylonTrackerClass::storePower(Unit unit)
+void PylonTrackerClass::updatePower(Unit unit)
 {
-	if (!unit || !unit->exists() || !unit->isCompleted())
-	{
-		return;
-	}
 	TilePosition pylonTile = unit->getTilePosition();
 	for (int x = 0; x <= 15; x++)
 	{
@@ -81,18 +77,40 @@ void PylonTrackerClass::storePower(Unit unit)
 
 			if (inRangeSmall)
 			{
-				smallLocations[tile] = 1;
+				if (unit->exists())
+				{
+					smallLocations[tile] += 1;
+				}
+				else
+				{
+					smallLocations[tile] -= 1;
+				}
 			}
 
 			if (inRangeMedium)
 			{
-				mediumLocations[tile] = 1;
+				if (unit->exists())
+				{
+					mediumLocations[tile] += 1;
+				}
+				else
+				{
+					mediumLocations[tile] -= 1;
+				}
 			}
 
 			if (inRangeLarge)
 			{
-				largeLocations[tile] = 1;
+				if (unit->exists())
+				{
+					largeLocations[tile] += 1;
+				}
+				else
+				{
+					largeLocations[tile] -= 1;
+				}
 			}
+
 		}
 	}
 	return;

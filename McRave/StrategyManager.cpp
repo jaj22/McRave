@@ -15,7 +15,7 @@ void StrategyTrackerClass::updateAlly()
 	// Reset
 	globalEnemyStrength = 0.0;
 	globalAllyStrength = 0.0;
-	allyDefense = 0.0;
+	//allyDefense = 0.0;
 	enemyDefense = 0.0;
 
 	// Check through all alive units or units dead within 500 frames
@@ -24,11 +24,18 @@ void StrategyTrackerClass::updateAlly()
 		// If deadframe is 0, unit is alive still
 		if (u.second.unit() && u.second.getDeadFrame() == 0)
 		{
-			// Strength based calculations ignore workers and buildings
-			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
+			// Strength based calculations
+			if (!u.second.getType().isBuilding())
 			{
-				// Add strength				
-				globalAllyStrength += max(u.second.getVisibleGroundStrength(), u.second.getVisibleAirStrength());
+				// If a recall happened recently, cause units to enrage
+				if (Broodwar->getFrameCount() - recallFrame < 1000 && Strategy().getRecallFrame() > 0)
+				{
+					globalAllyStrength += 20.0 * max(u.second.getVisibleGroundStrength(), u.second.getVisibleAirStrength());
+				}
+				else
+				{
+					globalAllyStrength += max(u.second.getVisibleGroundStrength(), u.second.getVisibleAirStrength());
+				}
 
 				// Set last command frame
 				if (u.first->isAttackFrame())
@@ -108,12 +115,11 @@ void StrategyTrackerClass::updateEnemy()
 			// Strength based calculations ignore workers and buildings
 			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
 			{
-				// Add strength	
 				globalEnemyStrength += max(u.second.getVisibleGroundStrength(), u.second.getVisibleAirStrength());
 			}
 			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
 			{
-				enemyDefense += u.second.getVisibleGroundStrength(); 
+				enemyDefense += u.second.getVisibleGroundStrength();
 
 			}
 		}
@@ -194,12 +200,6 @@ void StrategyTrackerClass::protossStrategy()
 			rush = false;
 		}
 
-		// If we are being 4/5 pooled, make a shield battery
-		if (eZerg > 0 && enemyComposition[UnitTypes::Zerg_Zergling] >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
-		{
-			//rush = true;
-		}
-
 		// If we are being BBS'd, unlock Zealots
 		if (eTerran > 0)
 		{
@@ -253,6 +253,12 @@ void StrategyTrackerClass::terranStrategy()
 	else
 	{
 		holdRamp = true;
+	}
+
+	// If we are being 4/5 pooled
+	if (eZerg > 0 && enemyComposition[UnitTypes::Zerg_Zergling] >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
+	{
+		rush = true;
 	}
 }
 

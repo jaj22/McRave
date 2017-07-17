@@ -7,13 +7,25 @@
 #include "McRave.h"
 
 // --- AUTHOR NOTES ---
-// TODO in testing before CIG 2017:
-// Test size/damage type
-// Melee unit bouncing - trying min TTT of 2.0 seconds
-// Anti-stone check
-// Worker pull with FFE
+// TODO in testing before AIIDE 2017:
 
-// TODO in testing after CIG 2017:
+// OPTIMIZATION:
+// One shot grid updating and minimizing grid iterations - Testing
+// Move update of units in StrategyManager to UnitManager - Testing
+// Static defense needs a new method
+
+// Edge Cases:
+// onUnitMorph - Archons, Eggs, Refineries
+
+// Ready for Testing:
+// Test Recall!
+// Test size/damage type
+// Anti-stone check
+
+// Other:
+// Melee unit bouncing - trying min TTT of 2.0 seconds
+// Worker pull with FFE
+// Cannons stored in buildinginfo defense map
 // Use global ally / globaly enemy as local latching
 // Archon merging
 // Spider mine removal from expansions
@@ -26,14 +38,12 @@
 
 // TODO:
 // Remove exists check from target aquisition?
-// Move update of units in StrategyManager to UnitManager (less iterations)
 // IsSelected to display information
 // Move special units into their own area, separate command manager
 // Make target position stuff based on units current command target position
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
-// One time increases: supply, sizes
 // Player class to track upgrades/race/supply/strength
 
 // TODO to move to no latency compensation:
@@ -113,23 +123,18 @@ void McRaveModule::onUnitHide(BWAPI::Unit unit)
 
 void McRaveModule::onUnitCreate(BWAPI::Unit unit)
 {
-	Buildings().storeBuilding(unit);
+	Units().onUnitCreate(unit);
 }
 
 void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 {
-	Bases().removeBase(unit);
 	Units().removeUnit(unit);
-	Buildings().removeBuilding(unit);
-	SpecialUnits().removeUnit(unit);
-	Workers().removeWorker(unit);
-	Resources().removeResource(unit);
 	Terrain().removeTerritory(unit);
 }
 
 void McRaveModule::onUnitMorph(BWAPI::Unit unit)
 {
-	Buildings().storeBuilding(unit);
+	Units().onUnitMorph(unit);
 }
 
 void McRaveModule::onUnitRenegade(BWAPI::Unit unit)
@@ -142,5 +147,5 @@ void McRaveModule::onSaveGame(std::string gameName)
 
 void McRaveModule::onUnitComplete(BWAPI::Unit unit)
 {
-	Units().storeUnit(unit);
+	Units().onUnitComplete(unit);
 }

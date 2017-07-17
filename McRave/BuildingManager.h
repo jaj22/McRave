@@ -11,13 +11,9 @@ class BuildingTrackerClass
 	int queuedMineral, queuedGas;
 	map <UnitType, int> buildingsQueued;
 	map <Unit, BuildingInfo> myBuildings;
-	map <Unit, BuildingInfo> myBatteries;
-	map <Unit, BuildingInfo> myBunkers;
 	int errorTime = 0, buildingOffset = 0;
 public:
 	map <Unit, BuildingInfo>& getMyBuildings() { return myBuildings; }
-	map <Unit, BuildingInfo>& getMyBatteries() { return myBatteries; }
-	map <Unit, BuildingInfo>& getMyBunkers() { return myBunkers; }
 	map <UnitType, int>& getbuildingsQueued() { return buildingsQueued; }
 	TilePosition getBuildLocation(UnitType);
 	TilePosition getBuildLocationNear(UnitType, TilePosition, bool);
@@ -30,6 +26,7 @@ public:
 	int getQueuedGas() { return queuedGas; }
 
 	void update();
+	void updateBuildings();
 	void queueBuildings();
 	void constructBuildings();
 	void storeBuilding(Unit);

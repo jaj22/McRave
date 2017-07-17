@@ -14,22 +14,68 @@ void SpecialUnitTrackerClass::updateArbiters()
 {
 	for (auto &u : myArbiters)
 	{
-		// Move towards high cluster counts and closest to ally starting position
+		u.second.setPosition(u.second.unit()->getPosition());
+		u.second.setWalkPosition(Util().getWalkPosition(u.second.unit()));
+		if (Broodwar->self()->hasResearched(TechTypes::Recall) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter) > 1 && u.second.unit()->getEnergy() > 100 && (!recaller || (recaller && !recaller->exists())))
+		{
+			recaller = u.second.unit();
+		}
+
 		int bestCluster = 0;
 		double closestD = 0.0;
 		Position bestPosition = Grids().getArmyCenter();
 		WalkPosition start = u.second.getWalkPosition();
-		for (int x = start.x - 20; x <= start.x + 20; x++)
+
+		if (recaller && u.second.unit()->getEnergy() > 100)
 		{
-			for (int y = start.y - 20; y <= start.y + 20; y++)
+			if (u.second.unit()->getDistance(Terrain().getPlayerStartingPosition()) > 320 && Grids().getStasisCluster(u.second.getWalkPosition()) < 4)
 			{
-				if (WalkPosition(x, y).isValid() && Grids().getArbiterGrid(x, y) == 0 && (closestD == 0.0 || Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
+				// Move towards areas with no threat close to enemy starting position
+				for (int x = start.x - 20; x <= start.x + 20; x++)
 				{
-					if (Util().isSafe(start, WalkPosition(x, y), UnitTypes::Protoss_Arbiter, false, true, false))
+					for (int y = start.y - 20; y <= start.y + 20; y++)
 					{
-						closestD = Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y)));
-						bestCluster = Grids().getACluster(x, y);
-						bestPosition = Position(WalkPosition(x, y));
+						// If the Arbiter finds a tank cluster that is fairly high with little to no air threat, lock in moving there
+						if (WalkPosition(x, y).isValid() && Grids().getStasisCluster(WalkPosition(x, y)) >= 4 && Grids().getEAirDistanceGrid(WalkPosition(x, y)) < 10)
+						{
+							closestD = -1;
+							bestPosition = Position(WalkPosition(x, y));
+						}
+
+						// Else if the Arbiter finds a tile that is no threat and closer to the enemy starting position
+						else if (WalkPosition(x, y).isValid() && (closestD == 0.0 || Terrain().getEnemyStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD))
+						{
+							if (Util().isSafe(start, WalkPosition(x, y), UnitTypes::Protoss_Arbiter, false, true, false))
+							{
+								closestD = Terrain().getEnemyStartingPosition().getDistance(Position(WalkPosition(x, y)));
+								bestPosition = Position(WalkPosition(x, y));
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				recaller->useTech(TechTypes::Recall, Grids().getArmyCenter());
+				Strategy().recallEvent();
+				continue;
+			}
+		}
+		else
+		{
+			// Move towards high cluster counts and closest to ally starting position
+			for (int x = start.x - 20; x <= start.x + 20; x++)
+			{
+				for (int y = start.y - 20; y <= start.y + 20; y++)
+				{
+					if (WalkPosition(x, y).isValid() && Grids().getArbiterGrid(x, y) == 0 && (closestD == 0.0 || Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
+					{
+						if (Util().isSafe(start, WalkPosition(x, y), UnitTypes::Protoss_Arbiter, false, true, false))
+						{
+							closestD = Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y)));
+							bestCluster = Grids().getACluster(x, y);
+							bestPosition = Position(WalkPosition(x, y));
+						}
 					}
 				}
 			}
@@ -53,6 +99,9 @@ void SpecialUnitTrackerClass::updateDetectors()
 {
 	for (auto &u : myDetectors)
 	{
+		u.second.setPosition(u.second.unit()->getPosition());
+		u.second.setWalkPosition(Util().getWalkPosition(u.second.unit()));
+
 		// First check if any expansions need detection on them
 		if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
 		{
@@ -109,6 +158,8 @@ void SpecialUnitTrackerClass::updateReavers()
 		{
 			u.first->train(UnitTypes::Protoss_Scarab);
 		}
+		u.second.setPosition(u.second.unit()->getPosition());
+		u.second.setWalkPosition(Util().getWalkPosition(u.second.unit()));
 	}
 	return;
 }
@@ -117,23 +168,19 @@ void SpecialUnitTrackerClass::storeUnit(Unit unit)
 {
 	if (unit->getType() == UnitTypes::Protoss_Arbiter)
 	{
-		myArbiters[unit].setPosition(unit->getPosition());
-		myArbiters[unit].setWalkPosition(Util().getWalkPosition(unit));
+		myArbiters[unit].setUnit(unit);
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Observer)
 	{
-		myDetectors[unit].setPosition(unit->getPosition());
-		myDetectors[unit].setWalkPosition(Util().getWalkPosition(unit));
+		myDetectors[unit].setUnit(unit);
 	}
 	else if (unit->getType() == UnitTypes::Protoss_High_Templar)
 	{
-		myTemplars[unit].setPosition(unit->getPosition());
-		myTemplars[unit].setWalkPosition(Util().getWalkPosition(unit));
+		myTemplars[unit].setUnit(unit);
 	}
 	else if (unit->getType() == UnitTypes::Protoss_Reaver)
 	{
-		myReavers[unit].setPosition(unit->getPosition());
-		myReavers[unit].setWalkPosition(Util().getWalkPosition(unit));
+		myReavers[unit].setUnit(unit);
 	}
 	return;
 }

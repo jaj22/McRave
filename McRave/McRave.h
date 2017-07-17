@@ -20,6 +20,7 @@ namespace
 #include <ctime>
 #include <chrono>
 
+class BaseInfo;
 class UnitInfo;
 class ResourceInfo;
 

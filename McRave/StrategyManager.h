@@ -19,6 +19,7 @@ class StrategyTrackerClass
 	bool walledOff = false;
 	bool bust = false;
 	bool zealotsLocked = false;
+	double recallFrame = 0.0;
 
 	set <UnitType> lockedType;
 public:
@@ -57,6 +58,9 @@ public:
 
 	// Check if we have locked a unit out of being allowed
 	bool isLocked(UnitType);
+
+	void recallEvent() { recallFrame = Broodwar->getFrameCount(); }
+	double getRecallFrame() { return recallFrame; }
 };
 
 typedef Singleton<StrategyTrackerClass> StrategyTracker;

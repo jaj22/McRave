@@ -13,7 +13,7 @@ class TransportTrackerClass
 public:
 	void update();
 	void updateTransports();
-	void updateCargo(TransportInfo&);
+	void updateInformation(TransportInfo&);
 	void updateDecision(TransportInfo&);
 	void updateMovement(TransportInfo&);
 	void removeUnit(Unit);

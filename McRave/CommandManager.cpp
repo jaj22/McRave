@@ -14,11 +14,6 @@ void CommandTrackerClass::updateAlliedUnits()
 	{
 		UnitInfo unit = u.second;
 
-		if (unit.getType().isBuilding())
-		{
-			continue;
-		}
-
 		// Special units have their own commands
 		if (unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Shuttle)
 		{
@@ -212,11 +207,12 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 	{
 		if (unit.unit()->getLastCommand().getType() != UnitCommandTypes::Right_Click_Unit)
 		{
-			for (auto battery : Buildings().getMyBatteries())
+			for (auto& b : Buildings().getMyBuildings())
 			{
-				if (battery.second.getEnergy() >= 10 && unit.unit()->getDistance(battery.second.getPosition()) < 320)
+				BuildingInfo building = b.second;
+				if (building.getType() == UnitTypes::Protoss_Shield_Battery && building.getEnergy() >= 10 && unit.unit()->getDistance(building.getPosition()) < 320)
 				{
-					unit.unit()->rightClick(battery.second.unit());
+					unit.unit()->rightClick(building.unit());
 					continue;
 				}
 			}

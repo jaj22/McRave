@@ -1,5 +1,11 @@
 #include "McRave.h"
 
+double UtilTrackerClass::getPercentHealth(UnitInfo& unit)
+{
+	// Returns the percent of health for a unit, with higher emphasis on health over shields
+	return double(unit.unit()->getHitPoints() + (unit.unit()->getShields() / 2)) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields() / 2));
+}
+
 double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 {
 	// Some hardcoded values that don't have attacks but should still be considered for strength
@@ -59,7 +65,7 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 	}
 
 	double effectiveness = 1.0;
-	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields() / 2)) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields() / 2));
+	
 
 	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
 	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
@@ -94,9 +100,9 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
-		return 10.0 * unit.getMaxGroundStrength() * effectiveness;
+		return 25.0 * unit.getMaxGroundStrength() * effectiveness;
 	}
-	return hp * unit.getMaxGroundStrength() * effectiveness;
+	return unit.getPercentHealth() * unit.getMaxGroundStrength() * effectiveness;
 }
 
 double UtilTrackerClass::getMaxAirStrength(UnitInfo& unit, Player who)
@@ -174,9 +180,9 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
-		return 10.0 * unit.getMaxAirStrength() * effectiveness;
+		return 25.0 * unit.getMaxAirStrength() * effectiveness;
 	}
-	return hp * unit.getMaxAirStrength() * effectiveness;
+	return unit.getPercentHealth() * unit.getMaxAirStrength() * effectiveness;
 }
 
 double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)

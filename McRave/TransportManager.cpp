@@ -12,15 +12,20 @@ void TransportTrackerClass::updateTransports()
 {
 	for (auto &shuttle : myShuttles)
 	{
-		updateCargo(shuttle.second);
+		updateInformation(shuttle.second);
 		updateDecision(shuttle.second);
 		updateMovement(shuttle.second);
 	}
 	return;
 }
 
-void TransportTrackerClass::updateCargo(TransportInfo& shuttle)
+void TransportTrackerClass::updateInformation(TransportInfo& shuttle)
 {
+	
+	shuttle.setType(shuttle.unit()->getType());
+	shuttle.setPosition(shuttle.unit()->getPosition());
+	shuttle.setWalkPosition(Util().getWalkPosition(shuttle.unit()));
+
 	// Check if the shuttle has space remaining
 	if (shuttle.getCargoSize() < 4)
 	{
@@ -235,7 +240,5 @@ void TransportTrackerClass::removeUnit(Unit unit)
 void TransportTrackerClass::storeUnit(Unit unit)
 {
 	myShuttles[unit].setUnit(unit);
-	myShuttles[unit].setType(unit->getType());
-	myShuttles[unit].setPosition(unit->getPosition());
-	myShuttles[unit].setWalkPosition(Util().getWalkPosition(unit));
+	return;
 }

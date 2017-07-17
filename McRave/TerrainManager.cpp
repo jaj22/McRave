@@ -127,7 +127,7 @@ void TerrainTrackerClass::onStart()
 
 void TerrainTrackerClass::removeTerritory(Unit base)
 {
-	if (base)
+	if (base && base->exists() && base->getType().isResourceDepot())
 	{
 		if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
 		{
@@ -171,7 +171,17 @@ Position TerrainTrackerClass::getClosestEnemyBase(Position here)
 	return closestP;
 }
 
-//Position TerrainTrackerClass::getClosestAllyBase(Position here)
-//{
-//
-//}
+Position TerrainTrackerClass::getClosestBaseCenter(Unit unit)
+{
+	double closestD = 0.0;
+	Position closestB;
+	for (auto base : theMap.GetArea(unit->getTilePosition())->Bases())
+	{
+		if (unit->getDistance(base.Center()) < closestD || closestD == 0.0)
+		{
+			closestD = unit->getDistance(base.Center());
+			closestB = base.Center();
+		}
+	}
+	return closestB;
+}

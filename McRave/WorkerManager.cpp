@@ -13,6 +13,7 @@ void WorkerTrackerClass::updateWorkers()
 {
 	for (auto &worker : myWorkers)
 	{
+		updateInformation(worker.second);
 		updateGathering(worker.second);
 		updateSituational(worker.second);
 	}
@@ -29,6 +30,15 @@ void WorkerTrackerClass::updateScout()
 	return;
 }
 
+void WorkerTrackerClass::updateInformation(WorkerInfo& worker)
+{
+	worker.setPosition(worker.unit()->getPosition());
+	worker.setWalkPosition(Util().getWalkPosition(worker.unit()));
+	worker.setTilePosition(worker.unit()->getTilePosition());
+	return;
+}
+
+
 void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 {
 	WalkPosition start = worker.getWalkPosition();
@@ -37,11 +47,11 @@ void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 
 	Unit closest = worker.unit()->getClosestUnit(Filter::IsEnemy && Filter::CanAttack);
 	if (!closest || (closest && closest->exists() && worker.unit()->getDistance(closest) > 640))
-	{		
+	{
 		worker.unit()->move(Terrain().getEnemyStartingPosition());
 		return;
 	}
-	
+
 	// All walkpositions in a 4x4 walkposition grid are set as scouted already to prevent overlapping
 	for (int x = start.x - 4; x < start.x + 4 + worker.getType().tileWidth() * 4; x++)
 	{
@@ -66,7 +76,7 @@ void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 			if (WalkPosition(x, y).isValid() && Broodwar->getFrameCount() - recentExplorations[WalkPosition(x, y)] > 500 && (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0.0))
 			{
 				if (Util().isSafe(start, WalkPosition(x, y), worker.getType(), true, false, true))
-				{					
+				{
 					bestPosition = Position(WalkPosition(x, y));
 					closestD = Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition());
 				}
@@ -110,7 +120,7 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 			return;
 		}
 	}
-	
+
 	// Reassignment logic
 	if (Resources().getGasNeeded() > 0 && (!Strategy().isRush() || !BuildOrder().isOpener() || Broodwar->self()->getRace() == Races::Terran))
 	{
@@ -180,7 +190,7 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 		}
 	}
 
-	// Bunker logic
+	// Bunker repair logic
 	if (Grids().getBunkerGrid(worker.getTilePosition()) > 0)
 	{
 		Unit bunker = worker.unit()->getClosestUnit(Filter::GetType == UnitTypes::Terran_Bunker && Filter::HP_Percent < 100);
@@ -320,13 +330,7 @@ Unit WorkerTrackerClass::getClosestWorker(Position here)
 
 void WorkerTrackerClass::storeWorker(Unit unit)
 {
-	if (unit->exists())
-	{
-		myWorkers[unit].setUnit(unit);
-		myWorkers[unit].setPosition(unit->getPosition());
-		myWorkers[unit].setWalkPosition(Util().getWalkPosition(unit));
-		myWorkers[unit].setTilePosition(unit->getTilePosition());
-	}
+	myWorkers[unit].setUnit(unit);	
 	return;
 }
 
@@ -345,6 +349,7 @@ void WorkerTrackerClass::removeWorker(Unit worker)
 		deadScoutFrame = Broodwar->getFrameCount();
 	}
 	myWorkers.erase(worker);
+	return;
 }
 
 void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
@@ -386,7 +391,6 @@ void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
 
 void WorkerTrackerClass::reAssignWorker(WorkerInfo& worker)
 {
-
 	if (Resources().getMyGas().find(worker.getResource()) != Resources().getMyGas().end())
 	{
 		Resources().getMyGas()[worker.getResource()].setGathererCount(Resources().getMyGas()[worker.getResource()].getGathererCount() - 1);
@@ -396,4 +400,5 @@ void WorkerTrackerClass::reAssignWorker(WorkerInfo& worker)
 		Resources().getMyMinerals()[worker.getResource()].setGathererCount(Resources().getMyMinerals()[worker.getResource()].getGathererCount() - 1);
 	}
 	assignWorker(worker);
+	return;
 }

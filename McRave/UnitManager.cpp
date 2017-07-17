@@ -10,111 +10,96 @@ void UnitTrackerClass::update()
 	return;
 }
 
-void UnitTrackerClass::storeUnit(Unit unit)
+void UnitTrackerClass::onUnitCreate(Unit unit)
 {
-	if (unit->getType().isMineralField())
+	if (unit->getPlayer() == Broodwar->self())
 	{
-		if (unit->getInitialResources() == 0)
+		// Store supply if it costs supply
+		if (unit->getType().supplyRequired() > 0)
 		{
-			Resources().storeBoulder(unit);
+			supply += unit->getType().supplyRequired();
 		}
-		else
-		{			
-			Resources().storeMineral(unit);
+
+		// Store Buildings, Bases, Pylons
+		if (unit->getType().isResourceDepot())
+		{
+			Bases().storeBase(unit);
+		}
+		else if (unit->getType() == UnitTypes::Protoss_Pylon)
+		{
+			Pylons().storePylon(unit);
+		}
+		else if (unit->getType().isBuilding())
+		{
+			Buildings().storeBuilding(unit);
 		}
 	}
-	if (unit->getType() == UnitTypes::Resource_Vespene_Geyser)
+}
+
+void UnitTrackerClass::onUnitComplete(Unit unit)
+{
+	// Don't need to store Scarabs
+	if (unit->getType() == UnitTypes::Protoss_Scarab)
 	{
-		Resources().storeGas(unit);
+		return;
+	}
+
+	if (unit->getPlayer() == Broodwar->self())
+	{
+		// Store Workers, Units, Bases(update base grid?)
+		if (unit->getType().isWorker())
+		{
+			Workers().storeWorker(unit);
+		}
+
+		if (unit->getType() == UnitTypes::Protoss_Observer || unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_High_Templar || unit->getType() == UnitTypes::Protoss_Arbiter)
+		{
+			SpecialUnits().storeUnit(unit);
+		}
+		else if (unit->getType() == UnitTypes::Protoss_Shuttle)
+		{
+			Transport().storeUnit(unit);
+		}
+
+		if (!unit->getType().isWorker() && !unit->getType().isBuilding())
+		{
+			storeAlly(unit);
+		}
+	}
+	else if (unit->getType().isResourceContainer())
+	{
+		Resources().storeResource(unit);
+	}
+	else if (unit->getPlayer()->isEnemy(Broodwar->self()))
+	{
+		storeEnemy(unit);
+	}
+}
+
+void UnitTrackerClass::onUnitMorph(Unit unit)
+{
+	if (unit->getPlayer() == Broodwar->self())
+	{
+
+	}
+	else if (unit->getPlayer()->isEnemy(Broodwar->self()))
+	{
+		enemyUnits[unit].setUnitType(unit->getType());
 	}
 }
 
 void UnitTrackerClass::updateAliveUnits()
 {
-	// Reset sizes and supply
-	for (auto &size : allySizes)
+	// Update Ally Units
+	for (auto& ally : allyUnits)
 	{
-		size.second = 0;
-	}
-	for (auto &size : enemySizes)
-	{
-		size.second = 0;
-	}
-	supply = 0;
-
-	// Store all allied units
-	for (auto &u : Broodwar->self()->getUnits())
-	{
-		// Don't want to store scarabs or units that don't exist
-		if (u->getType() == UnitTypes::Protoss_Scarab || !u || !u->exists())
-		{
-			continue;
-		}
-
-		// Add supply of this unit if it has one
-		if (u->getType().supplyRequired() > 0)
-		{
-			supply = supply + u->getType().supplyRequired();
-		}
-
-		// Store buildings even if they're not completed
-		if (u->getType().isBuilding())
-		{			
-			if (u->getType().isResourceDepot())
-			{
-				Bases().storeBase(u);
-			}
-			else if (u->getType() == UnitTypes::Protoss_Pylon)
-			{
-				Pylons().storePylon(u);
-			}
-			else if (u->getType() == UnitTypes::Protoss_Shield_Battery)
-			{
-				Buildings().storeBattery(u);
-			}
-			else if (u->getType() == UnitTypes::Protoss_Photon_Cannon)
-			{
-				updateAlly(u);
-			}
-		}
-
-		// Don't want to store units that aren't completed
-		else if (!u->isCompleted())
-		{
-			continue;
-		}
-
-		// Store workers
-		else if (u->getType().isWorker())
-		{
-			Workers().storeWorker(u);
-		}
-		// Store units
-		else
-		{
-			updateAlly(u);
-			if (u->getType() == UnitTypes::Protoss_Observer || u->getType() == UnitTypes::Protoss_Reaver || u->getType() == UnitTypes::Protoss_High_Templar || u->getType() == UnitTypes::Protoss_Arbiter || u->getType() == UnitTypes::Terran_Medic)
-			{
-				SpecialUnits().storeUnit(u);
-			}
-			else if (u->getType() == UnitTypes::Protoss_Shuttle)
-			{
-				Transport().storeUnit(u);
-			}
-		}
+		updateAlly(ally.second);
 	}
 
-	// Store all enemy units
-	for (auto &player : Broodwar->enemies())
+	// Update Enemy Units
+	for (auto& enemy : enemyUnits)
 	{
-		for (auto &u : player->getUnits())
-		{
-			// Store if exists
-			if (u && u->exists())
-			{
-				updateEnemy(u);
-			}
-		}
+		updateEnemy(enemy.second);
 	}
 
 	// TESTING -- Calculate how a unit is performing
@@ -157,7 +142,7 @@ void UnitTrackerClass::updateAliveUnits()
 			}
 			else
 			{
-				unitPerformance[bullet->getSource()->getType()] += bullet->getSource()->getType().airWeapon().damageAmount();
+				unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().airWeapon().damageAmount());
 			}
 		}
 	}
@@ -191,77 +176,87 @@ void UnitTrackerClass::updateDeadUnits()
 	}
 }
 
-void UnitTrackerClass::updateEnemy(Unit unit)
+void UnitTrackerClass::storeEnemy(Unit unit)
 {
-	// Update units
-	auto &u = enemyUnits[unit];
-	auto t = unit->getType();
-	auto p = unit->getPlayer();
-
-	// Update information
-	u.setUnit(unit);
-	u.setUnitType(t);
-	u.setPosition(unit->getPosition());
-	u.setWalkPosition(Util().getWalkPosition(unit));
-	u.setTilePosition(unit->getTilePosition());
-	u.setPlayer(unit->getPlayer());
-
-	// Update statistics
-	u.setGroundRange(Util().getTrueRange(t, p));
-	u.setAirRange(Util().getTrueAirRange(t, p));
-	u.setGroundDamage(Util().getTrueGroundDamage(t, p));
-	u.setAirDamage(Util().getTrueAirDamage(t, p));
-	u.setSpeed(Util().getTrueSpeed(t, p));
-	u.setMinStopFrame(Util().getMinStopFrame(t));
-
-	// Update sizes and strength
-	u.setVisibleGroundStrength(Util().getVisibleGroundStrength(u, p));
-	u.setMaxGroundStrength(Util().getMaxGroundStrength(u, p));
-	u.setVisibleAirStrength(Util().getVisibleAirStrength(u, p));
-	u.setMaxAirStrength(Util().getMaxAirStrength(u, p));
-	u.setPriority(Util().getPriority(u, p));
-	enemySizes[t.size()] += 1;
+	enemyUnits[unit].setUnit(unit);
+	enemySizes[unit->getType().size()] += 1;
 	return;
 }
 
-void UnitTrackerClass::updateAlly(Unit unit)
+void UnitTrackerClass::updateEnemy(UnitInfo& unit)
 {
-	auto &u = allyUnits[unit];
-	auto t = unit->getType();
-	auto p = unit->getPlayer();
+	// Update units
+	auto t = unit.unit()->getType();
+	auto p = unit.unit()->getPlayer();
 
 	// Update information
-	u.setUnit(unit);
-	u.setUnitType(t);
-	u.setPosition(unit->getPosition());
-	u.setTilePosition(unit->getTilePosition());
-	u.setWalkPosition(Util().getWalkPosition(unit));
-	u.setPlayer(unit->getPlayer());
+	unit.setUnitType(t);
+	unit.setPosition(unit.unit()->getPosition());
+	unit.setWalkPosition(Util().getWalkPosition(unit.unit()));
+	unit.setTilePosition(unit.unit()->getTilePosition());
+	unit.setPlayer(unit.unit()->getPlayer());
 
 	// Update statistics
-	u.setGroundRange(Util().getTrueRange(t, p));
-	u.setAirRange(Util().getTrueAirRange(t, p));
-	u.setGroundDamage(Util().getTrueGroundDamage(t, p));
-	u.setAirDamage(Util().getTrueAirDamage(t, p));
-	u.setSpeed(Util().getTrueSpeed(t, p));
-	u.setMinStopFrame(Util().getMinStopFrame(t));
+	unit.setPercentHealth(Util().getPercentHealth(unit));
+	unit.setGroundRange(Util().getTrueRange(t, p));
+	unit.setAirRange(Util().getTrueAirRange(t, p));
+	unit.setGroundDamage(Util().getTrueGroundDamage(t, p));
+	unit.setAirDamage(Util().getTrueAirDamage(t, p));
+	unit.setSpeed(Util().getTrueSpeed(t, p));
+	unit.setMinStopFrame(Util().getMinStopFrame(t));
 
 	// Update sizes and strength
-	u.setVisibleGroundStrength(Util().getVisibleGroundStrength(u, p));
-	u.setMaxGroundStrength(Util().getMaxGroundStrength(u, p));
-	u.setVisibleAirStrength(Util().getVisibleAirStrength(u, p));
-	u.setMaxAirStrength(Util().getMaxAirStrength(u, p));
-	u.setPriority(Util().getPriority(u, p));
-	allySizes[t.size()] += 1;
+	unit.setVisibleGroundStrength(Util().getVisibleGroundStrength(unit, p));
+	unit.setMaxGroundStrength(Util().getMaxGroundStrength(unit, p));
+	unit.setVisibleAirStrength(Util().getVisibleAirStrength(unit, p));
+	unit.setMaxAirStrength(Util().getMaxAirStrength(unit, p));
+	unit.setPriority(Util().getPriority(unit, p));
+	return;
+}
 
-	if (unit->getLastCommand().getTargetPosition().isValid())
+void UnitTrackerClass::storeAlly(Unit unit)
+{
+	allyUnits[unit].setUnit(unit);
+	allySizes[unit->getType().size()] += 1;
+	return;
+}
+
+void UnitTrackerClass::updateAlly(UnitInfo& unit)
+{
+	auto t = unit.unit()->getType();
+	auto p = unit.unit()->getPlayer();
+
+	// Update information	
+	unit.setUnitType(t);
+	unit.setPosition(unit.unit()->getPosition());
+	unit.setTilePosition(unit.unit()->getTilePosition());
+	unit.setWalkPosition(Util().getWalkPosition(unit.unit()));
+	unit.setPlayer(unit.unit()->getPlayer());
+
+	// Update statistics
+	unit.setPercentHealth(Util().getPercentHealth(unit));
+	unit.setGroundRange(Util().getTrueRange(t, p));
+	unit.setAirRange(Util().getTrueAirRange(t, p));
+	unit.setGroundDamage(Util().getTrueGroundDamage(t, p));
+	unit.setAirDamage(Util().getTrueAirDamage(t, p));
+	unit.setSpeed(Util().getTrueSpeed(t, p));
+	unit.setMinStopFrame(Util().getMinStopFrame(t));
+
+	// Update sizes and strength
+	unit.setVisibleGroundStrength(Util().getVisibleGroundStrength(unit, p));
+	unit.setMaxGroundStrength(Util().getMaxGroundStrength(unit, p));
+	unit.setVisibleAirStrength(Util().getVisibleAirStrength(unit, p));
+	unit.setMaxAirStrength(Util().getMaxAirStrength(unit, p));
+	unit.setPriority(Util().getPriority(unit, p));
+
+	if (unit.unit()->getLastCommand().getTargetPosition().isValid())
 	{
-		u.setTargetPosition(unit->getLastCommand().getTargetPosition());
+		unit.setTargetPosition(unit.unit()->getLastCommand().getTargetPosition());
 	}
 
 	// Update calculations
-	u.setTarget(Targets().getTarget(u));
-	getLocalCalculation(u);
+	unit.setTarget(Targets().getTarget(unit));
+	getLocalCalculation(unit);
 	return;
 }
 
@@ -270,11 +265,42 @@ void UnitTrackerClass::removeUnit(Unit unit)
 	if (allyUnits.find(unit) != allyUnits.end())
 	{
 		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
+		allySizes[unit->getType().size()] -= 1;
 	}
 	else if (enemyUnits.find(unit) != enemyUnits.end())
 	{
 		enemyUnits[unit].setDeadFrame(Broodwar->getFrameCount());
+		enemySizes[unit->getType().size()] -= 1;
 	}
+
+	if (unit->getPlayer() == Broodwar->self())
+	{
+		if (unit->getType().isResourceDepot())
+		{
+			Bases().removeBase(unit);
+		}
+		else if (unit->getType().isBuilding())
+		{
+			Buildings().removeBuilding(unit);
+		}
+		else if (unit->getType().isWorker())
+		{
+			Workers().removeWorker(unit);
+		}
+		else if (unit->getType() == UnitTypes::Protoss_Observer || unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_High_Templar || unit->getType() == UnitTypes::Protoss_Arbiter)
+		{
+			SpecialUnits().removeUnit(unit);
+		}
+		else if (unit->getType() == UnitTypes::Protoss_Shuttle)
+		{
+			Transport().removeUnit(unit);
+		}
+	}
+	if (unit->getType().isResourceContainer())
+	{
+		Resources().removeResource(unit);
+	}
+
 }
 
 void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be moved to UTIL as a double function, to be accesible to SpecialUnitManager too
@@ -289,10 +315,11 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	// Time to reach target
 	if (unit.getPosition().getDistance(unit.getTargetPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
 	{
-		timeToTarget = max(2.0, (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed());		
+		timeToTarget = max(2.0, (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed());
 	}
 
-	if (unit.getPosition().getDistance(unit.getTargetPosition()) > 640.0)
+	// If a unit is clearly out of range based on current health (keeps healthy units in the front), set as "no local" and skip calculating
+	if (unit.getPosition().getDistance(unit.getTargetPosition()) > 640.0 + (64.0 * (1.0 - unit.getPercentHealth())))
 	{
 		unit.setStrategy(3);
 		return;
@@ -313,7 +340,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 		{
 			// If enemy hasn't died, add to enemy. Otherwise, partially add to ally local
 			if (enemy.getDeadFrame() == 0)
-			{				
+			{
 				enemyLocalGroundStrength += enemy.getVisibleGroundStrength();
 			}
 			else
@@ -370,6 +397,13 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 				enemyLocalAirStrength += ally.getMaxAirStrength() * 1.0 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(ally.getDeadFrame())));
 			}
 		}
+	}
+
+	// If a recall happened recently, cause units to enrage
+	if (Broodwar->getFrameCount() - Strategy().getRecallFrame() < 1000 && Strategy().getRecallFrame() > 0)
+	{
+		allyLocalAirStrength = allyLocalAirStrength * 20.0;
+		allyLocalGroundStrength = allyLocalGroundStrength * 20.0;
 	}
 
 	// Store the difference of strengths 
@@ -482,7 +516,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 			unit.setStrategy(1);
 			return;
 		}
-	}	
+	}
 
 	// If last command was engage
 	if (unit.getStrategy() == 1)
@@ -524,11 +558,6 @@ void UnitTrackerClass::updateGlobalCalculations()
 {
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
-		if (Broodwar->mapFileName().find("Alchemist") != Broodwar->mapName().npos)
-		{
-			globalStrategy = 1;
-			return;
-		}
 		if (Strategy().isFastExpand())
 		{
 			globalStrategy = 0;

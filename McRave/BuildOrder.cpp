@@ -26,44 +26,43 @@ void BuildOrderTrackerClass::updateDecision()
 			techUnit = UnitTypes::None;
 		}
 
-		// If production is saturated and none are idle, choose a tech
-		if (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleHighProduction().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 3)
+		// If production is saturated and none are idle or we need detection for some invis units, choose a tech
+		if (Strategy().needDetection() || (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleHighProduction().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 3))
 		{
 			// Put tech function here instead
 			getTech = true;
 		}
 
-		// If an opening has not been chosen, we can choose FFE, otherwise we never should choose it (to prevent PvR 2 gate into FFE)
-		if (opening != 1)
+		// If we are choosing an opening
+		if (getOpening)
 		{
-			// PvZ
-			if (Strategy().getNumberZerg() > 0)
+			// PvZ - FFE
+			if (Strategy().getNumberZerg() > 0 && opening == 0)
 			{
 				opening = 1;
-			}	
-			// PvP
+			}
+
+			// PvP - 1 Gate Core
 			else if (Strategy().getNumberProtoss() > 0)
 			{
 				opening = 2;
 			}
-			// PvT
+			// PvT - 1 Gate Nexus
 			else if (Strategy().getNumberTerran() > 0)
 			{
 				opening = 3;
 			}
-			// PvR
+			// PvR - 2 Gate Core
 			else
 			{
 				opening = 4;
 			}
-		}
-		if (Strategy().isRush())
-		{
-			opening = 4;
-		}
-		if (Broodwar->mapFileName().find("Alchemist") != Broodwar->mapName().npos)
-		{
-			opening = 5; // Aka fuck you I'm 9/9 gating because this map is fucking stupid
+
+			// If we are being rushed in PvP, opening is always 4.
+			if (Strategy().isRush())
+			{
+				opening = 4;
+			}
 		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
@@ -211,6 +210,11 @@ void BuildOrderTrackerClass::protossTech()
 				techUnit = UnitTypes::Protoss_Reaver;
 			}
 		}
+
+		if (Strategy().needDetection())
+		{
+			techUnit = UnitTypes::Protoss_Observer;
+		}
 	}
 	if (techUnit == UnitTypes::Protoss_Reaver)
 	{
@@ -290,7 +294,7 @@ void BuildOrderTrackerClass::protossSituational()
 	// Cannon logic
 	if (!Strategy().isFastExpand() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Forge))
 	{
-		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = 0;
+		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Photon_Cannon);
 		for (auto &base : Bases().getMyBases())
 		{
 			if (base.second.unit()->isCompleted() && Grids().getDefenseGrid(base.second.getTilePosition()) < 2)

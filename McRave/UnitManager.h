@@ -29,14 +29,19 @@ public:
 	void update();
 	void updateAliveUnits();
 	void updateDeadUnits();
-	void updateEnemy(Unit);
-	void updateAlly(Unit);
-	void removeUnit(Unit);
+	void updateEnemy(UnitInfo&);
+	void updateAlly(UnitInfo&);	
 	void getLocalCalculation(UnitInfo&);
 	void updateGlobalCalculations();
 
 	// One shot storage
-	void storeUnit(Unit);
+	void onUnitCreate(Unit);
+	void onUnitComplete(Unit);
+	void onUnitMorph(Unit);
+
+	void storeAlly(Unit);
+	void storeEnemy(Unit);
+	void removeUnit(Unit);
 
 	// Returns the global strategy
 	int getGlobalStrategy() { return globalStrategy; }

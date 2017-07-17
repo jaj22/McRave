@@ -64,29 +64,37 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 			double distance = pow(1.0 + unit.getPosition().getDistance(enemy.getPosition()), 2.0);
 			double threat = Grids().getEGroundDistanceGrid(enemy.getWalkPosition());
 
+			// Reavers and Tanks target highest priority units with clusters around them
 			if (unit.getType() == UnitTypes::Protoss_Reaver || unit.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
 			{
-				thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition())) / distance;
+				thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getWalkPosition())) / distance;
 			}
+
+			// Arbiters only target tanks
 			else if (unit.getType() == UnitTypes::Protoss_Arbiter)
 			{
 				if (enemy.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemy.getType() != UnitTypes::Terran_Siege_Tank_Tank_Mode)
 				{
-					thisUnit = (enemy.getPriority() * Grids().getStasisCluster(enemy.getTilePosition())) / distance;
+					thisUnit = (enemy.getPriority() * Grids().getStasisCluster(enemy.getWalkPosition())) / distance;
 				}
-			}
-			else if (unit.getType() == UnitTypes::Protoss_High_Templar)
-			{
-				if (Grids().getACluster(enemy.getWalkPosition()) == 0 && !enemy.getType().isBuilding())
-				{
-					thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition()) * Grids().getEAirCluster(enemy.getTilePosition())) / distance;
-				}
-			}
-			else
-			{
-				thisUnit = enemy.getPriority() / distance;
 			}
 
+			// High Templars target the highest priority with the largest cluster
+			else if (unit.getType() == UnitTypes::Protoss_High_Templar)
+			{
+				if (Grids().getACluster(enemy.getWalkPosition()) < Grids().getEAirCluster(enemy.getWalkPosition()) + Grids().getEGroundCluster(enemy.getWalkPosition()) && !enemy.getType().isBuilding())
+				{
+					thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getWalkPosition()) * Grids().getEAirCluster(enemy.getWalkPosition())) / distance;
+				}
+			}
+
+			// All other units target highest priority units with slight emphasis on lower health units
+			else
+			{
+				thisUnit = (enemy.getPriority() * (1 + 0.1 *(1 - enemy.getPercentHealth))) / distance;
+			}
+
+			// If the unit doesn't exist, it's not a suitable target usually (could be removed?)
 			if (!enemy.unit()->exists())
 			{
 				thisUnit = thisUnit * 0.1;
