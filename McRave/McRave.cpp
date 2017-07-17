@@ -113,10 +113,12 @@ void McRaveModule::onUnitHide(BWAPI::Unit unit)
 
 void McRaveModule::onUnitCreate(BWAPI::Unit unit)
 {
+	Buildings().storeBuilding(unit);
 }
 
 void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 {
+	Bases().removeBase(unit);
 	Units().removeUnit(unit);
 	Buildings().removeBuilding(unit);
 	SpecialUnits().removeUnit(unit);
@@ -127,6 +129,7 @@ void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
 
 void McRaveModule::onUnitMorph(BWAPI::Unit unit)
 {
+	Buildings().storeBuilding(unit);
 }
 
 void McRaveModule::onUnitRenegade(BWAPI::Unit unit)
@@ -139,4 +142,5 @@ void McRaveModule::onSaveGame(std::string gameName)
 
 void McRaveModule::onUnitComplete(BWAPI::Unit unit)
 {
+	Units().storeUnit(unit);
 }

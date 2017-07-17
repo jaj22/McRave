@@ -23,10 +23,10 @@ void BuildingTrackerClass::queueBuildings()
 			// If the Tile Position and Builder are valid
 			if (here.isValid() && builder)
 			{
-				// Queue at this building type a pair of building placement and builder		
+				// Queue at this building type a pair of building placement and builder	
+				Grids().updateReservedLocation(b.first, here);
 				Workers().getMyWorkers()[builder].setBuildingType(b.first);
 				Workers().getMyWorkers()[builder].setBuildPosition(here);
-				Grids().updateReservedLocation(b.first, here);
 			}
 		}
 	}
@@ -65,13 +65,18 @@ void BuildingTrackerClass::constructBuildings()
 
 void BuildingTrackerClass::storeBuilding(Unit building)
 {
-	myBuildings[building].setUnit(building);
-	myBuildings[building].setUnitType(building->getType());
-	myBuildings[building].setPosition(building->getPosition());
-	myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
-	myBuildings[building].setTilePosition(building->getTilePosition());
-	myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
-	myBuildings[building].setEnergy(building->getEnergy());
+	if (building->getType().isBuilding())
+	{
+		myBuildings[building].setUnit(building);
+		myBuildings[building].setUnitType(building->getType());
+		myBuildings[building].setPosition(building->getPosition());
+		myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
+		myBuildings[building].setTilePosition(building->getTilePosition());
+		myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
+		myBuildings[building].setEnergy(building->getEnergy());
+
+		Grids().updateBuildingGrid(myBuildings[building]);
+	}
 	return;
 }
 
@@ -89,7 +94,11 @@ void BuildingTrackerClass::storeBattery(Unit building)
 
 void BuildingTrackerClass::removeBuilding(Unit building)
 {
-	myBuildings.erase(building);
+	if (building->getType().isBuilding())
+	{
+		Grids().updateBuildingGrid(myBuildings[building]);
+		myBuildings.erase(building);		
+	}
 	return;
 }
 
@@ -105,7 +114,7 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 
 	// Searches in a spiral around the specified tile position
 	while (length < 200)
-	{				
+	{
 		// If we can build here, return this tile position		
 		if (TilePosition(x, y).isValid() && canBuildHere(building, TilePosition(x, y), ignoreCond))
 		{
@@ -150,7 +159,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	if (building.isResourceDepot())
 	{
 		// Fast expands must be as close to home and have a gas geyser
-		if (Strategy().isFastExpand())
+		if (Strategy().isFastExpand() || Terrain().getEnemyBasePositions().size() == 0)
 		{
 			for (auto &area : theMap.Areas())
 			{
@@ -254,11 +263,11 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 {
 	// Attempt to place Cannons in a concave around the second choke on a fast expansion
 	/*if (Strategy().isFastExpand())
-	{		
-		if (building == UnitTypes::Protoss_Photon_Cannon)
-		{
-			return false;
-		}
+	{
+	if (building == UnitTypes::Protoss_Photon_Cannon)
+	{
+	return false;
+	}
 	}*/
 
 	// Production buildings that create ground units require spacing so they don't trap units -- TEMP: Supply depot to not block SCVs (need to find solution)

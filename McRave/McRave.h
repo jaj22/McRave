@@ -18,8 +18,10 @@ namespace
 #include <Windows.h>
 #include <set>
 #include <ctime>
+#include <chrono>
 
 class UnitInfo;
+class ResourceInfo;
 
 // Include other source files
 #include "BuildingManager.h"

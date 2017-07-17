@@ -12,8 +12,16 @@ void BaseTrackerClass::updateAlliedBases()
 {
 	for (auto &base : myBases)
 	{
-		trainWorkers(base.second);
-		updateDefenses(base.second);
+		if ((base.first && !base.first->exists()) || !base.first)
+		{
+			myBases.erase(base.first);
+			break;
+		}
+		if (base.second.unit() && base.second.unit()->exists())
+		{
+			trainWorkers(base.second);
+			updateDefenses(base.second);
+		}
 	}
 	return;
 }
@@ -33,6 +41,7 @@ void BaseTrackerClass::storeBase(Unit base)
 
 void BaseTrackerClass::removeBase(Unit base)
 {
+	myOrderedBases.erase(base->getPosition().getDistance(Terrain().getPlayerStartingPosition()));
 	myBases.erase(base);
 	return;
 }
@@ -42,20 +51,12 @@ void BaseTrackerClass::trainWorkers(BaseInfo& base)
 	if (base.unit() && (!Resources().isMinSaturated() || !Resources().isGasSaturated()) && base.unit()->isIdle())
 	{
 		for (auto &worker : base.getType().buildsWhat())
-		{
+		{			
 			if (Broodwar->self()->completedUnitCount(worker) < 60 && (Broodwar->self()->minerals() >= worker.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
 			{
 				base.unit()->train(worker);
 			}
-		}
-		/*	if (base.getType() == UnitTypes::Protoss_Nexus && Broodwar->self()->allUnitCount(UnitTypes::Protoss_Probe) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Protoss_Probe.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
-			{
-			base.unit()->train(UnitTypes::Protoss_Probe);
-			}
-			else if (base.getType() == UnitTypes::Terran_Command_Center && Broodwar->self()->allUnitCount(UnitTypes::Terran_SCV) < 60 && (Broodwar->self()->minerals() >= UnitTypes::Terran_SCV.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
-			{
-			base.unit()->train(UnitTypes::Terran_SCV);
-			}*/
+		}		
 	}
 	return;
 }

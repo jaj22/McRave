@@ -72,7 +72,7 @@ void TerrainTrackerClass::updateChokes()
 	{
 		int x = 0;
 		int y = 0;
-		const Area* closestA;
+		const Area* closestA = nullptr;
 		double closestBaseDistance = 0.0, furthestChokeDistance = 0.0, closestChokeDistance = 0.0;
 		TilePosition natural;
 		for (auto &area : theMap.Areas())
@@ -171,7 +171,7 @@ Position TerrainTrackerClass::getClosestEnemyBase(Position here)
 	return closestP;
 }
 
-Position TerrainTrackerClass::getClosestAllyBase(Position here)
-{
-
-}
+//Position TerrainTrackerClass::getClosestAllyBase(Position here)
+//{
+//
+//}

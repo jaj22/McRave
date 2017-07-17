@@ -314,24 +314,23 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 			{
 				continue;
 			}
-			if (unit.getPosition().getDistance(Position(WalkPosition(x, y))) < 80)
+
+			if (unit.getType() == UnitTypes::Protoss_Dragoon && Grids().getResourceGrid(x / 4, y / 4) > 0)
 			{
-				if (unit.getType() == UnitTypes::Protoss_Dragoon && Grids().getResourceGrid(x / 4, y / 4) > 0)
-				{
-					continue;
-				}
-
-				double mobility = double(Grids().getMobilityGrid(x, y));
-				double threat = Grids().getEGroundGrid(x, y);
-				double distance = Grids().getEGroundDistanceGrid(x, y);
-				double distanceHome = double(pow(Grids().getDistanceHome(x, y), 0.1));
-
-				if ((mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility && Util().isSafe(start, WalkPosition(x, y), unit.getType(), false, false, true))
-				{
-					highestMobility = (mobility / (1.0 + (distance * threat))) / distanceHome;
-					finalPosition = WalkPosition(x, y);
-				}
+				continue;
 			}
+
+			double mobility = double(Grids().getMobilityGrid(x, y));
+			double threat = Grids().getEGroundGrid(x, y);
+			double distance = Grids().getEGroundDistanceGrid(x, y);
+			double distanceHome = double(pow(Grids().getDistanceHome(x, y), 0.1));
+
+			if ((mobility / (1.0 + (distance * threat))) / distanceHome > highestMobility && Util().isSafe(start, WalkPosition(x, y), unit.getType(), false, false, true))
+			{
+				highestMobility = (mobility / (1.0 + (distance * threat))) / distanceHome;
+				finalPosition = WalkPosition(x, y);
+			}
+
 		}
 	}
 

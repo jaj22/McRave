@@ -227,6 +227,10 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 			return;
 		}
 	}
+	else
+	{
+		worker.setTarget(nullptr);
+	}
 
 	// If worker doesn't have an assigned resource, assign one
 	if (!worker.getResource())
@@ -316,7 +320,7 @@ Unit WorkerTrackerClass::getClosestWorker(Position here)
 
 void WorkerTrackerClass::storeWorker(Unit unit)
 {
-	if (unit->exists() && unit->isCompleted())
+	if (unit->exists())
 	{
 		myWorkers[unit].setUnit(unit);
 		myWorkers[unit].setPosition(unit->getPosition());

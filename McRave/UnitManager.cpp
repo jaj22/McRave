@@ -10,6 +10,25 @@ void UnitTrackerClass::update()
 	return;
 }
 
+void UnitTrackerClass::storeUnit(Unit unit)
+{
+	if (unit->getType().isMineralField())
+	{
+		if (unit->getInitialResources() == 0)
+		{
+			Resources().storeBoulder(unit);
+		}
+		else
+		{			
+			Resources().storeMineral(unit);
+		}
+	}
+	if (unit->getType() == UnitTypes::Resource_Vespene_Geyser)
+	{
+		Resources().storeGas(unit);
+	}
+}
+
 void UnitTrackerClass::updateAliveUnits()
 {
 	// Reset sizes and supply
@@ -40,8 +59,7 @@ void UnitTrackerClass::updateAliveUnits()
 
 		// Store buildings even if they're not completed
 		if (u->getType().isBuilding())
-		{
-			Buildings().storeBuilding(u);
+		{			
 			if (u->getType().isResourceDepot())
 			{
 				Bases().storeBase(u);
@@ -95,34 +113,6 @@ void UnitTrackerClass::updateAliveUnits()
 			if (u && u->exists())
 			{
 				updateEnemy(u);
-			}
-		}
-	}
-
-	// Store all neutral units
-	for (auto &r : Broodwar->neutral()->getUnits())
-	{
-		if (r && r->exists())
-		{
-			if (Grids().getBaseGrid(r->getTilePosition()) != 0)
-			{
-				if (r->getType().isMineralField() && r->getInitialResources() > 0 && Resources().getMyMinerals().find(r) == Resources().getMyMinerals().end())
-				{
-					Resources().storeMineral(r);
-				}
-
-				if (Resources().getMyGas().find(r) == Resources().getMyGas().end() && r->getType() == UnitTypes::Resource_Vespene_Geyser)
-				{
-					Resources().storeGas(r);
-				}
-			}
-			else if (Grids().getBaseGrid(r->getTilePosition()) == 0)
-			{
-				Resources().removeResource(r);
-			}
-			if (r->getInitialResources() == 0 && r->getDistance(Terrain().getPlayerStartingPosition()) < 2560)
-			{
-				Resources().storeBoulder(r);
 			}
 		}
 	}
@@ -534,6 +524,11 @@ void UnitTrackerClass::updateGlobalCalculations()
 {
 	if (Broodwar->self()->getRace() == Races::Protoss)
 	{
+		if (Broodwar->mapFileName().find("Alchemist") != Broodwar->mapName().npos)
+		{
+			globalStrategy = 1;
+			return;
+		}
 		if (Strategy().isFastExpand())
 		{
 			globalStrategy = 0;

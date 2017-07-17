@@ -36,7 +36,7 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 		{
 			continue;
 		}
-		
+
 		if (unit.getType().isFlyer())
 		{
 			thisUnit = enemy.getPriority() / (1.0 + (unit.getPosition().getDistance(enemy.getPosition())));
@@ -59,22 +59,25 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 			if (enemy.unit()->exists() && (enemy.unit()->isCloaked() || enemy.unit()->isBurrowed()) && !enemy.unit()->isDetected())
 			{
 				continue;
-			}			
+			}
 
 			double distance = pow(1.0 + unit.getPosition().getDistance(enemy.getPosition()), 2.0);
 			double threat = Grids().getEGroundDistanceGrid(enemy.getWalkPosition());
-			
+
 			if (unit.getType() == UnitTypes::Protoss_Reaver || unit.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode)
 			{
 				thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition())) / distance;
 			}
 			else if (unit.getType() == UnitTypes::Protoss_Arbiter)
 			{
-				thisUnit = (enemy.getPriority() * Grids().getStasisCluster(enemy.getTilePosition())) / distance;
+				if (enemy.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemy.getType() != UnitTypes::Terran_Siege_Tank_Tank_Mode)
+				{
+					thisUnit = (enemy.getPriority() * Grids().getStasisCluster(enemy.getTilePosition())) / distance;
+				}
 			}
 			else if (unit.getType() == UnitTypes::Protoss_High_Templar)
 			{
-				if (Grids().getACluster(enemy.getWalkPosition()) == 0)
+				if (Grids().getACluster(enemy.getWalkPosition()) == 0 && !enemy.getType().isBuilding())
 				{
 					thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getTilePosition()) * Grids().getEAirCluster(enemy.getTilePosition())) / distance;
 				}

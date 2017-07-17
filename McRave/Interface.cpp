@@ -10,7 +10,19 @@ void InterfaceTrackerClass::update()
 
 void InterfaceTrackerClass::performanceTest(string function)
 {
-	clock_t duration = clock() - globalClock;
+	double dur = std::chrono::duration <double, std::milli>(std::chrono::high_resolution_clock::now() - start).count();
+	myTest[function] = myTest[function] * 0.99 + dur*0.01;
+	if (myTest[function] > 1.00)
+	{
+		Broodwar->drawTextScreen(200, screenOffset, "%s", function);
+		Broodwar->drawTextScreen(350, screenOffset, "%.2f ms", myTest[function]);
+		screenOffset += 10;
+	}
+	return;
+
+
+
+	/*clock_t duration = clock() - globalClock;
 	myTest[function] = myTest[function] * 0.99 + duration*0.01;
 	if (myTest[function] > 0.0)
 	{
@@ -18,12 +30,12 @@ void InterfaceTrackerClass::performanceTest(string function)
 		Broodwar->drawTextScreen(350, screenOffset, "%d ms", myTest[function]);
 		screenOffset += 10;
 	}
-	return;
+	return;*/
 }
 
 void InterfaceTrackerClass::startClock()
 {
-	globalClock = clock();
+	start = chrono::high_resolution_clock::now();
 	return;
 }
 

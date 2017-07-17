@@ -61,36 +61,36 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 	double effectiveness = 1.0;
 	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields() / 2)) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields() / 2));
 
-	int aLarge = Units().getMySizes()[UnitSizeTypes::Large];
-	int aMedium = Units().getMySizes()[UnitSizeTypes::Medium];
-	int aSmall = Units().getMySizes()[UnitSizeTypes::Small];
+	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
+	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
+	double aSmall = double(Units().getMySizes()[UnitSizeTypes::Small]);
 
-	int eLarge = Units().getEnSizes()[UnitSizeTypes::Large];
-	int eMedium = Units().getEnSizes()[UnitSizeTypes::Medium];
-	int eSmall = Units().getEnSizes()[UnitSizeTypes::Small];
+	double eLarge = double(Units().getEnSizes()[UnitSizeTypes::Large]);
+	double eMedium = double(Units().getEnSizes()[UnitSizeTypes::Medium]);
+	double eSmall = double(Units().getEnSizes()[UnitSizeTypes::Small]);
 
-	if (unit.getPlayer()->isEnemy(Broodwar->self()))
+	if (unit.unit()->getPlayer() == Broodwar->enemy())
 	{
 		if (unit.getType().groundWeapon().damageType() == DamageTypes::Explosive)
 		{
-			effectiveness = double((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / double(aLarge + aMedium + aSmall);
+			effectiveness = double((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / max(1.0, double(aLarge + aMedium + aSmall));
 		}
 		else if (unit.getType().groundWeapon().damageType() == DamageTypes::Concussive)
 		{
-			effectiveness = double((aLarge*0.25) + (aMedium*0.5) + (aSmall*1.0)) / double(aLarge + aMedium + aSmall);
+			effectiveness = double((aLarge*0.25) + (aMedium*0.5) + (aSmall*1.0)) / max(1.0, double(aLarge + aMedium + aSmall));
 		}
 	}
 	else
 	{
 		if (unit.getType().groundWeapon().damageType() == DamageTypes::Explosive)
 		{
-			effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / double(eLarge + eMedium + eSmall);
+			effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / max(1.0, double(eLarge + eMedium + eSmall));
 		}
 		else if (unit.getType().groundWeapon().damageType() == DamageTypes::Concussive)
 		{
-			effectiveness = double((eLarge*0.25) + (eMedium*0.5) + (eSmall*1.0)) / double(eLarge + eMedium + eSmall);
+			effectiveness = double((eLarge*0.25) + (eMedium*0.5) + (eSmall*1.0)) / max(1.0, double(eLarge + eMedium + eSmall));
 		}
-	}
+	}*/
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
@@ -140,36 +140,36 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 	double effectiveness = 1.0;
 	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields())) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields()));
 	
-	int aLarge = Units().getMySizes()[UnitSizeTypes::Large];
-	int aMedium = Units().getMySizes()[UnitSizeTypes::Medium];
-	int aSmall = Units().getMySizes()[UnitSizeTypes::Small];
+	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
+	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
+	double aSmall = double(Units().getMySizes()[UnitSizeTypes::Small]);
 
-	int eLarge = Units().getEnSizes()[UnitSizeTypes::Large];
-	int eMedium = Units().getEnSizes()[UnitSizeTypes::Medium];
-	int eSmall = Units().getEnSizes()[UnitSizeTypes::Small];
+	double eLarge = double(Units().getEnSizes()[UnitSizeTypes::Large]);
+	double eMedium = double(Units().getEnSizes()[UnitSizeTypes::Medium]);
+	double eSmall = double(Units().getEnSizes()[UnitSizeTypes::Small]);
 
-	if (unit.getPlayer()->isEnemy(Broodwar->self()))
+	if (unit.unit()->getPlayer() == Broodwar->enemy())
 	{
 		if (unit.getType().airWeapon().damageType() == DamageTypes::Explosive)
 		{
-			effectiveness = double((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / double(aLarge + aMedium + aSmall);
+			effectiveness = double((aLarge*1.0) + (aMedium*0.75) + (aSmall*0.5)) / max(1.0, double(aLarge + aMedium + aSmall));
 		}
 		else if (unit.getType().airWeapon().damageType() == DamageTypes::Concussive)
 		{
-			effectiveness = double((aLarge*0.25) + (aMedium*0.5) + (aSmall*1.0)) / double(aLarge + aMedium + aSmall);
+			effectiveness = double((aLarge*0.25) + (aMedium*0.5) + (aSmall*1.0)) / max(1.0, double(aLarge + aMedium + aSmall));
 		}		
 	}
 	else
 	{
 		if (unit.getType().airWeapon().damageType() == DamageTypes::Explosive)
 		{
-			effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / double(eLarge + eMedium + eSmall);
+			effectiveness = double((eLarge*1.0) + (eMedium*0.75) + (eSmall*0.5)) / max(1.0, double(eLarge + eMedium + eSmall));
 		}
 		else if (unit.getType().airWeapon().damageType() == DamageTypes::Concussive)
 		{
-			effectiveness = double((eLarge*0.25) + (eMedium*0.5) + (eSmall*1.0)) / double(eLarge + eMedium + eSmall);
+			effectiveness = double((eLarge*0.25) + (eMedium*0.5) + (eSmall*1.0)) / max(1.0, double(eLarge + eMedium + eSmall));
 		}
-	}
+	}*/
 
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())

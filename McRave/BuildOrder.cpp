@@ -61,9 +61,8 @@ void BuildOrderTrackerClass::updateDecision()
 		{
 			opening = 4;
 		}
-		if (Broodwar->mapName() == "Alchemist")
+		if (Broodwar->mapFileName().find("Alchemist") != Broodwar->mapName().npos)
 		{
-			Broodwar << "Why are we playing this map?" << endl;
 			opening = 5; // Aka fuck you I'm 9/9 gating because this map is fucking stupid
 		}
 	}

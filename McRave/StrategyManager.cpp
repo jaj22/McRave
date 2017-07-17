@@ -218,7 +218,7 @@ void StrategyTrackerClass::protossStrategy()
 		{
 			fastExpand = true;
 		}
-		else if (eZerg > 0)
+		else if (eZerg > 0 && Broodwar->mapFileName().find("Alchemist") == Broodwar->mapName().npos)
 		{
 			fastExpand = true;
 		}
