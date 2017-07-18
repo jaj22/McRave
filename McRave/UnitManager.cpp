@@ -452,7 +452,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 		allyLocalAirStrength = allyLocalAirStrength * 20.0;
 		allyLocalGroundStrength = allyLocalGroundStrength * 20.0;
 	}
-
+  
 	// Store the difference of strengths 
 	unit.setGroundLocal(allyLocalGroundStrength - enemyLocalGroundStrength);
 	unit.setAirLocal(allyLocalAirStrength - enemyLocalAirStrength);

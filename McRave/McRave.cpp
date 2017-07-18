@@ -121,6 +121,7 @@ void McRaveModule::onUnitCreate(Unit unit)
 
 void McRaveModule::onUnitDestroy(Unit unit)
 {
+	Bases().removeBase(unit);
 	Units().removeUnit(unit);
 	Terrain().removeTerritory(unit);
 }

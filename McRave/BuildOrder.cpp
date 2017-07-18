@@ -65,6 +65,14 @@ void BuildOrderTrackerClass::updateDecision()
 				opening = 4;
 			}
 		}
+		if (Strategy().isRush())
+		{
+			opening = 4;
+		}
+		if (Broodwar->mapFileName().find("Alchemist") != Broodwar->mapName().npos)
+		{
+			opening = 5; // Aka fuck you I'm 9/9 gating because this map is fucking stupid
+		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{

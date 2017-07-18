@@ -64,8 +64,7 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 		return 0;
 	}
 
-	double effectiveness = 1.0;
-	
+	double effectiveness = 1.0;	
 
 	/*double aLarge = double(Units().getAllySizes()[UnitSizeTypes::Large]);
 	double aMedium = double(Units().getAllySizes()[UnitSizeTypes::Medium]);

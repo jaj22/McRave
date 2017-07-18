@@ -49,6 +49,12 @@ class GridTrackerClass
 	
 	unordered_set<WalkPosition, myHash> resetWalks;
 
+	unordered_set<TilePosition, myHash> resetTiles;
+	unordered_set<WalkPosition, myHash> resetWalks;
+
+	//set<TilePosition> resetTiles;
+	//set<WalkPosition> resetWalks;
+
 	// Other
 	bool distanceAnalysis = false;
 	bool mobilityAnalysis = false;
@@ -84,6 +90,12 @@ public:
 
 	// Updates a base if it is destroyed or created
 	void updateBaseGrid(BaseInfo&);
+
+	// Updates a resource if it is destroyed or removed from my control
+	void updateResourceGrid(ResourceInfo&);
+
+	// Updates a building if it is destroyed or completed
+	void updateBuildingGrid(BuildingInfo&);
 
 	// Returns the number of allied ground and air units within range of most area of effect abilities
 	int getACluster(int x, int y) { return aClusterGrid[x][y]; }

@@ -114,7 +114,6 @@ void ResourceTrackerClass::removeResource(Unit resource)
 	{
 		Grids().updateResourceGrid(myMinerals[resource]);
 		myMinerals.erase(resource);
-
 	}
 	else if (myGas.find(resource) != myGas.end())
 	{
