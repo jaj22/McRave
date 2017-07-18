@@ -62,18 +62,20 @@ void GridTrackerClass::reset()
 
 		// Reset WalkPosition grids		
 		aClusterGrid[x][y] = 0;
-		antiMobilityGrid[x][y] = 0;
+		aDetectorGrid[x][y] = 0;
+		arbiterGrid[x][y] = 0;
+		
 		eGroundGrid[x][y] = 0.0;
 		eAirGrid[x][y] = 0.0;
 		eGroundDistanceGrid[x][y] = 0.0;
-		eAirDistanceGrid[x][y] = 0.0;
-		observerGrid[x][y] = 0;
-		arbiterGrid[x][y] = 0;
-		eDetectorGrid[x][y] = 0;
+		eAirDistanceGrid[x][y] = 0.0;		
 		eGroundClusterGrid[x][y] = 0;
 		eAirClusterGrid[x][y] = 0;
+		eDetectorGrid[x][y] = 0;
+		
 		psiStormGrid[x][y] = 0;
 		EMPGrid[x][y] = 0;
+		antiMobilityGrid[x][y] = 0;
 	}
 
 	// Wipe all the information in our hashed set before gathering information
@@ -218,14 +220,14 @@ void GridTrackerClass::updateEnemyGrids()
 				{
 					if (WalkPosition(x, y).isValid())
 					{
-						double distance = max(1.0, Position(WalkPosition(x, y)).getDistance(enemy.getPosition()) - double(enemy.getType().tileWidth() * 16.0));
+						double distance = max(1.0, Position(WalkPosition(x, y)).getDistance(enemy.getPosition()) - double(enemy.getType().width()));
 
 						if (enemy.getGroundDamage() > 0.0 && distance < enemy.getGroundRange())
 						{
 							resetWalks.insert(WalkPosition(x, y));
 							eGroundGrid[x][y] += enemy.getMaxGroundStrength();
 						}
-						if (enemy.getGroundDamage() > 0.0 && distance < enemy.getGroundRange() + (enemy.getSpeed() / 8))
+						if (enemy.getGroundDamage() > 0.0 && distance < enemy.getGroundRange() + enemy.getSpeed())
 						{
 							resetWalks.insert(WalkPosition(x, y));
 							eGroundDistanceGrid[x][y] += max(0.1, enemy.getMaxGroundStrength() / distance);
@@ -241,14 +243,14 @@ void GridTrackerClass::updateEnemyGrids()
 				{
 					if (WalkPosition(x, y).isValid())
 					{
-						double distance = max(1.0, Position(WalkPosition(x, y)).getDistance(enemy.getPosition()) - double(enemy.getType().tileWidth() * 16.0));
+						double distance = max(1.0, Position(WalkPosition(x, y)).getDistance(enemy.getPosition()) - double(enemy.getType().width()));
 
 						if (enemy.getAirDamage() > 0.0 && distance < enemy.getAirRange())
 						{
 							resetWalks.insert(WalkPosition(x, y));
 							eAirGrid[x][y] += enemy.getMaxAirStrength();
 						}
-						if (enemy.getAirDamage() > 0.0 && distance < enemy.getAirRange() + (enemy.getSpeed() / 8))
+						if (enemy.getAirDamage() > 0.0 && distance < enemy.getAirRange() + enemy.getSpeed())
 						{
 							resetWalks.insert(WalkPosition(x, y));
 							eAirDistanceGrid[x][y] += max(0.1, enemy.getMaxAirStrength() / distance);
@@ -672,35 +674,35 @@ void GridTrackerClass::updateMobilityGrids()
 	return;
 }
 
-void GridTrackerClass::updateObserverMovement(Unit observer)
+void GridTrackerClass::updateDetectorMovement(SupportUnitInfo& observer)
 {
-	WalkPosition destination = WalkPosition(SpecialUnits().getMyDetectors()[observer].getDestination());
+	WalkPosition destination = WalkPosition(observer.getDestination());
 
 	for (int x = destination.x - 40; x <= destination.x + 40; x++)
 	{
 		for (int y = destination.y - 40; y <= destination.y + 40; y++)
 		{
 			// Create a circle of detection rather than a square
-			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyDetectors()[observer].getDestination().getDistance(Position(WalkPosition(x, y))) < 320)
+			if (WalkPosition(x, y).isValid() && observer.getDestination().getDistance(Position(WalkPosition(x, y))) < 160)
 			{
 				resetWalks.insert(WalkPosition(x, y));
-				observerGrid[x][y] = 1;
+				aDetectorGrid[x][y] = 1;
 			}
 		}
 	}
 	return;
 }
 
-void GridTrackerClass::updateArbiterMovement(Unit arbiter)
+void GridTrackerClass::updateArbiterMovement(SupportUnitInfo& arbiter)
 {
-	WalkPosition destination = WalkPosition(SpecialUnits().getMyArbiters()[arbiter].getDestination());
+	WalkPosition destination = WalkPosition(arbiter.getDestination());
 
 	for (int x = destination.x - 20; x <= destination.x + 20; x++)
 	{
 		for (int y = destination.y - 20; y <= destination.y + 20; y++)
 		{
 			// Create a circle of detection rather than a square
-			if (WalkPosition(x, y).isValid() && SpecialUnits().getMyArbiters()[arbiter].getDestination().getDistance(Position(WalkPosition(x, y))) < 160)
+			if (WalkPosition(x, y).isValid() && arbiter.getDestination().getDistance(Position(WalkPosition(x, y))) < 160)
 			{
 				resetWalks.insert(WalkPosition(x, y));
 				arbiterGrid[x][y] = 1;

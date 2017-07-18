@@ -12,23 +12,24 @@ void SpecialUnitTrackerClass::update()
 
 void SpecialUnitTrackerClass::updateArbiters()
 {
-	for (auto &u : myArbiters)
+	for (auto &a : myArbiters)
 	{
-		u.second.setPosition(u.second.unit()->getPosition());
-		u.second.setWalkPosition(Util().getWalkPosition(u.second.unit()));
-		if (Broodwar->self()->hasResearched(TechTypes::Recall) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter) > 1 && u.second.unit()->getEnergy() > 100 && (!recaller || (recaller && !recaller->exists())))
+		SupportUnitInfo arbiter = a.second;
+		arbiter.setPosition(arbiter.unit()->getPosition());
+		arbiter.setWalkPosition(Util().getWalkPosition(arbiter.unit()));
+		if (Broodwar->self()->hasResearched(TechTypes::Recall) && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter) > 1 && arbiter.unit()->getEnergy() > 100 && (!recaller || (recaller && !recaller->exists())))
 		{
-			recaller = u.second.unit();
+			recaller = arbiter.unit();
 		}
 
 		int bestCluster = 0;
 		double closestD = 0.0;
 		Position bestPosition = Grids().getArmyCenter();
-		WalkPosition start = u.second.getWalkPosition();
+		WalkPosition start = arbiter.getWalkPosition();
 
-		if (recaller && u.second.unit()->getEnergy() > 100)
+		if (recaller && arbiter.unit()->getEnergy() > 100)
 		{
-			if (u.second.unit()->getDistance(Terrain().getPlayerStartingPosition()) > 320 && Grids().getStasisCluster(u.second.getWalkPosition()) < 4)
+			if (arbiter.unit()->getDistance(Terrain().getPlayerStartingPosition()) > 320 && Grids().getStasisCluster(arbiter.getWalkPosition()) < 4)
 			{
 				// Move towards areas with no threat close to enemy starting position
 				for (int x = start.x - 20; x <= start.x + 20; x++)
@@ -81,15 +82,15 @@ void SpecialUnitTrackerClass::updateArbiters()
 			}
 		}
 		// Move and update grids	
-		u.second.setDestination(bestPosition);
-		u.first->move(bestPosition);
-		Grids().updateArbiterMovement(u.first);
+		arbiter.setDestination(bestPosition);
+		arbiter.unit()->move(bestPosition);
+		Grids().updateArbiterMovement(arbiter);
 
 		// If there's a stasis target, cast stasis on it
-		Unit target = Units().getAllyUnits()[u.first].getTarget();
-		if (target && target->exists() && u.first->getEnergy() >= 100)
+		Unit target = Units().getAllyUnits()[arbiter.unit()].getTarget();
+		if (target && target->exists() && arbiter.unit()->getEnergy() >= 100)
 		{
-			u.first->useTech(TechTypes::Stasis_Field, target);
+			arbiter.unit()->useTech(TechTypes::Stasis_Field, target);
 		}
 	}
 	return;
@@ -97,10 +98,11 @@ void SpecialUnitTrackerClass::updateArbiters()
 
 void SpecialUnitTrackerClass::updateDetectors()
 {
-	for (auto &u : myDetectors)
+	for (auto &d : myDetectors)
 	{
-		u.second.setPosition(u.second.unit()->getPosition());
-		u.second.setWalkPosition(Util().getWalkPosition(u.second.unit()));
+		SupportUnitInfo detector = d.second;
+		detector.setPosition(detector.unit()->getPosition());
+		detector.setWalkPosition(Util().getWalkPosition(detector.unit()));
 
 		// First check if any expansions need detection on them
 		if (BuildOrder().getBuildingDesired()[UnitTypes::Protoss_Nexus] > Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus))
@@ -109,11 +111,11 @@ void SpecialUnitTrackerClass::updateDetectors()
 			for (auto &base : Terrain().getAllBaseLocations())
 			{
 				// If an expansion is unbuildable and we've scouted it already, move there to detect burrowed units
-				if (!Broodwar->canBuildHere(base, UnitTypes::Protoss_Nexus, nullptr) && Grids().getBaseGrid(base) == 0)
+				if (!Broodwar->canBuildHere(base, UnitTypes::Protoss_Nexus, nullptr, true) && Grids().getBaseGrid(base) == 0)
 				{
-					u.second.setDestination(Position(base));
-					u.first->move(Position(base));
-					Grids().updateObserverMovement(u.first);
+					detector.setDestination(Position(base));
+					detector.unit()->move(Position(base));
+					Grids().updateDetectorMovement(detector);
 					baseScout = true;
 				}
 			}
@@ -126,12 +128,12 @@ void SpecialUnitTrackerClass::updateDetectors()
 		// Move towards lowest enemy air threat, no enemy detection and closest to enemy starting position	
 		double closestD = 0.0;
 		Position newDestination = Grids().getArmyCenter();
-		WalkPosition start = u.second.getWalkPosition();
+		WalkPosition start = detector.getWalkPosition();
 		for (int x = start.x - 20; x <= start.x + 20; x++)
 		{
 			for (int y = start.y - 20; y <= start.y + 20; y++)
 			{
-				if (WalkPosition(x, y).isValid() && Grids().getEDetectorGrid(x, y) == 0 && Position(WalkPosition(x, y)).getDistance(Position(start)) > 64 && Grids().getACluster(x, y) > 0 && Grids().getObserverGrid(x, y) == 0 && Grids().getEAirGrid(x, y) == 0.0 && (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0))
+				if (WalkPosition(x, y).isValid() && Grids().getEDetectorGrid(x, y) == 0 && Position(WalkPosition(x, y)).getDistance(Position(start)) > 64 && Grids().getACluster(x, y) > 0 && Grids().getADetectorGrid(x, y) == 0 && Grids().getEAirGrid(x, y) == 0.0 && (Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition()) < closestD || closestD == 0))
 				{
 					newDestination = Position(WalkPosition(x, y));
 					closestD = Position(WalkPosition(x, y)).getDistance(Terrain().getEnemyStartingPosition());
@@ -140,9 +142,9 @@ void SpecialUnitTrackerClass::updateDetectors()
 		}
 		if (newDestination.isValid())
 		{
-			u.second.setDestination(newDestination);
-			u.first->move(newDestination);
-			Grids().updateObserverMovement(u.first);
+			detector.setDestination(newDestination);
+			detector.unit()->move(newDestination);
+			Grids().updateDetectorMovement(detector);
 		}
 		continue;
 	}

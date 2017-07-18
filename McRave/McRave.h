@@ -20,8 +20,10 @@ namespace
 #include <ctime>
 #include <chrono>
 
+// Forward declare classes needed in other header files than their defined header
 class BaseInfo;
 class UnitInfo;
+class SupportUnitInfo;
 class ResourceInfo;
 
 // Include other source files

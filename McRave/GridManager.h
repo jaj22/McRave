@@ -43,7 +43,7 @@ class GridTrackerClass
 	int reservePathHome[256][256];
 
 	// Special Unit grids
-	int observerGrid[1024][1024];
+	int aDetectorGrid[1024][1024];
 	int arbiterGrid[1024][1024];
 	int psiStormGrid[1024][1024];
 	int EMPGrid[1024][1024];
@@ -68,8 +68,8 @@ public:
 	void updateMobilityGrids();
 
 	// Unit and building based functions
-	void updateArbiterMovement(Unit);
-	void updateObserverMovement(Unit);
+	void updateArbiterMovement(SupportUnitInfo&);
+	void updateDetectorMovement(SupportUnitInfo&);
 	void updateAllyMovement(Unit, WalkPosition);
 	void updateReservedLocation(UnitType, TilePosition);
 
@@ -169,8 +169,8 @@ public:
 	int getDistanceHome(WalkPosition here) { return distanceGridHome[here.x][here.y]; }
 
 	// Returns 1 if an allied Observer is within range of the given WalkPosition, 0 otherwise
-	int getObserverGrid(int x, int y) { return observerGrid[x][y]; }
-	int getObserverGrid(WalkPosition here) { return observerGrid[here.x][here.y]; }
+	int getADetectorGrid(int x, int y) { return aDetectorGrid[x][y]; }
+	int getADetectorGrid(WalkPosition here) { return aDetectorGrid[here.x][here.y]; }
 
 	// Returns 1 if an allied Arbiter is within range of the given WalkPosition, 0 otherwise
 	int getArbiterGrid(int x, int y) { return arbiterGrid[x][y]; }

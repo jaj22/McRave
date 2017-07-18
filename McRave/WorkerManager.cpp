@@ -64,10 +64,10 @@ void WorkerTrackerClass::exploreArea(WorkerInfo& worker)
 		}
 	}
 
-	// Check a 10x10 walkposition grid for a potential new place to scout
-	for (int x = start.x - 10; x < start.x + 20 + worker.getType().tileWidth() * 4; x++)
+	// Check a 20x20 walkposition grid for a potential new place to scout
+	for (int x = start.x - 20; x < start.x + 20 + worker.getType().tileWidth() * 4; x++)
 	{
-		for (int y = start.y - 10; y < start.y + 20 + worker.getType().tileHeight() * 4; y++)
+		for (int y = start.y - 20; y < start.y + 20 + worker.getType().tileHeight() * 4; y++)
 		{
 			if (Grids().getDistanceHome(start) - Grids().getDistanceHome(WalkPosition(x, y)) > 20)
 			{
@@ -259,6 +259,21 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	// If idle and carrying gas or minerals, return cargo			
 	if (worker.unit()->isCarryingGas() || worker.unit()->isCarryingMinerals())
 	{
+		// TEMP TEST - Leta Worker idea
+		if (worker.getResource()->exists())
+		{
+			if (worker.getResource()->getType().isMineralField())
+			{
+				if (worker.getPosition().getDistance(Resources().getMyMinerals()[worker.getResource()].getClosestBasePosition()) > 64)
+				{
+					worker.unit()->move(Resources().getMyMinerals()[worker.getResource()].getClosestBasePosition());
+				}
+				else
+				{
+					worker.unit()->returnCargo();
+				}
+			}
+		}
 		if (worker.unit()->getLastCommand().getType() != UnitCommandTypes::Return_Cargo)
 		{
 			worker.unit()->returnCargo();

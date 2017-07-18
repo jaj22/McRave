@@ -314,19 +314,19 @@ void BuildOrderTrackerClass::protossSituational()
 	}
 
 	// Gateway logic
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && (Production().getIdleLowProduction().size() == 0 && ((Broodwar->self()->minerals() - Production().getReservedMineral() - Buildings().getQueuedMineral() > 200) || (!Production().isGateSat() && Resources().isMinSaturated()))))
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && (Production().getIdleLowProduction().size() == 0 && ((Broodwar->self()->minerals() - Production().getReservedMineral() - Buildings().getQueuedMineral() > 150) || (!Production().isGateSat() && Resources().isMinSaturated()))))
 	{
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
 
 	// Assimilator logic
-	if (Resources().isMinSaturated())
+	if (Resources().isMinSaturated() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == buildingDesired[UnitTypes::Protoss_Nexus])
 	{
 		buildingDesired[UnitTypes::Protoss_Assimilator] = Resources().getMyGas().size();
 	}
 
 	// Forge logic
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 3)
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 3 && Units().getSupply() > 120)
 	{
 		buildingDesired[UnitTypes::Protoss_Forge] = 1;
 	}
