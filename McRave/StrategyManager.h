@@ -41,7 +41,9 @@ public:
 	void terranStrategy();
 	void zergStrategy();
 	void updateSituationalBehaviour();
-	void updateUnitScore(UnitType, int);
+	void updateProtossUnitScore(UnitType, int);
+	void updateTerranUnitScore(UnitType, int);
+	void updateZergUnitScore(UnitType, int);
 
 	// Check if we have locked a unit out of being allowed
 	bool isLocked(UnitType);

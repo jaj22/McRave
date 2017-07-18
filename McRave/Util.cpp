@@ -199,6 +199,12 @@ double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
 		return 50.0;
 	}
 
+	// Carriers don't have any strength, manually modify priority
+	else if (unit.getType() == UnitTypes::Protoss_Carrier)
+	{
+		return 20.0;
+	}
+
 	// Workers get a fairly low priority
 	else if (unit.getType().isWorker())
 	{

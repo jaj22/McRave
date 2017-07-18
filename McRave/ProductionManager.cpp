@@ -190,6 +190,13 @@ void ProductionTrackerClass::updateProtoss()
 						building.unit()->upgrade(UpgradeTypes::Carrier_Capacity);
 					}
 				}
+				if (Strategy().getUnitScore()[UnitTypes::Protoss_Scout] > 0.0)
+				{
+					if (Broodwar->self()->minerals() >= UpgradeTypes::Gravitic_Thrusters.mineralPrice() + Buildings().getQueuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Gravitic_Thrusters.gasPrice() + Buildings().getQueuedGas() + reservedGas)
+					{
+						building.unit()->upgrade(UpgradeTypes::Gravitic_Thrusters);
+					}
+				}
 			}
 
 			// Citadel Of Adun
@@ -271,6 +278,21 @@ void ProductionTrackerClass::updateProtoss()
 					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Corsair.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Corsair.gasPrice() + Buildings().getQueuedGas())
 					{
 						building.unit()->train(UnitTypes::Protoss_Corsair);
+					}
+				}
+
+				// Only build scouts against Carriers
+				if (Strategy().getUnitScore()[UnitTypes::Protoss_Scout] > 0.0)
+				{
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Scout.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Scout.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->train(UnitTypes::Protoss_Scout);
+						idleHighProduction.erase(building.unit());
+						return;
+					}
+					else
+					{
+						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Scout);
 					}
 				}
 			}

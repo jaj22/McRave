@@ -23,6 +23,7 @@
 // One shot unit scoring? maybe not
 
 // TODO:
+// Only remove boulders close to me
 // If a building is no longer desired, remove from Probes build objective
 // Invis grid for observers to detect stuff
 // Melee units behaving poorly
@@ -79,65 +80,65 @@ void McRaveModule::onFrame()
 	Display().update();
 }
 
-void McRaveModule::onSendText(std::string text)
+void McRaveModule::onSendText(string text)
 {
 	Display().sendText(text);
 }
 
-void McRaveModule::onReceiveText(BWAPI::Player player, std::string text)
+void McRaveModule::onReceiveText(Player player, string text)
 {
 }
 
-void McRaveModule::onPlayerLeft(BWAPI::Player player)
+void McRaveModule::onPlayerLeft(Player player)
 {
 	Broodwar->sendText("GG %s!", player->getName().c_str());
 }
 
-void McRaveModule::onNukeDetect(BWAPI::Position target)
+void McRaveModule::onNukeDetect(Position target)
 {
 }
 
-void McRaveModule::onUnitDiscover(BWAPI::Unit unit)
+void McRaveModule::onUnitDiscover(Unit unit)
 {
 }
 
-void McRaveModule::onUnitEvade(BWAPI::Unit unit)
+void McRaveModule::onUnitEvade(Unit unit)
 {
 }
 
-void McRaveModule::onUnitShow(BWAPI::Unit unit)
+void McRaveModule::onUnitShow(Unit unit)
 {
 }
 
-void McRaveModule::onUnitHide(BWAPI::Unit unit)
+void McRaveModule::onUnitHide(Unit unit)
 {
 }
 
-void McRaveModule::onUnitCreate(BWAPI::Unit unit)
+void McRaveModule::onUnitCreate(Unit unit)
 {
 	Units().onUnitCreate(unit);
 }
 
-void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
+void McRaveModule::onUnitDestroy(Unit unit)
 {
 	Units().removeUnit(unit);
 	Terrain().removeTerritory(unit);
 }
 
-void McRaveModule::onUnitMorph(BWAPI::Unit unit)
+void McRaveModule::onUnitMorph(Unit unit)
 {
 	Units().onUnitMorph(unit);
 }
 
-void McRaveModule::onUnitRenegade(BWAPI::Unit unit)
+void McRaveModule::onUnitRenegade(Unit unit)
 {
 }
 
-void McRaveModule::onSaveGame(std::string gameName)
+void McRaveModule::onSaveGame(string gameName)
 {
 }
 
-void McRaveModule::onUnitComplete(BWAPI::Unit unit)
+void McRaveModule::onUnitComplete(Unit unit)
 {
 	Units().onUnitComplete(unit);
 }

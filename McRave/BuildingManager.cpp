@@ -221,6 +221,15 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 	}
 
+	// If we are being rushed and need a battery
+	if (Strategy().isRush())
+	{
+		if (building == UnitTypes::Protoss_Shield_Battery)
+		{
+			return getBuildLocationNear(building, Terrain().getFirstChoke());
+		}
+	}
+
 	// For each base, check if there's a Pylon or Cannon needed
 	for (auto &base : Bases().getMyBases())
 	{
@@ -254,15 +263,6 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 
 bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
-	// Attempt to place Cannons in a concave around the second choke on a fast expansion
-	/*if (Strategy().isAllyFastExpand())
-	{
-	if (building == UnitTypes::Protoss_Photon_Cannon)
-	{
-	return false;
-	}
-	}*/
-
 	// Production buildings that create ground units require spacing so they don't trap units -- TEMP: Supply depot to not block SCVs (need to find solution)
 	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
 	{

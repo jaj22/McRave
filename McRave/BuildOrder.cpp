@@ -248,6 +248,7 @@ void BuildOrderTrackerClass::protossTech()
 	else if (techUnit == UnitTypes::Protoss_Scout)
 	{
 		buildingDesired[UnitTypes::Protoss_Stargate] = 2;
+		buildingDesired[UnitTypes::Protoss_Fleet_Beacon] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
 	}
 	else if (techUnit == UnitTypes::Protoss_Arbiter)
 	{

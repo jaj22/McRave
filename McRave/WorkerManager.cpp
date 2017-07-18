@@ -22,7 +22,7 @@ void WorkerTrackerClass::updateWorkers()
 
 void WorkerTrackerClass::updateScout()
 {
-	// Update scout probes decision if we are above 9 supply
+	// Update scout probes decision if we are above 9 supply and just placed a pylon
 	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) > 0 && Units().getSupply() >= 18 && (Broodwar->getFrameCount() - deadScoutFrame > 1000 && (!scout || (scout && !scout->exists()))))
 	{
 		scout = getClosestWorker(Position(Terrain().getSecondChoke()));
@@ -119,14 +119,7 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 			exploreArea(worker);
 			return;
 		}
-	}
-
-	// Reassignment logic
-	if (Resources().getGasNeeded() > 0 && (!Strategy().isRush() || !BuildOrder().isOpener() || Broodwar->self()->getRace() == Races::Terran))
-	{
-		reAssignWorker(worker);
-		Resources().setGasNeeded(Resources().getGasNeeded() - 1);
-	}
+	}	
 
 	// Boulder removal logic
 	if (Resources().getMyBoulders().size() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
@@ -147,6 +140,14 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	// Building logic
 	if (worker.getBuildingType().isValid() && worker.getBuildPosition().isValid())
 	{		
+		// If our building desired has changed recently, remove
+		if (BuildOrder().getBuildingDesired()[worker.getBuildingType()] <= Broodwar->self()->visibleUnitCount(worker.getBuildingType()))
+		{
+			worker.setBuildingType(UnitTypes::None);
+			worker.setBuildPosition(TilePositions::None);
+		}
+
+		// If our building position is no longer buildable, remove
 		if (!Buildings().canBuildHere(worker.getBuildingType(), worker.getBuildPosition()))
 		{
 			worker.setBuildingType(UnitTypes::None);
@@ -233,6 +234,13 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	else
 	{
 		worker.setTarget(nullptr);
+	}
+
+	// Reassignment logic
+	if (Resources().getGasNeeded() > 0 && (!Strategy().isRush() || !BuildOrder().isOpener() || Broodwar->self()->getRace() == Races::Terran))
+	{
+		reAssignWorker(worker);
+		Resources().setGasNeeded(Resources().getGasNeeded() - 1);
 	}
 
 	// If worker doesn't have an assigned resource, assign one

@@ -198,7 +198,14 @@ void StrategyTrackerClass::updateScoring()
 	for (auto &t : Units().getEnemyComposition())
 	{
 		// For each type, add a score to production based on the unit count divided by our current unit count
-		updateUnitScore(t.first, t.second);
+		if (Broodwar->self()->getRace() == Races::Protoss)
+		{
+			updateProtossUnitScore(t.first, t.second);
+		}
+		else if (Broodwar->self()->getRace() == Races::Terran)
+		{
+			updateTerranUnitScore(t.first, t.second);
+		}
 		if (t.first != UnitTypes::None && t.second > 0.0)
 		{
 			Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
@@ -214,7 +221,7 @@ void StrategyTrackerClass::updateScoring()
 	}
 }
 
-void StrategyTrackerClass::updateUnitScore(UnitType unit, int count)
+void StrategyTrackerClass::updateProtossUnitScore(UnitType unit, int count)
 {
 	switch (unit)
 	{
@@ -327,4 +334,14 @@ void StrategyTrackerClass::updateUnitScore(UnitType unit, int count)
 		unitScore[UnitTypes::Protoss_High_Templar] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar)));
 		break;
 	}
+}
+
+void StrategyTrackerClass::updateTerranUnitScore(UnitType unit, int count)
+{
+
+}
+
+void StrategyTrackerClass::updateZergUnitScore(UnitType unit, int count)
+{
+
 }
