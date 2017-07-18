@@ -1,5 +1,25 @@
 #include "McRave.h"
 
+// McRaveT Stuff: need to wall in all 3 
+// TvP
+// 2 Fact triple tank cheese
+// 9 depot, 10 rax, 12 refinery, 15 depot, 18 fact, 20 fact, 23 depot, both addons asap, research vult speed/mines, build vultures after the tanks and push
+
+// TvT
+// 1 Fact FE into 2 base BC / yamato
+
+// TvZ
+// 2 port wraith
+
+// McRaveZ Stuff:
+// ZvP / ZvT
+// 2 Hatch lurker
+// 9 pool, 9 gas, 6 lings, lair, den, aspect, 4 hydras
+
+// ZvZ
+// 1H spire
+// 9 pool, 9 gas, 6 lings, lair, spire
+
 void BuildOrderTrackerClass::update()
 {
 	Display().startClock();
@@ -68,10 +88,6 @@ void BuildOrderTrackerClass::updateDecision()
 		if (Strategy().isRush())
 		{
 			opening = 4;
-		}
-		if (Broodwar->mapFileName().find("Alchemist") != Broodwar->mapName().npos)
-		{
-			opening = 5; // Aka fuck you I'm 9/9 gating because this map is fucking stupid
 		}
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
@@ -339,10 +355,20 @@ void BuildOrderTrackerClass::terranOpener()
 {
 	if (getOpening)
 	{
-		buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 18) + (Units().getSupply() >= 20) + (Units().getSupply() >= 42);
-		buildingDesired[UnitTypes::Terran_Engineering_Bay] = (Units().getSupply() >= 36);
-		buildingDesired[UnitTypes::Terran_Refinery] = (Units().getSupply() >= 36);
-		buildingDesired[UnitTypes::Terran_Academy] = (Units().getSupply() >= 48);
+		// Two Rax Academy
+		if (opening == 1)
+		{
+			buildingDesired[UnitTypes::Terran_Barracks] = (Units().getSupply() >= 18) + (Units().getSupply() >= 20) + (Units().getSupply() >= 42);
+			buildingDesired[UnitTypes::Terran_Engineering_Bay] = (Units().getSupply() >= 36);
+			buildingDesired[UnitTypes::Terran_Refinery] = (Units().getSupply() >= 36);
+			buildingDesired[UnitTypes::Terran_Academy] = (Units().getSupply() >= 48);
+		}
+
+		// 1 Rax Fact
+		if (opening == 2)
+		{
+
+		}
 	}
 	return;
 }

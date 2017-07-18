@@ -46,6 +46,7 @@ class GridTrackerClass
 	int observerGrid[1024][1024];
 	int arbiterGrid[1024][1024];
 	int psiStormGrid[1024][1024];
+	int EMPGrid[1024][1024];
 	
 	unordered_set<WalkPosition, myHash> resetWalks;
 
@@ -71,7 +72,13 @@ public:
 	void updateObserverMovement(Unit);
 	void updateAllyMovement(Unit, WalkPosition);
 	void updateReservedLocation(UnitType, TilePosition);
+
+	// Update if there is a storm active on the map or we are attempting to cast one
 	void updatePsiStorm(WalkPosition);
+	void updatePsiStorm(Bullet);
+
+	// Update if there is an EMP active on the map
+	void updateEMP(Bullet);
 
 	// On start functions
 	void updateGroundDistanceGrid();	
@@ -168,6 +175,14 @@ public:
 	// Returns 1 if an allied Arbiter is within range of the given WalkPosition, 0 otherwise
 	int getArbiterGrid(int x, int y) { return arbiterGrid[x][y]; }
 	int getArbiterGrid(WalkPosition here) { return arbiterGrid[here.x][here.y]; }
+
+	// Returns 1 if an active psi storm exists or will exist at this location
+	int getPsiStormGrid(int x, int y) { return psiStormGrid[x][y]; }
+	int getPsiStormGrid(WalkPosition here) { return psiStormGrid[here.x][here.y]; }
+
+	// Returns 1 if an active EMP is targeted at this location
+	int getEMPGrid(int x, int y) { return EMPGrid[x][y]; }
+	int getEMPGrid(WalkPosition here) { return EMPGrid[here.x][here.y]; }
 
 	// Other functions
 	Position getArmyCenter(){ return armyCenter; }

@@ -22,6 +22,8 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 	double highest = 0.0, thisUnit = 0.0;
 	Unit target = nullptr;
 	Position targetPosition;
+	WalkPosition targetWalkPosition;
+	TilePosition targetTilePosition;
 
 	for (auto &e : Units().getEnemyUnits())
 	{
@@ -70,21 +72,21 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 				thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getWalkPosition())) / distance;
 			}
 
-			// Arbiters only target tanks
+			// Arbiters only target tanks - Testing no regard for distance
 			else if (unit.getType() == UnitTypes::Protoss_Arbiter)
 			{
 				if (enemy.getType() == UnitTypes::Terran_Siege_Tank_Siege_Mode || enemy.getType() != UnitTypes::Terran_Siege_Tank_Tank_Mode)
 				{
-					thisUnit = (enemy.getPriority() * Grids().getStasisCluster(enemy.getWalkPosition())) / distance;
+					thisUnit = (enemy.getPriority() * Grids().getStasisCluster(enemy.getWalkPosition()));
 				}
 			}
 
 			// High Templars target the highest priority with the largest cluster
 			else if (unit.getType() == UnitTypes::Protoss_High_Templar)
 			{
-				if (Grids().getACluster(enemy.getWalkPosition()) < Grids().getEAirCluster(enemy.getWalkPosition()) + Grids().getEGroundCluster(enemy.getWalkPosition()) && !enemy.getType().isBuilding())
+				if (Grids().getPsiStormGrid(enemy.getWalkPosition()) == 0 && Grids().getACluster(enemy.getWalkPosition()) < Grids().getEAirCluster(enemy.getWalkPosition()) + Grids().getEGroundCluster(enemy.getWalkPosition()) && !enemy.getType().isBuilding())
 				{
-					thisUnit = (enemy.getPriority() * Grids().getEGroundCluster(enemy.getWalkPosition()) * Grids().getEAirCluster(enemy.getWalkPosition())) / distance;
+					thisUnit = (enemy.getPriority() * max(Grids().getEGroundCluster(enemy.getWalkPosition()), Grids().getEAirCluster(enemy.getWalkPosition()))) / distance;
 				}
 			}
 
@@ -107,11 +109,15 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 			target = enemy.unit();
 			highest = thisUnit;
 			targetPosition = enemy.getPosition();
+			targetWalkPosition = enemy.getWalkPosition();
+			targetTilePosition = enemy.getTilePosition();
 		}
 	}
 	if (target)
 	{
 		unit.setTargetPosition(targetPosition);
+		unit.setTargetWalkPosition(targetWalkPosition);
+		unit.setTargetTilePosition(targetTilePosition);
 	}
 	return target;
 }
@@ -121,6 +127,8 @@ Unit TargetTrackerClass::allyTarget(UnitInfo& unit)
 	double highest = 0.0;
 	Unit target = nullptr;
 	Position targetPosition;
+	WalkPosition targetWalkPosition;
+	TilePosition targetTilePosition;
 
 	// Search for an ally target that needs healing for medics
 	for (auto &a : Units().getAllyUnits())
@@ -143,6 +151,8 @@ Unit TargetTrackerClass::allyTarget(UnitInfo& unit)
 			highest = distance;
 			target = ally.unit();
 			targetPosition = ally.getPosition();
+			targetWalkPosition = ally.getWalkPosition();
+			targetTilePosition = ally.getTilePosition();
 		}
 	}
 
@@ -150,6 +160,8 @@ Unit TargetTrackerClass::allyTarget(UnitInfo& unit)
 	if (target)
 	{
 		unit.setTargetPosition(targetPosition);
+		unit.setTargetWalkPosition(targetWalkPosition);
+		unit.setTargetTilePosition(targetTilePosition);
 	}
 	return target;
 }

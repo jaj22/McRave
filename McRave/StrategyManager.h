@@ -16,6 +16,7 @@ class StrategyTrackerClass
 	bool holdRamp = false;
 	bool bust = false;
 	bool zealotsLocked = false;
+	bool marinesLocked = false;
 	double recallFrame = 0.0;
 
 	// Testing stuff

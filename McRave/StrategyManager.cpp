@@ -120,20 +120,43 @@ void StrategyTrackerClass::protossStrategy()
 
 void StrategyTrackerClass::terranStrategy()
 {
-	// Ramp holding logic
-	if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) < 1)
+	// If it's early on and we're being rushed
+	if (!Broodwar->self()->hasResearched(TechTypes::Stim_Packs) && Broodwar->self()->completedUnitCount(UnitTypes::Terran_Factory) == 0)
 	{
-		holdRamp = false;
+		// Ramp holding logic
+		if (Broodwar->self()->completedUnitCount(UnitTypes::Terran_Academy) < 1)
+		{
+			holdRamp = false;
+		}
+		else
+		{
+			holdRamp = true;
+		}
+
+		// If we are being BBS'd, unlock Marines
+		if (Players().getNumberTerran() > 0)
+		{
+			if ((Units().getEnemyComposition()[UnitTypes::Terran_Barracks] == 0 || Units().getEnemyComposition()[UnitTypes::Terran_Barracks] == 2) && Units().getEnemyComposition()[UnitTypes::Terran_Command_Center] == 1 && Units().getEnemyComposition()[UnitTypes::Terran_Refinery] == 0)
+			{
+				marinesLocked = false;
+			}
+			else
+			{
+				marinesLocked = true;
+			}
+		}
+
+		// If we are being 4/5 pooled
+		if (Players().getNumberZerg() > 0 && Units().getEnemyComposition()[UnitTypes::Zerg_Zergling] >= 4 && Units().getEnemyComposition()[UnitTypes::Zerg_Drone] <= 6)
+		{
+			rush = true;
+		}
 	}
 	else
 	{
-		holdRamp = true;
-	}
-
-	// If we are being 4/5 pooled
-	if (Players().getNumberZerg() > 0 && Units().getEnemyComposition()[UnitTypes::Zerg_Zergling] >= 4 && Units().getEnemyComposition()[UnitTypes::Zerg_Drone] <= 6)
-	{
-		rush = true;
+		marinesLocked = false;
+		holdRamp = false;
+		rush = false;
 	}
 }
 
@@ -150,6 +173,15 @@ void StrategyTrackerClass::updateBullets()
 	{
 		if (bullet->exists() && bullet->getSource() && bullet->getSource()->exists() && bullet->getTarget() && bullet->getTarget()->exists())
 		{
+			if (bullet->getType() == BulletTypes::Psionic_Storm)
+			{
+				Broodwar << "Psi Storm Active at: " << bullet->getPosition() << endl;
+				Grids().updatePsiStorm(bullet);
+			}
+			if (bullet->getType() == BulletTypes::EMP_Missile)
+			{
+				Broodwar << "EMP Sent to: " << bullet->getTargetPosition() << endl;
+			}		
 			if (bullet->getSource()->getPlayer() == Broodwar->self() && myBullets.find(bullet) == myBullets.end())
 			{
 				myBullets.emplace(bullet);
@@ -250,15 +282,6 @@ void StrategyTrackerClass::updateProtossUnitScore(UnitType unit, int count)
 		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 0.50) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
 		unitScore[UnitTypes::Protoss_Arbiter] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter)));
 		break;
-	case UnitTypes::Enum::Terran_Wraith:
-		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
-		break;
-	case UnitTypes::Enum::Terran_Science_Vessel:
-		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
-		break;
-	case UnitTypes::Enum::Terran_Battlecruiser:
-		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
-		break;
 	case UnitTypes::Enum::Terran_Siege_Tank_Siege_Mode:
 		unitScore[UnitTypes::Protoss_Zealot] += (count * unit.supplyRequired() * 0.85) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot)));
 		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 0.15) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
@@ -268,6 +291,17 @@ void StrategyTrackerClass::updateProtossUnitScore(UnitType unit, int count)
 		unitScore[UnitTypes::Protoss_Zealot] += (count * unit.supplyRequired() * 0.85) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot)));
 		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 0.15) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
 		unitScore[UnitTypes::Protoss_Arbiter] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Arbiter)));
+		break;
+	case UnitTypes::Enum::Terran_Wraith:
+		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
+		break;
+	case UnitTypes::Enum::Terran_Science_Vessel:
+		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
+		break;
+	case UnitTypes::Enum::Terran_Battlecruiser:
+		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
+		break;
+	case UnitTypes::Enum::Terran_Valkyrie:
 		break;
 
 	case UnitTypes::Enum::Zerg_Zergling:
@@ -298,6 +332,8 @@ void StrategyTrackerClass::updateProtossUnitScore(UnitType unit, int count)
 		unitScore[UnitTypes::Protoss_Dragoon] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Dragoon)));
 		unitScore[UnitTypes::Protoss_Corsair] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Corsair)));
 		break;
+	case UnitTypes::Enum::Zerg_Devourer:
+		break;
 	case UnitTypes::Enum::Zerg_Defiler:
 		unitScore[UnitTypes::Protoss_Zealot] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot)));
 		unitScore[UnitTypes::Protoss_Reaver] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver)));
@@ -324,6 +360,8 @@ void StrategyTrackerClass::updateProtossUnitScore(UnitType unit, int count)
 	case UnitTypes::Enum::Protoss_Dark_Archon:
 		unitScore[UnitTypes::Protoss_High_Templar] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar)));
 		break;
+	case UnitTypes::Enum::Protoss_Scout:
+		break;
 	case UnitTypes::Enum::Protoss_Carrier:
 		unitScore[UnitTypes::Protoss_Scout] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Scout)));
 		break;
@@ -338,7 +376,71 @@ void StrategyTrackerClass::updateProtossUnitScore(UnitType unit, int count)
 
 void StrategyTrackerClass::updateTerranUnitScore(UnitType unit, int count)
 {
+	switch (unit)
+	{
+	case UnitTypes::Enum::Terran_Marine:		
+		break;
+	case UnitTypes::Enum::Terran_Medic:
+		break;
+	case UnitTypes::Enum::Terran_Firebat:		
+		break;
+	case UnitTypes::Enum::Terran_Vulture:
+		break;
+	case UnitTypes::Enum::Terran_Goliath:
+		break;
+	case UnitTypes::Enum::Terran_Siege_Tank_Siege_Mode:
+		break;
+	case UnitTypes::Enum::Terran_Siege_Tank_Tank_Mode:
+		break;
+	case UnitTypes::Enum::Terran_Wraith:
+		break;
+	case UnitTypes::Enum::Terran_Science_Vessel:
+		break;
+	case UnitTypes::Enum::Terran_Battlecruiser:
+		break;
+	case UnitTypes::Enum::Terran_Valkyrie:
+		break;
 
+	case UnitTypes::Enum::Zerg_Zergling:
+		break;
+	case UnitTypes::Enum::Zerg_Hydralisk:
+		break;
+	case UnitTypes::Enum::Zerg_Lurker:
+		break;
+	case UnitTypes::Enum::Zerg_Ultralisk:
+		break;
+	case UnitTypes::Enum::Zerg_Mutalisk:
+		break;
+	case UnitTypes::Enum::Zerg_Guardian:
+		break;
+	case UnitTypes::Enum::Zerg_Devourer:
+		break;
+	case UnitTypes::Enum::Zerg_Defiler:
+		break;
+
+	case UnitTypes::Enum::Protoss_Zealot:
+		break;
+	case UnitTypes::Enum::Protoss_Dragoon:
+		break;
+	case UnitTypes::Enum::Protoss_High_Templar:
+		break;
+	case UnitTypes::Enum::Protoss_Dark_Templar:
+		break;
+	case UnitTypes::Enum::Protoss_Reaver:
+		break;
+	case UnitTypes::Enum::Protoss_Archon:
+		break;
+	case UnitTypes::Enum::Protoss_Dark_Archon:
+		break;
+	case UnitTypes::Enum::Protoss_Scout:
+		break;
+	case UnitTypes::Enum::Protoss_Carrier:
+		break;
+	case UnitTypes::Enum::Protoss_Arbiter:
+		break;
+	case UnitTypes::Enum::Protoss_Corsair:
+		break;
+	}
 }
 
 void StrategyTrackerClass::updateZergUnitScore(UnitType unit, int count)

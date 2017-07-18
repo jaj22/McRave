@@ -60,7 +60,7 @@ void GridTrackerClass::reset()
 			armyCenter = Position(WalkPosition(x, y));
 		}
 
-		// Reset WalkPosition grids
+		// Reset WalkPosition grids		
 		aClusterGrid[x][y] = 0;
 		antiMobilityGrid[x][y] = 0;
 		eGroundGrid[x][y] = 0.0;
@@ -72,6 +72,8 @@ void GridTrackerClass::reset()
 		eDetectorGrid[x][y] = 0;
 		eGroundClusterGrid[x][y] = 0;
 		eAirClusterGrid[x][y] = 0;
+		psiStormGrid[x][y] = 0;
+		EMPGrid[x][y] = 0;
 	}
 
 	// Wipe all the information in our hashed set before gathering information
@@ -764,7 +766,32 @@ void GridTrackerClass::updatePsiStorm(WalkPosition here)
 		{
 			if (WalkPosition(x, y).isValid())
 			{
+				resetWalks.insert(WalkPosition(x, y));
 				psiStormGrid[x][y] = 1;
+			}
+		}
+	}
+	return;
+}
+
+void GridTrackerClass::updatePsiStorm(Bullet storm)
+{
+	WalkPosition here = WalkPosition(storm->getPosition());
+	updatePsiStorm(here);
+	return;
+}
+
+void GridTrackerClass::updateEMP(Bullet EMP)
+{
+	WalkPosition here = WalkPosition(EMP->getTargetPosition());
+	for (int x = here.x - 4; x < here.x + 8; x++)
+	{
+		for (int y = here.y - 4; y < here.y + 8; y++)
+		{
+			if (WalkPosition(x, y).isValid())
+			{
+				resetWalks.insert(WalkPosition(x, y));
+				EMPGrid[x][y] = 1;
 			}
 		}
 	}

@@ -17,6 +17,7 @@
 // Cannons / Worker pull
 // Cannons for each expansion
 // Bullets if working, use for unit scoring of performance
+// Test psi storm grid and EMP grid
 
 // One shot stuff:
 // onUnitMorph - Archons, Eggs, Refineries

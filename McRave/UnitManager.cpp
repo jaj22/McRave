@@ -45,7 +45,7 @@ void UnitTrackerClass::onUnitCreate(Unit unit)
 void UnitTrackerClass::onUnitComplete(Unit unit)
 {
 	// Don't need to store Scarabs
-	if (unit->getType() == UnitTypes::Protoss_Scarab)
+	if (unit->getType() == UnitTypes::Protoss_Scarab || unit->getType() == UnitTypes::Zerg_Larva)
 	{
 		return;
 	}
@@ -58,16 +58,20 @@ void UnitTrackerClass::onUnitComplete(Unit unit)
 			Workers().storeWorker(unit);
 		}
 
-		if (unit->getType() == UnitTypes::Protoss_Observer || unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_High_Templar || unit->getType() == UnitTypes::Protoss_Arbiter)
+		if (unit->getType() == UnitTypes::Protoss_Observer)
 		{
 			SpecialUnits().storeUnit(unit);
+		}
+		else if (unit->getType() == UnitTypes::Protoss_Reaver || unit->getType() == UnitTypes::Protoss_High_Templar || unit->getType() == UnitTypes::Protoss_Arbiter)
+		{
+			storeAlly(unit);
+			SpecialUnits().storeUnit(unit);			
 		}
 		else if (unit->getType() == UnitTypes::Protoss_Shuttle)
 		{
 			Transport().storeUnit(unit);
 		}
-
-		if (!unit->getType().isWorker() && !unit->getType().isBuilding())
+		else if (!unit->getType().isWorker() && !unit->getType().isBuilding())
 		{
 			storeAlly(unit);
 		}
@@ -86,7 +90,38 @@ void UnitTrackerClass::onUnitMorph(Unit unit)
 {
 	if (unit->getPlayer() == Broodwar->self())
 	{
-
+		// Zerg morphing
+		if (unit->getType().getRace() == Races::Zerg)
+		{
+			if (unit->getType() == UnitTypes::Zerg_Egg || unit->getType() == UnitTypes::Zerg_Lurker_Egg)
+			{
+				// Figure out how morphing works
+			}
+			else if (unit->getType().isBuilding() && Workers().getMyWorkers().find(unit) != Workers().getMyWorkers().end())
+			{
+				Workers().removeWorker(unit);
+				Buildings().storeBuilding(unit);
+				supply -= 2;
+			}
+			else if (unit->getType().isWorker())
+			{
+				Workers().storeWorker(unit);
+			}
+			else if (unit->getType() == UnitTypes::Zerg_Overlord || unit->getType() == UnitTypes::Zerg_Queen || unit->getType() == UnitTypes::Zerg_Defiler)
+			{
+				SpecialUnits().storeUnit(unit);
+			}
+			else if (!unit->getType().isWorker() && !unit->getType().isBuilding())
+			{
+				storeAlly(unit);
+			}
+		}
+		
+		// Protoss morphing
+		if (unit->getType() == UnitTypes::Protoss_Archon)
+		{
+			// Remove the two HTs and their respective supply
+		}
 	}
 	else if (unit->getPlayer()->isEnemy(Broodwar->self()))
 	{
@@ -309,6 +344,12 @@ void UnitTrackerClass::updateAlly(UnitInfo& unit)
 
 void UnitTrackerClass::removeUnit(Unit unit)
 {
+	// Store supply if it costs supply
+	if (unit->getType().supplyRequired() > 0)
+	{
+		supply -= unit->getType().supplyRequired();
+	}
+
 	if (allyUnits.find(unit) != allyUnits.end())
 	{
 		allyUnits[unit].setDeadFrame(Broodwar->getFrameCount());

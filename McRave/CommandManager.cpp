@@ -166,6 +166,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 		if (unit.getTarget() && unit.getTarget()->exists() && unit.unit()->getEnergy() >= 75)
 		{
 			unit.unit()->useTech(TechTypes::Psionic_Storm, unit.getTarget());
+			Grids().updatePsiStorm(unit.getTargetWalkPosition());
 			return;
 		}
 	}

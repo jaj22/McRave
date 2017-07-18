@@ -68,7 +68,7 @@ void SpecialUnitTrackerClass::updateArbiters()
 			{
 				for (int y = start.y - 20; y <= start.y + 20; y++)
 				{
-					if (WalkPosition(x, y).isValid() && Grids().getArbiterGrid(x, y) == 0 && (closestD == 0.0 || Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
+					if (WalkPosition(x, y).isValid() && Grids().getEMPGrid(x, y) == 0 && Grids().getArbiterGrid(x, y) == 0 && (closestD == 0.0 || Grids().getACluster(x, y) > bestCluster || (Grids().getACluster(x, y) == bestCluster && Terrain().getPlayerStartingPosition().getDistance(Position(WalkPosition(x, y))) < closestD)))
 					{
 						if (Util().isSafe(start, WalkPosition(x, y), UnitTypes::Protoss_Arbiter, false, true, false))
 						{
