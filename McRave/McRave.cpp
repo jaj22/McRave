@@ -8,6 +8,7 @@
 
 // --- AUTHOR NOTES ---
 // TODO in testing before AIIDE 2017:
+// Re-test grids due to merge conflict issues
 // Reserve Path for ReserveGrid
 // Island check for DistanceGridHome
 // Test Recall!
@@ -63,7 +64,7 @@ void McRaveModule::onEnd(bool isWinner)
 
 void McRaveModule::onFrame()
 {
-	//Players().update();
+	Players().update();
 	Terrain().update();
 	Grids().update();
 	Resources().update();
@@ -121,9 +122,7 @@ void McRaveModule::onUnitCreate(Unit unit)
 
 void McRaveModule::onUnitDestroy(Unit unit)
 {
-	Bases().removeBase(unit);
 	Units().removeUnit(unit);
-	Terrain().removeTerritory(unit);
 }
 
 void McRaveModule::onUnitMorph(Unit unit)
