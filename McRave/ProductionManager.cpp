@@ -4,11 +4,25 @@ void ProductionTrackerClass::update()
 {
 	Display().startClock();
 	updateReservedResources();
-	updateProtoss();
-	updateTerran();
-	updateZerg();
+	updateProduction();
 	Display().performanceTest(__FUNCTION__);
 	return;
+}
+
+void ProductionTrackerClass::updateProduction()
+{
+	if (Broodwar->self()->getRace() == Races::Protoss)
+	{
+		updateProtoss();
+	}
+	else if (Broodwar->self()->getRace() == Races::Terran)
+	{
+		updateTerran();
+	}
+	else
+	{
+		updateZerg();
+	}
 }
 
 bool ProductionTrackerClass::canAfford(UnitType unit)
@@ -109,10 +123,10 @@ void ProductionTrackerClass::updateProtoss()
 
 	// Production
 	for (auto &thisBuilding : Buildings().getMyBuildings())
-	{			
+	{
 		BuildingInfo &building = thisBuilding.second;
 		if (building.unit() && building.unit()->isIdle())
-		{			
+		{
 			// Forge
 			if (building.getType() == UnitTypes::Protoss_Forge && Units().getSupply() > 100)
 			{
@@ -344,7 +358,7 @@ void ProductionTrackerClass::updateProtoss()
 			// Templar Archives
 			else if (building.getType() == UnitTypes::Protoss_Templar_Archives)
 			{
-				if (Strategy().getNumberTerran() == 0 || (Strategy().getNumberTerran() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter) > 0))
+				if (Players().getNumberTerran() == 0 || (Players().getNumberTerran() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter) > 0))
 				{
 					if (!Broodwar->self()->hasResearched(TechTypes::Psionic_Storm))
 					{

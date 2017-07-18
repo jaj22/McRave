@@ -14,7 +14,7 @@ void TerrainTrackerClass::updateAreas()
 	// If we see a building, check for closest starting location
 	if (enemyBasePositions.size() <= 0)
 	{
-		for (auto &unit : Units().getEnUnits())
+		for (auto &unit : Units().getEnemyUnits())
 		{
 			if (unit.second.getType().isBuilding() && Terrain().getEnemyBasePositions().size() == 0 && unit.second.getPosition().getDistance(Terrain().getPlayerStartingPosition()) > 1600)
 			{

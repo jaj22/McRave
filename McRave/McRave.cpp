@@ -8,43 +8,35 @@
 
 // --- AUTHOR NOTES ---
 // TODO in testing before AIIDE 2017:
-
-// OPTIMIZATION:
-// One shot grid updating and minimizing grid iterations - Testing
-// Move update of units in StrategyManager to UnitManager - Testing
-// Static defense needs a new method
-
-// Edge Cases:
-// onUnitMorph - Archons, Eggs, Refineries
-
-// Ready for Testing:
+// Reserve Path for ReserveGrid
+// Island check for DistanceGridHome
 // Test Recall!
 // Test size/damage type
 // Anti-stone check
-
-// Other:
-// Melee unit bouncing - trying min TTT of 2.0 seconds
-// Worker pull with FFE
-// Cannons stored in buildinginfo defense map
-// Use global ally / globaly enemy as local latching
-// Archon merging
-// Spider mine removal from expansions
+// Cannons / Worker pull
 // Cannons for each expansion
 // Bullets if working, use for unit scoring of performance
-// Test FFE against random
-// Disable GUI
-// Camera center on army center
-// Check shuttles
+
+// One shot stuff:
+// onUnitMorph - Archons, Eggs, Refineries
+// One shot composition storing - requires onMorph usage
+// One shot unit scoring? maybe not
 
 // TODO:
+// If a building is no longer desired, remove from Probes build objective
+// Invis grid for observers to detect stuff
+// Melee units behaving poorly
+// Use global ally / globaly enemy as local latching
+// Archon merging when low energy or fleeing
+// Spider mine removal from expansions
+// Improve shuttles
 // Remove exists check from target aquisition?
 // IsSelected to display information
-// Move special units into their own area, separate command manager
-// Make target position stuff based on units current command target position
+// Move special units into their own area, separate command manager?
+// Make target position stuff based on units current command target position?
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
-// Player class to track upgrades/race/supply/strength
 
 // TODO to move to no latency compensation:
 // Building idle status stored

@@ -32,18 +32,18 @@ void TransportTrackerClass::updateInformation(TransportInfo& shuttle)
 		// See if any Reavers need a shuttle
 		for (auto &reaver : SpecialUnits().getMyReavers())
 		{
-			if (reaver.first && reaver.first->exists() && (!Units().getMyUnits()[reaver.first].getTransport() || !Units().getMyUnits()[reaver.first].getTransport()->exists()) && shuttle.getCargoSize() + 2 < 4)
+			if (reaver.first && reaver.first->exists() && (!Units().getAllyUnits()[reaver.first].getTransport() || !Units().getAllyUnits()[reaver.first].getTransport()->exists()) && shuttle.getCargoSize() + 2 < 4)
 			{
-				Units().getMyUnits()[reaver.first].setTransport(shuttle.unit());
+				Units().getAllyUnits()[reaver.first].setTransport(shuttle.unit());
 				shuttle.assignCargo(reaver.first);
 			}
 		}
 		// See if any High Templars need a shuttle
 		for (auto &templar : SpecialUnits().getMyTemplars())
 		{
-			if (templar.first && templar.first->exists() && (!Units().getMyUnits()[templar.first].getTransport() || !Units().getMyUnits()[templar.first].getTransport()->exists()) && shuttle.getCargoSize() + 1 < 4)
+			if (templar.first && templar.first->exists() && (!Units().getAllyUnits()[templar.first].getTransport() || !Units().getAllyUnits()[templar.first].getTransport()->exists()) && shuttle.getCargoSize() + 1 < 4)
 			{
-				Units().getMyUnits()[templar.first].setTransport(shuttle.unit());
+				Units().getAllyUnits()[templar.first].setTransport(shuttle.unit());
 				shuttle.assignCargo(templar.first);
 			}
 		}
@@ -90,7 +90,7 @@ void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 		if (!cargo->isLoaded())
 		{
 			// If it's requesting a pickup
-			if ((Units().getMyUnits()[cargo].getTargetPosition().getDistance(Units().getMyUnits()[cargo].getPosition()) > 320) || (cargo->getType() == UnitTypes::Protoss_Reaver && cargo->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()) || (cargo->getType() == UnitTypes::Protoss_High_Templar && cargo->getEnergy() < 75))
+			if ((Units().getAllyUnits()[cargo].getTargetPosition().getDistance(Units().getAllyUnits()[cargo].getPosition()) > 320) || (cargo->getType() == UnitTypes::Protoss_Reaver && cargo->getGroundWeaponCooldown() > Broodwar->getLatencyFrames()) || (cargo->getType() == UnitTypes::Protoss_High_Templar && cargo->getEnergy() < 75))
 			{
 				shuttle.unit()->load(cargo);
 				shuttle.setLoadState(1);
@@ -100,7 +100,7 @@ void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 		// Else if the cargo is loaded
 		else if (cargo->isLoaded())
 		{
-			shuttle.setDrop(Units().getMyUnits()[cargo].getTargetPosition());
+			shuttle.setDrop(Units().getAllyUnits()[cargo].getTargetPosition());
 
 			// If we are harassing, check if we are close to drop point
 			if (shuttle.isHarassing() && shuttle.getPosition().getDistance(shuttle.getDrop()) < 160)
@@ -109,7 +109,7 @@ void TransportTrackerClass::updateDecision(TransportInfo& shuttle)
 				shuttle.setLoadState(2);
 			}
 			// Else check if we are in a position to help the main army
-			else if (!shuttle.isHarassing() && Units().getMyUnits()[cargo].getStrategy() == 1 && Units().getMyUnits()[cargo].getPosition().getDistance(Units().getMyUnits()[cargo].getTargetPosition()) < 320 && (cargo->getGroundWeaponCooldown() <= Broodwar->getLatencyFrames() || cargo->getEnergy() >= 75))
+			else if (!shuttle.isHarassing() && Units().getAllyUnits()[cargo].getStrategy() == 1 && Units().getAllyUnits()[cargo].getPosition().getDistance(Units().getAllyUnits()[cargo].getTargetPosition()) < 320 && (cargo->getGroundWeaponCooldown() <= Broodwar->getLatencyFrames() || cargo->getEnergy() >= 75))
 			{
 				shuttle.unit()->unload(cargo);
 				shuttle.setLoadState(2);
@@ -228,9 +228,9 @@ void TransportTrackerClass::removeUnit(Unit unit)
 		myShuttles.erase(unit);
 		for (auto &cargo : myShuttles[unit].getAssignedCargo())
 		{
-			if (Units().getMyUnits().find(cargo) != Units().getMyUnits().end())
+			if (Units().getAllyUnits().find(cargo) != Units().getAllyUnits().end())
 			{
-				Units().getMyUnits()[cargo].setTransport(nullptr);
+				Units().getAllyUnits()[cargo].setTransport(nullptr);
 			}
 		}
 	}

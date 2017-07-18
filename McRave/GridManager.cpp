@@ -82,7 +82,7 @@ void GridTrackerClass::reset()
 void GridTrackerClass::updateAllyGrids()
 {
 	// Ally Unit Grid Update
-	for (auto &u : Units().getMyUnits())
+	for (auto &u : Units().getAllyUnits())
 	{
 		UnitInfo &unit = u.second;
 		WalkPosition start = unit.getWalkPosition();
@@ -153,7 +153,7 @@ void GridTrackerClass::updateAllyGrids()
 void GridTrackerClass::updateEnemyGrids()
 {
 	// Enemy Unit Grid Update
-	for (auto &e : Units().getEnUnits())
+	for (auto &e : Units().getEnemyUnits())
 	{
 		UnitInfo enemy = e.second;
 		WalkPosition start = enemy.getWalkPosition();
@@ -576,6 +576,11 @@ void GridTrackerClass::updateMobilityGrids()
 					mobilityGrid[x][y] = min(mobilityGrid[x][y], 10);
 				}
 
+				if (theMap.GetArea(WalkPosition(x, y))->AccessibleNeighbours().size() == 0)
+				{
+					// Island
+				}
+
 				// Setup what is possible to check ground distances on
 				if (mobilityGrid[x][y] <= 0)
 				{
@@ -633,12 +638,6 @@ void GridTrackerClass::updateMobilityGrids()
 							closestT = TilePosition(x, y);
 						}
 					}
-
-					/*if (TilePosition(x, y).getDistance(end) < closestD || closestD == 0.0)
-					{
-					closestD = TilePosition(x, y).getDistance(end);
-					closestT = TilePosition(x, y);
-					}*/
 				}
 			}
 
@@ -646,6 +645,10 @@ void GridTrackerClass::updateMobilityGrids()
 			{
 				start = closestT;
 				reserveGrid[closestT.x][closestT.y] = 1;
+				if (closestT.getDistance(Terrain().getPlayerStartingTilePosition()) < 32)
+				{
+					return;
+				}
 			}
 		}
 

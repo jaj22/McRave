@@ -23,7 +23,7 @@ void WorkerTrackerClass::updateWorkers()
 void WorkerTrackerClass::updateScout()
 {
 	// Update scout probes decision if we are above 9 supply
-	if (Units().getSupply() >= 18 && (Broodwar->getFrameCount() - deadScoutFrame > 1000 && (!scout || (scout && !scout->exists()))))
+	if (Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Pylon) > 0 && Units().getSupply() >= 18 && (Broodwar->getFrameCount() - deadScoutFrame > 1000 && (!scout || (scout && !scout->exists()))))
 	{
 		scout = getClosestWorker(Position(Terrain().getSecondChoke()));
 	}
@@ -195,9 +195,9 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	}
 
 	// If we are fast expanding and enemy is rushing, we need to defend with workers
-	if (Strategy().isFastExpand() && BuildOrder().isOpener() && (Strategy().globalAlly() + Strategy().getAllyDefense()) < Strategy().globalEnemy())
+	if (Strategy().isAllyFastExpand() && BuildOrder().isOpener() && (Units().getGlobalAllyStrength() + Units().getAllyDefense()) < Units().getGlobalEnemyStrength())
 	{
-		Strategy().increaseGlobalAlly(1);
+		Units().increaseGlobalAlly(1);
 		if (Grids().getEGroundDistanceGrid(worker.getWalkPosition()) > 0.0)
 		{
 			Unit target = worker.unit()->getClosestUnit(Filter::IsEnemy && !Filter::IsFlyer, 320);

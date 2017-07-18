@@ -23,7 +23,7 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 	Unit target = nullptr;
 	Position targetPosition;
 
-	for (auto &e : Units().getEnUnits())
+	for (auto &e : Units().getEnemyUnits())
 	{
 		UnitInfo enemy = e.second;
 		if (!enemy.unit())
@@ -123,7 +123,7 @@ Unit TargetTrackerClass::allyTarget(UnitInfo& unit)
 	Position targetPosition;
 
 	// Search for an ally target that needs healing for medics
-	for (auto &a : Units().getMyUnits())
+	for (auto &a : Units().getAllyUnits())
 	{
 		UnitInfo ally = a.second;
 		if (!ally.unit() || ally.getDeadFrame() != 0 || !ally.getType().isOrganic())

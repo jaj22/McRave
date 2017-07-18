@@ -152,7 +152,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	if (building.isResourceDepot())
 	{
 		// Fast expands must be as close to home and have a gas geyser
-		if (Strategy().isFastExpand() || Terrain().getEnemyBasePositions().size() == 0)
+		if (Strategy().isAllyFastExpand() || Terrain().getEnemyBasePositions().size() == 0)
 		{
 			for (auto &area : theMap.Areas())
 			{
@@ -205,7 +205,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	}*/
 	
 	// If we are fast expanding
-	if (Strategy().isFastExpand())
+	if (Strategy().isAllyFastExpand())
 	{
 		if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(Terrain().getFFEPosition()) <= 0 + Strategy().isBust())
 		{
@@ -255,7 +255,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
 	// Attempt to place Cannons in a concave around the second choke on a fast expansion
-	/*if (Strategy().isFastExpand())
+	/*if (Strategy().isAllyFastExpand())
 	{
 	if (building == UnitTypes::Protoss_Photon_Cannon)
 	{
@@ -311,7 +311,7 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 				}
 
 				// If it's a pylon and overlapping too many pylons
-				if (!Strategy().isFastExpand() && building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 1)
+				if (!Strategy().isAllyFastExpand() && building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 1)
 				{
 					return false;
 				}

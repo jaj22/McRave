@@ -67,13 +67,13 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 	double effectiveness = 1.0;
 	
 
-	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
-	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
-	double aSmall = double(Units().getMySizes()[UnitSizeTypes::Small]);
+	/*double aLarge = double(Units().getAllySizes()[UnitSizeTypes::Large]);
+	double aMedium = double(Units().getAllySizes()[UnitSizeTypes::Medium]);
+	double aSmall = double(Units().getAllySizes()[UnitSizeTypes::Small]);
 
-	double eLarge = double(Units().getEnSizes()[UnitSizeTypes::Large]);
-	double eMedium = double(Units().getEnSizes()[UnitSizeTypes::Medium]);
-	double eSmall = double(Units().getEnSizes()[UnitSizeTypes::Small]);
+	double eLarge = double(Units().getEnemySizes()[UnitSizeTypes::Large]);
+	double eMedium = double(Units().getEnemySizes()[UnitSizeTypes::Medium]);
+	double eSmall = double(Units().getEnemySizes()[UnitSizeTypes::Small]);
 
 	if (unit.unit()->getPlayer() == Broodwar->enemy())
 	{
@@ -146,13 +146,13 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 	double effectiveness = 1.0;
 	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields())) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields()));
 	
-	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
-	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
-	double aSmall = double(Units().getMySizes()[UnitSizeTypes::Small]);
+	/*double aLarge = double(Units().getAllySizes()[UnitSizeTypes::Large]);
+	double aMedium = double(Units().getAllySizes()[UnitSizeTypes::Medium]);
+	double aSmall = double(Units().getAllySizes()[UnitSizeTypes::Small]);
 
-	double eLarge = double(Units().getEnSizes()[UnitSizeTypes::Large]);
-	double eMedium = double(Units().getEnSizes()[UnitSizeTypes::Medium]);
-	double eSmall = double(Units().getEnSizes()[UnitSizeTypes::Small]);
+	double eLarge = double(Units().getEnemySizes()[UnitSizeTypes::Large]);
+	double eMedium = double(Units().getEnemySizes()[UnitSizeTypes::Medium]);
+	double eSmall = double(Units().getEnemySizes()[UnitSizeTypes::Small]);
 
 	if (unit.unit()->getPlayer() == Broodwar->enemy())
 	{
@@ -404,7 +404,7 @@ WalkPosition UtilTrackerClass::getWalkPosition(Unit unit)
 
 set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
 {
-	WalkPosition start = Units().getMyUnits()[unit].getWalkPosition();
+	WalkPosition start = Units().getAllyUnits()[unit].getWalkPosition();
 	set<WalkPosition> returnValues;
 
 	for (int i = start.x; i <= start.x + unit->getType().tileWidth(); i++)
