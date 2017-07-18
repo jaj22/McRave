@@ -91,7 +91,7 @@ Unit TargetTrackerClass::enemyTarget(UnitInfo& unit)
 			// All other units target highest priority units with slight emphasis on lower health units
 			else
 			{
-				thisUnit = (enemy.getPriority() * (1 + 0.1 *(1 - enemy.getPercentHealth))) / distance;
+				thisUnit = (enemy.getPriority() * (1 + 0.1 *(1 - enemy.getPercentHealth()))) / distance;
 			}
 
 			// If the unit doesn't exist, it's not a suitable target usually (could be removed?)

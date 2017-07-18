@@ -30,7 +30,6 @@ public:
 	void queueBuildings();
 	void constructBuildings();
 	void storeBuilding(Unit);
-	void storeBattery(Unit);
 	void removeBuilding(Unit);
 };
 

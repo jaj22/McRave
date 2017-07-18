@@ -109,10 +109,10 @@ void ProductionTrackerClass::updateProtoss()
 
 	// Production
 	for (auto &thisBuilding : Buildings().getMyBuildings())
-	{
+	{			
 		BuildingInfo &building = thisBuilding.second;
 		if (building.unit() && building.unit()->isIdle())
-		{
+		{			
 			// Forge
 			if (building.getType() == UnitTypes::Protoss_Forge && Units().getSupply() > 100)
 			{

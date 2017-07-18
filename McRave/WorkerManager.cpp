@@ -146,21 +146,14 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 
 	// Building logic
 	if (worker.getBuildingType().isValid() && worker.getBuildPosition().isValid())
-	{
+	{		
 		if (!Buildings().canBuildHere(worker.getBuildingType(), worker.getBuildPosition()))
 		{
 			worker.setBuildingType(UnitTypes::None);
-			worker.setBuildPosition(TilePositions::None);
-			if (!worker.unit()->isConstructing())
-			{
-				worker.unit()->stop();
-			}
-			return;
+			worker.setBuildPosition(TilePositions::None);			
 		}
 		else
 		{
-			Grids().updateReservedLocation(worker.getBuildingType(), worker.getBuildPosition());
-
 			if (!Broodwar->isVisible(worker.getBuildPosition()) || Broodwar->self()->minerals() >= worker.getBuildingType().mineralPrice() / worker.getPosition().getDistance(Position(worker.getBuildPosition())) && Broodwar->self()->minerals() <= worker.getBuildingType().mineralPrice() && Broodwar->self()->gas() >= worker.getBuildingType().gasPrice() / worker.getPosition().getDistance(Position(worker.getBuildPosition())) && Broodwar->self()->gas() <= worker.getBuildingType().gasPrice())
 			{
 				if (worker.unit()->getOrderTargetPosition() != Position(worker.getBuildPosition()) || worker.unit()->isStuck())
@@ -282,7 +275,7 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 		if (worker.getResource() && Grids().getBaseGrid(TilePosition(worker.getResourcePosition())) == 2)
 		{
 			if (worker.getResource()->exists())
-			{
+			{				
 				worker.unit()->gather(worker.getResource());
 				worker.setLastGatherFrame(Broodwar->getFrameCount());
 				return;
@@ -330,7 +323,7 @@ Unit WorkerTrackerClass::getClosestWorker(Position here)
 
 void WorkerTrackerClass::storeWorker(Unit unit)
 {
-	myWorkers[unit].setUnit(unit);	
+	myWorkers[unit].setUnit(unit);
 	return;
 }
 
@@ -361,7 +354,7 @@ void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
 	{
 		for (auto &gas : Resources().getMyGas())
 		{
-			if (gas.second.getType() != UnitTypes::Resource_Vespene_Geyser && gas.first->isCompleted() && gas.second.getGathererCount() < 3)
+			if (gas.second.getType() != UnitTypes::Resource_Vespene_Geyser && gas.first->isCompleted() && gas.second.getGathererCount() < 3 && Grids().getBaseGrid(gas.second.getTilePosition()) > 0)
 			{
 				gas.second.setGathererCount(gas.second.getGathererCount() + 1);
 				worker.setResource(gas.first);
@@ -376,7 +369,7 @@ void WorkerTrackerClass::assignWorker(WorkerInfo& worker)
 	{
 		for (auto &mineral : Resources().getMyMinerals())
 		{
-			if (mineral.second.getGathererCount() < cnt)
+			if (mineral.second.getGathererCount() < cnt && Grids().getBaseGrid(mineral.second.getTilePosition()) > 0)
 			{
 				mineral.second.setGathererCount(mineral.second.getGathererCount() + 1);
 				worker.setResource(mineral.first);

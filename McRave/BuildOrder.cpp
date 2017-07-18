@@ -34,12 +34,13 @@ void BuildOrderTrackerClass::updateDecision()
 		}
 
 		// If we are choosing an opening
-		if (getOpening)
+		if (getOpening && opening != 1)
 		{
 			// PvZ - FFE
 			if (Strategy().getNumberZerg() > 0 && opening == 0)
 			{
 				opening = 1;
+				return;
 			}
 
 			// PvP - 1 Gate Core

@@ -40,9 +40,9 @@ void GridTrackerClass::reset()
 	{
 		for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
 		{
-			if (resourceGrid[x / 4][y / 4] > 0)
+			if (reserveGrid[x / 4][y / 4] > 0)
 			{
-				Broodwar->drawBoxMap(Position(x * 8, y * 8), Position(x * 8 + 32, y * 8 + 32), Colors::Black);
+				Broodwar->drawCircleMap(Position(WalkPosition(x, y)) + Position(8, 8), 4, Colors::Red);
 			}
 		}
 	}
@@ -58,12 +58,6 @@ void GridTrackerClass::reset()
 		{
 			center = aClusterGrid[x][y];
 			armyCenter = Position(WalkPosition(x, y));
-		}
-
-		// Debugging 
-		if (eGroundDistanceGrid[x][y] > 0.0)
-		{
-			Broodwar->drawBoxMap(Position(WalkPosition(x, y)), Position(WalkPosition(x + 1, y + 1)), Colors::Black);
 		}
 
 		// Reset WalkPosition grids
@@ -106,7 +100,7 @@ void GridTrackerClass::updateAllyGrids()
 					}
 
 					// Anti Mobility Grid directly under unit
-					if (x >= start.x && x <= start.x + unit.getType().tileWidth() * 4 && y >= start.y && y <= start.y + unit.getType().tileHeight() * 4)
+					if (WalkPosition(x, y).isValid() && x >= start.x && x <= start.x + unit.getType().tileWidth() * 4 && y >= start.y && y <= start.y + unit.getType().tileHeight() * 4)
 					{
 						resetWalks.insert(WalkPosition(x, y));
 						antiMobilityGrid[x][y] = 1;
@@ -595,7 +589,6 @@ void GridTrackerClass::updateMobilityGrids()
 		}
 	}
 
-
 	if (Broodwar->getFrameCount() > 500)
 	{
 		// Create reserve path home
@@ -613,7 +606,7 @@ void GridTrackerClass::updateMobilityGrids()
 					{
 						continue;
 					}
-					if (reservePathHome[x][y] == 1)
+					if (reserveGrid[x][y] == 1)
 					{
 						continue;
 					}

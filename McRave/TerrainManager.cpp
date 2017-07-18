@@ -63,10 +63,6 @@ void TerrainTrackerClass::updateChokes()
 		}
 	}
 
-	// Start location
-	playerStartingTilePosition = Broodwar->self()->getStartLocation();
-	playerStartingPosition = Position(playerStartingTilePosition);
-
 	// Establish FFE position	
 	if (Broodwar->getFrameCount() > 100)
 	{
@@ -122,7 +118,9 @@ void TerrainTrackerClass::updateChokes()
 
 void TerrainTrackerClass::onStart()
 {
-		
+	// Start location
+	playerStartingTilePosition = Broodwar->self()->getStartLocation();
+	playerStartingPosition = Position(playerStartingTilePosition);
 }
 
 void TerrainTrackerClass::removeTerritory(Unit base)
@@ -175,10 +173,10 @@ Position TerrainTrackerClass::getClosestBaseCenter(Unit unit)
 {
 	double closestD = 0.0;
 	Position closestB;
-	for (auto base : theMap.GetArea(unit->getTilePosition())->Bases())
+	for (auto &base : theMap.GetArea(unit->getTilePosition())->Bases())
 	{
 		if (unit->getDistance(base.Center()) < closestD || closestD == 0.0)
-		{
+		{			
 			closestD = unit->getDistance(base.Center());
 			closestB = base.Center();
 		}

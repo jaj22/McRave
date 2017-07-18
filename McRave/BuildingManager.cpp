@@ -14,9 +14,12 @@ void BuildingTrackerClass::updateBuildings()
 {
 	for (auto& b : myBuildings)
 	{
-		BuildingInfo building = b.second;
-		building.setIdleStatus(building.unit()->getRemainingTrainTime() == 0);
-		building.setEnergy(building.unit()->getEnergy());
+		if (b.second.unit() && b.second.unit()->exists())
+		{
+			BuildingInfo building = b.second;
+			building.setIdleStatus(building.unit()->getRemainingTrainTime() == 0);
+			building.setEnergy(building.unit()->getEnergy());
+		}
 	}
 }
 
@@ -35,7 +38,6 @@ void BuildingTrackerClass::queueBuildings()
 			if (here.isValid() && builder)
 			{
 				// Queue at this building type a pair of building placement and builder	
-				Grids().updateReservedLocation(b.first, here);
 				Workers().getMyWorkers()[builder].setBuildingType(b.first);
 				Workers().getMyWorkers()[builder].setBuildPosition(here);
 			}
@@ -76,7 +78,7 @@ void BuildingTrackerClass::constructBuildings()
 
 void BuildingTrackerClass::storeBuilding(Unit building)
 {
-	BuildingInfo b = myBuildings[building];
+	BuildingInfo &b = myBuildings[building];
 	b.setUnit(building);
 	b.setUnitType(building->getType());
 	b.setPosition(building->getPosition());
@@ -107,7 +109,7 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 	while (length < 50)
 	{
 		// If we can build here, return this tile position		
-		if (TilePosition(x, y).isValid() && theMap.GetArea(TilePosition(x, y)) == theMap.GetArea(buildTilePosition) && canBuildHere(building, TilePosition(x, y), ignoreCond))
+		if (TilePosition(x, y).isValid() /*&& theMap.GetArea(TilePosition(x, y)) == theMap.GetArea(buildTilePosition)*/ && canBuildHere(building, TilePosition(x, y), ignoreCond))
 		{
 			return TilePosition(x, y);
 		}
@@ -201,7 +203,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	}
 	}
 	}*/
-
+	
 	// If we are fast expanding
 	if (Strategy().isFastExpand())
 	{
@@ -225,7 +227,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
 		{
 			if (Grids().getPylonGrid(base.second.getTilePosition()) == 0)
-			{
+			{				
 				return getBuildLocationNear(building, base.second.getTilePosition());
 			}
 		}
@@ -240,7 +242,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 
 	// For each base, check if you can build near it, starting at the main
 	for (auto &base : Bases().getMyOrderedBases())
-	{
+	{		
 		TilePosition here = getBuildLocationNear(building, base.second);
 		if (here.isValid())
 		{
@@ -315,7 +317,7 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 				}
 
 				// If it's not a cannon and on top of the resource grid
-				if (building != UnitTypes::Protoss_Photon_Cannon && building != UnitTypes::Protoss_Shield_Battery && building != UnitTypes::Terran_Bunker && !ignoreCond && Grids().getResourceGrid(x, y) > 0)
+				if (!building.isResourceDepot() && building != UnitTypes::Protoss_Photon_Cannon && building != UnitTypes::Protoss_Shield_Battery && building != UnitTypes::Terran_Bunker && !ignoreCond && Grids().getResourceGrid(x, y) > 0)
 				{
 					return false;
 				}

@@ -84,7 +84,7 @@ void StrategyTrackerClass::updateEnemy()
 	{
 		// If nullptr, continue
 		if (!u.first)
-		{
+		{			
 			continue;
 		}
 		// If deadframe is 0, unit is alive still
@@ -120,7 +120,6 @@ void StrategyTrackerClass::updateEnemy()
 			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
 			{
 				enemyDefense += u.second.getVisibleGroundStrength();
-
 			}
 		}
 

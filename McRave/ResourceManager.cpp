@@ -13,7 +13,7 @@ void ResourceTrackerClass::updateResources()
 	// Assume mineral saturation, will be changed to false if any mineral field has less than 2 gatherers
 	minSat = true;
 	for (auto &m : myMinerals)
-	{
+	{		
 		ResourceInfo& resource = m.second;
 		if (resource.unit()->exists())
 		{

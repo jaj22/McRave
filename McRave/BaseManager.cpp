@@ -12,10 +12,10 @@ void BaseTrackerClass::updateAlliedBases()
 {
 	for (auto &b : myBases)
 	{
-		BaseInfo base = b.second;
+		BaseInfo& base = b.second;
 		if (base.unit() && base.unit()->exists())
 		{
-			if (Grids().getBaseGrid(base.getTilePosition()) == 0 && base.unit()->isCompleted())
+			if (Grids().getBaseGrid(base.getTilePosition()) == 1 && base.unit()->isCompleted())
 			{
 				Grids().updateBaseGrid(base);
 			}

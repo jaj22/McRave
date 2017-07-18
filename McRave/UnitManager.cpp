@@ -24,10 +24,12 @@ void UnitTrackerClass::onUnitCreate(Unit unit)
 		if (unit->getType().isResourceDepot())
 		{
 			Bases().storeBase(unit);
+			Buildings().storeBuilding(unit);
 		}
 		else if (unit->getType() == UnitTypes::Protoss_Pylon)
 		{
 			Pylons().storePylon(unit);
+			Buildings().storeBuilding(unit);
 		}
 		else if (unit->getType().isBuilding())
 		{
@@ -93,13 +95,19 @@ void UnitTrackerClass::updateAliveUnits()
 	// Update Ally Units
 	for (auto& ally : allyUnits)
 	{
-		updateAlly(ally.second);
+		if (ally.second.getDeadFrame() == 0)
+		{
+			updateAlly(ally.second);
+		}
 	}
 
 	// Update Enemy Units
 	for (auto& enemy : enemyUnits)
 	{
-		updateEnemy(enemy.second);
+		if (enemy.second.unit() && enemy.second.unit()->exists())
+		{
+			updateEnemy(enemy.second);
+		}
 	}
 
 	// TESTING -- Calculate how a unit is performing
@@ -226,7 +234,7 @@ void UnitTrackerClass::updateAlly(UnitInfo& unit)
 	auto t = unit.unit()->getType();
 	auto p = unit.unit()->getPlayer();
 
-	// Update information	
+	// Update information
 	unit.setUnitType(t);
 	unit.setPosition(unit.unit()->getPosition());
 	unit.setTilePosition(unit.unit()->getTilePosition());
@@ -249,7 +257,7 @@ void UnitTrackerClass::updateAlly(UnitInfo& unit)
 	unit.setMaxAirStrength(Util().getMaxAirStrength(unit, p));
 	unit.setPriority(Util().getPriority(unit, p));
 
-	if (unit.unit()->getLastCommand().getTargetPosition().isValid())
+	if (unit.unit() && unit.unit()->getLastCommand().getTargetPosition().isValid())
 	{
 		unit.setTargetPosition(unit.unit()->getLastCommand().getTargetPosition());
 	}
