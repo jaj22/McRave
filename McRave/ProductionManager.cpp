@@ -192,7 +192,7 @@ void ProductionTrackerClass::updateProtoss()
 				}
 				if (Strategy().getUnitScore()[UnitTypes::Protoss_Scout] > 0.0)
 				{
-					if (Broodwar->self()->minerals() >= UpgradeTypes::Gravitic_Thrusters.mineralPrice() + Buildings().getQueuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Gravitic_Thrusters.gasPrice() + Buildings().getQueuedGas() + reservedGas)
+					if (Broodwar->self()->minerals() >= UpgradeTypes::Gravitic_Thrusters.mineralPrice() + Buildings().getQueuedMineral() + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Gravitic_Thrusters.gasPrice() + Buildings().getQueuedGas() + reservedGas)
 					{
 						building.unit()->upgrade(UpgradeTypes::Gravitic_Thrusters);
 					}
