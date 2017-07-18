@@ -3,10 +3,24 @@
 void BuildingTrackerClass::update()
 {
 	Display().startClock();
+	updateBuildings();
 	queueBuildings();
 	constructBuildings();
 	Display().performanceTest(__FUNCTION__);
 	return;
+}
+
+void BuildingTrackerClass::updateBuildings()
+{
+	for (auto& b : myBuildings)
+	{
+		if (b.second.unit() && b.second.unit()->exists())
+		{
+			BuildingInfo building = b.second;
+			building.setIdleStatus(building.unit()->getRemainingTrainTime() == 0);
+			building.setEnergy(building.unit()->getEnergy());
+		}
+	}
 }
 
 void BuildingTrackerClass::queueBuildings()
@@ -24,7 +38,6 @@ void BuildingTrackerClass::queueBuildings()
 			if (here.isValid() && builder)
 			{
 				// Queue at this building type a pair of building placement and builder	
-				Grids().updateReservedLocation(b.first, here);
 				Workers().getMyWorkers()[builder].setBuildingType(b.first);
 				Workers().getMyWorkers()[builder].setBuildPosition(here);
 			}
@@ -65,40 +78,20 @@ void BuildingTrackerClass::constructBuildings()
 
 void BuildingTrackerClass::storeBuilding(Unit building)
 {
-	if (building->getType().isBuilding())
-	{
-		myBuildings[building].setUnit(building);
-		myBuildings[building].setUnitType(building->getType());
-		myBuildings[building].setPosition(building->getPosition());
-		myBuildings[building].setWalkPosition(Util().getWalkPosition(building));
-		myBuildings[building].setTilePosition(building->getTilePosition());
-		myBuildings[building].setIdleStatus(building->getRemainingTrainTime() == 0);
-		myBuildings[building].setEnergy(building->getEnergy());
-
-		Grids().updateBuildingGrid(myBuildings[building]);
-	}
-	return;
-}
-
-void BuildingTrackerClass::storeBattery(Unit building)
-{
-	myBatteries[building].setUnit(building);
-	myBatteries[building].setUnitType(building->getType());
-	myBatteries[building].setPosition(building->getPosition());
-	myBatteries[building].setWalkPosition(Util().getWalkPosition(building));
-	myBatteries[building].setTilePosition(building->getTilePosition());
-	myBatteries[building].setIdleStatus(building->getRemainingTrainTime() == 0);
-	myBatteries[building].setEnergy(building->getEnergy());
+	BuildingInfo &b = myBuildings[building];
+	b.setUnit(building);
+	b.setUnitType(building->getType());
+	b.setPosition(building->getPosition());
+	b.setWalkPosition(Util().getWalkPosition(building));
+	b.setTilePosition(building->getTilePosition());
+	Grids().updateBuildingGrid(b);
 	return;
 }
 
 void BuildingTrackerClass::removeBuilding(Unit building)
 {
-	if (building->getType().isBuilding())
-	{
-		Grids().updateBuildingGrid(myBuildings[building]);
-		myBuildings.erase(building);		
-	}
+	Grids().updateBuildingGrid(myBuildings[building]);
+	myBuildings.erase(building);
 	return;
 }
 
@@ -113,10 +106,10 @@ TilePosition BuildingTrackerClass::getBuildLocationNear(UnitType building, TileP
 	int dy = 1;
 
 	// Searches in a spiral around the specified tile position
-	while (length < 200)
+	while (length < 50)
 	{
 		// If we can build here, return this tile position		
-		if (TilePosition(x, y).isValid() && canBuildHere(building, TilePosition(x, y), ignoreCond))
+		if (TilePosition(x, y).isValid() /*&& theMap.GetArea(TilePosition(x, y)) == theMap.GetArea(buildTilePosition)*/ && canBuildHere(building, TilePosition(x, y), ignoreCond))
 		{
 			return TilePosition(x, y);
 		}
@@ -159,7 +152,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	if (building.isResourceDepot())
 	{
 		// Fast expands must be as close to home and have a gas geyser
-		if (Strategy().isFastExpand() || Terrain().getEnemyBasePositions().size() == 0)
+		if (Strategy().isAllyFastExpand() || Terrain().getEnemyBasePositions().size() == 0)
 		{
 			for (auto &area : theMap.Areas())
 			{
@@ -210,9 +203,9 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	}
 	}
 	}*/
-
+	
 	// If we are fast expanding
-	if (Strategy().isFastExpand())
+	if (Strategy().isAllyFastExpand())
 	{
 		if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(Terrain().getFFEPosition()) <= 0 + Strategy().isBust())
 		{
@@ -228,13 +221,22 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 		}
 	}
 
+	// If we are being rushed and need a battery
+	if (Strategy().isRush())
+	{
+		if (building == UnitTypes::Protoss_Shield_Battery)
+		{
+			return getBuildLocationNear(building, Terrain().getFirstChoke());
+		}
+	}
+
 	// For each base, check if there's a Pylon or Cannon needed
 	for (auto &base : Bases().getMyBases())
 	{
 		if (building == UnitTypes::Protoss_Pylon && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) >= 2)
 		{
 			if (Grids().getPylonGrid(base.second.getTilePosition()) == 0)
-			{
+			{				
 				return getBuildLocationNear(building, base.second.getTilePosition());
 			}
 		}
@@ -249,7 +251,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 
 	// For each base, check if you can build near it, starting at the main
 	for (auto &base : Bases().getMyOrderedBases())
-	{
+	{		
 		TilePosition here = getBuildLocationNear(building, base.second);
 		if (here.isValid())
 		{
@@ -261,15 +263,6 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 
 bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTilePosition, bool ignoreCond)
 {
-	// Attempt to place Cannons in a concave around the second choke on a fast expansion
-	/*if (Strategy().isFastExpand())
-	{
-	if (building == UnitTypes::Protoss_Photon_Cannon)
-	{
-	return false;
-	}
-	}*/
-
 	// Production buildings that create ground units require spacing so they don't trap units -- TEMP: Supply depot to not block SCVs (need to find solution)
 	if (building == UnitTypes::Terran_Supply_Depot || building == UnitTypes::Protoss_Gateway || building == UnitTypes::Protoss_Robotics_Facility || building == UnitTypes::Terran_Barracks || building == UnitTypes::Terran_Factory)
 	{
@@ -318,13 +311,13 @@ bool BuildingTrackerClass::canBuildHere(UnitType building, TilePosition buildTil
 				}
 
 				// If it's a pylon and overlapping too many pylons
-				if (!Strategy().isFastExpand() && building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 1)
+				if (!Strategy().isAllyFastExpand() && building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(x, y) >= 1)
 				{
 					return false;
 				}
 
 				// If it's not a cannon and on top of the resource grid
-				if (building != UnitTypes::Protoss_Photon_Cannon && building != UnitTypes::Protoss_Shield_Battery && building != UnitTypes::Terran_Bunker && !ignoreCond && Grids().getResourceGrid(x, y) > 0)
+				if (!building.isResourceDepot() && building != UnitTypes::Protoss_Photon_Cannon && building != UnitTypes::Protoss_Shield_Battery && building != UnitTypes::Terran_Bunker && !ignoreCond && Grids().getResourceGrid(x, y) > 0)
 				{
 					return false;
 				}

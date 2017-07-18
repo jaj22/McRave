@@ -7,6 +7,7 @@ using namespace std;
 class BuildingInfo
 {
 	int energy;
+	double strength;
 	bool idleStatus;
 	Unit thisUnit;
 	UnitType unitType, nextUnit;
@@ -18,6 +19,7 @@ public:
 	BuildingInfo();
 
 	int getEnergy() { return energy; }
+	double getStrength() { return strength; }
 	bool isIdle() { return idleStatus; }
 	Unit unit() { return thisUnit; }
 	UnitType getType() { return unitType; }
@@ -27,6 +29,7 @@ public:
 	TilePosition getTilePosition() { return tilePosition; }	
 	
 	void setEnergy(int newEnergy) { energy = newEnergy; }
+	void setStrength(double newStrength) { strength = newStrength; }
 	void setIdleStatus(bool newIdleStatus) { idleStatus = newIdleStatus; }
 	void setUnit(Unit newUnit) { thisUnit = newUnit; }
 	void setUnitType(UnitType newBuildingType) { unitType = newBuildingType; }

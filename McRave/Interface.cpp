@@ -55,7 +55,7 @@ void InterfaceTrackerClass::drawInformation()
 	}
 
 	// Display global strength calculations	
-	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Strategy().globalAlly(), Strategy().globalEnemy());
+	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Units().getGlobalAllyStrength(), Units().getGlobalEnemyStrength());
 
 	// Display unit scoring
 	offset += 50;
@@ -84,7 +84,7 @@ void InterfaceTrackerClass::drawAllyInfo()
 {
 	if (debugging)
 	{
-		for (auto &u : Units().getMyUnits())
+		for (auto &u : Units().getAllyUnits())
 		{
 			UnitInfo unit = u.second;
 			if (unit.getDeadFrame() == 0)
@@ -105,7 +105,7 @@ void InterfaceTrackerClass::drawEnemyInfo()
 {
 	if (debugging)
 	{
-		for (auto &u : Units().getEnUnits())
+		for (auto &u : Units().getEnemyUnits())
 		{
 			UnitInfo unit = u.second;
 			if (unit.getDeadFrame() == 0)

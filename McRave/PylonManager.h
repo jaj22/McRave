@@ -13,7 +13,7 @@ class PylonTrackerClass
 	set<Unit> myPylons;
 public:
 	void storePylon(Unit);
-	void storePower(Unit);
+	void updatePower(Unit);
 	bool hasPower(TilePosition, UnitType);
 };
 

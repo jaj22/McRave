@@ -19,9 +19,7 @@ public:
 	void updateEnemyBases();
 	void storeBase(Unit);
 	void removeBase(Unit);
-	void trainWorkers(BaseInfo&);
-	void updateDefenses(BaseInfo&);
-	TilePosition centerOfResources(Unit);
+	void updateProduction(BaseInfo&);
 };
 
 typedef Singleton<BaseTrackerClass> BaseTracker;

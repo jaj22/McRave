@@ -8,6 +8,7 @@ using namespace std;
 class UtilTrackerClass
 {
 public:
+	double getPercentHealth(UnitInfo&);
 	double getMaxGroundStrength(UnitInfo&, Player);
 	double getVisibleGroundStrength(UnitInfo&, Player);
 	double getMaxAirStrength(UnitInfo&, Player);

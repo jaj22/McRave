@@ -11,6 +11,7 @@ class BuildOrderTrackerClass
 	int opening;
 	bool getOpening = true, getTech = false;
 	UnitType techUnit;
+	set <UnitType> techList;
 
 public:
 	map <UnitType, int>& getBuildingDesired() { return buildingDesired; }

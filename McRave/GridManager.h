@@ -29,9 +29,9 @@ class GridTrackerClass
 	double eGroundDistanceGrid[1024][1024];
 	double eAirDistanceGrid[1024][1024];
 	int eDetectorGrid[1024][1024];
-	int eGroundClusterGrid[256][256];
-	int eAirClusterGrid[256][256];
-	int stasisClusterGrid[256][256];
+	int eGroundClusterGrid[1024][1024];
+	int eAirClusterGrid[1024][1024];
+	int stasisClusterGrid[1024][1024];
 
 	// Neutral grids	
 	int resourceGrid[256][256];
@@ -45,7 +45,9 @@ class GridTrackerClass
 	// Special Unit grids
 	int observerGrid[1024][1024];
 	int arbiterGrid[1024][1024];
-	int templarGrid[256][256];
+	int psiStormGrid[1024][1024];
+	
+	unordered_set<WalkPosition, myHash> resetWalks;
 
 	unordered_set<TilePosition, myHash> resetTiles;
 	unordered_set<WalkPosition, myHash> resetWalks;
@@ -59,6 +61,9 @@ class GridTrackerClass
 	Position armyCenter;
 public:
 
+	// Check if we are done analyzing stuff
+	bool isAnalyzed() { return distanceAnalysis; }
+
 	// Update functions
 	void reset();
 	void update();
@@ -66,12 +71,25 @@ public:
 	void updateEnemyGrids();
 	void updateNeutralGrids();
 	void updateMobilityGrids();
+
+	// Unit and building based functions
 	void updateArbiterMovement(Unit);
 	void updateObserverMovement(Unit);
 	void updateAllyMovement(Unit, WalkPosition);
 	void updateReservedLocation(UnitType, TilePosition);
-	void updateGroundDistanceGrid();
-	bool isAnalyzed() { return distanceAnalysis; }
+	void updatePsiStorm(WalkPosition);
+
+	// On start functions
+	void updateGroundDistanceGrid();	
+
+	// Updates a resource if it is destroyed or created
+	void updateResourceGrid(ResourceInfo&);
+
+	// Updates a building if it is destroyed or created
+	void updateBuildingGrid(BuildingInfo&);
+
+	// Updates a base if it is destroyed or created
+	void updateBaseGrid(BaseInfo&);
 
 	// Updates a resource if it is destroyed or removed from my control
 	void updateResourceGrid(ResourceInfo&);
@@ -129,15 +147,15 @@ public:
 
 	// Returns the number of enemy ground units within range of most area of effect abilities
 	int getEGroundCluster(int x, int y) { return eGroundClusterGrid[x][y]; }
-	int getEGroundCluster(TilePosition here) { return eGroundClusterGrid[here.x][here.y]; }
+	int getEGroundCluster(WalkPosition here) { return eGroundClusterGrid[here.x][here.y]; }
 
 	// Returns the number of enemy air units within range of most area of effect abilities
 	int getEAirCluster(int x, int y) { return eAirClusterGrid[x][y]; }
-	int getEAirCluster(TilePosition here) { return eAirClusterGrid[here.x][here.y]; }
+	int getEAirCluster(WalkPosition here) { return eAirClusterGrid[here.x][here.y]; }
 
 	// Returns the number of valuable stasis targets within range of stasis
 	int getStasisCluster(int x, int y) { return stasisClusterGrid[x][y]; }
-	int getStasisCluster(TilePosition here) { return stasisClusterGrid[here.x][here.y]; }
+	int getStasisCluster(WalkPosition here) { return stasisClusterGrid[here.x][here.y]; }
 
 	// Returns 1 if the tile is between a resource and a base, 0 otherwise
 	int getResourceGrid(int x, int y) { return resourceGrid[x][y]; }

@@ -14,7 +14,7 @@ void TerrainTrackerClass::updateAreas()
 	// If we see a building, check for closest starting location
 	if (enemyBasePositions.size() <= 0)
 	{
-		for (auto &unit : Units().getEnUnits())
+		for (auto &unit : Units().getEnemyUnits())
 		{
 			if (unit.second.getType().isBuilding() && Terrain().getEnemyBasePositions().size() == 0 && unit.second.getPosition().getDistance(Terrain().getPlayerStartingPosition()) > 1600)
 			{
@@ -62,10 +62,6 @@ void TerrainTrackerClass::updateChokes()
 			}
 		}
 	}
-
-	// Start location
-	playerStartingTilePosition = Broodwar->self()->getStartLocation();
-	playerStartingPosition = Position(playerStartingTilePosition);
 
 	// Establish FFE position	
 	if (Broodwar->getFrameCount() > 100)
@@ -122,12 +118,14 @@ void TerrainTrackerClass::updateChokes()
 
 void TerrainTrackerClass::onStart()
 {
-		
+	// Start location
+	playerStartingTilePosition = Broodwar->self()->getStartLocation();
+	playerStartingPosition = Position(playerStartingTilePosition);
 }
 
 void TerrainTrackerClass::removeTerritory(Unit base)
 {
-	if (base)
+	if (base && base->exists() && base->getType().isResourceDepot())
 	{
 		if (enemyBasePositions.find(base->getPosition()) != enemyBasePositions.end())
 		{
@@ -171,7 +169,17 @@ Position TerrainTrackerClass::getClosestEnemyBase(Position here)
 	return closestP;
 }
 
-//Position TerrainTrackerClass::getClosestAllyBase(Position here)
-//{
-//
-//}
+Position TerrainTrackerClass::getClosestBaseCenter(Unit unit)
+{
+	double closestD = 0.0;
+	Position closestB;
+	for (auto &base : theMap.GetArea(unit->getTilePosition())->Bases())
+	{
+		if (unit->getDistance(base.Center()) < closestD || closestD == 0.0)
+		{			
+			closestD = unit->getDistance(base.Center());
+			closestB = base.Center();
+		}
+	}
+	return closestB;
+}

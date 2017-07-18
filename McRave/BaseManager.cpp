@@ -10,17 +10,17 @@ void BaseTrackerClass::update()
 
 void BaseTrackerClass::updateAlliedBases()
 {
-	for (auto &base : myBases)
+	for (auto &b : myBases)
 	{
-		if ((base.first && !base.first->exists()) || !base.first)
+		BaseInfo& base = b.second;
+		if (base.unit() && base.unit()->exists())
 		{
-			myBases.erase(base.first);
-			break;
-		}
-		if (base.second.unit() && base.second.unit()->exists())
-		{
-			trainWorkers(base.second);
-			updateDefenses(base.second);
+			if (Grids().getBaseGrid(base.getTilePosition()) == 1 && base.unit()->isCompleted())
+			{
+				Grids().updateBaseGrid(base);
+			}
+
+			updateProduction(base);
 		}
 	}
 	return;
@@ -28,14 +28,17 @@ void BaseTrackerClass::updateAlliedBases()
 
 void BaseTrackerClass::storeBase(Unit base)
 {
-	myBases[base].setUnit(base);
-	myBases[base].setUnitType(base->getType());
-	myBases[base].setResourcesPosition(centerOfResources(base));
-	myBases[base].setPosition(base->getPosition());
-	myBases[base].setWalkPosition(Util().getWalkPosition(base));
-	myBases[base].setTilePosition(base->getTilePosition());
-	myBases[base].setPosition(base->getPosition());
+	BaseInfo& b = myBases[base];
+	b.setUnit(base);
+	b.setUnitType(base->getType());
+	b.setResourcesPosition(TilePosition(Resources().resourceClusterCenter(base)));
+	b.setPosition(base->getPosition());
+	b.setWalkPosition(Util().getWalkPosition(base));
+	b.setTilePosition(base->getTilePosition());
+	b.setPosition(base->getPosition());
 	myOrderedBases[base->getPosition().getDistance(Terrain().getPlayerStartingPosition())] = base->getTilePosition();
+	Terrain().getAllyTerritory().insert(theMap.GetArea(b.getTilePosition())->Id());
+	Grids().updateBaseGrid(b);
 	return;
 }
 
@@ -43,48 +46,29 @@ void BaseTrackerClass::removeBase(Unit base)
 {
 	myOrderedBases.erase(base->getPosition().getDistance(Terrain().getPlayerStartingPosition()));
 	myBases.erase(base);
+	Terrain().getAllyTerritory().erase(theMap.GetArea(base->getTilePosition())->Id());
+	Grids().updateBaseGrid(myBases[base]);	
 	return;
 }
 
-void BaseTrackerClass::trainWorkers(BaseInfo& base)
+void BaseTrackerClass::updateProduction(BaseInfo& base)
 {
 	if (base.unit() && (!Resources().isMinSaturated() || !Resources().isGasSaturated()) && base.unit()->isIdle())
 	{
-		for (auto &worker : base.getType().buildsWhat())
-		{			
-			if (Broodwar->self()->completedUnitCount(worker) < 60 && (Broodwar->self()->minerals() >= worker.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+		for (auto &unit : base.getType().buildsWhat())
+		{
+			if (unit.isWorker())
 			{
-				base.unit()->train(worker);
+				if (Broodwar->self()->completedUnitCount(unit) < 60 && (Broodwar->self()->minerals() >= unit.mineralPrice() + Production().getReservedMineral() + Buildings().getQueuedMineral()))
+				{
+					base.unit()->train(unit);
+				}
 			}
-		}		
+			else
+			{
+				// Zerg production
+			}
+		}
 	}
 	return;
-}
-
-void BaseTrackerClass::updateDefenses(BaseInfo& base)
-{
-	// Update defenses got gutted, this can be merged somewhere else
-	Terrain().getAllyTerritory().emplace(theMap.GetArea(base.getTilePosition())->Id());
-	return;
-}
-
-TilePosition BaseTrackerClass::centerOfResources(Unit base)
-{
-	// Get average of minerals	
-	int avgX = 0, avgY = 0, size = 0;
-	for (auto &m : Broodwar->getUnitsInRadius(base->getPosition(), 320, Filter::IsMineralField))
-	{
-		avgX = avgX + m->getTilePosition().x;
-		avgY = avgY + m->getTilePosition().y;
-		size++;
-	}
-	if (size == 0)
-	{
-		return TilePositions::None;
-	}
-
-	avgX = avgX / size;
-	avgY = avgY / size;
-
-	return TilePosition(avgX, avgY);
 }

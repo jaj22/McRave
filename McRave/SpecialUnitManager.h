@@ -12,6 +12,8 @@ class SpecialUnitTrackerClass
 	map <Unit, SupportUnitInfo> myDetectors;
 	map <Unit, SupportUnitInfo> myTemplars;
 	map <Unit, SupportUnitInfo> myReavers;
+	map <WalkPosition, double> myStorms;
+	Unit recaller = nullptr;
 public:
 	void update();
 	void updateArbiters();

@@ -7,34 +7,37 @@
 #include "McRave.h"
 
 // --- AUTHOR NOTES ---
-// TODO in testing before CIG 2017:
+// TODO in testing before AIIDE 2017:
+// Reserve Path for ReserveGrid
+// Island check for DistanceGridHome
+// Test Recall!
 // Test size/damage type
-// Melee unit bouncing - trying min TTT of 2.0 seconds
 // Anti-stone check
-// Worker pull with FFE
-
-// TODO in testing after CIG 2017:
-// Use global ally / globaly enemy as local latching
-// Archon merging
-// Spider mine removal from expansions
+// Cannons / Worker pull
 // Cannons for each expansion
 // Bullets if working, use for unit scoring of performance
-// Test FFE against random
-// Disable GUI
-// Camera center on army center
-// Check shuttles
+
+// One shot stuff:
+// onUnitMorph - Archons, Eggs, Refineries
+// One shot composition storing - requires onMorph usage
+// One shot unit scoring? maybe not
 
 // TODO:
+// Only remove boulders close to me
+// If a building is no longer desired, remove from Probes build objective
+// Invis grid for observers to detect stuff
+// Melee units behaving poorly
+// Use global ally / globaly enemy as local latching
+// Archon merging when low energy or fleeing
+// Spider mine removal from expansions
+// Improve shuttles
 // Remove exists check from target aquisition?
-// Move update of units in StrategyManager to UnitManager (less iterations)
 // IsSelected to display information
-// Move special units into their own area, separate command manager
-// Make target position stuff based on units current command target position
+// Move special units into their own area, separate command manager?
+// Make target position stuff based on units current command target position?
 // Move production buildings to the front of the base, tech to the back
 // Dijkstras theory for distance grid
 // Move stim research to strategy
-// One time increases: supply, sizes
-// Player class to track upgrades/race/supply/strength
 
 // TODO to move to no latency compensation:
 // Building idle status stored
@@ -77,70 +80,66 @@ void McRaveModule::onFrame()
 	Display().update();
 }
 
-void McRaveModule::onSendText(std::string text)
+void McRaveModule::onSendText(string text)
 {
 	Display().sendText(text);
 }
 
-void McRaveModule::onReceiveText(BWAPI::Player player, std::string text)
+void McRaveModule::onReceiveText(Player player, string text)
 {
 }
 
-void McRaveModule::onPlayerLeft(BWAPI::Player player)
+void McRaveModule::onPlayerLeft(Player player)
 {
 	Broodwar->sendText("GG %s!", player->getName().c_str());
 }
 
-void McRaveModule::onNukeDetect(BWAPI::Position target)
+void McRaveModule::onNukeDetect(Position target)
 {
 }
 
-void McRaveModule::onUnitDiscover(BWAPI::Unit unit)
+void McRaveModule::onUnitDiscover(Unit unit)
 {
 }
 
-void McRaveModule::onUnitEvade(BWAPI::Unit unit)
+void McRaveModule::onUnitEvade(Unit unit)
 {
 }
 
-void McRaveModule::onUnitShow(BWAPI::Unit unit)
+void McRaveModule::onUnitShow(Unit unit)
 {
 }
 
-void McRaveModule::onUnitHide(BWAPI::Unit unit)
+void McRaveModule::onUnitHide(Unit unit)
 {
 }
 
-void McRaveModule::onUnitCreate(BWAPI::Unit unit)
+void McRaveModule::onUnitCreate(Unit unit)
 {
-	Buildings().storeBuilding(unit);
+	Units().onUnitCreate(unit);
 }
 
-void McRaveModule::onUnitDestroy(BWAPI::Unit unit)
+void McRaveModule::onUnitDestroy(Unit unit)
 {
 	Bases().removeBase(unit);
 	Units().removeUnit(unit);
-	Buildings().removeBuilding(unit);
-	SpecialUnits().removeUnit(unit);
-	Workers().removeWorker(unit);
-	Resources().removeResource(unit);
 	Terrain().removeTerritory(unit);
 }
 
-void McRaveModule::onUnitMorph(BWAPI::Unit unit)
+void McRaveModule::onUnitMorph(Unit unit)
 {
-	Buildings().storeBuilding(unit);
+	Units().onUnitMorph(unit);
 }
 
-void McRaveModule::onUnitRenegade(BWAPI::Unit unit)
-{
-}
-
-void McRaveModule::onSaveGame(std::string gameName)
+void McRaveModule::onUnitRenegade(Unit unit)
 {
 }
 
-void McRaveModule::onUnitComplete(BWAPI::Unit unit)
+void McRaveModule::onSaveGame(string gameName)
 {
-	Units().storeUnit(unit);
+}
+
+void McRaveModule::onUnitComplete(Unit unit)
+{
+	Units().onUnitComplete(unit);
 }

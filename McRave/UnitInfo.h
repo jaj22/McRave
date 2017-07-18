@@ -6,7 +6,7 @@ using namespace std;
 
 // Class for storing information about all units
 class UnitInfo {
-	double visibleGroundStrength, visibleAirStrength, maxGroundStrength, maxAirStrength, groundLocal, airLocal, groundRange, airRange, priority, groundDamage, airDamage, speed;
+	double percentHealth, visibleGroundStrength, visibleAirStrength, maxGroundStrength, maxAirStrength, groundLocal, airLocal, groundRange, airRange, priority, groundDamage, airDamage, speed;
 	int deadFrame, strategy, lastAttackFrame, minStopFrame;
 
 	Unit target, thisUnit, transport;
@@ -20,6 +20,9 @@ class UnitInfo {
 public:
 	UnitInfo();
 	~UnitInfo();
+
+	// Returns the units health and shield percentage
+	double getPercentHealth() { return percentHealth; }
 
 	// Returns the units visible ground strength based on: (%hp * ground dps * range * speed)
 	double getVisibleGroundStrength() { return visibleGroundStrength; }
@@ -84,6 +87,7 @@ public:
 	TilePosition getTilePosition() { return tilePosition; }
 	TilePosition getTargetTilePosition() { return targetTilePosition; }
 
+	void setPercentHealth(double newPercent) { percentHealth = newPercent; }
 	void setVisibleGroundStrength(double newStrength) { visibleGroundStrength = newStrength; }
 	void setMaxGroundStrength(double newMaxStrength) { maxGroundStrength = newMaxStrength; }
 	void setVisibleAirStrength(double newStrength) { visibleAirStrength = newStrength; }

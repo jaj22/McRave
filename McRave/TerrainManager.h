@@ -23,6 +23,9 @@ public:
 	void updateChokes();
 	void removeTerritory(Unit);
 	bool isInAllyTerritory(Unit);
+	
+	Position getClosestBaseCenter(Unit);
+
 	Position getClosestEnemyBase(Position);
 	Position getClosestAllyBase(Position);
 	

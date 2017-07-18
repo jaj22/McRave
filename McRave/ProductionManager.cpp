@@ -4,11 +4,25 @@ void ProductionTrackerClass::update()
 {
 	Display().startClock();
 	updateReservedResources();
-	updateProtoss();
-	updateTerran();
-	updateZerg();
+	updateProduction();
 	Display().performanceTest(__FUNCTION__);
 	return;
+}
+
+void ProductionTrackerClass::updateProduction()
+{
+	if (Broodwar->self()->getRace() == Races::Protoss)
+	{
+		updateProtoss();
+	}
+	else if (Broodwar->self()->getRace() == Races::Terran)
+	{
+		updateTerran();
+	}
+	else
+	{
+		updateZerg();
+	}
 }
 
 bool ProductionTrackerClass::canAfford(UnitType unit)
@@ -176,6 +190,13 @@ void ProductionTrackerClass::updateProtoss()
 						building.unit()->upgrade(UpgradeTypes::Carrier_Capacity);
 					}
 				}
+				if (Strategy().getUnitScore()[UnitTypes::Protoss_Scout] > 0.0)
+				{
+					if (Broodwar->self()->minerals() >= UpgradeTypes::Gravitic_Thrusters.mineralPrice() + Buildings().getQueuedMineral + reservedMineral && Broodwar->self()->gas() >= UpgradeTypes::Gravitic_Thrusters.gasPrice() + Buildings().getQueuedGas() + reservedGas)
+					{
+						building.unit()->upgrade(UpgradeTypes::Gravitic_Thrusters);
+					}
+				}
 			}
 
 			// Citadel Of Adun
@@ -257,6 +278,21 @@ void ProductionTrackerClass::updateProtoss()
 					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Corsair.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Corsair.gasPrice() + Buildings().getQueuedGas())
 					{
 						building.unit()->train(UnitTypes::Protoss_Corsair);
+					}
+				}
+
+				// Only build scouts against Carriers
+				if (Strategy().getUnitScore()[UnitTypes::Protoss_Scout] > 0.0)
+				{
+					if (Broodwar->self()->minerals() >= UnitTypes::Protoss_Scout.mineralPrice() + Buildings().getQueuedMineral() && Broodwar->self()->gas() >= UnitTypes::Protoss_Scout.gasPrice() + Buildings().getQueuedGas())
+					{
+						building.unit()->train(UnitTypes::Protoss_Scout);
+						idleHighProduction.erase(building.unit());
+						return;
+					}
+					else
+					{
+						idleHighProduction.emplace(building.unit(), UnitTypes::Protoss_Scout);
 					}
 				}
 			}
@@ -344,7 +380,7 @@ void ProductionTrackerClass::updateProtoss()
 			// Templar Archives
 			else if (building.getType() == UnitTypes::Protoss_Templar_Archives)
 			{
-				if (Strategy().getNumberTerran() == 0 || (Strategy().getNumberTerran() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter) > 0))
+				if (Players().getNumberTerran() == 0 || (Players().getNumberTerran() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter) > 0))
 				{
 					if (!Broodwar->self()->hasResearched(TechTypes::Psionic_Storm))
 					{

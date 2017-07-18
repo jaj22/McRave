@@ -10,14 +10,9 @@ void CommandTrackerClass::update()
 
 void CommandTrackerClass::updateAlliedUnits()
 {
-	for (auto &u : Units().getMyUnits())
+	for (auto &u : Units().getAllyUnits())
 	{
 		UnitInfo unit = u.second;
-
-		if (unit.getType().isBuilding())
-		{
-			continue;
-		}
 
 		// Special units have their own commands
 		if (unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Shuttle)
@@ -212,11 +207,12 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 	{
 		if (unit.unit()->getLastCommand().getType() != UnitCommandTypes::Right_Click_Unit)
 		{
-			for (auto battery : Buildings().getMyBatteries())
+			for (auto& b : Buildings().getMyBuildings())
 			{
-				if (battery.second.getEnergy() >= 10 && unit.unit()->getDistance(battery.second.getPosition()) < 320)
+				BuildingInfo building = b.second;
+				if (building.getType() == UnitTypes::Protoss_Shield_Battery && building.getEnergy() >= 10 && unit.unit()->getDistance(building.getPosition()) < 320)
 				{
-					unit.unit()->rightClick(battery.second.unit());
+					unit.unit()->rightClick(building.unit());
 					continue;
 				}
 			}
@@ -242,13 +238,13 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 	}
 
 	// Reavers should always kite away from their target if it has lower range
-	else if (unit.getType() == UnitTypes::Protoss_Reaver && Units().getEnUnits()[unit.getTarget()].getGroundRange() < unit.getGroundRange())
+	else if (unit.getType() == UnitTypes::Protoss_Reaver && Units().getEnemyUnits()[unit.getTarget()].getGroundRange() < unit.getGroundRange())
 	{
 		kite = true;
 	}
 
 	// If kiting is a good idea, enable
-	else if ((unit.getGroundRange() > 32 && unit.unit()->isUnderAttack()) || (Units().getEnUnits()[unit.getTarget()].getGroundRange() <= unit.getGroundRange() && (unit.unit()->getDistance(unit.getTargetPosition()) <= unit.getGroundRange() - Units().getEnUnits()[unit.getTarget()].getGroundRange() && Units().getEnUnits()[unit.getTarget()].getGroundRange() > 0 && unit.getGroundRange() > 32 || unit.unit()->getHitPoints() < 40)))
+	else if ((unit.getGroundRange() > 32 && unit.unit()->isUnderAttack()) || (Units().getEnemyUnits()[unit.getTarget()].getGroundRange() <= unit.getGroundRange() && (unit.unit()->getDistance(unit.getTargetPosition()) <= unit.getGroundRange() - Units().getEnemyUnits()[unit.getTarget()].getGroundRange() && Units().getEnemyUnits()[unit.getTarget()].getGroundRange() > 0 && unit.getGroundRange() > 32 || unit.unit()->getHitPoints() < 40)))
 	{
 		kite = true;
 	}
@@ -270,7 +266,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 		{
 			unit.unit()->attack(unit.getTarget());
 		}
-		unit.setTargetPosition(Units().getEnUnits()[unit.getTarget()].getPosition());
+		unit.setTargetPosition(Units().getEnemyUnits()[unit.getTarget()].getPosition());
 	}
 	return;
 }

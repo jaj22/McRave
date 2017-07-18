@@ -1,5 +1,11 @@
 #include "McRave.h"
 
+double UtilTrackerClass::getPercentHealth(UnitInfo& unit)
+{
+	// Returns the percent of health for a unit, with higher emphasis on health over shields
+	return double(unit.unit()->getHitPoints() + (unit.unit()->getShields() / 2)) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields() / 2));
+}
+
 double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 {
 	// Some hardcoded values that don't have attacks but should still be considered for strength
@@ -58,16 +64,15 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 		return 0;
 	}
 
-	double effectiveness = 1.0;
-	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields() / 2)) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields() / 2));
+	double effectiveness = 1.0;	
 
-	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
-	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
-	double aSmall = double(Units().getMySizes()[UnitSizeTypes::Small]);
+	/*double aLarge = double(Units().getAllySizes()[UnitSizeTypes::Large]);
+	double aMedium = double(Units().getAllySizes()[UnitSizeTypes::Medium]);
+	double aSmall = double(Units().getAllySizes()[UnitSizeTypes::Small]);
 
-	double eLarge = double(Units().getEnSizes()[UnitSizeTypes::Large]);
-	double eMedium = double(Units().getEnSizes()[UnitSizeTypes::Medium]);
-	double eSmall = double(Units().getEnSizes()[UnitSizeTypes::Small]);
+	double eLarge = double(Units().getEnemySizes()[UnitSizeTypes::Large]);
+	double eMedium = double(Units().getEnemySizes()[UnitSizeTypes::Medium]);
+	double eSmall = double(Units().getEnemySizes()[UnitSizeTypes::Small]);
 
 	if (unit.unit()->getPlayer() == Broodwar->enemy())
 	{
@@ -94,9 +99,9 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
-		return 10.0 * unit.getMaxGroundStrength() * effectiveness;
+		return 25.0 * unit.getMaxGroundStrength() * effectiveness;
 	}
-	return hp * unit.getMaxGroundStrength() * effectiveness;
+	return unit.getPercentHealth() * unit.getMaxGroundStrength() * effectiveness;
 }
 
 double UtilTrackerClass::getMaxAirStrength(UnitInfo& unit, Player who)
@@ -140,13 +145,13 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 	double effectiveness = 1.0;
 	double hp = double(unit.unit()->getHitPoints() + (unit.unit()->getShields())) / double(unit.getType().maxHitPoints() + (unit.getType().maxShields()));
 	
-	/*double aLarge = double(Units().getMySizes()[UnitSizeTypes::Large]);
-	double aMedium = double(Units().getMySizes()[UnitSizeTypes::Medium]);
-	double aSmall = double(Units().getMySizes()[UnitSizeTypes::Small]);
+	/*double aLarge = double(Units().getAllySizes()[UnitSizeTypes::Large]);
+	double aMedium = double(Units().getAllySizes()[UnitSizeTypes::Medium]);
+	double aSmall = double(Units().getAllySizes()[UnitSizeTypes::Small]);
 
-	double eLarge = double(Units().getEnSizes()[UnitSizeTypes::Large]);
-	double eMedium = double(Units().getEnSizes()[UnitSizeTypes::Medium]);
-	double eSmall = double(Units().getEnSizes()[UnitSizeTypes::Small]);
+	double eLarge = double(Units().getEnemySizes()[UnitSizeTypes::Large]);
+	double eMedium = double(Units().getEnemySizes()[UnitSizeTypes::Medium]);
+	double eSmall = double(Units().getEnemySizes()[UnitSizeTypes::Small]);
 
 	if (unit.unit()->getPlayer() == Broodwar->enemy())
 	{
@@ -174,9 +179,9 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 
 	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
 	{
-		return 10.0 * unit.getMaxAirStrength() * effectiveness;
+		return 25.0 * unit.getMaxAirStrength() * effectiveness;
 	}
-	return hp * unit.getMaxAirStrength() * effectiveness;
+	return unit.getPercentHealth() * unit.getMaxAirStrength() * effectiveness;
 }
 
 double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
@@ -191,6 +196,12 @@ double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
 	if (unit.getType() == UnitTypes::Protoss_Arbiter || unit.getType() == UnitTypes::Protoss_Observer || unit.getType() == UnitTypes::Protoss_Shuttle || unit.getType() == UnitTypes::Terran_Science_Vessel || unit.getType() == UnitTypes::Terran_Dropship || unit.getType() == UnitTypes::Terran_Vulture_Spider_Mine)
 	{
 		return 50.0;
+	}
+
+	// Carriers don't have any strength, manually modify priority
+	else if (unit.getType() == UnitTypes::Protoss_Carrier)
+	{
+		return 20.0;
 	}
 
 	// Workers get a fairly low priority
@@ -398,7 +409,7 @@ WalkPosition UtilTrackerClass::getWalkPosition(Unit unit)
 
 set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
 {
-	WalkPosition start = Units().getMyUnits()[unit].getWalkPosition();
+	WalkPosition start = Units().getAllyUnits()[unit].getWalkPosition();
 	set<WalkPosition> returnValues;
 
 	for (int i = start.x; i <= start.x + unit->getType().tileWidth(); i++)
@@ -413,14 +424,14 @@ set<WalkPosition> UtilTrackerClass::getWalkPositionsUnderUnit(Unit unit)
 
 bool UtilTrackerClass::isSafe(WalkPosition start, WalkPosition end, UnitType unitType, bool groundCheck, bool airCheck, bool mobilityCheck)
 {
-	for (int i = end.x - (unitType.tileWidth() * 2); i <= end.x + (unitType.tileWidth() * 2); i++)
+	for (int i = end.x - (unitType.width() / 16); i <= end.x + (unitType.width() / 16); i++)
 	{
-		for (int j = end.y - (unitType.tileHeight() * 2); j <= end.y + (unitType.tileHeight() * 2); j++)
+		for (int j = end.y - (unitType.height() / 16); j <= end.y + (unitType.height() / 16); j++)
 		{
 			if (WalkPosition(i, j).isValid())
 			{				
 				// If WalkPosition shared with WalkPositions under unit, ignore
-				if (i >= start.x && i <= (start.x + (unitType.tileWidth() * 4)) && j >= start.y && j <= (start.y + (unitType.tileHeight() * 4)))
+				if (i >= start.x && i <= (start.x + (unitType.width() / 16)) && j >= start.y && j <= (start.y + (unitType.height() / 16)))
 				{					
 					continue;
 				}

@@ -3,128 +3,11 @@
 void StrategyTrackerClass::update()
 {
 	Display().startClock();
-	updateAlly();
-	updateEnemy();
 	updateSituationalBehaviour();
+	updateBullets();
+	updateScoring();
 	Display().performanceTest(__FUNCTION__);
 	return;
-}
-
-void StrategyTrackerClass::updateAlly()
-{
-	// Reset
-	globalEnemyStrength = 0.0;
-	globalAllyStrength = 0.0;
-	allyDefense = 0.0;
-	enemyDefense = 0.0;
-
-	// Check through all alive units or units dead within 500 frames
-	for (auto &u : Units().getMyUnits())
-	{
-		// If deadframe is 0, unit is alive still
-		if (u.second.unit() && u.second.getDeadFrame() == 0)
-		{
-			// Strength based calculations ignore workers and buildings
-			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
-			{
-				// Add strength				
-				globalAllyStrength += max(u.second.getVisibleGroundStrength(), u.second.getVisibleAirStrength());
-
-				// Set last command frame
-				if (u.first->isAttackFrame())
-				{
-					u.second.setLastAttackFrame(Broodwar->getFrameCount());
-				}
-			}
-			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
-			{
-				allyDefense += u.second.getVisibleGroundStrength();
-			}
-		}
-		else
-		{
-			globalEnemyStrength += max(u.second.getMaxGroundStrength(), u.second.getMaxAirStrength()) * 0.5 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-		}
-	}
-}
-
-void StrategyTrackerClass::updateEnemy()
-{
-	// Reset	
-	eZerg = 0;
-	eProtoss = 0;
-	eTerran = 0;
-
-	// Store enemy races
-	for (auto &player : Broodwar->enemies())
-	{
-		if (player->getRace() == Races::Zerg)
-		{
-			eZerg++;
-		}
-		else if (player->getRace() == Races::Protoss)
-		{
-			eProtoss++;
-		}
-		else if (player->getRace() == Races::Terran)
-		{
-			eTerran++;
-		}
-	}
-
-	// Stored enemy units iterator
-	for (auto &u : Units().getEnUnits())
-	{
-		// If nullptr, continue
-		if (!u.first)
-		{
-			continue;
-		}
-		// If deadframe is 0, unit is alive still
-		if (u.second.getDeadFrame() == 0)
-		{
-			if (Workers().isScouting())
-			{
-				if (eTerran > 0 && theMap.GetArea(u.second.getTilePosition()))
-				{
-					for (auto &choke : theMap.GetArea(u.second.getTilePosition())->ChokePoints())
-					{
-						if (Position(choke->Center()).getDistance(u.second.getPosition()) < 256)
-						{
-							walledOff = true;
-						}
-					}
-				}
-			}
-
-			enemyComposition[u.second.getType()] += 1;
-
-			// If tile is visible but unit is not, remove position
-			if (!u.first->exists() && u.second.getPosition() != Positions::None && Broodwar->isVisible(TilePosition(u.second.getPosition())))
-			{
-				u.second.setPosition(Positions::None);
-			}
-
-			// Strength based calculations ignore workers and buildings
-			if (!u.second.getType().isWorker() && !u.second.getType().isBuilding())
-			{
-				// Add strength	
-				globalEnemyStrength += max(u.second.getVisibleGroundStrength(), u.second.getVisibleAirStrength());
-			}
-			if (u.second.getType().isBuilding() && u.second.getGroundDamage() > 0 && u.second.unit()->isCompleted())
-			{
-				enemyDefense += u.second.getVisibleGroundStrength(); 
-
-			}
-		}
-
-		// If unit is dead
-		else if (u.second.getDeadFrame() != 0)
-		{
-			// Add a portion of the strength to ally strength
-			globalAllyStrength += max(u.second.getMaxGroundStrength(), u.second.getMaxAirStrength()) * 1 / (1.0 + 0.001*(double(Broodwar->getFrameCount()) - double(u.second.getDeadFrame())));
-		}
-	}
 }
 
 void StrategyTrackerClass::updateSituationalBehaviour()
@@ -133,12 +16,6 @@ void StrategyTrackerClass::updateSituationalBehaviour()
 	for (auto &unit : unitScore)
 	{
 		unit.second = 0;
-	}
-
-	// Invisible unit detection
-	if (enemyComposition[UnitTypes::Protoss_Dark_Templar] > 0 || enemyComposition[UnitTypes::Protoss_Citadel_of_Adun] > 0 || enemyComposition[UnitTypes::Protoss_Templar_Archives] > 0 || enemyComposition[UnitTypes::Terran_Wraith] > 0 || enemyComposition[UnitTypes::Terran_Ghost] > 0 || enemyComposition[UnitTypes::Zerg_Lurker] > 0)
-	{
-		invis = true;
 	}
 
 	// Specific behaviours
@@ -154,20 +31,6 @@ void StrategyTrackerClass::updateSituationalBehaviour()
 	{
 		zergStrategy();
 	}
-
-	// Enemy composition
-	int offset = 0;
-	for (auto &t : enemyComposition)
-	{
-		// For each type, add a score to production based on the unit count divided by our current unit count
-		updateUnitScore(t.first, t.second);
-		if (t.first != UnitTypes::None && t.second > 0.0)
-		{
-			Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
-			offset = offset + 10;
-		}
-		t.second = 0;
-	}
 }
 
 void StrategyTrackerClass::protossStrategy()
@@ -176,7 +39,7 @@ void StrategyTrackerClass::protossStrategy()
 	if (Broodwar->self()->getUpgradeLevel(UpgradeTypes::Singularity_Charge) == 0)
 	{
 		// Ramp holding logic
-		if ((fastExpand && eZerg > 0) || (eProtoss > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
+		if ((allyFastExpand && Players().getNumberZerg() > 0) || (Players().getNumberProtoss() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Dragoon) >= 1))
 		{
 			holdRamp = true;
 		}
@@ -185,7 +48,7 @@ void StrategyTrackerClass::protossStrategy()
 			holdRamp = false;
 		}
 
-		if (eProtoss > 0 && enemyComposition[UnitTypes::Protoss_Forge] == 0 && (enemyComposition[UnitTypes::Protoss_Gateway] >= 2 || enemyComposition[UnitTypes::Protoss_Gateway] == 0) && enemyComposition[UnitTypes::Protoss_Assimilator] == 0 && enemyComposition[UnitTypes::Protoss_Nexus] == 1)
+		if (Players().getNumberProtoss() > 0 && Units().getEnemyComposition()[UnitTypes::Protoss_Forge] == 0 && (Units().getEnemyComposition()[UnitTypes::Protoss_Gateway] >= 2 || Units().getEnemyComposition()[UnitTypes::Protoss_Gateway] == 0) && Units().getEnemyComposition()[UnitTypes::Protoss_Assimilator] == 0 && Units().getEnemyComposition()[UnitTypes::Protoss_Nexus] == 1)
 		{
 			rush = true;
 		}
@@ -194,16 +57,10 @@ void StrategyTrackerClass::protossStrategy()
 			rush = false;
 		}
 
-		// If we are being 4/5 pooled, make a shield battery
-		if (eZerg > 0 && enemyComposition[UnitTypes::Zerg_Zergling] >= 4 && enemyComposition[UnitTypes::Zerg_Drone] <= 6)
-		{
-			//rush = true;
-		}
-
 		// If we are being BBS'd, unlock Zealots
-		if (eTerran > 0)
+		if (Players().getNumberTerran() > 0)
 		{
-			if ((enemyComposition[UnitTypes::Terran_Barracks] == 0 || enemyComposition[UnitTypes::Terran_Barracks] == 2) && enemyComposition[UnitTypes::Terran_Command_Center] == 1 && enemyComposition[UnitTypes::Terran_Refinery] == 0)
+			if ((Units().getEnemyComposition()[UnitTypes::Terran_Barracks] == 0 || Units().getEnemyComposition()[UnitTypes::Terran_Barracks] == 2) && Units().getEnemyComposition()[UnitTypes::Terran_Command_Center] == 1 && Units().getEnemyComposition()[UnitTypes::Terran_Refinery] == 0)
 			{
 				zealotsLocked = false;
 			}
@@ -213,22 +70,28 @@ void StrategyTrackerClass::protossStrategy()
 			}
 		}
 
-		// Fast expand Logic
-		if (enemyComposition[UnitTypes::Terran_Bunker] > 0 || enemyComposition[UnitTypes::Protoss_Photon_Cannon] >= 2)
+		// Check if enemy is playing defensive so we can expand off it
+		if (Units().getEnemyComposition()[UnitTypes::Terran_Bunker] > 0 || Units().getEnemyComposition()[UnitTypes::Protoss_Photon_Cannon] >= 2)
 		{
-			fastExpand = true;
-		}
-		else if (eZerg > 0 && Broodwar->mapFileName().find("Alchemist") == Broodwar->mapName().npos)
-		{
-			fastExpand = true;
+			allyFastExpand = true;
 		}
 		else
 		{
-			fastExpand = false;
+			allyFastExpand = false;
+		}
+
+		// Check if enemy is fast expanding so we can try to punish it and end the game early
+		if (Units().getEnemyComposition()[UnitTypes::Terran_Command_Center] > 1 || Units().getEnemyComposition()[UnitTypes::Zerg_Hatchery] > 2 || Units().getEnemyComposition()[UnitTypes::Protoss_Nexus] > 1)
+		{
+			enemyFastExpand = true;
+		}
+		else
+		{
+			enemyFastExpand = false;
 		}
 
 		// Check to see if a bust is coming
-		if (fastExpand && enemyComposition[UnitTypes::Zerg_Hydralisk_Den] > 0 || enemyComposition[UnitTypes::Zerg_Hydralisk] >= 4)
+		if (allyFastExpand && Units().getEnemyComposition()[UnitTypes::Zerg_Hydralisk_Den] > 0 || Units().getEnemyComposition()[UnitTypes::Zerg_Hydralisk] >= 4)
 		{
 			bust = true;
 		}
@@ -236,11 +99,23 @@ void StrategyTrackerClass::protossStrategy()
 	else
 	{
 		rush = false;
-		fastExpand = false;
+		allyFastExpand = false;
+		enemyFastExpand = false;
 		bust = false;
 		holdRamp = false;
 		zealotsLocked = false;
 	}
+
+	// Check if we need detection
+	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Observatory) > 0)
+	{
+		invis = false;
+	}
+	else if (Units().getEnemyComposition()[UnitTypes::Protoss_Dark_Templar] > 0 || Units().getEnemyComposition()[UnitTypes::Protoss_Citadel_of_Adun] > 0 || Units().getEnemyComposition()[UnitTypes::Protoss_Templar_Archives] > 0 ||/* Units().getEnemyComposition()[UnitTypes::Terran_Wraith] > 0 ||*/ Units().getEnemyComposition()[UnitTypes::Terran_Ghost] > 0 || Units().getEnemyComposition()[UnitTypes::Zerg_Lurker] > 0)
+	{
+		invis = true;
+	}
+
 }
 
 void StrategyTrackerClass::terranStrategy()
@@ -254,6 +129,12 @@ void StrategyTrackerClass::terranStrategy()
 	{
 		holdRamp = true;
 	}
+
+	// If we are being 4/5 pooled
+	if (Players().getNumberZerg() > 0 && Units().getEnemyComposition()[UnitTypes::Zerg_Zergling] >= 4 && Units().getEnemyComposition()[UnitTypes::Zerg_Drone] <= 6)
+	{
+		rush = true;
+	}
 }
 
 void StrategyTrackerClass::zergStrategy()
@@ -261,7 +142,86 @@ void StrategyTrackerClass::zergStrategy()
 
 }
 
-void StrategyTrackerClass::updateUnitScore(UnitType unit, int count)
+
+void StrategyTrackerClass::updateBullets()
+{
+	// TESTING -- Calculate how a unit is performing
+	for (auto& bullet : Broodwar->getBullets())
+	{
+		if (bullet->exists() && bullet->getSource() && bullet->getSource()->exists() && bullet->getTarget() && bullet->getTarget()->exists())
+		{
+			if (bullet->getSource()->getPlayer() == Broodwar->self() && myBullets.find(bullet) == myBullets.end())
+			{
+				myBullets.emplace(bullet);
+				double typeMod = 1.0;
+
+				if (!bullet->getTarget()->getType().isFlyer())
+				{
+					if (bullet->getSource()->getType().groundWeapon().damageType() == DamageTypes::Explosive)
+					{
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Small)
+						{
+							typeMod = 0.5;
+						}
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Medium)
+						{
+							typeMod = 0.75;
+						}
+					}
+					if (bullet->getSource()->getType().groundWeapon().damageType() == DamageTypes::Concussive)
+					{
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Large)
+						{
+							typeMod = 0.25;
+						}
+						if (bullet->getTarget()->getType().size() == UnitSizeTypes::Medium)
+						{
+							typeMod = 0.5;
+						}
+					}
+
+					unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().groundWeapon().damageAmount()) * typeMod;
+				}
+			}
+			else
+			{
+				unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().airWeapon().damageAmount());
+			}
+		}
+	}
+}
+
+void StrategyTrackerClass::updateScoring()
+{
+	// Unit score based off enemy composition
+	int offset = 0;
+	for (auto &t : Units().getEnemyComposition())
+	{
+		// For each type, add a score to production based on the unit count divided by our current unit count
+		if (Broodwar->self()->getRace() == Races::Protoss)
+		{
+			updateProtossUnitScore(t.first, t.second);
+		}
+		else if (Broodwar->self()->getRace() == Races::Terran)
+		{
+			updateTerranUnitScore(t.first, t.second);
+		}
+		if (t.first != UnitTypes::None && t.second > 0.0)
+		{
+			Broodwar->drawTextScreen(500, 50 + offset, "%s : %d", t.first.toString().c_str(), t.second);
+			offset = offset + 10;
+		}
+		t.second = 0;
+	}
+
+	// Update Unit score based on performance
+	for (auto &t : unitScore)
+	{
+		t.second += unitPerformance[t.first];
+	}
+}
+
+void StrategyTrackerClass::updateProtossUnitScore(UnitType unit, int count)
 {
 	switch (unit)
 	{
@@ -342,5 +302,46 @@ void StrategyTrackerClass::updateUnitScore(UnitType unit, int count)
 		unitScore[UnitTypes::Protoss_Zealot] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Zealot)));
 		unitScore[UnitTypes::Protoss_Reaver] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver)));
 		break;
+
+	case UnitTypes::Enum::Protoss_Zealot:
+		unitScore[UnitTypes::Protoss_Reaver] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver)));
+		break;
+	case UnitTypes::Enum::Protoss_Dragoon:
+		unitScore[UnitTypes::Protoss_Reaver] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver)));
+		break;
+	case UnitTypes::Enum::Protoss_High_Templar:
+		unitScore[UnitTypes::Protoss_High_Templar] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar)));
+		break;
+	case UnitTypes::Enum::Protoss_Dark_Templar:
+		unitScore[UnitTypes::Protoss_Reaver] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver)));
+		break;
+	case UnitTypes::Enum::Protoss_Reaver:
+		unitScore[UnitTypes::Protoss_Reaver] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Reaver)));
+		break;
+	case UnitTypes::Enum::Protoss_Archon:
+		unitScore[UnitTypes::Protoss_High_Templar] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar)));
+		break;
+	case UnitTypes::Enum::Protoss_Dark_Archon:
+		unitScore[UnitTypes::Protoss_High_Templar] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar)));
+		break;
+	case UnitTypes::Enum::Protoss_Carrier:
+		unitScore[UnitTypes::Protoss_Scout] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Scout)));
+		break;
+	case UnitTypes::Enum::Protoss_Arbiter:
+		unitScore[UnitTypes::Protoss_High_Templar] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar)));
+		break;
+	case UnitTypes::Enum::Protoss_Corsair:
+		unitScore[UnitTypes::Protoss_High_Templar] += (count * unit.supplyRequired() * 1.00) / max(1.0, double(Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_High_Templar)));
+		break;
 	}
+}
+
+void StrategyTrackerClass::updateTerranUnitScore(UnitType unit, int count)
+{
+
+}
+
+void StrategyTrackerClass::updateZergUnitScore(UnitType unit, int count)
+{
+
 }
