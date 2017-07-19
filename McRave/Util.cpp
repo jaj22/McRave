@@ -25,6 +25,10 @@ double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 	{
 		return 0.0;
 	}
+	if (unit.getType() == UnitTypes::Protoss_Interceptor)
+	{
+		return 2.5;
+	}
 
 	double range, damage, speed;
 	range = cbrt(unit.getGroundRange());
@@ -106,6 +110,10 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 
 double UtilTrackerClass::getMaxAirStrength(UnitInfo& unit, Player who)
 {
+	if (unit.getType() == UnitTypes::Protoss_Interceptor)
+	{
+		return 2.5;
+	}
 	double range, damage, speed;
 	range = cbrt(unit.getAirRange());
 	damage = unit.getAirDamage() / double(unit.getType().airWeapon().damageCooldown());
@@ -201,7 +209,7 @@ double UtilTrackerClass::getPriority(UnitInfo& unit, Player who)
 	// Carriers don't have any strength, manually modify priority
 	else if (unit.getType() == UnitTypes::Protoss_Carrier)
 	{
-		return 20.0;
+		return 10.0;
 	}
 
 	// Workers get a fairly low priority

@@ -162,6 +162,11 @@ void GridTrackerClass::updateEnemyGrids()
 		UnitInfo enemy = e.second;
 		WalkPosition start = enemy.getWalkPosition();
 
+		if (enemy.getType() == UnitTypes::Protoss_Interceptor)
+		{
+			continue;
+		}
+
 		if (enemy.unit() && enemy.getDeadFrame() == 0)
 		{
 			if (enemy.unit()->exists() && !enemy.getType().isBuilding() && !enemy.unit()->isStasised() && !enemy.unit()->isMaelstrommed())
