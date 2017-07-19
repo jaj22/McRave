@@ -82,7 +82,7 @@ void UnitTrackerClass::onUnitComplete(Unit unit)
 	else if (unit->getType().isResourceContainer())
 	{
 		Resources().storeResource(unit);
-	}	
+	}
 }
 
 void UnitTrackerClass::onUnitMorph(Unit unit)
@@ -413,31 +413,35 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	double enemyLocalGroundStrength = 0.0, allyLocalGroundStrength = 0.0, timeToTarget = 0.0, timeToUnit = 0.0, timeRatio;
 	double enemyLocalAirStrength = 0.0, allyLocalAirStrength = 0.0;
 	Position engagementPosition;
-	
+
 
 	// Reset local
 	unit.setGroundLocal(0);
-
-
-
-	if (enemyUnits.find(unit.getTarget()) != enemyUnits.end())
+	// Time to reach target
+	if (unit.getPosition().getDistance(unit.getTargetPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
 	{
-		UnitInfo target = enemyUnits[unit.getTarget()];
-
-		// Time for target to reach unit
-		if (target.getPosition().getDistance(unit.getPosition()) > target.getGroundRange() && (target.getSpeed() + unit.getSpeed()) > 0.0)
-		{
-			timeToUnit = (target.getPosition().getDistance(unit.getPosition()) - target.getGroundRange()) / (target.getSpeed() + unit.getSpeed());
-		}
-		// Time to reach target
-		if (unit.getPosition().getDistance(target.getPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
-		{
-			timeToTarget = (unit.getPosition().getDistance(target.getPosition()) - unit.getGroundRange()) / (unit.getSpeed() + target.getSpeed());
-		}
-
-		// Calculate engagement position
-		// Distance between unit and target, assume for local calculations no retreat/push, just pure distance
+		timeToTarget = max(1.0, (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed());
 	}
+
+
+	//if (enemyUnits.find(unit.getTarget()) != enemyUnits.end())
+	//{
+	//	UnitInfo target = enemyUnits[unit.getTarget()];
+
+	//	// Time for target to reach unit
+	//	if (target.getPosition().getDistance(unit.getPosition()) > target.getGroundRange() && (target.getSpeed() + unit.getSpeed()) > 0.0)
+	//	{
+	//		timeToUnit = (target.getPosition().getDistance(unit.getPosition()) - target.getGroundRange()) / (target.getSpeed() + unit.getSpeed());
+	//	}
+	//	// Time to reach target
+	//	if (unit.getPosition().getDistance(target.getPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
+	//	{
+	//		timeToTarget = (unit.getPosition().getDistance(target.getPosition()) - unit.getGroundRange()) / (unit.getSpeed() + target.getSpeed());
+	//	}
+
+	//	// Calculate engagement position
+	//	// Distance between unit and target, assume for local calculations no retreat/push, just pure distance
+	//}
 
 
 
@@ -530,8 +534,8 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 		allyLocalGroundStrength = allyLocalGroundStrength * 20.0;
 	}
 
-	groundLatch = (groundLatch * 149 / 150) + ((allyLocalGroundStrength - enemyLocalGroundStrength) * 1 / 150);
-	airLatch = (airLatch * 149 / 150) + ((allyLocalAirStrength - enemyLocalAirStrength) * 1 / 150);
+	/*groundLatch = (groundLatch * 149 / 150) + ((allyLocalGroundStrength - enemyLocalGroundStrength) * 1 / 150);
+	airLatch = (airLatch * 149 / 150) + ((allyLocalAirStrength - enemyLocalAirStrength) * 1 / 150);*/
 
 	// Store the difference of strengths 
 	unit.setGroundLocal(allyLocalGroundStrength - enemyLocalGroundStrength);
@@ -649,7 +653,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	if (unit.getStrategy() == 1)
 	{
 		// Latch based system for at least 80% disadvantage to disengage
-		if ((!unit.getType().isFlyer() && groundLatch < 1.0) || (unit.getType().isFlyer() && airLatch < 1.0))
+		if ((!unit.getType().isFlyer() && allyLocalGroundStrength < enemyLocalGroundStrength*0.8 /*&& groundLatch < 1.0*/) || (unit.getType().isFlyer() && allyLocalAirStrength < enemyLocalAirStrength*0.8 /*&& airLatch < 1.0*/))
 		{
 			unit.setStrategy(0);
 			return;
@@ -664,7 +668,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	else
 	{
 		// Latch based system for at least 120% advantage to engage
-		if ((!unit.getType().isFlyer() && groundLatch >= 1.0) || (unit.getType().isFlyer() && airLatch > 1.0))
+		if ((!unit.getType().isFlyer() && allyLocalGroundStrength > enemyLocalGroundStrength*1.2/*&& groundLatch >= 1.0*/) || (unit.getType().isFlyer() && allyLocalAirStrength > enemyLocalAirStrength*1.2 /*&& airLatch > 1.0*/))
 		{
 			unit.setStrategy(1);
 			return;

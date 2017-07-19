@@ -102,9 +102,16 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 		}
 	}*/
 
-	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
+	if (unit.unit()->isCloaked() || unit.unit()->isBurrowed())
 	{
-		return 25.0 * unit.getMaxGroundStrength() * effectiveness;
+		if (who == Broodwar->self() && Grids().getEDetectorGrid(unit.getWalkPosition()) == 0)
+		{
+			return 25.0 * unit.getMaxAirStrength() * effectiveness;
+		}
+		else if (!unit.unit()->isDetected())
+		{
+			return 25.0 * unit.getMaxAirStrength() * effectiveness;
+		}
 	}
 	return unit.getPercentHealth() * unit.getMaxGroundStrength() * effectiveness;
 }
@@ -187,9 +194,16 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 	}*/
 
 
-	if ((unit.unit()->isCloaked() || unit.unit()->isBurrowed()) && !unit.unit()->isDetected())
+	if (unit.unit()->isCloaked() || unit.unit()->isBurrowed())
 	{
-		return 25.0 * unit.getMaxAirStrength() * effectiveness;
+		if (who == Broodwar->self() && Grids().getEDetectorGrid(unit.getWalkPosition()) == 0)
+		{
+			return 25.0 * unit.getMaxAirStrength() * effectiveness;
+		}
+		else if (!unit.unit()->isDetected())
+		{
+			return 25.0 * unit.getMaxAirStrength() * effectiveness;
+		}
 	}
 	return unit.getPercentHealth() * unit.getMaxAirStrength() * effectiveness;
 }
