@@ -18,6 +18,7 @@ class UnitTrackerClass
 
 	double globalAllyStrength, globalEnemyStrength;
 	double allyDefense, enemyDefense;
+	double groundLatch, airLatch;
 	int supply, globalStrategy;
 public:
 	// Accessors

@@ -1,5 +1,8 @@
 #include "McRave.h"
 
+// Collective health/dps and measure outcome based on highest value targets being killed first
+// Time to target for both units
+
 void UnitTrackerClass::update()
 {
 	Display().startClock();
@@ -402,23 +405,42 @@ void UnitTrackerClass::removeUnit(Unit unit)
 	{
 		Resources().removeResource(unit);
 	}
-
 }
 
 void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be moved to UTIL as a double function, to be accesible to SpecialUnitManager too
 {
 	// Variables for calculating local strengths
-	double enemyLocalGroundStrength = 0.0, allyLocalGroundStrength = 0.0, timeToTarget = 0.0;
+	double enemyLocalGroundStrength = 0.0, allyLocalGroundStrength = 0.0, timeToTarget = 0.0, timeToUnit = 0.0, timeRatio;
 	double enemyLocalAirStrength = 0.0, allyLocalAirStrength = 0.0;
+	Position engagementPosition;
+	
 
 	// Reset local
 	unit.setGroundLocal(0);
 
-	// Time to reach target
-	if (unit.getPosition().getDistance(unit.getTargetPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
+
+
+	if (enemyUnits.find(unit.getTarget()) != enemyUnits.end())
 	{
-		timeToTarget = max(1.0, (unit.getPosition().getDistance(unit.getTargetPosition()) - unit.getGroundRange()) / unit.getSpeed());
+		UnitInfo target = enemyUnits[unit.getTarget()];
+
+		// Time for target to reach unit
+		if (target.getPosition().getDistance(unit.getPosition()) > target.getGroundRange() && (target.getSpeed() + unit.getSpeed()) > 0.0)
+		{
+			timeToUnit = (target.getPosition().getDistance(unit.getPosition()) - target.getGroundRange()) / (target.getSpeed() + unit.getSpeed());
+		}
+		// Time to reach target
+		if (unit.getPosition().getDistance(target.getPosition()) > unit.getGroundRange() && unit.getSpeed() > 0.0)
+		{
+			timeToTarget = (unit.getPosition().getDistance(target.getPosition()) - unit.getGroundRange()) / (unit.getSpeed() + target.getSpeed());
+		}
+
+		// Calculate engagement position
+		// Distance between unit and target, assume for local calculations no retreat/push, just pure distance
 	}
+
+
+
 
 	// If a unit is clearly out of range based on current health (keeps healthy units in the front), set as "no local" and skip calculating
 	if (unit.getPosition().getDistance(unit.getTargetPosition()) > 640.0 + (64.0 * (1.0 - unit.getPercentHealth())))
@@ -507,6 +529,9 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 		allyLocalAirStrength = allyLocalAirStrength * 20.0;
 		allyLocalGroundStrength = allyLocalGroundStrength * 20.0;
 	}
+
+	groundLatch = (groundLatch * 149 / 150) + ((allyLocalGroundStrength - enemyLocalGroundStrength) * 1 / 150);
+	airLatch = (airLatch * 149 / 150) + ((allyLocalAirStrength - enemyLocalAirStrength) * 1 / 150);
 
 	// Store the difference of strengths 
 	unit.setGroundLocal(allyLocalGroundStrength - enemyLocalGroundStrength);
@@ -624,7 +649,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	if (unit.getStrategy() == 1)
 	{
 		// Latch based system for at least 80% disadvantage to disengage
-		if ((!unit.getType().isFlyer() && allyLocalGroundStrength < enemyLocalGroundStrength*0.8) || (unit.getType().isFlyer() && allyLocalAirStrength < enemyLocalAirStrength*0.8))
+		if ((!unit.getType().isFlyer() && groundLatch < 1.0) || (unit.getType().isFlyer() && airLatch < 1.0))
 		{
 			unit.setStrategy(0);
 			return;
@@ -639,7 +664,7 @@ void UnitTrackerClass::getLocalCalculation(UnitInfo& unit) // Will eventually be
 	else
 	{
 		// Latch based system for at least 120% advantage to engage
-		if ((!unit.getType().isFlyer() && allyLocalGroundStrength > enemyLocalGroundStrength*1.2) || (unit.getType().isFlyer() && allyLocalAirStrength > enemyLocalAirStrength*1.2))
+		if ((!unit.getType().isFlyer() && groundLatch >= 1.0) || (unit.getType().isFlyer() && airLatch > 1.0))
 		{
 			unit.setStrategy(1);
 			return;

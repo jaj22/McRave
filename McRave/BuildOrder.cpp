@@ -47,7 +47,7 @@ void BuildOrderTrackerClass::updateDecision()
 		}
 
 		// If production is saturated and none are idle or we need detection for some invis units, choose a tech
-		if (Strategy().needDetection() || (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleHighProduction().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 3))
+		if (Strategy().needDetection() || (!getOpening && !getTech && techUnit == UnitTypes::None && Production().isGateSat() && Production().getIdleHighProduction().size() == 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2))
 		{
 			// Put tech function here instead
 			getTech = true;
@@ -56,7 +56,7 @@ void BuildOrderTrackerClass::updateDecision()
 		// If we are choosing an opening
 		if (getOpening && opening != 1)
 		{
-			// PvZ - FFE
+			// PvZ - FFE always
 			if (Players().getNumberZerg() > 0 && opening == 0)
 			{
 				opening = 1;
@@ -65,12 +65,27 @@ void BuildOrderTrackerClass::updateDecision()
 
 			// PvP - 1 Gate Core
 			else if (Players().getNumberProtoss() > 0)
-			{
-				opening = 2;
+			{				
+				if (Strategy().isRush())
+				{
+					opening = 4;
+				}
+				else
+				{
+					opening = 2;
+				}
 			}
 			// PvT - 1 Gate Nexus
 			else if (Players().getNumberTerran() > 0)
 			{
+			/*	if (Strategy().isEnemyFastExpand())
+				{
+					opening = 2;
+				}
+				else
+				{
+					opening = 3;
+				}*/
 				opening = 3;
 			}
 			// PvR - 2 Gate Core
@@ -79,11 +94,7 @@ void BuildOrderTrackerClass::updateDecision()
 				opening = 4;
 			}
 
-			// If we are being rushed in PvP, opening is always 4.
-			if (Strategy().isRush())
-			{
-				//opening = 4;
-			}
+			
 		}		
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)

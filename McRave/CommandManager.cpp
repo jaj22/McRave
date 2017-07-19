@@ -159,6 +159,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 {
 	// TEMP -- Set to false initially
 	kite = false;
+	approach = false;
 
 	// Specific High Templar behavior
 	if (unit.getType() == UnitTypes::Protoss_High_Templar)
@@ -177,7 +178,7 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 		unit.unit()->useTech(TechTypes::Stim_Packs);
 	}
 
-	// Specific Medic behavior
+	// Specific Medic behavior -- if removed, nulls get stored further down
 	if (unit.getType() == UnitTypes::Terran_Medic)
 	{
 		if (unit.unit()->getLastCommand().getType() != UnitCommandTypes::Use_Tech_Unit || unit.unit()->getLastCommand().getTarget() != unit.getTarget())
@@ -250,11 +251,25 @@ void CommandTrackerClass::attackTarget(UnitInfo& unit)
 		kite = true;
 	}
 
-	// If kite is true and weapon on cooldown, move
-	if (kite && ((!unit.getTarget()->getType().isFlyer() && unit.unit()->getGroundWeaponCooldown() > 0) || (unit.getTarget()->getType().isFlyer() && unit.unit()->getAirWeaponCooldown() > 0)))
+	// If approaching is necessary
+	if (unit.getGroundRange() > 32 && unit.getGroundRange() < Units().getEnemyUnits()[unit.getTarget()].getGroundRange())
 	{
-		fleeTarget(unit);
-		return;
+		approach = true;
+	}
+
+	// If kite is true and weapon on cooldown, move
+	if (!unit.getTarget()->getType().isFlyer() && unit.unit()->getGroundWeaponCooldown() > 0 || unit.getTarget()->getType().isFlyer() && unit.unit()->getAirWeaponCooldown() > 0)
+	{
+		if (approach)
+		{
+			approachTarget(unit);
+			return;
+		}
+		if (kite)
+		{
+			fleeTarget(unit);
+			return;
+		}
 	}
 	else if ((!unit.getTarget()->getType().isFlyer() && unit.unit()->getGroundWeaponCooldown() <= 0) || (unit.getTarget()->getType().isFlyer() && unit.unit()->getAirWeaponCooldown() <= 0))
 	{
@@ -341,6 +356,12 @@ void CommandTrackerClass::fleeTarget(UnitInfo& unit)
 			unit.unit()->move(Position(finalPosition));
 		}
 	}
+	return;
+}
+
+void CommandTrackerClass::approachTarget(UnitInfo& unit)
+{
+	unit.unit()->move(unit.getTargetPosition());
 	return;
 }
 

@@ -40,7 +40,7 @@ double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 	{
 		damage = unit.getGroundDamage() / 24.0;
 	}
-	speed = unit.getSpeed()/128.0;
+	//speed = unit.getSpeed()/128.0;
 
 	if (!unit.getType().isWorker() && unit.getGroundDamage() > 0)
 	{
@@ -49,14 +49,15 @@ double UtilTrackerClass::getMaxGroundStrength(UnitInfo& unit, Player who)
 		{
 			damage = damage * 1.33;
 		}
-		if (speed > 0)
-		{
-			return range * damage * speed ;
-		}
-		else
-		{
-			return range * damage;
-		}
+		return range * damage;
+		//if (speed > 0)
+		//{
+		//	return range * damage * speed ;
+		//}
+		//else
+		//{
+		//	return range * damage;
+		//}
 	}
 	return 0.0;
 }
@@ -127,18 +128,19 @@ double UtilTrackerClass::getMaxAirStrength(UnitInfo& unit, Player who)
 		damage = unit.getAirDamage() / 24.0;
 	}
 
-	speed = unit.getSpeed()/128.0;
+	/*speed = unit.getSpeed()/128.0;*/
 
 	if (!unit.getType().isWorker() && damage > 0)
 	{
-		if (speed > 0)
-		{
-			return range * damage * speed;
-		}
-		else
-		{
-			return range * damage;
-		}
+		return range * damage;
+		//if (speed > 0)
+		//{
+		//	return range * damage * speed;
+		//}
+		//else
+		//{
+		//	return range * damage;
+		//}
 	}
 	return 0.0;
 }

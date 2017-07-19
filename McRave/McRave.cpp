@@ -8,28 +8,25 @@
 
 // --- AUTHOR NOTES ---
 // TODO in testing before AIIDE 2017:
+// Better engaging
 // Scout improvements
-// Reserve Path for ReserveGrid
 // Island check for DistanceGridHome
 // Test Recall!
 // Test size/damage type
 // Anti-stone check
 // Cannons / Worker pull
-// Cannons for each expansion
-// Bullets if working, use for unit scoring of performance
 // Test psi storm grid and EMP grid
+// Against units with higher range, move forward after shooting
 
 // One shot stuff:
+// Store resources when Nexus created - remove when destroyed
 // onUnitMorph - Archons, Eggs, Refineries
 // One shot composition storing - requires onMorph usage
 // One shot unit scoring? maybe not
 
 // TODO:
 // Only remove boulders close to me
-// If a building is no longer desired, remove from Probes build objective
 // Invis grid for observers to detect stuff
-// Melee units behaving poorly
-// Use global ally / globaly enemy as local latching
 // Archon merging when low energy or fleeing
 // Spider mine removal from expansions
 // Improve shuttles

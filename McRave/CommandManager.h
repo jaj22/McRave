@@ -7,7 +7,7 @@ using namespace std;
 
 class CommandTrackerClass
 {
-	bool kite;
+	bool kite, approach;
 public:
 	void update();
 	void updateAlliedUnits();
@@ -16,6 +16,7 @@ public:
 	void attackTarget(UnitInfo&);
 	void exploreArea(UnitInfo&);
 	void fleeTarget(UnitInfo&);
+	void approachTarget(UnitInfo&);
 };
 
 typedef Singleton<CommandTrackerClass> CommandTracker;
