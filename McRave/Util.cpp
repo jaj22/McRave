@@ -108,7 +108,7 @@ double UtilTrackerClass::getVisibleGroundStrength(UnitInfo& unit, Player who)
 		{
 			return 25.0 * unit.getMaxAirStrength() * effectiveness;
 		}
-		else if (!unit.unit()->isDetected())
+		else if (!unit.unit()->isDetected() && who == Broodwar->enemy())
 		{
 			return 25.0 * unit.getMaxAirStrength() * effectiveness;
 		}
@@ -200,7 +200,7 @@ double UtilTrackerClass::getVisibleAirStrength(UnitInfo& unit, Player who)
 		{
 			return 25.0 * unit.getMaxAirStrength() * effectiveness;
 		}
-		else if (!unit.unit()->isDetected())
+		else if (!unit.unit()->isDetected() && who == Broodwar->enemy())
 		{
 			return 25.0 * unit.getMaxAirStrength() * effectiveness;
 		}
