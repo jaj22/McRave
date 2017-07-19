@@ -162,7 +162,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 					{
 						continue;
 					}
-					if (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0)
+					if (Grids().getBaseGrid(base.Location()) == 0 && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
 					{
 						closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
 						closestP = base.Location();
