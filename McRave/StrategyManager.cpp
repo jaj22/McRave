@@ -71,7 +71,7 @@ void StrategyTrackerClass::protossStrategy()
 		}
 
 		// Check if enemy is playing defensive so we can expand off it
-		if (Units().getEnemyComposition()[UnitTypes::Terran_Bunker] > 0 || Units().getEnemyComposition()[UnitTypes::Protoss_Photon_Cannon] >= 2)
+		if ((Players().getNumberZerg() > 0 && BuildOrder().getOpener() == 1) || Units().getEnemyComposition()[UnitTypes::Terran_Bunker] > 0 || Units().getEnemyComposition()[UnitTypes::Protoss_Photon_Cannon] >= 2)
 		{
 			allyFastExpand = true;
 		}
@@ -212,13 +212,13 @@ void StrategyTrackerClass::updateBullets()
 						}
 					}
 
-					unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().groundWeapon().damageAmount()) * typeMod;
+					//unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().groundWeapon().damageAmount()) * typeMod;
 				}
-			}
-			else
-			{
-				unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().airWeapon().damageAmount());
-			}
+				else
+				{
+					//unitPerformance[bullet->getSource()->getType()] += double(bullet->getSource()->getType().airWeapon().damageAmount());
+				}
+			}			
 		}
 	}
 }

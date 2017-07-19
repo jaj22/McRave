@@ -19,7 +19,7 @@ void ResourceTrackerClass::updateResources()
 		{
 			resource.setRemainingResources(resource.unit()->getResources());
 		}
-		if (minSat && resource.getGathererCount() < 2)
+		if (minSat && resource.getGathererCount() < 2 && Grids().getBaseGrid(resource.getTilePosition()) > 0)
 		{
 			minSat = false;
 		}
@@ -27,17 +27,23 @@ void ResourceTrackerClass::updateResources()
 
 	// Assume gas saturation, will be changed to false if any gas geyser has less than 3 gatherers
 	gasSat = true;
+	tempGasCount = 0;
 	for (auto &g : myGas)
 	{
-		if (g.first->exists())
+		ResourceInfo& resource = g.second;
+		if (resource.unit()->exists())
 		{
-			g.second.setUnitType(g.first->getType());
-			g.second.setRemainingResources(g.first->getResources());
+			resource.setType(resource.unit()->getType());
+			resource.setRemainingResources(resource.unit()->getResources());
 		}
-		if (g.second.getGathererCount() < 3 && g.second.getType() != UnitTypes::Resource_Vespene_Geyser && g.second.unit()->isCompleted())
+		if (resource.getGathererCount() < 3 && resource.getType() != UnitTypes::Resource_Vespene_Geyser && resource.unit()->isCompleted() && Grids().getBaseGrid(resource.getTilePosition()) > 0)
 		{
-			gasNeeded = 3 - g.second.getGathererCount();
+			gasNeeded = 3 - resource.getGathererCount();
 			gasSat = false;
+		}
+		if (Grids().getBaseGrid(resource.getTilePosition()) == 2)
+		{
+			tempGasCount++;
 		}
 	}
 	return;
@@ -70,7 +76,7 @@ void ResourceTrackerClass::storeMineral(Unit resource)
 	m.setUnit(resource);
 	m.setResourceClusterPosition(resourceClusterCenter(resource));
 	m.setClosestBasePosition(Terrain().getClosestBaseCenter(resource));
-	m.setUnitType(resource->getType());
+	m.setType(resource->getType());
 	m.setPosition(resource->getPosition());
 	m.setWalkPosition(Util().getWalkPosition(resource));
 	m.setTilePosition(resource->getTilePosition());
@@ -86,7 +92,7 @@ void ResourceTrackerClass::storeGas(Unit resource)
 	g.setUnit(resource);
 	g.setResourceClusterPosition(resourceClusterCenter(resource));
 	g.setClosestBasePosition(Terrain().getClosestBaseCenter(resource));
-	g.setUnitType(resource->getType());
+	g.setType(resource->getType());
 	g.setPosition(resource->getPosition());
 	g.setWalkPosition(Util().getWalkPosition(resource));
 	g.setTilePosition(resource->getTilePosition());
@@ -100,7 +106,7 @@ void ResourceTrackerClass::storeBoulder(Unit resource)
 	b.setGathererCount(0);
 	b.setRemainingResources(resource->getResources());
 	b.setUnit(resource);
-	b.setUnitType(resource->getType());
+	b.setType(resource->getType());
 	b.setPosition(resource->getPosition());
 	b.setWalkPosition(Util().getWalkPosition(resource));
 	b.setTilePosition(resource->getTilePosition());

@@ -9,7 +9,6 @@
 // --- AUTHOR NOTES ---
 // TODO in testing before AIIDE 2017:
 // Scout improvements
-// Re-test grids due to merge conflict issues
 // Reserve Path for ReserveGrid
 // Island check for DistanceGridHome
 // Test Recall!
@@ -103,6 +102,10 @@ void McRaveModule::onNukeDetect(Position target)
 
 void McRaveModule::onUnitDiscover(Unit unit)
 {
+	if (unit->getPlayer()->isEnemy(Broodwar->self()))
+	{
+		Units().storeEnemy(unit);
+	}
 }
 
 void McRaveModule::onUnitEvade(Unit unit)

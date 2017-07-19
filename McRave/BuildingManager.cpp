@@ -80,7 +80,7 @@ void BuildingTrackerClass::storeBuilding(Unit building)
 {
 	BuildingInfo &b = myBuildings[building];
 	b.setUnit(building);
-	b.setUnitType(building->getType());
+	b.setType(building->getType());
 	b.setPosition(building->getPosition());
 	b.setWalkPosition(Util().getWalkPosition(building));
 	b.setTilePosition(building->getTilePosition());
@@ -162,7 +162,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 					{
 						continue;
 					}
-					if (Broodwar->isBuildable(base.Location(), true) && (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0))
+					if (Grids().getDistanceHome(WalkPosition(base.Location())) < closestD || closestD == 0)
 					{
 						closestD = Grids().getDistanceHome(WalkPosition(base.Location()));
 						closestP = base.Location();
@@ -208,7 +208,7 @@ TilePosition BuildingTrackerClass::getBuildLocation(UnitType building)
 	if (Strategy().isAllyFastExpand())
 	{
 		if (building == UnitTypes::Protoss_Pylon && Grids().getPylonGrid(Terrain().getFFEPosition()) <= 0 + Strategy().isBust())
-		{
+		{	
 			return getBuildLocationNear(building, Terrain().getFFEPosition());
 		}
 		if (building == UnitTypes::Protoss_Photon_Cannon)

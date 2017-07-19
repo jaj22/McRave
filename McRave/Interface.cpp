@@ -54,8 +54,11 @@ void InterfaceTrackerClass::drawInformation()
 		}
 	}
 
+
+
 	// Display global strength calculations	
 	Broodwar->drawTextScreen(500, 20, "A: %.2f    E: %.2f", Units().getGlobalAllyStrength(), Units().getGlobalEnemyStrength());
+	Broodwar->drawTextScreen(500, 30, "%.2f", Units().getAllyDefense());
 
 	// Display unit scoring
 	offset += 50;

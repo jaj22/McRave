@@ -259,21 +259,18 @@ void WorkerTrackerClass::updateGathering(WorkerInfo& worker)
 	// If idle and carrying gas or minerals, return cargo			
 	if (worker.unit()->isCarryingGas() || worker.unit()->isCarryingMinerals())
 	{
-		// TEMP TEST - Leta Worker idea
-		if (worker.getResource()->exists())
-		{
-			if (worker.getResource()->getType().isMineralField())
-			{
-				if (worker.getPosition().getDistance(Resources().getMyMinerals()[worker.getResource()].getClosestBasePosition()) > 64)
-				{
-					worker.unit()->move(Resources().getMyMinerals()[worker.getResource()].getClosestBasePosition());
-				}
-				else
-				{
-					worker.unit()->returnCargo();
-				}
-			}
-		}
+		//// TEMP TEST - Leta Worker idea
+		//if (worker.getResource()->exists())
+		//{
+		//	if (worker.getResource()->getType().isMineralField())
+		//	{
+		//		if (worker.getPosition().getDistance(Resources().getMyMinerals()[worker.getResource()].getClosestBasePosition()) > 160)
+		//		{
+		//			worker.unit()->move(Resources().getMyMinerals()[worker.getResource()].getClosestBasePosition());
+		//			return;
+		//		}
+		//	}
+		//}
 		if (worker.unit()->getLastCommand().getType() != UnitCommandTypes::Return_Cargo)
 		{
 			worker.unit()->returnCargo();

@@ -20,7 +20,7 @@ public:
 	TilePosition getTilePosition() { return tilePosition; }
 	TilePosition getResourcesPosition() { return resourcesPosition; }	
 
-	void setUnitType(UnitType newType) { unitType = newType; }
+	void setType(UnitType newType) { unitType = newType; }
 	void setUnit(Unit newUnit) { thisUnit = newUnit; }
 	void setPosition(Position newPosition) { position = newPosition; }
 	void setWalkPosition(WalkPosition newPosition) { walkPosition = newPosition; }

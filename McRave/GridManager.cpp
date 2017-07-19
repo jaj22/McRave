@@ -35,17 +35,17 @@ void GridTrackerClass::update()
 
 void GridTrackerClass::reset()
 {
-	// Temp debugging for tile positions
-	for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
-	{
-		for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
-		{
-			if (reserveGrid[x / 4][y / 4] > 0)
-			{
-				Broodwar->drawCircleMap(Position(WalkPosition(x, y)) + Position(8, 8), 4, Colors::Red);
-			}
-		}
-	}
+	//// Temp debugging for tile positions
+	//for (int x = 0; x <= Broodwar->mapWidth() * 4; x++)
+	//{
+	//	for (int y = 0; y <= Broodwar->mapHeight() * 4; y++)
+	//	{
+	//		if (reserveGrid[x / 4][y / 4] > 0)
+	//		{
+	//			Broodwar->drawCircleMap(Position(WalkPosition(x, y)) + Position(8, 8), 4, Colors::Red);
+	//		}
+	//	}
+	//}
 
 	int center = 0;
 	for (auto &walk : resetWalks)
@@ -390,29 +390,7 @@ void GridTrackerClass::updateBuildingGrid(BuildingInfo& building)
 					}
 				}
 			}
-		}
-
-		// Defense Grid
-		if (building.getType() == UnitTypes::Protoss_Photon_Cannon || building.getType() == UnitTypes::Terran_Bunker || building.getType() == UnitTypes::Zerg_Sunken_Colony)
-		{
-			for (int x = building.getTilePosition().x - 7; x < building.getTilePosition().x + building.getType().tileWidth() + 7; x++)
-			{
-				for (int y = building.getTilePosition().y - 7; y < building.getTilePosition().y + building.getType().tileHeight() + 7; y++)
-				{
-					if (TilePosition(x, y).isValid() && building.getPosition().getDistance(Position(TilePosition(x, y))) < 224)
-					{
-						if (building.unit()->exists())
-						{
-							defenseGrid[x][y] += 1;
-						}
-						else
-						{
-							defenseGrid[x][y] -= 1;
-						}
-					}
-				}
-			}
-		}
+		}		
 	}
 }
 
@@ -493,6 +471,42 @@ void GridTrackerClass::updateBaseGrid(BaseInfo& base)
 				else
 				{
 					baseGrid[x][y] = 0;
+				}
+			}
+		}
+	}
+}
+
+void GridTrackerClass::updateDefenseGrid(UnitInfo& unit)
+{
+	// Defense Grid
+	if (unit.getType() == UnitTypes::Protoss_Photon_Cannon || unit.getType() == UnitTypes::Terran_Bunker || unit.getType() == UnitTypes::Zerg_Sunken_Colony)
+	{
+		for (int x = unit.getTilePosition().x - 7; x < unit.getTilePosition().x + unit.getType().tileWidth() + 7; x++)
+		{
+			for (int y = unit.getTilePosition().y - 7; y < unit.getTilePosition().y + unit.getType().tileHeight() + 7; y++)
+			{
+				if (TilePosition(x, y).isValid() && unit.getPosition().getDistance(Position(TilePosition(x, y))) < 224)
+				{
+					if (unit.unit()->exists())
+					{
+						defenseGrid[x][y] += 1;
+					}
+					else
+					{
+						defenseGrid[x][y] -= 1;
+					}
+					if (x >= unit.getTilePosition().x && x < unit.getTilePosition().x + unit.getType().tileWidth() && y >= unit.getTilePosition().y && y < unit.getTilePosition().y + unit.getType().tileHeight())
+					{
+						if (unit.unit()->exists())
+						{
+							reserveGrid[x][y] += 1;
+						}
+						else
+						{
+							reserveGrid[x][y] -= 1;
+						}
+					}
 				}
 			}
 		}
@@ -649,7 +663,7 @@ void GridTrackerClass::updateMobilityGrids()
 			{
 				start = closestT;
 				reserveGrid[closestT.x][closestT.y] = 1;
-				if (closestT.getDistance(Terrain().getPlayerStartingTilePosition()) < 32)
+				if (closestT.getDistance(Terrain().getPlayerStartingTilePosition()) < 2)
 				{
 					return;
 				}

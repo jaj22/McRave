@@ -30,7 +30,7 @@ void BaseTrackerClass::storeBase(Unit base)
 {
 	BaseInfo& b = myBases[base];
 	b.setUnit(base);
-	b.setUnitType(base->getType());
+	b.setType(base->getType());
 	b.setResourcesPosition(TilePosition(Resources().resourceClusterCenter(base)));
 	b.setPosition(base->getPosition());
 	b.setWalkPosition(Util().getWalkPosition(base));
@@ -44,10 +44,10 @@ void BaseTrackerClass::storeBase(Unit base)
 
 void BaseTrackerClass::removeBase(Unit base)
 {
-	myOrderedBases.erase(base->getPosition().getDistance(Terrain().getPlayerStartingPosition()));
-	myBases.erase(base);
 	Terrain().getAllyTerritory().erase(theMap.GetArea(base->getTilePosition())->Id());
 	Grids().updateBaseGrid(myBases[base]);	
+	myOrderedBases.erase(base->getPosition().getDistance(Terrain().getPlayerStartingPosition()));
+	myBases.erase(base);
 	return;
 }
 

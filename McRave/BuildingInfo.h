@@ -32,7 +32,7 @@ public:
 	void setStrength(double newStrength) { strength = newStrength; }
 	void setIdleStatus(bool newIdleStatus) { idleStatus = newIdleStatus; }
 	void setUnit(Unit newUnit) { thisUnit = newUnit; }
-	void setUnitType(UnitType newBuildingType) { unitType = newBuildingType; }
+	void setType(UnitType newBuildingType) { unitType = newBuildingType; }
 	void setNextUnit(UnitType newNextUnit) { nextUnit = newNextUnit; }
 	void setPosition(Position newPosition) { position = newPosition; }
 	void setWalkPosition(WalkPosition newPosition) { walkPosition = newPosition; }

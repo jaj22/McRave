@@ -92,6 +92,9 @@ public:
 	// Updates a base if it is destroyed or created
 	void updateBaseGrid(BaseInfo&);
 
+	// Updates a defense if it is destroyed or created
+	void updateDefenseGrid(UnitInfo&);
+
 	// Returns the number of allied ground and air units within range of most area of effect abilities
 	int getACluster(int x, int y) { return aClusterGrid[x][y]; }
 	int getACluster(WalkPosition here) { return aClusterGrid[here.x][here.y]; }

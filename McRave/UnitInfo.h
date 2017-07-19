@@ -108,7 +108,7 @@ public:
 	void setUnit(Unit newUnit) { thisUnit = newUnit; }
 	void setTarget(Unit newTarget){ target = newTarget; }
 	void setTransport(Unit newTransport) { transport = newTransport; }
-	void setUnitType(UnitType newType) { unitType = newType; }
+	void setType(UnitType newType) { unitType = newType; }
 	void setCommand(UnitCommandType newCommand) { command = newCommand; }
 	void setPlayer(Player newOwner) { who = newOwner; }
 

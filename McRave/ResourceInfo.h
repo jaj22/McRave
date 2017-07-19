@@ -34,7 +34,7 @@ public:
 	void setRemainingResources(int newRemainingResources) { remainingResources = newRemainingResources; }
 
 	void setUnit(Unit newUnit) { storedUnit = newUnit; }
-	void setUnitType(UnitType newType) { unitType = newType; }
+	void setType(UnitType newType) { unitType = newType; }
 
 	void setPosition(Position newPosition) { position = newPosition; }
 	void setResourceClusterPosition(Position newPosition) { resourceClusterPosition = newPosition; }

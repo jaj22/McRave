@@ -69,7 +69,7 @@ void BuildOrderTrackerClass::updateDecision()
 				opening = 2;
 			}
 			// PvT - 1 Gate Nexus
-			else if (Players().getNumberTerran() > 0 && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == 1)
+			else if (Players().getNumberTerran() > 0)
 			{
 				opening = 3;
 			}
@@ -82,13 +82,9 @@ void BuildOrderTrackerClass::updateDecision()
 			// If we are being rushed in PvP, opening is always 4.
 			if (Strategy().isRush())
 			{
-				opening = 4;
+				//opening = 4;
 			}
-		}
-		if (Strategy().isRush())
-		{
-			opening = 4;
-		}
+		}		
 	}
 	else if (Broodwar->self()->getRace() == Races::Terran)
 	{
@@ -168,7 +164,7 @@ void BuildOrderTrackerClass::protossOpener()
 		}
 		// 2 Gate Core
 		else if (opening == 4)
-		{
+		{			
 			buildingDesired[UnitTypes::Protoss_Nexus] = 1;
 			buildingDesired[UnitTypes::Protoss_Gateway] = (Units().getSupply() >= 20) + (Units().getSupply() >= 24);
 			buildingDesired[UnitTypes::Protoss_Assimilator] = Units().getSupply() >= 48;
@@ -214,42 +210,6 @@ void BuildOrderTrackerClass::protossTech()
 		// No longer need to choose a tech
 		getTech = false;
 		techList.insert(techUnit);
-
-		//// PvT Tech
-		//else if (Players().getNumberTerran() > 0)
-		//{
-		//	if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] > Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) == 0)
-		//	{
-		//		techUnit = UnitTypes::Protoss_Reaver;
-		//	}
-		//	else if (Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] <= Strategy().getUnitScore()[UnitTypes::Protoss_Arbiter] && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Arbiter_Tribunal) == 0)
-		//	{
-		//		techUnit = UnitTypes::Protoss_Arbiter;
-		//	}
-		//	else
-		//	{
-		//		//optional 3rd tech here? (maybe carrier switch)
-		//	}
-		//}
-
-		//// PvZ Tech
-		//else if (Players().getNumberZerg() > 0)
-		//{
-		//	if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] > Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Robotics_Support_Bay) >= 1)
-		//	{
-		//		techUnit = UnitTypes::Protoss_Corsair;
-		//	}
-		//	else if (Strategy().getUnitScore()[UnitTypes::Protoss_Corsair] <= Strategy().getUnitScore()[UnitTypes::Protoss_Reaver] || Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate) >= 1)
-		//	{
-		//		techUnit = UnitTypes::Protoss_Reaver;
-		//	}
-		//}
-
-		//// PvP Tech
-		//else if (Players().getNumberProtoss() > 0)
-		//{
-		//	
-		//}
 	}
 	if (techUnit == UnitTypes::Protoss_Reaver)
 	{
@@ -271,7 +231,7 @@ void BuildOrderTrackerClass::protossTech()
 	}
 	else if (techUnit == UnitTypes::Protoss_Scout)
 	{
-		buildingDesired[UnitTypes::Protoss_Stargate] = 2;
+		buildingDesired[UnitTypes::Protoss_Stargate] = min(2, 1 + Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Stargate));
 		buildingDesired[UnitTypes::Protoss_Fleet_Beacon] = min(1, Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Stargate));
 	}
 	else if (techUnit == UnitTypes::Protoss_Arbiter)
@@ -315,14 +275,14 @@ void BuildOrderTrackerClass::protossSituational()
 
 	// Gateway logic
 	if (Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Gateway) >= 2 && (Production().getIdleLowProduction().size() == 0 && ((Broodwar->self()->minerals() - Production().getReservedMineral() - Buildings().getQueuedMineral() > 150) || (!Production().isGateSat() && Resources().isMinSaturated()))))
-	{
+	{		
 		buildingDesired[UnitTypes::Protoss_Gateway] = min(Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) * 3, Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Gateway) + 1);
 	}
 
 	// Assimilator logic
 	if (Resources().isMinSaturated() && Broodwar->self()->completedUnitCount(UnitTypes::Protoss_Nexus) == buildingDesired[UnitTypes::Protoss_Nexus])
 	{
-		buildingDesired[UnitTypes::Protoss_Assimilator] = Resources().getMyGas().size();
+		buildingDesired[UnitTypes::Protoss_Assimilator] = Resources().getTempGasCount();
 	}
 
 	// Forge logic
@@ -337,7 +297,7 @@ void BuildOrderTrackerClass::protossSituational()
 		buildingDesired[UnitTypes::Protoss_Photon_Cannon] = Broodwar->self()->visibleUnitCount(UnitTypes::Protoss_Photon_Cannon);
 		for (auto &base : Bases().getMyBases())
 		{
-			if (base.second.unit()->isCompleted() && Grids().getDefenseGrid(base.second.getTilePosition()) < 2)
+			if (base.second.unit()->isCompleted() && Grids().getDefenseGrid(base.second.getTilePosition()) < 2 && Broodwar->hasPower(TilePosition(base.second.getPosition())))
 			{
 				buildingDesired[UnitTypes::Protoss_Photon_Cannon] += 2 - Grids().getDefenseGrid(base.second.getTilePosition());
 			}
